@@ -11,8 +11,8 @@ The project follows a modern containerized micro-architecture:
 - **Language**: TypeScript
 - **Features**: 
   - Progressive Web App (PWA) capabilities for mobile usage.
-  - Barcode scanning integration.
-  - Responsive design.
+  - Barcode scanning integration (using `html5-qrcode`).
+  - Secure Context support via local SSL.
 
 ### Backend
 - **Framework**: Spring Boot 4.0.2
@@ -27,81 +27,81 @@ The project follows a modern containerized micro-architecture:
 
 ### Infrastructure
 - **Docker Compose**: Orchestrates the Frontend, Backend, and Database services.
-- **Networking**: Internal bridge network for service communication.
+- **CI/CD**: GitHub Actions pipeline for automated building and testing.
 
 ## Features
 
 - **Barcode Scanning**: Scan vinyl barcodes to retrieve metadata from Discogs.
 - **Multi-User Support**: Individual user accounts with personal Discogs collection integration.
 - **Listening History**: Log when you listen to a record.
-- **Analytics**: View most played records and listening trends (in development).
+- **Analytics**: View most played records and listening trends.
 
 ## Deployment & Running
 
 ### Prerequisites
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running.
+- [mkcert](https://github.com/FiloSottile/mkcert) for local SSL certificates (required for webcam access).
 
-### Quick Start
+### 1. Setup Local SSL (One-time setup)
 
-1. **Clone the repository** (if not already done).
-2. **Navigate to the project root**:
-   ```bash
-   cd vinyl-tracker
-   ```
-3. **Start the application**:
+To enable the webcam for barcode scanning, the app must run over HTTPS. We use `mkcert` to generate trusted local certificates.
+
+1.  **Install mkcert**:
+    ```bash
+    brew install mkcert
+    mkcert -install
+    ```
+2.  **Generate Certificates**:
+    Run this in the project root to create certificates for localhost and your local IP:
+    ```bash
+    mkdir -p certs
+    mkcert -key-file certs/key.pem -cert-file certs/cert.pem localhost 127.0.0.1 ::1 <YOUR_LOCAL_IP>
+    ```
+    *Replace `<YOUR_LOCAL_IP>` with your actual IP address (e.g., `192.168.178.68`).*
+
+3.  **Trust on Mobile**:
+    To scan from your phone, send the `certs/rootCA.pem` file to your device (via AirDrop/Email) and install it as a trusted profile.
+
+### 2. Start the Application
+
+1. **Start infrastructure**:
    ```bash
    docker compose up --build -d
    ```
 
-### Accessing the App
-
-- **Frontend**: [http://localhost:5173](http://localhost:5173) (or configured port)
-- **Backend API**: [http://localhost:8080](http://localhost:8080)
-
-### Configuration
-
-Environment variables and database credentials are configured in `docker-compose.yml` and `application.properties`.
+2. **Access the App**:
+   - **Frontend**: [https://localhost:5173](https://localhost:5173) (or `https://<YOUR_IP>:5173`)
+   - **Backend API**: [http://localhost:8080](http://localhost:8080)
 
 ## User Guide
 
-### 1. Generating a Discogs Token
-To use the application, you need a Discogs account and a Personal Access Token. This token allows the app to search your collection and fetch release data on your behalf.
+### Logging In
+1. **Generate a Token**: Log in to Discogs -> Settings -> Developers -> Generate new token.
+2. **Login to App**: Use your Discogs Username and the Token as the password.
 
-1. **Log in** to your [Discogs account](https://www.discogs.com/).
-2. Go to **Settings** > **Developers**.
-3. Click on the button **Generate new token**.
-4. Copy the generated token string. You will need this to log in to the Vinyl Tracker app.
-
-### 2. Logging In
-1. Open the Vinyl Tracker app in your browser.
-2. Enter your **Discogs Username**.
-3. Paste your **Discogs Token** into the password field.
-4. Click **Login**.
-
-The app will verify your credentials against the Discogs API. Once logged in, your session is saved locally, and you can start scanning!
-
-## Development
-
-- **Backend**: Located in `/backend`. Run with Maven or your IDE.
-- **Frontend**: Located in `/frontend`. Run with `npm run dev`.
-
-## Testing
-
-To run the unit and integration tests for the project:
+## Development & Testing
 
 ### Frontend
-Navigate to the `frontend` directory and run:
+Located in `/frontend`. configured with `.npmrc` to handle legacy peer dependencies automatically.
+
+**Run Tests:**
 ```bash
 cd frontend
-npm install # if dependencies are not installed
+npm install
 npm test
 ```
-This will launch Vitest in watch mode. Use `npm test -- run` for a single run (CI mode).
 
 ### Backend
-Navigate to the `backend` directory and verify using Maven:
+Located in `/backend`.
+
+**Run Tests:**
 ```bash
 cd backend
 mvn test
 ```
-This will compile the application and run all unit tests (JUnit 5).
+
+### CI/CD
+The project includes a GitHub Actions workflow (`.github/workflows/ci.yml`) that automatically:
+- Builds and tests the Backend (Java 25/Maven).
+- Builds and tests the Frontend (Node 20/Vite).
+- Runs on every push to `main` and PRs.

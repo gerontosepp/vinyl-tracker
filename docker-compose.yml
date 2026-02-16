@@ -1,0 +1,37 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: vinyl-postgres
+    environment:
+      POSTGRES_DB: vinyl_tracker
+      POSTGRES_USER: vinyl_user
+      POSTGRES_PASSWORD: vinyl_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build: ./backend
+    container_name: vinyl-backend
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/vinyl_tracker
+      SPRING_DATASOURCE_USERNAME: vinyl_user
+      SPRING_DATASOURCE_PASSWORD: vinyl_password
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+
+  frontend:
+    build: ./frontend
+    container_name: vinyl-frontend
+    ports:
+      - "3000:3000" # Vite default (or 80 via nginx)
+      - "5173:5173" # Dev server
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:

@@ -38,6 +38,7 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/setupTests.ts',
+    exclude: ['node_modules', 'dist', '.idea', '.git', '.cache', 'e2e/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
@@ -53,9 +54,9 @@ export default defineConfig({
     https:
       fs.existsSync('./certs/key.pem') && fs.existsSync('./certs/cert.pem')
         ? {
-            key: fs.readFileSync('./certs/key.pem'),
-            cert: fs.readFileSync('./certs/cert.pem'),
-          }
+          key: fs.readFileSync('./certs/key.pem'),
+          cert: fs.readFileSync('./certs/cert.pem'),
+        }
         : undefined,
     proxy: {
       '/api': {

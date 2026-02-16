@@ -74,13 +74,13 @@ jobs:
       run: npx playwright install chromium --with-deps
 
     - name: Start Backend Services
-      run: docker compose up -d backend vinyl-postgres
+      run: docker compose up -d backend postgres
       env:
-        DB_PASSWORD: ${{ secrets.DB_PASSWORD || 'postgres' }}
-        DB_USER: ${{ secrets.DB_USER || 'postgres' }}
-        DB_NAME: ${{ secrets.DB_NAME || 'vinyl_tracker' }}
-        ENCRYPTION_PASSWORD: ${{ secrets.ENCRYPTION_PASSWORD || 'deadbeefdeadbeefdeadbeefdeadbeef' }}
-        ENCRYPTION_SALT: ${{ secrets.ENCRYPTION_SALT || 'deadbeefdeadbeef' }}
+        POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD || 'postgres' }}
+        POSTGRES_USER: ${{ secrets.DB_USER || 'postgres' }}
+        POSTGRES_DB: ${{ secrets.DB_NAME || 'vinyl_tracker' }}
+        VINYL_ENCRYPTION_PASSWORD: ${{ secrets.ENCRYPTION_PASSWORD || 'deadbeefdeadbeefdeadbeefdeadbeef' }}
+        VINYL_ENCRYPTION_SALT: ${{ secrets.ENCRYPTION_SALT || 'deadbeefdeadbeef' }}
         DISCONGS_TOKEN: ${{ secrets.DISCOGS_TOKEN || 'dummy_token' }}
         DISCOGS_USERNAME: ${{ secrets.DISCOGS_USERNAME || 'dummy_user' }}
 

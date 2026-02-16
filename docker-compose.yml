@@ -3,9 +3,9 @@ services:
     image: postgres:16
     container_name: vinyl-postgres
     environment:
-      POSTGRES_DB: vinyl_tracker
-      POSTGRES_USER: vinyl_user
-      POSTGRES_PASSWORD: vinyl_password
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
@@ -15,9 +15,11 @@ services:
     build: ./backend
     container_name: vinyl-backend
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/vinyl_tracker
-      SPRING_DATASOURCE_USERNAME: vinyl_user
-      SPRING_DATASOURCE_PASSWORD: vinyl_password
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      VINYL_ENCRYPTION_PASSWORD: ${VINYL_ENCRYPTION_PASSWORD}
+      VINYL_ENCRYPTION_SALT: ${VINYL_ENCRYPTION_SALT}
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
     ports:
       - "8080:8080"

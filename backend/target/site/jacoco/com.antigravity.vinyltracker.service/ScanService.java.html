@@ -19,8 +19,8 @@ public class ScanService {
     private final ListenEventRepository listenEventRepository;
     private final AppUserRepository userRepository;
 
-    public ScanService(DiscogsService discogsService, RecordRepository recordRepository,
-<span class="fc" id="L23">            ListenEventRepository listenEventRepository, AppUserRepository userRepository) {</span>
+<span class="fc" id="L22">    public ScanService(DiscogsService discogsService, RecordRepository recordRepository,</span>
+            ListenEventRepository listenEventRepository, AppUserRepository userRepository) {
 <span class="fc" id="L24">        this.discogsService = discogsService;</span>
 <span class="fc" id="L25">        this.recordRepository = recordRepository;</span>
 <span class="fc" id="L26">        this.listenEventRepository = listenEventRepository;</span>
@@ -40,10 +40,10 @@ public class ScanService {
             try {
 <span class="fc" id="L41">                Long releaseId = Long.parseLong(idStr);</span>
 <span class="fc" id="L42">                discogsRelease = discogsService.getRelease(releaseId, user);</span>
-<span class="nc" id="L43">            } catch (NumberFormatException e) {</span>
+<span class="pc" id="L43">            } catch (NumberFormatException e) {</span>
 <span class="nc" id="L44">                return new ScanDto.Result(false, &quot;Invalid custom barcode format&quot;, null);</span>
-<span class="fc" id="L45">            }</span>
-<span class="fc" id="L46">        } else {</span>
+            }
+        } else {
             // Standard Barcode -&gt; Search Collection
 <span class="fc" id="L48">            discogsRelease = discogsService.searchCollectionByBarcode(barcode, user);</span>
         }
@@ -63,7 +63,7 @@ public class ScanService {
 <span class="fc" id="L63">                    Record newRecord = new Record(</span>
 <span class="fc" id="L64">                            finalRelease.getId(),</span>
 <span class="fc" id="L65">                            finalRelease.getTitle(),</span>
-                            artistName,
+<span class="fc" id="L66">                            artistName,</span>
 <span class="fc" id="L67">                            String.valueOf(finalRelease.getYear()),</span>
 <span class="fc" id="L68">                            finalRelease.getThumbUrl());</span>
 <span class="fc" id="L69">                    return recordRepository.save(newRecord);</span>

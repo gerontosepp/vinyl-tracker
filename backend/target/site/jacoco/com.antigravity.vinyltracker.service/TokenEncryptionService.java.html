@@ -10,9 +10,9 @@ public class TokenEncryptionService {
 
     private final TextEncryptor encryptor;
 
-    public TokenEncryptionService(
+<span class="fc" id="L13">    public TokenEncryptionService(</span>
             @Value(&quot;${vinyl.encryption.password}&quot;) String password,
-<span class="fc" id="L15">            @Value(&quot;${vinyl.encryption.salt}&quot;) String salt) {</span>
+            @Value(&quot;${vinyl.encryption.salt}&quot;) String salt) {
 <span class="fc" id="L16">        this.encryptor = Encryptors.text(password, salt);</span>
 <span class="fc" id="L17">    }</span>
 

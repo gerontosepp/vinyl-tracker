@@ -4,10 +4,10 @@ vinyl-tracker-backend,com.antigravity.vinyltracker.controller,ScanController,4,1
 vinyl-tracker-backend,com.antigravity.vinyltracker.controller,AppUserController,105,143,5,1,22,29,8,8,5,8
 vinyl-tracker-backend,com.antigravity.vinyltracker.controller,AnalyticsController,10,61,0,0,0,16,2,4,2,4
 vinyl-tracker-backend,com.antigravity.vinyltracker.config,AppConfig,0,10,0,0,0,3,0,3,0,3
-vinyl-tracker-backend,com.antigravity.vinyltracker.config,AppConfig.new WebMvcConfigurer() {...},0,47,0,0,0,7,0,2,0,2
-vinyl-tracker-backend,com.antigravity.vinyltracker.config,SecurityConfig,0,49,0,0,0,10,0,4,0,4
+vinyl-tracker-backend,com.antigravity.vinyltracker.config,AppConfig.new WebMvcConfigurer() {...},0,50,0,0,0,7,0,2,0,2
+vinyl-tracker-backend,com.antigravity.vinyltracker.config,SecurityConfig,0,48,0,0,0,10,0,4,0,4
 vinyl-tracker-backend,com.antigravity.vinyltracker.service,DiscogsService,22,225,5,9,5,48,5,8,0,6
-vinyl-tracker-backend,com.antigravity.vinyltracker.service,ScanService,8,149,1,7,2,35,1,7,0,4
+vinyl-tracker-backend,com.antigravity.vinyltracker.service,ScanService,8,148,1,7,1,35,1,7,0,4
 vinyl-tracker-backend,com.antigravity.vinyltracker.service,TokenEncryptionService,27,8,8,0,8,3,6,1,2,1
 vinyl-tracker-backend,com.antigravity.vinyltracker.model.discogs,DiscogsDto,3,0,0,0,1,0,1,0,1,0
 vinyl-tracker-backend,com.antigravity.vinyltracker.model,Record,0,18,0,0,0,7,0,1,0,1

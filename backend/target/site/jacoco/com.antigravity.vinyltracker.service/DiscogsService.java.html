@@ -12,7 +12,7 @@ public class DiscogsService {
 
     private final RestClient restClient;
     private final TokenEncryptionService tokenService;
-    private static final String BASE_URL = &quot;https://api.discogs.com&quot;;
+<span class="fc" id="L15">    private static final String BASE_URL = &quot;https://api.discogs.com&quot;;</span>
 
 <span class="fc" id="L17">    public DiscogsService(RestClient.Builder restClientBuilder, TokenEncryptionService tokenService) {</span>
 <span class="fc" id="L18">        this.restClient = restClientBuilder.baseUrl(BASE_URL).build();</span>
@@ -68,7 +68,7 @@ public class DiscogsService {
 <span class="fc" id="L68">                log.info(&quot;Release matches and is in collection!&quot;);</span>
 <span class="fc" id="L69">                return getRelease(result.getId(), user);</span>
             }
-<span class="fc" id="L71">        }</span>
+        }
 <span class="fc" id="L72">        log.warn(&quot;Barcode found in Discogs, but no matching release in user's collection.&quot;);</span>
 <span class="fc" id="L73">        return null;</span>
     }

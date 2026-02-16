@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getRecentListens, getTopRecords } from '../services/api';
-import { ListenEvent } from '../types';
+import type { ListenEvent } from '../types';
 import BarcodeScanner from '../components/BarcodeScanner';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
@@ -80,7 +80,7 @@ const Dashboard: React.FC = () => {
                                         <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 12 }} />
                                         <Tooltip />
                                         <Bar dataKey="count" fill="#8884d8" radius={[0, 4, 4, 0]}>
-                                            {topRecords.map((entry, index) => (
+                                            {topRecords.map((_entry, index) => (
                                                 <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#8884d8' : '#82ca9d'} />
                                             ))}
                                         </Bar>

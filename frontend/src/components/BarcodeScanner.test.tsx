@@ -35,7 +35,7 @@ describe('BarcodeScanner Component', () => {
         vi.clearAllMocks();
         (useAuth as any).mockReturnValue({ user: mockUser });
 
-        mockRender.mockImplementation((successCallback: (text: string) => void) => {
+        mockRender.mockImplementation((_successCallback: (text: string) => void) => {
             // Default implementation
         });
     });

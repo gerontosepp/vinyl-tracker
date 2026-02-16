@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Dashboard from '../pages/Dashboard';
 import { useAuth } from '../context/AuthContext';
 import * as api from '../services/api';
@@ -75,7 +75,7 @@ describe('Integration: Scan to Collection Flow', () => {
         });
 
         // Setup Scanner Mock to auto-scan when rendered
-        mockRender.mockImplementation((successCallback: (text: string) => void) => {
+        mockRender.mockImplementation((_successCallback: (text: string) => void) => {
             // Can Trigger scan manually or immediately
             // We'll trigger it manually in the test to control flow
         });

@@ -32,6 +32,9 @@ services:
       - "5173:5173" # Dev server
     depends_on:
       - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
 
 volumes:
   postgres_data:

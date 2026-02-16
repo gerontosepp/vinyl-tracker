@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { useAuth } from '../context/AuthContext';
 import { scanBarcode } from '../services/api';
-import { ScanResult } from '../types';
+import type { ScanResult } from '../types';
 
 const BarcodeScanner: React.FC = () => {
     const { user } = useAuth();
@@ -34,7 +34,7 @@ const BarcodeScanner: React.FC = () => {
                     }
                 }
             },
-            (error) => {
+            (_error) => {
                 // Error callback (scanning in progress)
                 // console.warn(error);
             }

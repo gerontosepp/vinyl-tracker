@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { ScanResult, ListenEvent, User } from '../types';
+import type { ScanResult, ListenEvent, User } from '../types';
 
 const API_Base = 'http://localhost:8080/api';
 

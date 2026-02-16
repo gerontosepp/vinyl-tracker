@@ -41,10 +41,10 @@ export default defineConfig({
   },
   server: {
     host: true,
-    https: {
+    https: (fs.existsSync('./certs/key.pem') && fs.existsSync('./certs/cert.pem')) ? {
       key: fs.readFileSync('./certs/key.pem'),
       cert: fs.readFileSync('./certs/cert.pem'),
-    },
+    } : undefined,
     proxy: {
       '/api': {
         target: 'http://backend:8080',

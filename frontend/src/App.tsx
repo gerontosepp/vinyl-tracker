@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import Footer from './components/Footer';
 
 import './index.css';
 
@@ -28,6 +29,7 @@ function App() {
             }
           />
         </Routes>
+        <Footer />
       </AuthProvider>
     </Router>
   );

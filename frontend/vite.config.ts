@@ -1,7 +1,7 @@
 /// <reference types="vitest" />
-import { defineConfig } from 'vitest/config'
-import react from '@vitejs/plugin-react'
-import { VitePWA } from 'vite-plugin-pwa'
+import { defineConfig } from 'vitest/config';
+import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
 import fs from 'fs';
 
 // https://vite.dev/config/
@@ -20,19 +20,19 @@ export default defineConfig({
           {
             src: 'vite.svg',
             sizes: '192x192',
-            type: 'image/svg+xml'
+            type: 'image/svg+xml',
           },
           {
             src: 'vite.svg',
             sizes: '512x512',
-            type: 'image/svg+xml'
-          }
+            type: 'image/svg+xml',
+          },
         ],
       },
       devOptions: {
-        enabled: true
-      }
-    })
+        enabled: true,
+      },
+    }),
   ],
   test: {
     globals: true,
@@ -45,24 +45,27 @@ export default defineConfig({
       exclude: ['src/setupTests.ts', 'src/vite-env.d.ts', '**/*.test.ts', '**/*.test.tsx'],
       thresholds: {
         lines: 80,
-      }
+      },
     },
   },
   server: {
     host: true,
-    https: (fs.existsSync('./certs/key.pem') && fs.existsSync('./certs/cert.pem')) ? {
-      key: fs.readFileSync('./certs/key.pem'),
-      cert: fs.readFileSync('./certs/cert.pem'),
-    } : undefined,
+    https:
+      fs.existsSync('./certs/key.pem') && fs.existsSync('./certs/cert.pem')
+        ? {
+            key: fs.readFileSync('./certs/key.pem'),
+            cert: fs.readFileSync('./certs/cert.pem'),
+          }
+        : undefined,
     proxy: {
       '/api': {
         target: 'http://backend:8080',
         changeOrigin: true,
         secure: false,
-      }
-    }
+      },
+    },
   },
   define: {
-    '__APP_VERSION__': JSON.stringify(process.env.npm_package_version),
-  }
-})
+    __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
+  },
+});

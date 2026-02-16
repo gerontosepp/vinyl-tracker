@@ -8,75 +8,87 @@ import * as AuthContext from '../context/AuthContext';
 const mockRegister = vi.fn();
 
 vi.spyOn(AuthContext, 'useAuth').mockReturnValue({
-    user: null,
-    login: vi.fn(),
-    register: mockRegister,
-    updateDiscogs: vi.fn(),
-    logout: vi.fn(),
-    isLoading: false,
+  user: null,
+  login: vi.fn(),
+  register: mockRegister,
+  updateDiscogs: vi.fn(),
+  logout: vi.fn(),
+  isLoading: false,
 });
 
 const renderComponent = () => {
-    return render(
-        <BrowserRouter>
-            <Register />
-        </BrowserRouter>
-    );
+  return render(
+    <BrowserRouter>
+      <Register />
+    </BrowserRouter>
+  );
 };
 
 describe('Register Component', () => {
-    it('renders registration form', () => {
-        renderComponent();
-        expect(screen.getByRole('heading', { name: /Register/i })).toBeInTheDocument();
-        expect(screen.getByRole('textbox', { name: /Username/i })).toBeInTheDocument();
-        expect(screen.getByLabelText(/^Password$/i)).toBeInTheDocument(); // Password input might not have role textbox
-        expect(screen.getByLabelText(/Confirm Password/i)).toBeInTheDocument();
+  it('renders registration form', () => {
+    renderComponent();
+    expect(screen.getByRole('heading', { name: /Register/i })).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: /Username/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Password$/i)).toBeInTheDocument(); // Password input might not have role textbox
+    expect(screen.getByLabelText(/Confirm Password/i)).toBeInTheDocument();
+  });
+
+  it('shows error when passwords do not match', async () => {
+    renderComponent();
+
+    fireEvent.change(screen.getByRole('textbox', { name: /Username/i }), {
+      target: { value: 'newuser' },
+    });
+    fireEvent.change(screen.getByLabelText(/^Password$/i), { target: { value: 'password123' } });
+    fireEvent.change(screen.getByLabelText(/Confirm Password/i), {
+      target: { value: 'password456' },
     });
 
-    it('shows error when passwords do not match', async () => {
-        renderComponent();
+    fireEvent.click(screen.getByRole('button', { name: /Register/i }));
 
-        fireEvent.change(screen.getByRole('textbox', { name: /Username/i }), { target: { value: 'newuser' } });
-        fireEvent.change(screen.getByLabelText(/^Password$/i), { target: { value: 'password123' } });
-        fireEvent.change(screen.getByLabelText(/Confirm Password/i), { target: { value: 'password456' } });
+    await waitFor(() => {
+      expect(screen.getByText('Passwords do not match')).toBeInTheDocument();
+    });
+    expect(mockRegister).not.toHaveBeenCalled();
+  });
 
-        fireEvent.click(screen.getByRole('button', { name: /Register/i }));
+  it('calls register function when form is valid', async () => {
+    renderComponent();
 
-        await waitFor(() => {
-            expect(screen.getByText('Passwords do not match')).toBeInTheDocument();
-        });
-        expect(mockRegister).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByRole('textbox', { name: /Username/i }), {
+      target: { value: 'newuser' },
+    });
+    fireEvent.change(screen.getByLabelText(/^Password$/i), { target: { value: 'password123' } });
+    fireEvent.change(screen.getByLabelText(/Confirm Password/i), {
+      target: { value: 'password123' },
     });
 
-    it('calls register function when form is valid', async () => {
-        renderComponent();
+    mockRegister.mockResolvedValueOnce({}); // Simulate success
 
-        fireEvent.change(screen.getByRole('textbox', { name: /Username/i }), { target: { value: 'newuser' } });
-        fireEvent.change(screen.getByLabelText(/^Password$/i), { target: { value: 'password123' } });
-        fireEvent.change(screen.getByLabelText(/Confirm Password/i), { target: { value: 'password123' } });
+    fireEvent.click(screen.getByRole('button', { name: /Register/i }));
 
-        mockRegister.mockResolvedValueOnce({}); // Simulate success
+    await waitFor(() => {
+      expect(mockRegister).toHaveBeenCalledWith('newuser', 'password123');
+    });
+  });
 
-        fireEvent.click(screen.getByRole('button', { name: /Register/i }));
+  it('displays error message on registration failure', async () => {
+    renderComponent();
 
-        await waitFor(() => {
-            expect(mockRegister).toHaveBeenCalledWith('newuser', 'password123');
-        });
+    mockRegister.mockRejectedValueOnce(new Error('Registration failed'));
+
+    fireEvent.change(screen.getByRole('textbox', { name: /Username/i }), {
+      target: { value: 'existinguser' },
+    });
+    fireEvent.change(screen.getByLabelText(/^Password$/i), { target: { value: 'password123' } });
+    fireEvent.change(screen.getByLabelText(/Confirm Password/i), {
+      target: { value: 'password123' },
     });
 
-    it('displays error message on registration failure', async () => {
-        renderComponent();
+    fireEvent.click(screen.getByRole('button', { name: /Register/i }));
 
-        mockRegister.mockRejectedValueOnce(new Error('Registration failed'));
-
-        fireEvent.change(screen.getByRole('textbox', { name: /Username/i }), { target: { value: 'existinguser' } });
-        fireEvent.change(screen.getByLabelText(/^Password$/i), { target: { value: 'password123' } });
-        fireEvent.change(screen.getByLabelText(/Confirm Password/i), { target: { value: 'password123' } });
-
-        fireEvent.click(screen.getByRole('button', { name: /Register/i }));
-
-        await waitFor(() => {
-            expect(screen.getByText(/Registration failed/i)).toBeInTheDocument();
-        });
+    await waitFor(() => {
+      expect(screen.getByText(/Registration failed/i)).toBeInTheDocument();
     });
+  });
 });

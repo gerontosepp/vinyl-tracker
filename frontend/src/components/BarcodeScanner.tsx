@@ -9,6 +9,8 @@ const BarcodeScanner: React.FC = () => {
     const [scanResult, setScanResult] = useState<ScanResult | null>(null);
     const [isScanning, setIsScanning] = useState(true);
 
+    const scannerRef = React.useRef<Html5QrcodeScanner | null>(null);
+
     useEffect(() => {
         if (!isScanning) return;
 
@@ -19,20 +21,30 @@ const BarcodeScanner: React.FC = () => {
                 success: false,
                 message: "Camera access requires HTTPS or localhost. If you are using an IP address, the camera might be blocked by your browser."
             });
-            // We still try to render, but it likely won't work
+            return;
+        }
+
+        // Cleanup any existing scanner before creating a new one
+        if (scannerRef.current) {
+            scannerRef.current.clear().catch(console.error);
+            scannerRef.current = null;
         }
 
         const scanner = new Html5QrcodeScanner(
             "reader",
             { fps: 10, qrbox: { width: 250, height: 250 } },
-      /* verbose= */ false
+            /* verbose= */ false
         );
+        scannerRef.current = scanner;
 
         scanner.render(
             async (result) => {
                 // Success callback
                 console.log("Scanned:", result);
-                scanner.clear(); // Stop scanning temporarily
+                if (scannerRef.current) {
+                    await scannerRef.current.clear();
+                    scannerRef.current = null;
+                }
                 setIsScanning(false);
 
                 if (user) {
@@ -47,12 +59,14 @@ const BarcodeScanner: React.FC = () => {
             },
             (_error) => {
                 // Error callback (scanning in progress)
-                // console.warn(error);
             }
         );
 
         return () => {
-            scanner.clear().catch(error => console.error("Failed to clear scanner", error));
+            if (scannerRef.current) {
+                scannerRef.current.clear().catch(error => console.error("Failed to clear scanner", error));
+                scannerRef.current = null;
+            }
         };
     }, [user, isScanning]);
 

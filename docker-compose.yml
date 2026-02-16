@@ -35,6 +35,7 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
+      - ./certs:/app/certs
 
 volumes:
   postgres_data:

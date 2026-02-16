@@ -100,7 +100,7 @@ The application requires environment variables for configuration (database crede
 ## Development & Testing
 
 ### Frontend
-Located in `/frontend`. configured with `.npmrc` to handle legacy peer dependencies automatically.
+Located in `/frontend`. Recommended to use `--legacy-peer-deps` when installing.
 
 **Run Tests:**
 ```bash
@@ -109,6 +109,18 @@ npm install
 npm test
 ```
 *Note: Tests enforce >80% code coverage.*
+
+**Available NPM Scripts:**
+| Script | Description |
+| :--- | :--- |
+| `npm run dev` | Starts the development server with hot-reloading |
+| `npm run build` | Builds the application for production |
+| `npm run preview` | Previews the production build locally |
+| `npm run lint` | Runs ESLint to check for code quality issues |
+| `npm run format` | Runs Prettier to format the codebase |
+| `npm run test` | Runs unit and integration tests (Vitest) |
+| `npm run test:e2e` | Runs end-to-end tests (Playwright) - requires local env running |
+| `npm run prepare` | Sets up Husky git hooks |
 
 ### Backend
 Located in `/backend`.

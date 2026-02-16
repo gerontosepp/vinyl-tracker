@@ -27,7 +27,9 @@ services:
       - postgres
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      target: development
     container_name: vinyl-frontend
     ports:
       - "3000:3000" # Vite default (or 80 via nginx)

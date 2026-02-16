@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="de"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TokenEncryptionService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">vinyl-tracker-backend</a> &gt; <a href="index.source.html" class="el_package">com.antigravity.vinyltracker.service</a> &gt; <span class="el_source">TokenEncryptionService.java</span></div><h1>TokenEncryptionService.java</h1><pre class="source lang-java linenums">package com.antigravity.vinyltracker.service;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.encrypt.Encryptors;
+import org.springframework.security.crypto.encrypt.TextEncryptor;
+import org.springframework.stereotype.Service;
+
+@Service
+public class TokenEncryptionService {
+
+    private final TextEncryptor encryptor;
+
+    public TokenEncryptionService(
+            @Value(&quot;${vinyl.encryption.password}&quot;) String password,
+<span class="fc" id="L15">            @Value(&quot;${vinyl.encryption.salt}&quot;) String salt) {</span>
+<span class="fc" id="L16">        this.encryptor = Encryptors.text(password, salt);</span>
+<span class="fc" id="L17">    }</span>
+
+    public String encrypt(String text) {
+<span class="nc bnc" id="L20" title="All 4 branches missed.">        if (text == null || text.isEmpty()) {</span>
+<span class="nc" id="L21">            return null;</span>
+        }
+<span class="nc" id="L23">        return encryptor.encrypt(text);</span>
+    }
+
+    public String decrypt(String encryptedText) {
+<span class="nc bnc" id="L27" title="All 4 branches missed.">        if (encryptedText == null || encryptedText.isEmpty()) {</span>
+<span class="nc" id="L28">            return null;</span>
+        }
+        try {
+<span class="nc" id="L31">            return encryptor.decrypt(encryptedText);</span>
+<span class="nc" id="L32">        } catch (Exception e) {</span>
+            // Log decryption failure and return null potentially
+<span class="nc" id="L34">            return null;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

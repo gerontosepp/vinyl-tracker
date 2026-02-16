@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="de"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DiscogsService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">vinyl-tracker-backend</a> &gt; <a href="index.source.html" class="el_package">com.antigravity.vinyltracker.service</a> &gt; <span class="el_source">DiscogsService.java</span></div><h1>DiscogsService.java</h1><pre class="source lang-java linenums">package com.antigravity.vinyltracker.service;
+
+import com.antigravity.vinyltracker.model.AppUser;
+import com.antigravity.vinyltracker.model.discogs.DiscogsDto;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
+import org.springframework.http.HttpHeaders;
+
+@Service
+<span class="fc" id="L10">@lombok.extern.slf4j.Slf4j</span>
+public class DiscogsService {
+
+    private final RestClient restClient;
+    private final TokenEncryptionService tokenService;
+    private static final String BASE_URL = &quot;https://api.discogs.com&quot;;
+
+<span class="fc" id="L17">    public DiscogsService(RestClient.Builder restClientBuilder, TokenEncryptionService tokenService) {</span>
+<span class="fc" id="L18">        this.restClient = restClientBuilder.baseUrl(BASE_URL).build();</span>
+<span class="fc" id="L19">        this.tokenService = tokenService;</span>
+<span class="fc" id="L20">    }</span>
+
+    public DiscogsDto.Release getRelease(Long releaseId, AppUser user) {
+<span class="fc" id="L23">        log.info(&quot;Fetching release details for ID: {}&quot;, releaseId);</span>
+<span class="fc" id="L24">        String decryptedToken = tokenService.decrypt(user.getDiscogsToken());</span>
+<span class="pc bpc" id="L25" title="1 of 2 branches missed.">        if (decryptedToken == null) {</span>
+<span class="nc" id="L26">            throw new RuntimeException(&quot;Could not decrypt Discogs token for user &quot; + user.getUsername());</span>
+        }
+
+<span class="fc" id="L29">        return restClient.get()</span>
+<span class="fc" id="L30">                .uri(&quot;/releases/{id}&quot;, releaseId)</span>
+<span class="fc" id="L31">                .header(HttpHeaders.USER_AGENT, &quot;VinylTrackerApp/1.0&quot;)</span>
+<span class="fc" id="L32">                .header(HttpHeaders.AUTHORIZATION, &quot;Discogs token=&quot; + decryptedToken)</span>
+<span class="fc" id="L33">                .retrieve()</span>
+<span class="fc" id="L34">                .body(DiscogsDto.Release.class);</span>
+    }
+
+    public DiscogsDto.Release searchCollectionByBarcode(String barcode, AppUser user) {
+<span class="fc" id="L38">        log.info(&quot;Searching Discogs for barcode: {}&quot;, barcode);</span>
+<span class="fc" id="L39">        String decryptedToken = tokenService.decrypt(user.getDiscogsToken());</span>
+<span class="pc bpc" id="L40" title="1 of 2 branches missed.">        if (decryptedToken == null) {</span>
+<span class="nc" id="L41">            throw new RuntimeException(&quot;Could not decrypt Discogs token for user &quot; + user.getUsername());</span>
+        }
+
+        // 1. Search Global DB
+<span class="fc" id="L45">        DiscogsDto.SearchResponse searchResponse = restClient.get()</span>
+<span class="fc" id="L46">                .uri(uriBuilder -&gt; uriBuilder</span>
+<span class="fc" id="L47">                        .path(&quot;/database/search&quot;)</span>
+<span class="fc" id="L48">                        .queryParam(&quot;barcode&quot;, barcode)</span>
+<span class="fc" id="L49">                        .queryParam(&quot;type&quot;, &quot;release&quot;)</span>
+<span class="fc" id="L50">                        .build())</span>
+<span class="fc" id="L51">                .header(HttpHeaders.USER_AGENT, &quot;VinylTrackerApp/1.0&quot;)</span>
+<span class="fc" id="L52">                .header(HttpHeaders.AUTHORIZATION, &quot;Discogs token=&quot; + decryptedToken)</span>
+<span class="fc" id="L53">                .retrieve()</span>
+<span class="fc" id="L54">                .body(DiscogsDto.SearchResponse.class);</span>
+
+<span class="pc bpc" id="L56" title="2 of 4 branches missed.">        if (searchResponse == null || searchResponse.getResults() == null) {</span>
+<span class="nc" id="L57">            log.warn(&quot;No results found on Discogs for barcode: {}&quot;, barcode);</span>
+<span class="nc" id="L58">            return null;</span>
+        }
+
+<span class="fc" id="L61">        log.info(&quot;Found {} results for barcode {}&quot;, searchResponse.getResults().size(), barcode);</span>
+
+        // 2. Filter by Collection Ownership
+<span class="fc bfc" id="L64" title="All 2 branches covered.">        for (DiscogsDto.SearchResult result : searchResponse.getResults()) {</span>
+<span class="fc" id="L65">            log.info(&quot;Checking if release {} ({}) is in collection...&quot;, result.getId(), result.getTitle());</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">            if (isReleaseInCollection(result.getId(), user)) { // This calls another method using user, but we should</span>
+                                                               // pass decrypted token or decrypt inside
+<span class="fc" id="L68">                log.info(&quot;Release matches and is in collection!&quot;);</span>
+<span class="fc" id="L69">                return getRelease(result.getId(), user);</span>
+            }
+<span class="fc" id="L71">        }</span>
+<span class="fc" id="L72">        log.warn(&quot;Barcode found in Discogs, but no matching release in user's collection.&quot;);</span>
+<span class="fc" id="L73">        return null;</span>
+    }
+
+    public boolean isReleaseInCollection(Long releaseId, AppUser user) {
+<span class="fc" id="L77">        String decryptedToken = tokenService.decrypt(user.getDiscogsToken());</span>
+<span class="pc bpc" id="L78" title="1 of 2 branches missed.">        if (decryptedToken == null)</span>
+<span class="nc" id="L79">            return false;</span>
+
+        try {
+<span class="fc" id="L82">            restClient.get()</span>
+<span class="fc" id="L83">                    .uri(&quot;/users/{username}/collection/releases/{releaseId}&quot;, user.getDiscogsUsername(), releaseId)</span>
+<span class="fc" id="L84">                    .header(HttpHeaders.USER_AGENT, &quot;VinylTrackerApp/1.0&quot;)</span>
+<span class="fc" id="L85">                    .header(HttpHeaders.AUTHORIZATION, &quot;Discogs token=&quot; + decryptedToken)</span>
+<span class="fc" id="L86">                    .retrieve()</span>
+<span class="fc" id="L87">                    .toBodilessEntity();</span>
+<span class="fc" id="L88">            return true;</span>
+<span class="fc" id="L89">        } catch (Exception e) {</span>
+            // log.debug(&quot;Release {} not in collection: {}&quot;, releaseId, e.getMessage());
+<span class="fc" id="L91">            return false;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

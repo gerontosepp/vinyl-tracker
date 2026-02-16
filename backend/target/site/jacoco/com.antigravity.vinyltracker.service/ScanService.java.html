@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="de"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ScanService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">vinyl-tracker-backend</a> &gt; <a href="index.source.html" class="el_package">com.antigravity.vinyltracker.service</a> &gt; <span class="el_source">ScanService.java</span></div><h1>ScanService.java</h1><pre class="source lang-java linenums">package com.antigravity.vinyltracker.service;
+
+import com.antigravity.vinyltracker.model.AppUser;
+import com.antigravity.vinyltracker.model.ListenEvent;
+import com.antigravity.vinyltracker.model.Record;
+import com.antigravity.vinyltracker.model.discogs.DiscogsDto;
+import com.antigravity.vinyltracker.model.dto.ScanDto;
+import com.antigravity.vinyltracker.repository.AppUserRepository;
+import com.antigravity.vinyltracker.repository.ListenEventRepository;
+import com.antigravity.vinyltracker.repository.RecordRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+public class ScanService {
+
+    private final DiscogsService discogsService;
+    private final RecordRepository recordRepository;
+    private final ListenEventRepository listenEventRepository;
+    private final AppUserRepository userRepository;
+
+    public ScanService(DiscogsService discogsService, RecordRepository recordRepository,
+<span class="fc" id="L23">            ListenEventRepository listenEventRepository, AppUserRepository userRepository) {</span>
+<span class="fc" id="L24">        this.discogsService = discogsService;</span>
+<span class="fc" id="L25">        this.recordRepository = recordRepository;</span>
+<span class="fc" id="L26">        this.listenEventRepository = listenEventRepository;</span>
+<span class="fc" id="L27">        this.userRepository = userRepository;</span>
+<span class="fc" id="L28">    }</span>
+
+    @Transactional
+    public ScanDto.Result processScan(String barcode, String username) {
+<span class="fc" id="L32">        AppUser user = userRepository.findByUsername(username)</span>
+<span class="fc" id="L33">                .orElseThrow(() -&gt; new RuntimeException(&quot;User not found: &quot; + username));</span>
+
+<span class="fc" id="L35">        DiscogsDto.Release discogsRelease = null;</span>
+
+        // 1. Check if Custom Code or Standard Barcode
+<span class="fc bfc" id="L38" title="All 2 branches covered.">        if (barcode.startsWith(&quot;discogs-id:&quot;)) {</span>
+<span class="fc" id="L39">            String idStr = barcode.replace(&quot;discogs-id:&quot;, &quot;&quot;);</span>
+            try {
+<span class="fc" id="L41">                Long releaseId = Long.parseLong(idStr);</span>
+<span class="fc" id="L42">                discogsRelease = discogsService.getRelease(releaseId, user);</span>
+<span class="nc" id="L43">            } catch (NumberFormatException e) {</span>
+<span class="nc" id="L44">                return new ScanDto.Result(false, &quot;Invalid custom barcode format&quot;, null);</span>
+<span class="fc" id="L45">            }</span>
+<span class="fc" id="L46">        } else {</span>
+            // Standard Barcode -&gt; Search Collection
+<span class="fc" id="L48">            discogsRelease = discogsService.searchCollectionByBarcode(barcode, user);</span>
+        }
+
+<span class="fc bfc" id="L51" title="All 2 branches covered.">        if (discogsRelease == null) {</span>
+<span class="fc" id="L52">            return new ScanDto.Result(false, &quot;Release not found in collection or invalid barcode.&quot;, null);</span>
+        }
+
+<span class="fc" id="L55">        final DiscogsDto.Release finalRelease = discogsRelease;</span>
+
+        // 2. Persist Record (Cache) if not exists
+<span class="fc" id="L58">        Record record = recordRepository.findByDiscogsId(finalRelease.getId())</span>
+<span class="fc" id="L59">                .orElseGet(() -&gt; {</span>
+<span class="pc bpc" id="L60" title="1 of 4 branches missed.">                    String artistName = (finalRelease.getArtists() != null &amp;&amp; !finalRelease.getArtists().isEmpty())</span>
+<span class="fc" id="L61">                            ? finalRelease.getArtists().get(0).getName()</span>
+<span class="fc" id="L62">                            : &quot;Unknown&quot;;</span>
+<span class="fc" id="L63">                    Record newRecord = new Record(</span>
+<span class="fc" id="L64">                            finalRelease.getId(),</span>
+<span class="fc" id="L65">                            finalRelease.getTitle(),</span>
+                            artistName,
+<span class="fc" id="L67">                            String.valueOf(finalRelease.getYear()),</span>
+<span class="fc" id="L68">                            finalRelease.getThumbUrl());</span>
+<span class="fc" id="L69">                    return recordRepository.save(newRecord);</span>
+                });
+
+        // 3. Save Listen Event
+<span class="fc" id="L73">        ListenEvent event = new ListenEvent(user, record);</span>
+<span class="fc" id="L74">        listenEventRepository.save(event);</span>
+
+<span class="fc" id="L76">        ScanDto.TrackedRecord trackedRecord = new ScanDto.TrackedRecord(</span>
+<span class="fc" id="L77">                record.getDiscogsId(), record.getTitle(), record.getArtist(), record.getThumbUrl());</span>
+
+<span class="fc" id="L79">        return new ScanDto.Result(true, &quot;Now playing: &quot; + record.getTitle(), trackedRecord);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

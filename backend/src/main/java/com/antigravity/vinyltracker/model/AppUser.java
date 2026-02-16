@@ -23,9 +23,15 @@ public class AppUser {
     @Column(name = "discogs_token", columnDefinition = "TEXT")
     private String discogsToken;
 
-    public AppUser(String username, String discogsUsername, String discogsToken) {
+    @Column(nullable = false)
+    private String password;
+
+    @Column(nullable = false)
+    private String salt;
+
+    public AppUser(String username, String password, String salt) {
         this.username = username;
-        this.discogsUsername = discogsUsername;
-        this.discogsToken = discogsToken;
+        this.password = password;
+        this.salt = salt;
     }
 }

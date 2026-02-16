@@ -20,21 +20,28 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 class DiscogsServiceTest {
 
         private DiscogsService discogsService;
-
         private MockRestServiceServer server;
-
         private ObjectMapper objectMapper = new ObjectMapper();
-
         private AppUser user;
+        private TokenEncryptionService tokenService;
 
         @BeforeEach
         void setUp() {
                 RestClient.Builder builder = RestClient.builder();
+
+                // Manually create mock server
                 server = MockRestServiceServer.bindTo(builder).build();
-                discogsService = new DiscogsService(builder);
+
+                // Mock TokenEncryptionService
+                tokenService = org.mockito.Mockito.mock(TokenEncryptionService.class);
+                org.mockito.Mockito.when(tokenService.decrypt(org.mockito.ArgumentMatchers.anyString()))
+                                .thenAnswer(invocation -> invocation.getArgument(0)); // Return token as-is for test
+
+                discogsService = new DiscogsService(builder, tokenService);
 
                 user = new AppUser();
-                user.setDiscogsUsername("testuser");
+                user.setUsername("testuser");
+                user.setDiscogsUsername("testdiscogs");
                 user.setDiscogsToken("testtoken");
         }
 

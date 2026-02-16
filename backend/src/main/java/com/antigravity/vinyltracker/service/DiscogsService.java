@@ -11,24 +11,36 @@ import org.springframework.http.HttpHeaders;
 public class DiscogsService {
 
     private final RestClient restClient;
+    private final TokenEncryptionService tokenService;
     private static final String BASE_URL = "https://api.discogs.com";
 
-    public DiscogsService(RestClient.Builder restClientBuilder) {
+    public DiscogsService(RestClient.Builder restClientBuilder, TokenEncryptionService tokenService) {
         this.restClient = restClientBuilder.baseUrl(BASE_URL).build();
+        this.tokenService = tokenService;
     }
 
     public DiscogsDto.Release getRelease(Long releaseId, AppUser user) {
         log.info("Fetching release details for ID: {}", releaseId);
+        String decryptedToken = tokenService.decrypt(user.getDiscogsToken());
+        if (decryptedToken == null) {
+            throw new RuntimeException("Could not decrypt Discogs token for user " + user.getUsername());
+        }
+
         return restClient.get()
                 .uri("/releases/{id}", releaseId)
                 .header(HttpHeaders.USER_AGENT, "VinylTrackerApp/1.0")
-                .header(HttpHeaders.AUTHORIZATION, "Discogs token=" + user.getDiscogsToken())
+                .header(HttpHeaders.AUTHORIZATION, "Discogs token=" + decryptedToken)
                 .retrieve()
                 .body(DiscogsDto.Release.class);
     }
 
     public DiscogsDto.Release searchCollectionByBarcode(String barcode, AppUser user) {
         log.info("Searching Discogs for barcode: {}", barcode);
+        String decryptedToken = tokenService.decrypt(user.getDiscogsToken());
+        if (decryptedToken == null) {
+            throw new RuntimeException("Could not decrypt Discogs token for user " + user.getUsername());
+        }
+
         // 1. Search Global DB
         DiscogsDto.SearchResponse searchResponse = restClient.get()
                 .uri(uriBuilder -> uriBuilder
@@ -37,7 +49,7 @@ public class DiscogsService {
                         .queryParam("type", "release")
                         .build())
                 .header(HttpHeaders.USER_AGENT, "VinylTrackerApp/1.0")
-                .header(HttpHeaders.AUTHORIZATION, "Discogs token=" + user.getDiscogsToken())
+                .header(HttpHeaders.AUTHORIZATION, "Discogs token=" + decryptedToken)
                 .retrieve()
                 .body(DiscogsDto.SearchResponse.class);
 
@@ -51,7 +63,8 @@ public class DiscogsService {
         // 2. Filter by Collection Ownership
         for (DiscogsDto.SearchResult result : searchResponse.getResults()) {
             log.info("Checking if release {} ({}) is in collection...", result.getId(), result.getTitle());
-            if (isReleaseInCollection(result.getId(), user)) {
+            if (isReleaseInCollection(result.getId(), user)) { // This calls another method using user, but we should
+                                                               // pass decrypted token or decrypt inside
                 log.info("Release matches and is in collection!");
                 return getRelease(result.getId(), user);
             }
@@ -61,11 +74,15 @@ public class DiscogsService {
     }
 
     public boolean isReleaseInCollection(Long releaseId, AppUser user) {
+        String decryptedToken = tokenService.decrypt(user.getDiscogsToken());
+        if (decryptedToken == null)
+            return false;
+
         try {
             restClient.get()
                     .uri("/users/{username}/collection/releases/{releaseId}", user.getDiscogsUsername(), releaseId)
                     .header(HttpHeaders.USER_AGENT, "VinylTrackerApp/1.0")
-                    .header(HttpHeaders.AUTHORIZATION, "Discogs token=" + user.getDiscogsToken())
+                    .header(HttpHeaders.AUTHORIZATION, "Discogs token=" + decryptedToken)
                     .retrieve()
                     .toBodilessEntity();
             return true;

@@ -14,57 +14,94 @@ const BarcodeScanner: React.FC = () => {
     useEffect(() => {
         if (!isScanning) return;
 
-        // Check for Secure Context (HTTPS or localhost)
-        const isSecure = window.isSecureContext;
-        if (!isSecure) {
-            setScanResult({
-                success: false,
-                message: "Camera access requires HTTPS or localhost. If you are using an IP address, the camera might be blocked by your browser."
-            });
-            return;
-        }
+        let ignore = false;
 
-        // Cleanup any existing scanner before creating a new one
-        if (scannerRef.current) {
-            scannerRef.current.clear().catch(console.error);
-            scannerRef.current = null;
-        }
-
-        const scanner = new Html5QrcodeScanner(
-            "reader",
-            { fps: 10, qrbox: { width: 250, height: 250 } },
-            /* verbose= */ false
-        );
-        scannerRef.current = scanner;
-
-        scanner.render(
-            async (result) => {
-                // Success callback
-                console.log("Scanned:", result);
-                if (scannerRef.current) {
-                    await scannerRef.current.clear();
-                    scannerRef.current = null;
+        const startScanner = async () => {
+            // Check for Secure Context (HTTPS or localhost)
+            const isSecure = window.isSecureContext;
+            if (!isSecure) {
+                if (!ignore) {
+                    setScanResult({
+                        success: false,
+                        message: "Camera access requires HTTPS or localhost."
+                    });
                 }
-                setIsScanning(false);
-
-                if (user) {
-                    try {
-                        const apiResult = await scanBarcode(result, user.username);
-                        setScanResult(apiResult);
-                    } catch (e: any) {
-                        const msg = e.response?.data?.message || "Network error or backend failure";
-                        setScanResult({ success: false, message: msg });
-                    }
-                }
-            },
-            (_error) => {
-                // Error callback (scanning in progress)
+                return;
             }
-        );
+
+            // Cleanup any existing scanner connection if ref is still populated (shouldn't be if cleanup worked)
+            if (scannerRef.current) {
+                try {
+                    await scannerRef.current.clear();
+                } catch (e) {
+                    // ignore cleanup errors
+                }
+                scannerRef.current = null;
+            }
+
+            if (ignore) return;
+
+            // MANUALLY CLEAR DOM to prevent double-rendering artifacts from StrictMode
+            // because scanner.clear() is async and might not have finished removing elements yet.
+            const readerElement = document.getElementById("reader");
+            if (readerElement) {
+                readerElement.innerHTML = "";
+            }
+
+            const scanner = new Html5QrcodeScanner(
+                "reader",
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                /* verbose= */ false
+            );
+
+            scannerRef.current = scanner;
+
+            // Render
+            try {
+                scanner.render(
+                    async (result) => {
+                        if (ignore) return;
+
+                        console.log("Scanned:", result);
+                        // Stop scanning UI immediatey
+                        const currentScanner = scannerRef.current;
+                        if (currentScanner) {
+                            try {
+                                await currentScanner.clear();
+                            } catch (e) { console.warn(e); }
+                            scannerRef.current = null;
+                        }
+
+                        setIsScanning(false);
+
+                        if (user) {
+                            try {
+                                const apiResult = await scanBarcode(result, user.username);
+                                setScanResult(apiResult);
+                            } catch (e: any) {
+                                const msg = e.response?.data?.message || "Network error or backend failure";
+                                setScanResult({ success: false, message: msg });
+                            }
+                        }
+                    },
+                    (_error) => {
+                        // Scanning...
+                    }
+                );
+            } catch (err) {
+                console.error("Failed to render scanner", err);
+            }
+        };
+
+        // Delay slightly to allow previous cleanup to process if in strict mode loop
+        const timer = setTimeout(startScanner, 100);
 
         return () => {
-            if (scannerRef.current) {
-                scannerRef.current.clear().catch(error => console.error("Failed to clear scanner", error));
+            ignore = true;
+            clearTimeout(timer);
+            const scanner = scannerRef.current;
+            if (scanner) {
+                scanner.clear().catch(error => console.warn("Failed to clear scanner on unmount", error));
                 scannerRef.current = null;
             }
         };

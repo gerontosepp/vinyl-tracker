@@ -1,5 +1,6 @@
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import Dashboard from '../pages/Dashboard';
 import { useAuth } from '../context/AuthContext';
 import * as api from '../services/api';
@@ -82,7 +83,11 @@ describe('Integration: Scan to Collection Flow', () => {
     });
 
     it('completes full scan flow and updates dashboard', async () => {
-        render(<Dashboard />);
+        render(
+            <MemoryRouter>
+                <Dashboard />
+            </MemoryRouter>
+        );
 
         // 1. Initial Load - verify empty state
         await waitFor(() => {

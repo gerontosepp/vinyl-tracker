@@ -1,10 +1,12 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { User } from '../types';
-import { getUser, createUser } from '../services/api';
+import { loginUser, registerUser, updateDiscogsSettings } from '../services/api';
 
 interface AuthContextType {
     user: User | null;
-    login: (username: string, token?: string) => Promise<void>;
+    login: (username: string, password: string) => Promise<void>;
+    register: (username: string, password: string) => Promise<void>;
+    updateDiscogs: (discogsUsername: string, token: string, password: string) => Promise<void>;
     logout: () => void;
     isLoading: boolean;
 }
@@ -16,28 +18,46 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
-        const savedUsername = localStorage.getItem('vinyl_user');
-        if (savedUsername) {
-            login(savedUsername, '');
-        }
+        // Auto-login removed as we require password now.
+        // In a real app, we would check for a valid session/token here.
     }, []);
 
-    const login = async (username: string, token: string = '') => {
+    const login = async (username: string, password: string) => {
         setIsLoading(true);
         try {
-            let userData: User;
-            if (token) {
-                // If token provided, try to create/update user
-                // Assuming username is same as discogsUsername for now as per README
-                userData = await createUser(username, token, username);
-            } else {
-                userData = await getUser(username);
-            }
+            const userData = await loginUser(username, password);
             setUser(userData);
             localStorage.setItem('vinyl_user', username);
         } catch (error) {
             console.error("Login failed", error);
-            // Propagate error to show in UI
+            throw error;
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const register = async (username: string, password: string) => {
+        setIsLoading(true);
+        try {
+            const userData = await registerUser(username, password);
+            setUser(userData);
+            localStorage.setItem('vinyl_user', username);
+        } catch (error) {
+            console.error("Registration failed", error);
+            throw error;
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const updateDiscogs = async (discogsUsername: string, token: string, password: string) => {
+        if (!user) return;
+        setIsLoading(true);
+        try {
+            const updatedUser = await updateDiscogsSettings(user.username, token, discogsUsername, password);
+            setUser(updatedUser);
+        } catch (error) {
+            console.error("Update settings failed", error);
             throw error;
         } finally {
             setIsLoading(false);
@@ -50,7 +70,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+        <AuthContext.Provider value={{ user, login, register, updateDiscogs, logout, isLoading }}>
             {children}
         </AuthContext.Provider>
     );

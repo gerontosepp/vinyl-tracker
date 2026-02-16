@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import axios from 'axios';
-import { getRecentListens, scanBarcode, createUser, getUser } from './api';
+import { getRecentListens, scanBarcode, loginUser, registerUser, getUser } from './api';
 
 // Mock axios directly
 vi.mock('axios', () => {
@@ -11,6 +11,7 @@ vi.mock('axios', () => {
             create: vi.fn(() => ({
                 post: mockPost,
                 get: mockGet,
+                put: vi.fn(),
                 interceptors: {
                     request: { use: vi.fn() },
                     response: { use: vi.fn() }
@@ -31,16 +32,28 @@ describe('API Service', () => {
         mockApi = (axios.create as any)();
     });
 
-    it('createUser should make a POST request to /users', async () => {
+    it('loginUser should make a POST request to /users/login', async () => {
         const mockUser = { id: 1, username: 'testuser' };
         mockApi.post.mockResolvedValue({ data: mockUser });
 
-        const result = await createUser('testuser', 'token', 'discogsUser');
+        const result = await loginUser('testuser', 'password123');
 
-        expect(mockApi.post).toHaveBeenCalledWith('/users', {
+        expect(mockApi.post).toHaveBeenCalledWith('/users/login', {
             username: 'testuser',
-            discogsToken: 'token',
-            discogsUsername: 'discogsUser'
+            password: 'password123'
+        });
+        expect(result).toEqual(mockUser);
+    });
+
+    it('registerUser should make a POST request to /users/register', async () => {
+        const mockUser = { id: 1, username: 'newuser' };
+        mockApi.post.mockResolvedValue({ data: mockUser });
+
+        const result = await registerUser('newuser', 'password123');
+
+        expect(mockApi.post).toHaveBeenCalledWith('/users/register', {
+            username: 'newuser',
+            password: 'password123'
         });
         expect(result).toEqual(mockUser);
     });

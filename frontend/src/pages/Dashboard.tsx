@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getRecentListens, getTopRecords } from '../services/api';
 import type { ListenEvent } from '../types';
@@ -7,6 +8,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 
 
 const Dashboard: React.FC = () => {
     const { user, logout } = useAuth();
+    const navigate = useNavigate();
     const [recentListens, setRecentListens] = useState<ListenEvent[]>([]);
     const [topRecords, setTopRecords] = useState<any[]>([]);
     const [showScanner, setShowScanner] = useState(false);
@@ -40,10 +42,14 @@ const Dashboard: React.FC = () => {
     return (
         <div className="min-h-screen bg-gray-50 pb-20">
             <header className="bg-white shadow p-4 flex justify-between items-center sticky top-0 z-10">
-                <h1 className="text-xl font-bold">Vinyl Tracker</h1>
                 <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600">{user?.username}</span>
-                    <button onClick={logout} className="text-sm text-red-500">Logout</button>
+                    <h1 className="text-xl font-bold">Vinyl Tracker</h1>
+                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">v{__APP_VERSION__}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600 mr-2">{user?.username}</span>
+                    <button onClick={() => navigate('/settings')} className="text-sm text-gray-600 hover:text-gray-900 mr-2">Settings</button>
+                    <button onClick={logout} className="text-sm text-red-500 hover:text-red-700">Logout</button>
                 </div>
             </header>
 

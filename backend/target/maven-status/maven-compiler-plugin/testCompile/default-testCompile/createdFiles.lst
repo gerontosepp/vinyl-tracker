@@ -1,0 +1,6 @@
+com/antigravity/vinyltracker/controller/ScanControllerIntegrationTest$TestConfig.class
+com/antigravity/vinyltracker/service/DiscogsServiceTest.class
+com/antigravity/vinyltracker/service/ScanServiceTest.class
+com/antigravity/vinyltracker/controller/ScanControllerIntegrationTest.class
+com/antigravity/vinyltracker/controller/AppUserControllerTest.class
+com/antigravity/vinyltracker/controller/AnalyticsControllerTest.class

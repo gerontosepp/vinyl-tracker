@@ -28,11 +28,27 @@ export const getTopRecords = async (username: string): Promise<any[]> => {
     return response.data;
 };
 
-export const createUser = async (username: string, discogsToken: string, discogsUsername: string): Promise<User> => {
-    const response = await api.post<User>('/users', { username, discogsToken, discogsUsername });
+export const loginUser = async (username: string, password: string): Promise<User> => {
+    const response = await api.post('/users/login', { username, password });
     return response.data;
 };
 
+export const registerUser = async (username: string, password: string): Promise<User> => {
+    const response = await api.post('/users/register', { username, password });
+    return response.data;
+};
+
+export const resetPassword = async (username: string, newPassword: string, discogsToken: string): Promise<User> => {
+    const response = await api.post('/users/reset-password', { username, newPassword, discogsToken });
+    return response.data;
+};
+
+export const updateDiscogsSettings = async (username: string, token: string, discogsUsername: string, password: string): Promise<User> => {
+    const response = await api.put(`/users/${username}/discogs`, { token, discogsUsername, password });
+    return response.data;
+};
+
+// Deprecated or repurposed helpers if needed
 export const getUser = async (username: string): Promise<User> => {
     const response = await api.get<User>(`/users/${username}`);
     return response.data;

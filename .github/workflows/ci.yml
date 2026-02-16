@@ -16,14 +16,15 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Set up JDK 25
+    - name: Set up JDK 24
       uses: actions/setup-java@v4
       with:
-        java-version: '25'
+        java-version: '24'
         distribution: 'temurin'
         cache: 'maven'
         
     - name: Build and Test with Maven
+      # The jacoco-check goal is bound to the verify phase, so 'mvn verify' will trigger the coverage check and fail if < 80%
       run: mvn clean verify
 
   frontend-build:
@@ -46,9 +47,8 @@ jobs:
       run: npm ci --legacy-peer-deps
 
     - name: Run Tests
-      # Using npx vitest directly since 'test' script might not be in package.json
-      # 'run' mode ensures it doesn't watch (CI mode)
-      run: npx vitest run
+      # --coverage flag triggers coverage collection. Vitest config has thresholds set to failure if < 80% lines
+      run: npx vitest run --coverage
 
     - name: Build Frontend
       run: npm run build

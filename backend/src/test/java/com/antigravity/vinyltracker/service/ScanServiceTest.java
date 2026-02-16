@@ -48,6 +48,8 @@ class ScanServiceTest {
         user.setId(1L);
         user.setUsername("testuser");
         user.setDiscogsUsername("testdiscogs");
+        user.setPassword("password");
+        user.setSalt("salt");
     }
 
     @Test

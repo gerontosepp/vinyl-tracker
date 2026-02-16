@@ -67,6 +67,8 @@ class ScanControllerIntegrationTest {
         testUser.setUsername("integrationUser");
         testUser.setDiscogsUsername("discogsUser");
         testUser.setDiscogsToken("token");
+        testUser.setPassword("password");
+        testUser.setSalt("salt");
         userRepository.save(testUser);
     }
 

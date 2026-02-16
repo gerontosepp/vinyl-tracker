@@ -16,7 +16,7 @@ The project follows a modern containerized micro-architecture:
 
 ### Backend
 - **Framework**: Spring Boot 4.0.2
-- **Language**: Java 25 (LTS)
+- **Language**: Java 24
 - **Database Access**: Spring Data JPA with Hibernate.
 - **API**: RESTful endpoints for scanning, user management, and analytics.
 - **Integration**: Discogs API for record metadata.
@@ -75,9 +75,13 @@ To enable the webcam for barcode scanning, the app must run over HTTPS. We use `
 
 ## User Guide
 
-### Logging In
-1. **Generate a Token**: Log in to Discogs -> Settings -> Developers -> Generate new token.
-2. **Login to App**: Use your Discogs Username and the Token as the password.
+### Account Setup
+1. **Register**: Creates a new local account.
+2. **Discogs Integration**: 
+   - Go to **Settings**.
+   - Enter your Discogs Username.
+   - Enter your Discogs Personal Access Token (generate at Discogs -> Settings -> Developers).
+   - Your token is securely encrypted using your login password.
 
 ## Development & Testing
 
@@ -90,6 +94,7 @@ cd frontend
 npm install
 npm test
 ```
+*Note: Tests enforce >80% code coverage.*
 
 ### Backend
 Located in `/backend`.
@@ -97,11 +102,13 @@ Located in `/backend`.
 **Run Tests:**
 ```bash
 cd backend
-mvn test
+mvn verify
 ```
+*Note: `mvn verify` runs unit/integration tests and enforcing >80% code coverage via JaCoCo.*
 
 ### CI/CD
 The project includes a GitHub Actions workflow (`.github/workflows/ci.yml`) that automatically:
-- Builds and tests the Backend (Java 25/Maven).
+- Builds and tests the Backend (Java 24/Maven).
 - Builds and tests the Frontend (Node 20/Vite).
+- Enforces >80% test coverage for both.
 - Runs on every push to `main` and PRs.

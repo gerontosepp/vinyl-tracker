@@ -7,6 +7,7 @@ import org.springframework.web.client.RestClient;
 import org.springframework.http.HttpHeaders;
 
 @Service
+@lombok.extern.slf4j.Slf4j
 public class DiscogsService {
 
     private final RestClient restClient;
@@ -17,6 +18,7 @@ public class DiscogsService {
     }
 
     public DiscogsDto.Release getRelease(Long releaseId, AppUser user) {
+        log.info("Fetching release details for ID: {}", releaseId);
         return restClient.get()
                 .uri("/releases/{id}", releaseId)
                 .header(HttpHeaders.USER_AGENT, "VinylTrackerApp/1.0")
@@ -26,6 +28,7 @@ public class DiscogsService {
     }
 
     public DiscogsDto.Release searchCollectionByBarcode(String barcode, AppUser user) {
+        log.info("Searching Discogs for barcode: {}", barcode);
         // 1. Search Global DB
         DiscogsDto.SearchResponse searchResponse = restClient.get()
                 .uri(uriBuilder -> uriBuilder
@@ -39,15 +42,21 @@ public class DiscogsService {
                 .body(DiscogsDto.SearchResponse.class);
 
         if (searchResponse == null || searchResponse.getResults() == null) {
+            log.warn("No results found on Discogs for barcode: {}", barcode);
             return null;
         }
 
+        log.info("Found {} results for barcode {}", searchResponse.getResults().size(), barcode);
+
         // 2. Filter by Collection Ownership
         for (DiscogsDto.SearchResult result : searchResponse.getResults()) {
+            log.info("Checking if release {} ({}) is in collection...", result.getId(), result.getTitle());
             if (isReleaseInCollection(result.getId(), user)) {
+                log.info("Release matches and is in collection!");
                 return getRelease(result.getId(), user);
             }
         }
+        log.warn("Barcode found in Discogs, but no matching release in user's collection.");
         return null;
     }
 
@@ -61,6 +70,7 @@ public class DiscogsService {
                     .toBodilessEntity();
             return true;
         } catch (Exception e) {
+            // log.debug("Release {} not in collection: {}", releaseId, e.getMessage());
             return false;
         }
     }

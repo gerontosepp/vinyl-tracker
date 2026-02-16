@@ -23,8 +23,14 @@ public class AppUserController {
     }
 
     @PostMapping
-    public AppUser createUser(@RequestBody AppUser user) {
-        return userRepository.save(user);
+    public ResponseEntity<AppUser> createUser(@RequestBody AppUser user) {
+        return userRepository.findByUsername(user.getUsername())
+                .map(existingUser -> {
+                    existingUser.setDiscogsToken(user.getDiscogsToken());
+                    existingUser.setDiscogsUsername(user.getDiscogsUsername());
+                    return ResponseEntity.ok(userRepository.save(existingUser));
+                })
+                .orElseGet(() -> ResponseEntity.ok(userRepository.save(user)));
     }
 
     @GetMapping("/{username}")

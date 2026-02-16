@@ -1,7 +1,7 @@
 import axios from 'axios';
 import type { ScanResult, ListenEvent, User } from '../types';
 
-const API_Base = 'http://localhost:8080/api';
+const API_Base = '/api';
 
 export const api = axios.create({
     baseURL: API_Base,

@@ -75,7 +75,7 @@ To use the application, you need a Discogs account and a Personal Access Token. 
 ### 2. Logging In
 1. Open the Vinyl Tracker app in your browser.
 2. Enter your **Discogs Username**.
-3. Paste your **Discogs Token** into the password field.
+3. Paste your **Discogs Token** into the password field.  JsTHtLkGicRlGhOLHlUMiBwREoXhvMNnRMBxCotY
 4. Click **Login**.
 
 The app will verify your credentials against the Discogs API. Once logged in, your session is saved locally, and you can start scanning!
@@ -84,3 +84,6 @@ The app will verify your credentials against the Discogs API. Once logged in, yo
 
 - **Backend**: Located in `/backend`. Run with Maven or your IDE.
 - **Frontend**: Located in `/frontend`. Run with `npm run dev`.
+
+
+

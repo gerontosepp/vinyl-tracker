@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 
 const Login: React.FC = () => {
     const [username, setUsername] = useState('');
+    const [discogsToken, setDiscogsToken] = useState('');
     const [error, setError] = useState('');
     const { login, isLoading } = useAuth();
     const navigate = useNavigate();
@@ -14,7 +15,7 @@ const Login: React.FC = () => {
         setError('');
 
         try {
-            await login(username);
+            await login(username, discogsToken);
             navigate('/');
         } catch (err) {
             setError('Login failed. Please check your username.');
@@ -39,6 +40,16 @@ const Login: React.FC = () => {
                             onChange={(e) => setUsername(e.target.value)}
                             className="mt-1 block w-full border border-gray-300 rounded p-2"
                             placeholder="Enter your username"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Discogs Token</label>
+                        <input
+                            type="password"
+                            value={discogsToken}
+                            onChange={(e) => setDiscogsToken(e.target.value)}
+                            className="mt-1 block w-full border border-gray-300 rounded p-2"
+                            placeholder="Enter your Discogs Personal Access Token"
                         />
                     </div>
                     {/* In a real app, password field here */}

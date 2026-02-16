@@ -1,10 +1,10 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { User } from '../types';
-import { getUser } from '../services/api';
+import { getUser, createUser } from '../services/api';
 
 interface AuthContextType {
     user: User | null;
-    login: (username: string) => Promise<void>;
+    login: (username: string, token?: string) => Promise<void>;
     logout: () => void;
     isLoading: boolean;
 }
@@ -18,21 +18,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     useEffect(() => {
         const savedUsername = localStorage.getItem('vinyl_user');
         if (savedUsername) {
-            login(savedUsername);
+            login(savedUsername, '');
         }
     }, []);
 
-    const login = async (username: string) => {
+    const login = async (username: string, token: string = '') => {
         setIsLoading(true);
         try {
-            const userData = await getUser(username);
+            let userData: User;
+            if (token) {
+                // If token provided, try to create/update user
+                // Assuming username is same as discogsUsername for now as per README
+                userData = await createUser(username, token, username);
+            } else {
+                userData = await getUser(username);
+            }
             setUser(userData);
             localStorage.setItem('vinyl_user', username);
         } catch (error) {
             console.error("Login failed", error);
-            // For MVP, if user not found, we might redirect to register page, 
-            // but here we just fail silenty or clear storage
-            localStorage.removeItem('vinyl_user');
+            // Propagate error to show in UI
+            throw error;
         } finally {
             setIsLoading(false);
         }

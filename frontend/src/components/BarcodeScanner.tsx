@@ -12,6 +12,16 @@ const BarcodeScanner: React.FC = () => {
     useEffect(() => {
         if (!isScanning) return;
 
+        // Check for Secure Context (HTTPS or localhost)
+        const isSecure = window.isSecureContext;
+        if (!isSecure) {
+            setScanResult({
+                success: false,
+                message: "Camera access requires HTTPS or localhost. If you are using an IP address, the camera might be blocked by your browser."
+            });
+            // We still try to render, but it likely won't work
+        }
+
         const scanner = new Html5QrcodeScanner(
             "reader",
             { fps: 10, qrbox: { width: 250, height: 250 } },
@@ -29,8 +39,9 @@ const BarcodeScanner: React.FC = () => {
                     try {
                         const apiResult = await scanBarcode(result, user.username);
                         setScanResult(apiResult);
-                    } catch (e) {
-                        setScanResult({ success: false, message: "Network error or backend failure" });
+                    } catch (e: any) {
+                        const msg = e.response?.data?.message || "Network error or backend failure";
+                        setScanResult({ success: false, message: msg });
                     }
                 }
             },

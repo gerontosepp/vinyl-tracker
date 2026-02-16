@@ -20,7 +20,7 @@ public class AppUser {
     @Column(name = "discogs_username")
     private String discogsUsername;
 
-    @Column(name = "discogs_token")
+    @Column(name = "discogs_token", columnDefinition = "TEXT")
     private String discogsToken;
 
     public AppUser(String username, String discogsUsername, String discogsToken) {

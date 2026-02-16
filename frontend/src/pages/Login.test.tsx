@@ -58,7 +58,7 @@ describe('Login Component', () => {
         fireEvent.click(button);
 
         await waitFor(() => {
-            expect(mockLoginContext).toHaveBeenCalledWith('testuser');
+            expect(mockLoginContext).toHaveBeenCalledWith('testuser', '');
             expect(mockNavigate).toHaveBeenCalledWith('/');
         });
     });
@@ -79,7 +79,7 @@ describe('Login Component', () => {
         // we need to know what Login.tsx actually renders on error.
         // Assuming standard error handling for now.
         await waitFor(() => {
-            expect(mockLoginContext).toHaveBeenCalledWith('wronguser');
+            expect(mockLoginContext).toHaveBeenCalledWith('wronguser', '');
             expect(screen.getByText(/login failed/i)).toBeInTheDocument();
         });
     });

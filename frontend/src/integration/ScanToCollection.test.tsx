@@ -100,6 +100,9 @@ describe('Integration: Scan to Collection Flow', () => {
 
         // 3. Simulate Successful Scan
         // We need to trigger the successCallback passed to scanner.render
+        await waitFor(() => {
+            expect(mockRender).toHaveBeenCalled();
+        });
         const scanCallback = mockRender.mock.calls[0][0]; // First arg of first call
         expect(scanCallback).toBeDefined();
 

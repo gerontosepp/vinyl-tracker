@@ -1,4 +1,4 @@
-import { render, screen, act } from '@testing-library/react';
+import { render, screen, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import BarcodeScanner from './BarcodeScanner';
 import { scanBarcode } from '../services/api';
@@ -50,24 +50,30 @@ describe('BarcodeScanner Component', () => {
         expect(document.getElementById('reader')).toBeInTheDocument();
     });
 
-    it('initializes scanner on mount', () => {
+    it('initializes scanner on mount', async () => {
         render(<BarcodeScanner />);
-        expect(mockRender).toHaveBeenCalled();
+        await waitFor(() => {
+            expect(mockRender).toHaveBeenCalled();
+        });
     });
 
     it('handles successful scan', async () => {
         const mockResult = { success: true, message: 'Scanned', record: { title: 'Album' } };
         (scanBarcode as any).mockResolvedValue(mockResult);
 
-        // Setup mock to call success callback immediately
-        mockRender.mockImplementation((successCallback: (text: string) => void) => {
-            successCallback('123456');
-        });
-
         render(<BarcodeScanner />);
 
+        // Wait for scanner to be rendered
+        await waitFor(() => {
+            expect(mockRender).toHaveBeenCalled();
+        });
+
+        // Get the success callback passed to render
+        const successCallback = mockRender.mock.calls[0][0];
+
+        // Simulate scan
         await act(async () => {
-            // Wait for async operations in useEffect/callbacks
+            await successCallback('123456');
         });
 
         expect(scanBarcode).toHaveBeenCalledWith('123456', 'testuser');
@@ -77,14 +83,19 @@ describe('BarcodeScanner Component', () => {
     it('handles scan error', async () => {
         (scanBarcode as any).mockRejectedValue(new Error('Scan failed'));
 
-        mockRender.mockImplementation((successCallback: (text: string) => void) => {
-            successCallback('error-barcode');
-        });
-
         render(<BarcodeScanner />);
 
+        // Wait for scanner to be rendered
+        await waitFor(() => {
+            expect(mockRender).toHaveBeenCalled();
+        });
+
+        // Get the success callback
+        const successCallback = mockRender.mock.calls[0][0];
+
+        // Simulate scan
         await act(async () => {
-            // Wait for async operations
+            await successCallback('error-barcode');
         });
 
         expect(scanBarcode).toHaveBeenCalledWith('error-barcode', 'testuser');

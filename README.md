@@ -85,5 +85,23 @@ The app will verify your credentials against the Discogs API. Once logged in, yo
 - **Backend**: Located in `/backend`. Run with Maven or your IDE.
 - **Frontend**: Located in `/frontend`. Run with `npm run dev`.
 
+## Testing
 
+To run the unit and integration tests for the project:
 
+### Frontend
+Navigate to the `frontend` directory and run:
+```bash
+cd frontend
+npm install # if dependencies are not installed
+npm test
+```
+This will launch Vitest in watch mode. Use `npm test -- run` for a single run (CI mode).
+
+### Backend
+Navigate to the `backend` directory and verify using Maven:
+```bash
+cd backend
+mvn test
+```
+This will compile the application and run all unit tests (JUnit 5).

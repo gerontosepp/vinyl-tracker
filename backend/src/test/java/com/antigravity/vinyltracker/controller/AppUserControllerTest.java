@@ -3,7 +3,7 @@ package com.antigravity.vinyltracker.controller;
 import com.antigravity.vinyltracker.model.AppUser;
 import com.antigravity.vinyltracker.repository.AppUserRepository;
 import com.antigravity.vinyltracker.service.TokenEncryptionService;
-import tools.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

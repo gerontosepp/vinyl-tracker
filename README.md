@@ -62,7 +62,20 @@ To enable the webcam for barcode scanning, the app must run over HTTPS. We use `
 3.  **Trust on Mobile**:
     To scan from your phone, send the `certs/rootCA.pem` file to your device (via AirDrop/Email) and install it as a trusted profile.
 
-### 2. Start the Application
+### 2. Setup Environment Variables
+
+The application requires environment variables for configuration (database credentials, encryption keys).
+
+1.  **Create .env file**:
+    Copy the example file to `.env`:
+    ```bash
+    cp .env.example .env
+    ```
+
+2.  **Configure Secrets**:
+    Open `.env` and set your own secure values for `VINYL_ENCRYPTION_PASSWORD` and `VINYL_ENCRYPTION_SALT`.
+
+### 3. Start the Application
 
 1. **Start infrastructure**:
    ```bash

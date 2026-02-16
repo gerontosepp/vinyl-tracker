@@ -15,6 +15,10 @@ export const scanBarcode = async (barcode: string, username: string): Promise<Sc
   return response.data;
 };
 
+export const deleteScan = async (id: number, username: string): Promise<void> => {
+  await api.delete(`/scan/${id}?username=${username}`);
+};
+
 export const getRecentListens = async (username: string): Promise<ListenEvent[]> => {
   const response = await api.get<ListenEvent[]>(`/analytics/recent?username=${username}`);
   return response.data;

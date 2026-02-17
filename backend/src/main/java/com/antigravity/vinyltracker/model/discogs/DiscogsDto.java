@@ -45,4 +45,75 @@ public class DiscogsDto {
         private String coverImage;
         private List<String> barcode;
     }
+
+    @Data
+    @lombok.AllArgsConstructor
+    @lombok.NoArgsConstructor
+    public static class CollectionResponse {
+        @JsonProperty("releases")
+        private List<CollectionRelease> releases;
+        @JsonProperty("pagination")
+        private Pagination pagination;
+    }
+
+    @Data
+    @lombok.AllArgsConstructor
+    @lombok.NoArgsConstructor
+    public static class Pagination {
+        private int items;
+        private int page;
+        private int pages;
+        @JsonProperty("per_page")
+        private int perPage;
+        private Urls urls;
+
+        @Data
+        @lombok.AllArgsConstructor
+        @lombok.NoArgsConstructor
+        public static class Urls {
+            private String next;
+            private String prev;
+        }
+    }
+
+    @Data
+    @lombok.AllArgsConstructor
+    @lombok.NoArgsConstructor
+    public static class CollectionRelease {
+        private Long id;
+        @JsonProperty("instance_id")
+        private Long instanceId;
+        @JsonProperty("date_added")
+        private String dateAdded;
+        private int rating;
+        @JsonProperty("basic_information")
+        private BasicInformation basicInformation;
+    }
+
+    @Data
+    @lombok.AllArgsConstructor
+    @lombok.NoArgsConstructor
+    public static class BasicInformation {
+        private Long id;
+        private String title;
+        private int year;
+        @JsonProperty("thumb")
+        private String thumbUrl;
+        @JsonProperty("cover_image")
+        private String coverImage;
+        private List<Artist> artists;
+        private List<Label> labels;
+    }
+
+    @Data
+    @lombok.AllArgsConstructor
+    @lombok.NoArgsConstructor
+    public static class Label {
+        private String name;
+        @JsonProperty("catno")
+        private String catno;
+        @JsonProperty("entity_type_name")
+        private String entityTypeName;
+        private Long id;
+    }
 }

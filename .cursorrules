@@ -12,6 +12,7 @@ You are working on the Vinyl Tracker project. Stick to the following rules stric
 ## 2. Documentation
 - **Keep Docs Sync**: If you change features, configuration, or setup steps, you MUST update `README.md` immediately.
 - **Self-Documenting**: Write clear comments for complex logic, but prefer readable variable/method names.
+- **Arc42**: Update the arc42.md file if you make significant architectural changes.
 
 ## 3. Technology Stack specifics
 - **Backend**: Java 21+ (Spring Boot). Use Lombok.

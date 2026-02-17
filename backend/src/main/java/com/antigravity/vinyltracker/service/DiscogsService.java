@@ -91,4 +91,19 @@ public class DiscogsService {
             return false;
         }
     }
+
+    public DiscogsDto.CollectionResponse getCollection(AppUser user, int page) {
+        String decryptedToken = tokenService.decrypt(user.getDiscogsToken());
+        if (decryptedToken == null) {
+            throw new RuntimeException("Could not decrypt Discogs token for user " + user.getUsername());
+        }
+
+        return restClient.get()
+                .uri("/users/{username}/collection/folders/0/releases?page={page}&per_page=100",
+                        user.getDiscogsUsername(), page)
+                .header(HttpHeaders.USER_AGENT, "VinylTrackerApp/1.0")
+                .header(HttpHeaders.AUTHORIZATION, "Discogs token=" + decryptedToken)
+                .retrieve()
+                .body(DiscogsDto.CollectionResponse.class);
+    }
 }

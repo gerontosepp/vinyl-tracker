@@ -35,6 +35,8 @@ The project follows a modern containerized micro-architecture:
 - **Multi-User Support**: Individual user accounts with personal Discogs collection integration.
 - **Listening History**: Log when you listen to a record.
 - **Analytics**: View most played records and listening trends.
+- **QR Code Generation**: Generate a PDF with QR codes for your entire collection, sorted by artist.
+- **Quick Logging**: Scan generated QR codes to instantly log a listen without searching.
 
 ## Deployment & Running
 
@@ -77,11 +79,19 @@ The application requires environment variables for configuration (database crede
 
 ### 3. Start the Application
 
-1. **Start infrastructure**:
+1. **Start Development Environment**:
    ```bash
    docker compose up --build -d
    ```
-   *Note: The default `docker-compose.yml` targets the `development` stage for the frontend (hot-reloading). To run the optimized production build, configure the target to `production`.*
+   *Features hot-reloading for frontend.*
+
+2. **Start Production Environment**:
+   ```bash
+   docker compose -f docker-compose.prod.yml up --build -d
+   ```
+   *Optimized build, no hot-reloading, runs on port 80.*
+
+   👉 **[See Detailed Deployment Guide](docs/DEPLOYMENT.md)** for server setup and HTTPS requirements.
 
 2. **Access the App**:
    - **Frontend**: [https://localhost:5173](https://localhost:5173) (or `https://<YOUR_IP>:5173`)

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getRecentListens, getTopRecords, deleteScan } from '../services/api';
-import type { ListenEvent } from '../types';
+import type { ListenEvent, AnalyticsTopRecord } from '../types';
 import BarcodeScanner from '../components/BarcodeScanner';
 import Layout from '../components/Layout/Layout';
 import TopRecords from '../components/Dashboard/TopRecords';
@@ -11,7 +11,7 @@ import { useLocation } from 'react-router-dom';
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const [recentListens, setRecentListens] = useState<ListenEvent[]>([]);
-  const [topRecords, setTopRecords] = useState<{ name: string; count: number }[]>([]);
+  const [topRecords, setTopRecords] = useState<AnalyticsTopRecord[]>([]);
   const [showScanner, setShowScanner] = useState(false);
   const location = useLocation();
 
@@ -32,11 +32,7 @@ const Dashboard: React.FC = () => {
       setRecentListens((prev) => prev.filter((item) => item.id !== id));
       // Refresh top records as well
       const tops = await getTopRecords(user.username);
-      const formatted = tops.map((t: Record<string, any>) => ({
-        name: t.key || t.name || Object.keys(t)[0],
-        count: t.value || t.count || Object.values(t)[0],
-      }));
-      setTopRecords(formatted);
+      setTopRecords(tops);
     } catch (e) {
       console.error('Failed to delete scan', e);
       alert('Failed to delete scan');
@@ -51,11 +47,7 @@ const Dashboard: React.FC = () => {
         setRecentListens(recents);
 
         const tops = await getTopRecords(user.username);
-        const formatted = tops.map((t: Record<string, any>) => ({
-          name: t.key || t.name || Object.keys(t)[0],
-          count: t.value || t.count || Object.values(t)[0],
-        }));
-        setTopRecords(formatted);
+        setTopRecords(tops);
       } catch (e) {
         console.error('Failed to load dashboard data', e);
       }

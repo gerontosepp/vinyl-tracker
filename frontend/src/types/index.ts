@@ -24,7 +24,10 @@ export interface ScanResult {
 }
 
 export interface AnalyticsTopRecord {
-  recordTitle: string;
+  recordTitle: string; // Keeping for backward compatibility if needed, though title is better
+  title: string;
+  artist: string;
+  thumbUrl: string;
   count: number;
 }
 

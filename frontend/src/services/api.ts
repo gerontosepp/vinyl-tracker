@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { ScanResult, ListenEvent, User } from '../types';
+import type { ScanResult, ListenEvent, User, AnalyticsTopRecord } from '../types';
 
 const API_Base = '/api';
 
@@ -24,8 +24,8 @@ export const getRecentListens = async (username: string): Promise<ListenEvent[]>
   return response.data;
 };
 
-export const getTopRecords = async (username: string): Promise<Record<string, unknown>[]> => {
-  const response = await api.get<Record<string, unknown>[]>(`/analytics/top?username=${username}`);
+export const getTopRecords = async (username: string): Promise<AnalyticsTopRecord[]> => {
+  const response = await api.get<AnalyticsTopRecord[]>(`/analytics/top?username=${username}`);
   return response.data;
 };
 

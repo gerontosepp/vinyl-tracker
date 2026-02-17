@@ -34,8 +34,8 @@ describe('Dashboard Component', () => {
         });
         // Default API responses
         vi.spyOn(api, 'getTopRecords').mockResolvedValue([
-            { name: 'Radiohead', count: 5 },
-            { name: 'Beatles', count: 3 },
+            { title: 'Radiohead', artist: 'Radiohead', thumbUrl: '', count: 5, recordTitle: 'Radiohead' },
+            { title: 'Beatles', artist: 'Beatles', thumbUrl: '', count: 3, recordTitle: 'Beatles' },
         ]);
         vi.spyOn(api, 'getRecentListens').mockResolvedValue([
             {

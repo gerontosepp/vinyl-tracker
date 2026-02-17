@@ -40,20 +40,18 @@ class CollectionControllerTest {
 
     @Test
     @WithMockUser(username = "testuser")
-    void testGenerateQrCodes() throws Exception {
+    void testGenerateQrCodesAll() throws Exception {
         AppUser mockUser = new AppUser();
         mockUser.setUsername("testuser");
 
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(mockUser));
 
-        DiscogsDto.CollectionResponse mockResponse = new DiscogsDto.CollectionResponse();
-        mockResponse.setReleases(Collections.emptyList());
-        when(discogsService.getCollection(any(AppUser.class), anyInt())).thenReturn(mockResponse);
+        when(discogsService.getAllCollection(any(AppUser.class))).thenReturn(Collections.emptyList());
 
         byte[] mockPdf = "%PDF-1.4 mock content".getBytes();
         when(pdfService.generateQrCodePdf(anyList())).thenReturn(mockPdf);
 
-        mockMvc.perform(get("/api/collection/qr-codes")
+        mockMvc.perform(get("/api/collection/qr-codes/all")
                 .param("username", "testuser"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_PDF))

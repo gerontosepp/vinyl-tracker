@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { downloadQrCodes } from '../services/api';
+
 import Layout from '../components/Layout/Layout';
 
 const Settings: React.FC = () => {
@@ -106,41 +106,7 @@ const Settings: React.FC = () => {
           </button>
 
 
-          <hr className="my-6" />
 
-          <div>
-            <h3 className="text-md font-semibold mb-2">Collection Tools</h3>
-            <p className="text-sm text-gray-500 mb-4">
-              Download a PDF containing QR codes for all records in your Discogs collection.
-              These codes can be scanned to quickly log listens.
-            </p>
-            <button
-              type="button"
-              onClick={async () => {
-                try {
-                  setMsg('Generating PDF... this may take a moment.');
-                  setError('');
-                  if (!user) return;
-                  const blob = await downloadQrCodes(user.username);
-                  const url = window.URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = 'collection_qr_codes.pdf';
-                  document.body.appendChild(a);
-                  a.click();
-                  window.URL.revokeObjectURL(url);
-                  document.body.removeChild(a);
-                  setMsg('PDF downloaded successfully!');
-                } catch (e) {
-                  console.error(e);
-                  setError('Failed to generate PDF. Ensure Discogs token is set.');
-                }
-              }}
-              className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 w-full md:w-auto"
-            >
-              Download QR Codes PDF
-            </button>
-          </div>
         </form>
       </div >
     </Layout>

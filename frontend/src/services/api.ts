@@ -62,10 +62,32 @@ export const updateDiscogsSettings = async (
   return response.data;
 };
 
+export const getCollection = async (
+  username: string,
+  page: number = 1,
+  perPage: number = 50
+): Promise<import('../types').CollectionResponse> => {
+  const response = await api.get<import('../types').CollectionResponse>(
+    `/collection?username=${username}&page=${page}&per_page=${perPage}`
+  );
+  return response.data;
+};
+
 export const downloadQrCodes = async (username: string): Promise<Blob> => {
-  const response = await api.get(`/collection/qr-codes?username=${username}`, {
+  const response = await api.get(`/collection/qr-codes/all?username=${username}`, {
     responseType: 'blob',
   });
+  return response.data;
+};
+
+export const downloadQrCodesSelected = async (
+  items: import('../types').QrCodeItem[]
+): Promise<Blob> => {
+  const response = await api.post(
+    '/collection/qr-codes/selected',
+    { items },
+    { responseType: 'blob' }
+  );
   return response.data;
 };
 

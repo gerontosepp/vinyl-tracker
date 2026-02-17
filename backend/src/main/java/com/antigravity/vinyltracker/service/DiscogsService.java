@@ -5,6 +5,7 @@ import com.antigravity.vinyltracker.model.discogs.DiscogsDto;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.http.HttpHeaders;
+import java.util.List;
 
 @Service
 @lombok.extern.slf4j.Slf4j
@@ -92,18 +93,40 @@ public class DiscogsService {
         }
     }
 
-    public DiscogsDto.CollectionResponse getCollection(AppUser user, int page) {
+    public DiscogsDto.CollectionResponse getCollection(AppUser user, int page, int perPage) {
         String decryptedToken = tokenService.decrypt(user.getDiscogsToken());
         if (decryptedToken == null) {
             throw new RuntimeException("Could not decrypt Discogs token for user " + user.getUsername());
         }
 
         return restClient.get()
-                .uri("/users/{username}/collection/folders/0/releases?page={page}&per_page=100",
-                        user.getDiscogsUsername(), page)
+                .uri("/users/{username}/collection/folders/0/releases?page={page}&per_page={perPage}",
+                        user.getDiscogsUsername(), page, perPage)
                 .header(HttpHeaders.USER_AGENT, "VinylTrackerApp/1.0")
                 .header(HttpHeaders.AUTHORIZATION, "Discogs token=" + decryptedToken)
                 .retrieve()
                 .body(DiscogsDto.CollectionResponse.class);
+    }
+
+    public List<DiscogsDto.CollectionRelease> getAllCollection(AppUser user) {
+        List<DiscogsDto.CollectionRelease> allReleases = new java.util.ArrayList<>();
+        int page = 1;
+        int perPage = 100; // Max allowed by Discogs
+        int totalPages = 1;
+
+        do {
+            DiscogsDto.CollectionResponse response = getCollection(user, page, perPage);
+            if (response != null && response.getReleases() != null) {
+                allReleases.addAll(response.getReleases());
+                if (response.getPagination() != null) {
+                    totalPages = response.getPagination().getPages();
+                }
+            } else {
+                break;
+            }
+            page++;
+        } while (page <= totalPages);
+
+        return allReleases;
     }
 }

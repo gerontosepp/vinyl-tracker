@@ -116,4 +116,20 @@ public class DiscogsDto {
         private String entityTypeName;
         private Long id;
     }
+
+    @Data
+    @lombok.AllArgsConstructor
+    @lombok.NoArgsConstructor
+    public static class QrCodeRequest {
+        private List<QrCodeItem> items;
+    }
+
+    @Data
+    @lombok.AllArgsConstructor
+    @lombok.NoArgsConstructor
+    public static class QrCodeItem {
+        private Long id;
+        private String title;
+        private String artist;
+    }
 }

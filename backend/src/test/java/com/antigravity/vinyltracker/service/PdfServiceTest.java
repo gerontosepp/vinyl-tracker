@@ -38,18 +38,10 @@ class PdfServiceTest {
 
         PdfService pdfService = new PdfService(qrCodeService);
 
-        DiscogsDto.BasicInformation basicInfo = new DiscogsDto.BasicInformation();
-        basicInfo.setId(12345L);
-        basicInfo.setTitle("Test Album");
-        basicInfo.setArtists(Collections.singletonList(new DiscogsDto.Artist("Test Artist")));
+        DiscogsDto.QrCodeItem item = new DiscogsDto.QrCodeItem(12345L, "Test Album", "Test Artist");
+        List<DiscogsDto.QrCodeItem> items = Collections.singletonList(item);
 
-        DiscogsDto.CollectionRelease release = new DiscogsDto.CollectionRelease();
-        release.setId(12345L);
-        release.setBasicInformation(basicInfo);
-
-        List<DiscogsDto.CollectionRelease> releases = Collections.singletonList(release);
-
-        byte[] pdfBytes = pdfService.generateQrCodePdf(releases);
+        byte[] pdfBytes = pdfService.generateQrCodePdf(items);
 
         Assertions.assertNotNull(pdfBytes);
         Assertions.assertTrue(pdfBytes.length > 0);

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getRecentListens, getTopRecords } from '../services/api';
+import { getRecentListens, getTopRecords, deleteScan } from '../services/api';
 import type { ListenEvent } from '../types';
 import BarcodeScanner from '../components/BarcodeScanner';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
@@ -12,6 +12,24 @@ const Dashboard: React.FC = () => {
   const [recentListens, setRecentListens] = useState<ListenEvent[]>([]);
   const [topRecords, setTopRecords] = useState<{ name: string; count: number }[]>([]);
   const [showScanner, setShowScanner] = useState(false);
+
+  const handleDelete = async (id: number) => {
+    if (!user || !window.confirm('Delete this scan?')) return;
+    try {
+      await deleteScan(id, user.username);
+      setRecentListens((prev) => prev.filter((item) => item.id !== id));
+      // Refresh top records as well
+      const tops = await getTopRecords(user.username);
+      const formatted = tops.map((t: Record<string, any>) => ({
+        name: t.key || t.name || Object.keys(t)[0],
+        count: t.value || t.count || Object.values(t)[0],
+      }));
+      setTopRecords(formatted);
+    } catch (e) {
+      console.error('Failed to delete scan', e);
+      alert('Failed to delete scan');
+    }
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -117,13 +135,24 @@ const Dashboard: React.FC = () => {
                         alt={event.record.title}
                         className="w-16 h-16 object-cover rounded shadow-sm bg-gray-200"
                       />
-                      <div>
+                      <div className="flex-1">
                         <p className="font-semibold">{event.record.title}</p>
                         <p className="text-sm text-gray-600">{event.record.artist}</p>
                         <p className="text-xs text-gray-400">
                           {new Date(event.timestamp).toLocaleString()}
                         </p>
                       </div>
+                      <button
+                        onClick={() => handleDelete(event.id!)}
+                        className="text-red-500 hover:text-red-700 p-2"
+                        title="Delete Scan"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M3 6h18"></path>
+                          <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                          <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                        </svg>
+                      </button>
                     </li>
                   ))}
                 </ul>

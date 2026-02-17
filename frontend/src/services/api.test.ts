@@ -1,49 +1,47 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import axios from 'axios';
+
 import { getRecentListens, scanBarcode, loginUser, registerUser, getUser } from './api';
 
-// Mock axios directly
-vi.mock('axios', () => {
-  const mockPost = vi.fn();
-  const mockGet = vi.fn();
-  return {
-    default: {
-      create: vi.fn(() => ({
-        post: mockPost,
-        get: mockGet,
-        put: vi.fn(),
-        interceptors: {
-          request: { use: vi.fn() },
-          response: { use: vi.fn() },
-        },
-      })),
-      post: mockPost, // Fallback if used directly
-      get: mockGet, // Fallback if used directly
-    },
-  };
-});
+// Mock axios
+const { mockPost, mockGet, mockDelete, mockPut } = vi.hoisted(() => ({
+  mockPost: vi.fn(),
+  mockGet: vi.fn(),
+  mockDelete: vi.fn(),
+  mockPut: vi.fn(),
+}));
+
+vi.mock('axios', () => ({
+  default: {
+    create: vi.fn(() => ({
+      post: mockPost,
+      get: mockGet,
+      delete: mockDelete,
+      put: mockPut,
+      interceptors: {
+        request: { use: vi.fn() },
+        response: { use: vi.fn() },
+      },
+    })),
+    post: mockPost,
+    get: mockGet,
+    delete: mockDelete,
+    put: mockPut,
+  },
+}));
 
 describe('API Service', () => {
-  let mockApi: { post: ReturnType<typeof vi.fn>; get: ReturnType<typeof vi.fn> };
-
+  // Reset mocks before each test
   beforeEach(() => {
     vi.clearAllMocks();
-    // Get the mock instance created by axios.create()
-    mockApi = (
-      axios.create as unknown as () => {
-        post: ReturnType<typeof vi.fn>;
-        get: ReturnType<typeof vi.fn>;
-      }
-    )();
   });
 
   it('loginUser should make a POST request to /users/login', async () => {
     const mockUser = { id: 1, username: 'testuser' };
-    mockApi.post.mockResolvedValue({ data: mockUser });
+    mockPost.mockResolvedValue({ data: mockUser });
 
     const result = await loginUser('testuser', 'password123');
 
-    expect(mockApi.post).toHaveBeenCalledWith('/users/login', {
+    expect(mockPost).toHaveBeenCalledWith('/users/login', {
       username: 'testuser',
       password: 'password123',
     });
@@ -52,11 +50,11 @@ describe('API Service', () => {
 
   it('registerUser should make a POST request to /users/register', async () => {
     const mockUser = { id: 1, username: 'newuser' };
-    mockApi.post.mockResolvedValue({ data: mockUser });
+    mockPost.mockResolvedValue({ data: mockUser });
 
     const result = await registerUser('newuser', 'password123');
 
-    expect(mockApi.post).toHaveBeenCalledWith('/users/register', {
+    expect(mockPost).toHaveBeenCalledWith('/users/register', {
       username: 'newuser',
       password: 'password123',
     });
@@ -65,31 +63,68 @@ describe('API Service', () => {
 
   it('getUser should make a GET request to /users/:username', async () => {
     const mockUser = { id: 1, username: 'testuser' };
-    mockApi.get.mockResolvedValue({ data: mockUser });
+    mockGet.mockResolvedValue({ data: mockUser });
 
     const result = await getUser('testuser');
 
-    expect(mockApi.get).toHaveBeenCalledWith('/users/testuser');
+    expect(mockGet).toHaveBeenCalledWith('/users/testuser');
     expect(result).toEqual(mockUser);
   });
 
   it('getRecentListens should make a GET request to /analytics/recent', async () => {
     const mockListens = [{ id: 1, record: { title: 'Test Album' } }];
-    mockApi.get.mockResolvedValue({ data: mockListens });
+    mockGet.mockResolvedValue({ data: mockListens });
 
     const result = await getRecentListens('testuser');
 
-    expect(mockApi.get).toHaveBeenCalledWith('/analytics/recent?username=testuser');
+    expect(mockGet).toHaveBeenCalledWith('/analytics/recent?username=testuser');
     expect(result).toEqual(mockListens);
   });
 
   it('scanBarcode should make a POST request to /scan', async () => {
     const mockResult = { success: true, message: 'Scanned' };
-    mockApi.post.mockResolvedValue({ data: mockResult });
+    mockPost.mockResolvedValue({ data: mockResult });
 
     const result = await scanBarcode('12345', 'testuser');
 
-    expect(mockApi.post).toHaveBeenCalledWith('/scan?username=testuser', { barcode: '12345' });
+    expect(mockPost).toHaveBeenCalledWith('/scan?username=testuser', { barcode: '12345' });
     expect(result).toEqual(mockResult);
+  });
+
+  it('deleteScan should make a DELETE request to /scan/:id', async () => {
+    mockDelete.mockResolvedValue({});
+    const { deleteScan } = await import('./api');
+    await deleteScan(123, 'testuser');
+    expect(mockDelete).toHaveBeenCalledWith('/scan/123?username=testuser');
+  });
+
+  it('resetPassword should make a POST request to /users/reset-password', async () => {
+    const mockUser = { id: 1, username: 'testuser' };
+    mockPost.mockResolvedValue({ data: mockUser });
+    const { resetPassword } = await import('./api');
+
+    const result = await resetPassword('testuser', 'newpass', 'token123');
+
+    expect(mockPost).toHaveBeenCalledWith('/users/reset-password', {
+      username: 'testuser',
+      newPassword: 'newpass',
+      discogsToken: 'token123',
+    });
+    expect(result).toEqual(mockUser);
+  });
+
+  it('updateDiscogsSettings should make a PUT request to /users/:username/discogs', async () => {
+    const mockUser = { id: 1, username: 'testuser' };
+    mockPut.mockResolvedValue({ data: mockUser });
+    const { updateDiscogsSettings } = await import('./api');
+
+    const result = await updateDiscogsSettings('testuser', 'token123', 'discogsUser', 'pass123');
+
+    expect(mockPut).toHaveBeenCalledWith('/users/testuser/discogs', {
+      token: 'token123',
+      discogsUsername: 'discogsUser',
+      password: 'pass123',
+    });
+    expect(result).toEqual(mockUser);
   });
 });

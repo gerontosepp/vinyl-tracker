@@ -13,7 +13,7 @@ The **Vinyl Tracker** is a personal web application designed for vinyl enthusias
 - **Multi-User**: Supports multiple users, each with their own collection and Discogs integration.
 - **Mobile Friendly**: Designed as a Progressive Web App (PWA) to be usable on mobile devices, including camera access for barcode scanning.
 - **QR Code Generation**: Ability to export the collection as a printable PDF with QR codes for physical tagging.
-- **QR Code Generation**: Ability to export the collection as a printable PDF with QR codes for physical tagging.
+
 
 ### 1.2 Quality Goals
 - **Maintainability**: High test coverage (>80%) and modular code structure.

@@ -91,6 +91,8 @@ The application requires environment variables for configuration (database crede
    ```
    *Optimized build, no hot-reloading, runs on port 80.*
 
+   👉 **[See Detailed Deployment Guide](docs/DEPLOYMENT.md)** for server setup and HTTPS requirements.
+
 2. **Access the App**:
    - **Frontend**: [https://localhost:5173](https://localhost:5173) (or `https://<YOUR_IP>:5173`)
    - **Backend API**: [http://localhost:8080](http://localhost:8080)

@@ -79,11 +79,17 @@ The application requires environment variables for configuration (database crede
 
 ### 3. Start the Application
 
-1. **Start infrastructure**:
+1. **Start Development Environment**:
    ```bash
    docker compose up --build -d
    ```
-   *Note: The default `docker-compose.yml` targets the `development` stage for the frontend (hot-reloading). To run the optimized production build, configure the target to `production`.*
+   *Features hot-reloading for frontend.*
+
+2. **Start Production Environment**:
+   ```bash
+   docker compose -f docker-compose.prod.yml up --build -d
+   ```
+   *Optimized build, no hot-reloading, runs on port 80.*
 
 2. **Access the App**:
    - **Frontend**: [https://localhost:5173](https://localhost:5173) (or `https://<YOUR_IP>:5173`)

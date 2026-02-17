@@ -35,6 +35,8 @@ The project follows a modern containerized micro-architecture:
 - **Multi-User Support**: Individual user accounts with personal Discogs collection integration.
 - **Listening History**: Log when you listen to a record.
 - **Analytics**: View most played records and listening trends.
+- **QR Code Generation**: Generate a PDF with QR codes for your entire collection, sorted by artist.
+- **Quick Logging**: Scan generated QR codes to instantly log a listen without searching.
 
 ## Deployment & Running
 

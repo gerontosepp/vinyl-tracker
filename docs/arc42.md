@@ -12,6 +12,8 @@ The **Vinyl Tracker** is a personal web application designed for vinyl enthusias
 - **Analytics**: Users can view statistics about their most played records and listening trends over time.
 - **Multi-User**: Supports multiple users, each with their own collection and Discogs integration.
 - **Mobile Friendly**: Designed as a Progressive Web App (PWA) to be usable on mobile devices, including camera access for barcode scanning.
+- **QR Code Generation**: Ability to export the collection as a printable PDF with QR codes for physical tagging.
+- **QR Code Generation**: Ability to export the collection as a printable PDF with QR codes for physical tagging.
 
 ### 1.2 Quality Goals
 - **Maintainability**: High test coverage (>80%) and modular code structure.
@@ -52,7 +54,7 @@ graph LR
 
 ### 3.2 Technical Context
 - **Protocol**: HTTP/HTTPS (REST).
-- **Format**: JSON.
+- **Format**: JSON, PDF (for exports).
 - **Security**: JWT (or Session-based) Authentication, BCrypt password hashing, AES encryption for API tokens.
 
 ## 4. Solution Strategy
@@ -78,9 +80,9 @@ The system consists of three main containers:
 
 The Backend follows a layered architecture:
 
-- **Controller Layer**: Handles HTTP requests (`ScanController`, `AppUserController`, `AnalyticsController`).
-- **Service Layer**: Business logic and orchestration (`ScanService`, `DiscogsService`, `TokenEncryptionService`).
-- **Repository Layer**: Data access interface (`RecordRepository`, `ListenEventRepository`).
+- **Controller Layer**: Handles HTTP requests (`ScanController`, `AppUserController`, `AnalyticsController`, `CollectionController`).
+- **Service Layer**: Business logic and orchestration (`ScanService`, `DiscogsService`, `TokenEncryptionService`, `QrCodeService`, `PdfService`).
+- **Repository Layer**: Data access interface (`RecordRepository`, `ListenEventRepository`, `AppUserRepository`).
 - **Model Layer**: Domain entities (`AppUser`, `Record`, `ListenEvent`).
 
 ## 6. Runtime View
@@ -103,6 +105,16 @@ The Backend follows a layered architecture:
 3.  **Backend** receives `POST /api/records/{id}/listen`.
 4.  **Backend** creates a new `ListenEvent` with the current timestamp.
 5.  **Backend** updates the `playCount` and `lastPlayed` fields on the `Record`.
+
+### 6.3 Scenario: Generating QR Codes
+1.  **User** clicks "Download QR Codes PDF" in Settings.
+2.  **Frontend** requests `GET /api/collection/qr-codes`.
+3.  **Backend** fetches User's releases from Discogs.
+4.  **Backend** sorts releases by Artist.
+5.  **Backend** generates QR codes for each release.
+6.  **Backend** compiles a PDF grid.
+7.  **Backend** returns the PDF binary.
+8.  **Frontend** triggers a file download.
 
 ## 7. Deployment View
 

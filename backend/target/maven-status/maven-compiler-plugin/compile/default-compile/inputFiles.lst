@@ -3,6 +3,7 @@
 /Users/opolm/develop/AntiGrafity/backend/src/main/java/com/antigravity/vinyltracker/config/SecurityConfig.java
 /Users/opolm/develop/AntiGrafity/backend/src/main/java/com/antigravity/vinyltracker/controller/AnalyticsController.java
 /Users/opolm/develop/AntiGrafity/backend/src/main/java/com/antigravity/vinyltracker/controller/AppUserController.java
+/Users/opolm/develop/AntiGrafity/backend/src/main/java/com/antigravity/vinyltracker/controller/CollectionController.java
 /Users/opolm/develop/AntiGrafity/backend/src/main/java/com/antigravity/vinyltracker/controller/ScanController.java
 /Users/opolm/develop/AntiGrafity/backend/src/main/java/com/antigravity/vinyltracker/model/AppUser.java
 /Users/opolm/develop/AntiGrafity/backend/src/main/java/com/antigravity/vinyltracker/model/ListenEvent.java
@@ -13,5 +14,7 @@
 /Users/opolm/develop/AntiGrafity/backend/src/main/java/com/antigravity/vinyltracker/repository/ListenEventRepository.java
 /Users/opolm/develop/AntiGrafity/backend/src/main/java/com/antigravity/vinyltracker/repository/RecordRepository.java
 /Users/opolm/develop/AntiGrafity/backend/src/main/java/com/antigravity/vinyltracker/service/DiscogsService.java
+/Users/opolm/develop/AntiGrafity/backend/src/main/java/com/antigravity/vinyltracker/service/PdfService.java
+/Users/opolm/develop/AntiGrafity/backend/src/main/java/com/antigravity/vinyltracker/service/QrCodeService.java
 /Users/opolm/develop/AntiGrafity/backend/src/main/java/com/antigravity/vinyltracker/service/ScanService.java
 /Users/opolm/develop/AntiGrafity/backend/src/main/java/com/antigravity/vinyltracker/service/TokenEncryptionService.java

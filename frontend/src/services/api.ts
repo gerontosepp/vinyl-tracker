@@ -65,6 +65,13 @@ export const updateDiscogsSettings = async (
   return response.data;
 };
 
+export const downloadQrCodes = async (username: string): Promise<Blob> => {
+  const response = await api.get(`/collection/qr-codes?username=${username}`, {
+    responseType: 'blob',
+  });
+  return response.data;
+};
+
 // Deprecated or repurposed helpers if needed
 export const getUser = async (username: string): Promise<User> => {
   const response = await api.get<User>(`/users/${username}`);

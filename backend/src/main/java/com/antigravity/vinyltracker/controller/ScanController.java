@@ -27,4 +27,16 @@ public class ScanController {
             return ResponseEntity.badRequest().body(result);
         }
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteScan(
+            @PathVariable Long id,
+            @RequestParam String username) {
+        try {
+            scanService.deleteScan(id, username);
+            return ResponseEntity.noContent().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
 }

@@ -78,4 +78,16 @@ public class ScanService {
 
         return new ScanDto.Result(true, "Now playing: " + record.getTitle(), trackedRecord);
     }
+
+    @Transactional
+    public void deleteScan(Long id, String username) {
+        ListenEvent event = listenEventRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Scan not found"));
+
+        if (!event.getUser().getUsername().equals(username)) {
+            throw new RuntimeException("Unauthorized to delete this scan");
+        }
+
+        listenEventRepository.delete(event);
+    }
 }

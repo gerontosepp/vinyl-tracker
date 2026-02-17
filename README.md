@@ -138,3 +138,7 @@ The project includes a GitHub Actions workflow (`.github/workflows/ci.yml`) that
 - Builds and tests the Frontend (Node 20/Vite).
 - Enforces >80% test coverage for both.
 - Runs on every push to `main` and PRs.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

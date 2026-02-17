@@ -1,0 +1,22 @@
+# AntiGravity Project Rules
+
+You are working on the Vinyl Tracker project. Stick to the following rules strictly:
+
+## 1. Testing & Quality
+- **Mandatory Testing**: Never modify logic without adding or updating the corresponding tests.
+- **Coverage Goal**: Maintain a test coverage of **> 80%**.
+    - Backend: Verify with `mvn clean verify`.
+    - Frontend: Verify with `npm test`.
+- **Validation**: Always run the full test suite before considering a task complete.
+
+## 2. Documentation
+- **Keep Docs Sync**: If you change features, configuration, or setup steps, you MUST update `README.md` immediately.
+- **Self-Documenting**: Write clear comments for complex logic, but prefer readable variable/method names.
+
+## 3. Technology Stack specifics
+- **Backend**: Java 21+ (Spring Boot). Use Lombok.
+- **Frontend**: React (Vite/TypeScript). Tailwind CSS.
+
+## 4. General Workflow
+- Check for existing code patterns before inventing new ones.
+- If a build fails, fix it immediately before proceeding.

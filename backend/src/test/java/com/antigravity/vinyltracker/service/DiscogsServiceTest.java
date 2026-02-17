@@ -129,4 +129,102 @@ class DiscogsServiceTest {
 
                 assertNull(result);
         }
+
+        @Test
+        void getCollection_ShouldReturnCollectionFromApi_WhenMinPlaysIsNull() throws Exception {
+                // Arrange
+                int page = 1;
+                int perPage = 50;
+                String sort = "artist";
+                String sortOrder = "asc";
+
+                // Mock API Response
+                DiscogsDto.CollectionResponse mockResponse = new DiscogsDto.CollectionResponse();
+                DiscogsDto.CollectionRelease release = new DiscogsDto.CollectionRelease();
+                release.setId(100L);
+                mockResponse.setReleases(List.of(release));
+                mockResponse.setPagination(new DiscogsDto.Pagination(1, 1, 1, 50, null));
+
+                server.expect(requestTo("https://api.discogs.com/users/" + user.getDiscogsUsername() +
+                                "/collection/folders/0/releases?page=1&per_page=50&sort=artist&sort_order=asc"))
+                                .andRespond(withSuccess(objectMapper.writeValueAsString(mockResponse),
+                                                MediaType.APPLICATION_JSON));
+
+                // Mock Listen Counts (existing logic)
+                org.mockito.Mockito.when(listenEventRepository.findRecordsWithPlays(user.getId()))
+                                .thenReturn(List.of());
+
+                // Act
+                DiscogsDto.CollectionResponse result = discogsService.getCollection(user, page, perPage, sort,
+                                sortOrder, null);
+
+                // Assert
+                assertNotNull(result);
+                assertEquals(1, result.getReleases().size());
+                assertEquals(100L, result.getReleases().get(0).getId());
+        }
+
+        @Test
+        void getCollection_ShouldReturnCollectionFromLocalDb_WhenMinPlaysIsPositive() {
+                // Arrange
+                int page = 1;
+                int perPage = 50;
+                String sort = "artist";
+                String sortOrder = "asc";
+                int minPlays = 1;
+
+                // Mock Local DB Response
+                com.antigravity.vinyltracker.model.Record mockRecord = new com.antigravity.vinyltracker.model.Record();
+                mockRecord.setDiscogsId(200L);
+                mockRecord.setId(1L);
+                mockRecord.setTitle("Played Record");
+                mockRecord.setArtist("Played Artist");
+                mockRecord.setYear("2020");
+                mockRecord.setThumbUrl("http://thumb.url");
+
+                Object[] row = new Object[] { mockRecord, 5L }; // Record entity, Count
+
+                java.util.List<Object[]> list = new java.util.ArrayList<>();
+                list.add(row);
+                org.mockito.Mockito.when(listenEventRepository.findRecordsWithPlays(user.getId()))
+                                .thenReturn(list);
+
+                // Act
+                DiscogsDto.CollectionResponse result = discogsService.getCollection(user, page, perPage, sort,
+                                sortOrder, minPlays);
+
+                // Assert
+                assertNotNull(result);
+                assertEquals(1, result.getReleases().size());
+                DiscogsDto.CollectionRelease release = result.getReleases().get(0);
+                assertEquals(200L, release.getId());
+                assertEquals(5L, release.getListenCount());
+                assertEquals("Played Record", release.getBasicInformation().getTitle());
+                assertEquals("Played Artist", release.getBasicInformation().getArtists().get(0).getName());
+        }
+
+        @Test
+        void getAllCollection_ShouldAggregatePages() throws Exception {
+                // Arrange
+                DiscogsDto.CollectionResponse page1 = new DiscogsDto.CollectionResponse();
+                DiscogsDto.CollectionRelease r1 = new DiscogsDto.CollectionRelease();
+                r1.setId(1L);
+                page1.setReleases(List.of(r1));
+                page1.setPagination(new DiscogsDto.Pagination(1, 1, 1, 100, null));
+
+                server.expect(requestTo("https://api.discogs.com/users/" + user.getDiscogsUsername() +
+                                "/collection/folders/0/releases?page=1&per_page=100&sort=artist&sort_order=asc"))
+                                .andRespond(withSuccess(objectMapper.writeValueAsString(page1),
+                                                MediaType.APPLICATION_JSON));
+
+                org.mockito.Mockito.when(listenEventRepository.findRecordsWithPlays(user.getId()))
+                                .thenReturn(java.util.Collections.emptyList());
+
+                // Act
+                List<DiscogsDto.CollectionRelease> result = discogsService.getAllCollection(user);
+
+                // Assert
+                assertEquals(1, result.size());
+                assertEquals(1L, result.get(0).getId());
+        }
 }

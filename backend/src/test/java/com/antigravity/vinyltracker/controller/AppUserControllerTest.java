@@ -108,4 +108,84 @@ class AppUserControllerTest {
                 .andExpect(jsonPath("$.discogsUsername", is("discogsUser")))
                 .andExpect(jsonPath("$.discogsToken", is("encryptedToken")));
     }
+
+    @Test
+    void updateDiscogs_ShouldReturnUnauthorized_WhenPasswordMismatch() throws Exception {
+        Map<String, String> payload = Map.of(
+                "password", "wrongPassword",
+                "token", "newToken",
+                "discogsUsername", "discogsUser");
+        AppUser user = new AppUser("user1", "encodedPassword", "salt");
+
+        given(userRepository.findByUsername("user1")).willReturn(Optional.of(user));
+        given(passwordEncoder.matches("wrongPassword", "encodedPassword")).willReturn(false);
+
+        mockMvc.perform(put("/api/users/user1/discogs")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void register_ShouldReturnBadRequest_WhenUsernameExists() throws Exception {
+        Map<String, String> payload = Map.of("username", "existingUser", "password", "password123");
+        given(userRepository.findByUsername("existingUser")).willReturn(Optional.of(new AppUser()));
+
+        mockMvc.perform(post("/api/users/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void login_ShouldReturnUnauthorized_WhenPasswordMismatch() throws Exception {
+        Map<String, String> payload = Map.of("username", "user1", "password", "wrongPassword");
+        AppUser user = new AppUser("user1", "encodedPassword", "salt");
+        given(userRepository.findByUsername("user1")).willReturn(Optional.of(user));
+        given(passwordEncoder.matches("wrongPassword", "encodedPassword")).willReturn(false);
+
+        mockMvc.perform(post("/api/users/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void decryptToken_ShouldReturnDecryptedToken() throws Exception {
+        Map<String, String> payload = Map.of("password", "password123");
+        AppUser user = new AppUser("user1", "encodedPassword", "salt");
+        user.setDiscogsToken("encryptedToken");
+
+        given(userRepository.findByUsername("user1")).willReturn(Optional.of(user));
+        given(passwordEncoder.matches("password123", "encodedPassword")).willReturn(true);
+        given(tokenService.decrypt("encryptedToken")).willReturn("decryptedToken");
+
+        mockMvc.perform(post("/api/users/user1/decrypt-token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
+                        .string("decryptedToken"));
+    }
+
+    @Test
+    void resetPassword_ShouldUpdatePasswordAndToken() throws Exception {
+        Map<String, String> payload = Map.of(
+                "username", "user1",
+                "newPassword", "newPass",
+                "discogsToken", "newToken");
+        AppUser user = new AppUser("user1", "oldPass", "oldSalt");
+
+        given(userRepository.findByUsername("user1")).willReturn(Optional.of(user));
+        given(passwordEncoder.encode("newPass")).willReturn("newEncodedPass");
+        given(tokenService.encrypt("newToken")).willReturn("newEncryptedToken");
+        given(userRepository.save(any(AppUser.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+        mockMvc.perform(post("/api/users/reset-password")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.password", is("newEncodedPass")))
+                .andExpect(jsonPath("$.discogsToken", is("newEncryptedToken")));
+    }
 }

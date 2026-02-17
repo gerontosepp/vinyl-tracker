@@ -19,13 +19,19 @@ export const deleteScan = async (id: number, username: string): Promise<void> =>
   await api.delete(`/scan/${id}?username=${username}`);
 };
 
-export const getRecentListens = async (username: string): Promise<ListenEvent[]> => {
-  const response = await api.get<ListenEvent[]>(`/analytics/recent?username=${username}`);
+export const getRecentListens = async (username: string, startDate?: string, endDate?: string): Promise<ListenEvent[]> => {
+  let url = `/analytics/recent?username=${username}`;
+  if (startDate) url += `&from=${startDate}`;
+  if (endDate) url += `&to=${endDate}`;
+  const response = await api.get<ListenEvent[]>(url);
   return response.data;
 };
 
-export const getTopRecords = async (username: string): Promise<AnalyticsTopRecord[]> => {
-  const response = await api.get<AnalyticsTopRecord[]>(`/analytics/top?username=${username}`);
+export const getTopRecords = async (username: string, startDate?: string, endDate?: string): Promise<AnalyticsTopRecord[]> => {
+  let url = `/analytics/top?username=${username}`;
+  if (startDate) url += `&from=${startDate}`;
+  if (endDate) url += `&to=${endDate}`;
+  const response = await api.get<AnalyticsTopRecord[]>(url);
   return response.data;
 };
 

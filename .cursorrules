@@ -21,3 +21,17 @@ You are working on the Vinyl Tracker project. Stick to the following rules stric
 ## 4. General Workflow
 - Check for existing code patterns before inventing new ones.
 - If a build fails, fix it immediately before proceeding.
+
+## 5. Date & Time
+- Use ISO 8601 format for all date and time representations.
+- Use UTC time for all date and time operations.
+- Use local time for all date and time display to the user.
+- Use LocalDateTime for all date and time operations in the backend.
+- Use Date for all date and time operations in the frontend.
+
+## 6. Testing
+- verwende zum Testen der UI folgende die Werte  aus der Datei .secrets.local. Die Werte der aus Datei  sollen nicht  CHat angezeigt werden..
+    USER
+    PASSWORD
+    DISCOGS_USER
+    DISCOGS_TOKEN

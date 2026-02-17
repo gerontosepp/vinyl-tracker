@@ -13,6 +13,11 @@ const Dashboard: React.FC = () => {
   const [recentListens, setRecentListens] = useState<ListenEvent[]>([]);
   const [topRecords, setTopRecords] = useState<AnalyticsTopRecord[]>([]);
   const [showScanner, setShowScanner] = useState(false);
+
+  // Date filter state - default to today
+  const [startDate, setStartDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [endDate, setEndDate] = useState<string>(new Date().toISOString().split('T')[0]);
+
   const location = useLocation();
 
   useEffect(() => {
@@ -31,7 +36,7 @@ const Dashboard: React.FC = () => {
       await deleteScan(id, user.username);
       setRecentListens((prev) => prev.filter((item) => item.id !== id));
       // Refresh top records as well
-      const tops = await getTopRecords(user.username);
+      const tops = await getTopRecords(user.username, startDate, endDate);
       setTopRecords(tops);
     } catch (e) {
       console.error('Failed to delete scan', e);
@@ -43,10 +48,10 @@ const Dashboard: React.FC = () => {
     const loadData = async () => {
       if (!user) return;
       try {
-        const recents = await getRecentListens(user.username);
+        const recents = await getRecentListens(user.username, startDate, endDate);
         setRecentListens(recents);
 
-        const tops = await getTopRecords(user.username);
+        const tops = await getTopRecords(user.username, startDate, endDate);
         setTopRecords(tops);
       } catch (e) {
         console.error('Failed to load dashboard data', e);
@@ -56,7 +61,7 @@ const Dashboard: React.FC = () => {
     if (user) {
       loadData();
     }
-  }, [user, showScanner]);
+  }, [user, showScanner, startDate, endDate]);
 
   return (
     <Layout onScanClick={() => setShowScanner(true)}>
@@ -79,6 +84,23 @@ const Dashboard: React.FC = () => {
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Welcome back, {user?.username}</h1>
               <p className="text-gray-500 text-sm">Here's what you've been listening to recently.</p>
+            </div>
+            <div className="flex gap-2 items-center bg-white p-1.5 rounded-lg shadow-sm border border-gray-100">
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="border-gray-200 rounded-md text-xs py-1 px-2 focus:ring-blue-500 focus:border-blue-500"
+                title="Start Date"
+              />
+              <span className="text-gray-400">-</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="border-gray-200 rounded-md text-xs py-1 px-2 focus:ring-blue-500 focus:border-blue-500"
+                title="End Date"
+              />
             </div>
           </div>
 

@@ -34,12 +34,13 @@ public class CollectionController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "50") int per_page,
             @RequestParam(defaultValue = "artist") String sort,
-            @RequestParam(defaultValue = "asc") String sort_order) {
+            @RequestParam(defaultValue = "asc") String sort_order,
+            @RequestParam(required = false) Integer min_plays) {
 
         AppUser user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
 
-        return ResponseEntity.ok(discogsService.getCollection(user, page, per_page, sort, sort_order));
+        return ResponseEntity.ok(discogsService.getCollection(user, page, per_page, sort, sort_order, min_plays));
     }
 
     @PostMapping("/qr-codes/selected")

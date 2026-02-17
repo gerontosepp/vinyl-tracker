@@ -97,7 +97,64 @@ public class DiscogsService {
     }
 
     public DiscogsDto.CollectionResponse getCollection(AppUser user, int page, int perPage, String sort,
-            String sortOrder) {
+            String sortOrder, Integer minPlays) {
+
+        if (minPlays != null && minPlays > 0) {
+            // Fetch from local DB
+            List<Object[]> recordsWithPlays = listenEventRepository.findRecordsWithPlays(user.getId());
+
+            // Map to CollectionRelease DTOs
+            List<DiscogsDto.CollectionRelease> allPlayedReleases = recordsWithPlays.stream()
+                    .map(row -> {
+                        com.antigravity.vinyltracker.model.Record record = (com.antigravity.vinyltracker.model.Record) row[0];
+                        Long count = (Long) row[1];
+
+                        if (count < minPlays)
+                            return null;
+
+                        DiscogsDto.CollectionRelease release = new DiscogsDto.CollectionRelease();
+                        release.setId(record.getDiscogsId());
+                        release.setInstanceId(record.getId()); // Using local ID as instance ID proxy
+                        release.setListenCount(count);
+
+                        DiscogsDto.BasicInformation basicInfo = new DiscogsDto.BasicInformation();
+                        basicInfo.setId(record.getDiscogsId());
+                        basicInfo.setTitle(record.getTitle());
+                        basicInfo.setThumbUrl(record.getThumbUrl());
+                        basicInfo.setCoverImage(record.getThumbUrl());
+
+                        // Artist
+                        DiscogsDto.Artist artist = new DiscogsDto.Artist();
+                        artist.setName(record.getArtist());
+                        basicInfo.setArtists(List.of(artist));
+
+                        // Year
+                        try {
+                            basicInfo.setYear(Integer.parseInt(record.getYear()));
+                        } catch (NumberFormatException e) {
+                            basicInfo.setYear(0);
+                        }
+
+                        release.setBasicInformation(basicInfo);
+                        return release;
+                    })
+                    .filter(java.util.Objects::nonNull)
+                    .toList();
+
+            // Pagination logic for in-memory list
+            int start = Math.min((page - 1) * perPage, allPlayedReleases.size());
+            int end = Math.min(start + perPage, allPlayedReleases.size());
+            List<DiscogsDto.CollectionRelease> pagedReleases = allPlayedReleases.subList(start, end);
+
+            DiscogsDto.Pagination pagination = new DiscogsDto.Pagination();
+            pagination.setItems(allPlayedReleases.size());
+            pagination.setPage(page);
+            pagination.setPerPage(perPage);
+            pagination.setPages((int) Math.ceil((double) allPlayedReleases.size() / perPage));
+
+            return new DiscogsDto.CollectionResponse(pagedReleases, pagination);
+        }
+
         String decryptedToken = tokenService.decrypt(user.getDiscogsToken());
         if (decryptedToken == null) {
             throw new RuntimeException("Could not decrypt Discogs token for user " + user.getUsername());
@@ -112,10 +169,10 @@ public class DiscogsService {
                 .body(DiscogsDto.CollectionResponse.class);
 
         if (response != null && response.getReleases() != null) {
-            List<Object[]> listenCounts = listenEventRepository.countListensByUserId(user.getId());
-            java.util.Map<Long, Long> countsMap = listenCounts.stream()
+            List<Object[]> recordsWithPlays = listenEventRepository.findRecordsWithPlays(user.getId());
+            java.util.Map<Long, Long> countsMap = recordsWithPlays.stream()
                     .collect(java.util.stream.Collectors.toMap(
-                            row -> (Long) row[0],
+                            row -> ((com.antigravity.vinyltracker.model.Record) row[0]).getDiscogsId(),
                             row -> (Long) row[1]));
 
             response.getReleases().forEach(release -> {
@@ -143,7 +200,7 @@ public class DiscogsService {
         // So we just aggregate them.
 
         do {
-            DiscogsDto.CollectionResponse response = getCollection(user, page, perPage, "artist", "asc");
+            DiscogsDto.CollectionResponse response = getCollection(user, page, perPage, "artist", "asc", 0);
             if (response != null && response.getReleases() != null) {
                 allReleases.addAll(response.getReleases());
                 if (response.getPagination() != null) {

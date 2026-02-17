@@ -71,11 +71,14 @@ export const updateDiscogsSettings = async (
 export const getCollection = async (
   username: string,
   page: number = 1,
-  perPage: number = 50
+  perPage: number = 50,
+  minPlays: number = 0
 ): Promise<import('../types').CollectionResponse> => {
-  const response = await api.get<import('../types').CollectionResponse>(
-    `/collection?username=${username}&page=${page}&per_page=${perPage}`
-  );
+  let url = `/collection?username=${username}&page=${page}&per_page=${perPage}`;
+  if (minPlays > 0) {
+    url += `&min_plays=${minPlays}`;
+  }
+  const response = await api.get<import('../types').CollectionResponse>(url);
   return response.data;
 };
 

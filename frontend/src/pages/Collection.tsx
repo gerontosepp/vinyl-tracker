@@ -27,13 +27,17 @@ const Collection: React.FC = () => {
         navigate('/', { state: { scan: true } });
     };
 
+    // Filter State
+    const [showPlayedOnly, setShowPlayedOnly] = useState(false);
+
     // Fetch Data
     useEffect(() => {
         const fetchData = async () => {
             if (!user) return;
             setLoading(true);
             try {
-                const data = await getCollection(user.username, page, perPage);
+                const minPlays = showPlayedOnly ? 1 : 0;
+                const data = await getCollection(user.username, page, perPage, minPlays);
                 setReleases(data.releases);
                 if (data.pagination) {
                     setTotalPages(data.pagination.pages);
@@ -45,7 +49,7 @@ const Collection: React.FC = () => {
             }
         };
         fetchData();
-    }, [user, page, perPage]);
+    }, [user, page, perPage, showPlayedOnly]);
 
     // Selection Logic
     const toggleSelection = (release: CollectionRelease) => {
@@ -169,13 +173,26 @@ const Collection: React.FC = () => {
 
                 {/* Controls & Pagination Top */}
                 <div className="p-4 bg-gray-50 flex flex-wrap justify-between items-center border-b border-gray-100 text-sm">
-                    <button
-                        onClick={toggleSelectAllPage}
-                        className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
-                    >
-                        {isAllPageSelected ? <CheckSquare className="text-blue-600" size={20} /> : <Square size={20} />}
-                        Select Page
-                    </button>
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={toggleSelectAllPage}
+                            className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+                        >
+                            {isAllPageSelected ? <CheckSquare className="text-blue-600" size={20} /> : <Square size={20} />}
+                            Select Page
+                        </button>
+
+                        <button
+                            onClick={() => { setShowPlayedOnly(!showPlayedOnly); setPage(1); }}
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-colors ${showPlayedOnly
+                                    ? 'bg-blue-100 border-blue-200 text-blue-800'
+                                    : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                                }`}
+                        >
+                            <span className="font-medium">Played Only</span>
+                            {showPlayedOnly && <span className="text-xs bg-blue-200 px-1.5 rounded-full">ON</span>}
+                        </button>
+                    </div>
 
                     <div className="flex items-center gap-4">
                         <select

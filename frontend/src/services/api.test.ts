@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import axios from 'axios';
+
 import { getRecentListens, scanBarcode, loginUser, registerUser, getUser } from './api';
 
 // Mock axios

@@ -11,7 +11,7 @@ vi.mock('../components/BarcodeScanner', () => ({
     default: () => <div data-testid="barcode-scanner">Mock Scanner</div>,
 }));
 // ResizeObserver mock for Recharts
-global.ResizeObserver = class ResizeObserver {
+window.ResizeObserver = class ResizeObserver {
     observe() { }
     unobserve() { }
     disconnect() { }
@@ -28,8 +28,9 @@ describe('Dashboard Component', () => {
             user: mockUser,
             login: vi.fn(),
             register: vi.fn(),
+            updateDiscogs: vi.fn(),
             logout: mockLogout,
-            loading: false,
+            isLoading: false,
         });
         // Default API responses
         vi.spyOn(api, 'getTopRecords').mockResolvedValue([

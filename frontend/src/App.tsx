@@ -6,6 +6,8 @@ import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import Settings from './pages/Settings';
 import Dashboard from './pages/Dashboard';
+import Collection from './pages/Collection';
+import Profile from './pages/Profile';
 
 import './index.css';
 
@@ -29,6 +31,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/collection"
+            element={
+              <ProtectedRoute>
+                <Collection />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
               </ProtectedRoute>
             }
           />

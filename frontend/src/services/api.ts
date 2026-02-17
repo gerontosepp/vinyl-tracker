@@ -25,9 +25,6 @@ export const getRecentListens = async (username: string): Promise<ListenEvent[]>
 };
 
 export const getTopRecords = async (username: string): Promise<Record<string, unknown>[]> => {
-  // Backend returns List<Map.Entry<String, Long>> which serializes to [{"key": "Title", "value": 5}, ...]
-  // or generic object depending on Jackson config.
-  // Let's type it as Record<string, unknown>[] for now and handle mapping in component.
   const response = await api.get<Record<string, unknown>[]>(`/analytics/top?username=${username}`);
   return response.data;
 };

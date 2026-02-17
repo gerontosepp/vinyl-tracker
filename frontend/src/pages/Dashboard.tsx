@@ -1,17 +1,29 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getRecentListens, getTopRecords, deleteScan } from '../services/api';
 import type { ListenEvent } from '../types';
 import BarcodeScanner from '../components/BarcodeScanner';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import Layout from '../components/Layout/Layout';
+import TopRecords from '../components/Dashboard/TopRecords';
+import RecentListens from '../components/Dashboard/RecentListens';
+import { useLocation } from 'react-router-dom';
 
 const Dashboard: React.FC = () => {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const [recentListens, setRecentListens] = useState<ListenEvent[]>([]);
   const [topRecords, setTopRecords] = useState<{ name: string; count: number }[]>([]);
   const [showScanner, setShowScanner] = useState(false);
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state && (location.state as any).scan) {
+      setShowScanner(true);
+      // Optional: clear state so refresh doesn't re-open, but tricky with React Router
+      // For now, it's fine. 
+      // Better: window.history.replaceState({}, document.title)
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
 
   const handleDelete = async (id: number) => {
     if (!user || !window.confirm('Delete this scan?')) return;
@@ -55,113 +67,36 @@ const Dashboard: React.FC = () => {
   }, [user, showScanner]);
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      <header className="bg-white shadow p-4 flex justify-between items-center sticky top-0 z-10">
-        <div className="flex items-center gap-2">
-          <h1 className="text-xl font-bold">Vinyl Tracker</h1>
-          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-            v{__APP_VERSION__}
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-600 mr-2">{user?.username}</span>
+    <Layout onScanClick={() => setShowScanner(true)}>
+      {showScanner ? (
+        <div className="bg-white rounded-xl shadow-sm p-4 animate-fade-in h-full">
           <button
-            onClick={() => navigate('/settings')}
-            className="text-sm text-gray-600 hover:text-gray-900 mr-2"
+            onClick={() => setShowScanner(false)}
+            className="mb-4 text-sm text-gray-500 hover:text-gray-800 flex items-center gap-1"
           >
-            Settings
+            &larr; Back to Dashboard
           </button>
-          <button onClick={logout} className="text-sm text-red-500 hover:text-red-700">
-            Logout
-          </button>
-        </div>
-      </header>
-
-      <main className="p-4 max-w-screen-md mx-auto">
-        {showScanner ? (
-          <div className="mb-6">
-            <button
-              onClick={() => setShowScanner(false)}
-              className="mb-2 text-sm text-gray-500 hover:text-gray-800"
-            >
-              &larr; Back to Dashboard
-            </button>
+          <div className="max-w-md mx-auto">
             <BarcodeScanner />
           </div>
-        ) : (
-          <div className="mb-6 text-center">
-            <button
-              onClick={() => setShowScanner(true)}
-              className="bg-purple-600 text-white text-lg font-semibold px-8 py-4 rounded-full shadow-lg hover:bg-purple-700 transition"
-            >
-              SCAN RECORD
-            </button>
+        </div>
+      ) : (
+        <div className="flex flex-col h-[calc(100vh-6rem)] md:h-[calc(100vh-5rem)] space-y-4">
+          {/* Welcome Section - Fixed Height */}
+          <div className="flex-none flex justify-between items-center mb-2">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Welcome back, {user?.username}</h1>
+              <p className="text-gray-500 text-sm">Here's what you've been listening to recently.</p>
+            </div>
           </div>
-        )}
 
-        {!showScanner && (
-          <>
-            <section className="bg-white rounded shadow p-4 mb-6">
-              <h2 className="text-lg font-bold mb-4 border-b pb-2">Top Records</h2>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={topRecords} layout="vertical" margin={{ left: 10, right: 10 }}>
-                    <XAxis type="number" hide />
-                    <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 12 }} />
-                    <Tooltip />
-                    <Bar dataKey="count" fill="#8884d8" radius={[0, 4, 4, 0]}>
-                      {topRecords.map((_entry, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={index % 2 === 0 ? '#8884d8' : '#82ca9d'}
-                        />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </section>
+          {/* Split Content */}
+          <TopRecords data={topRecords} className="flex-1 min-h-0" />
 
-            <section className="bg-white rounded shadow p-4">
-              <h2 className="text-lg font-bold mb-4 border-b pb-2">Recent Listens</h2>
-              {recentListens.length === 0 ? (
-                <p className="text-gray-500 text-center py-4">No records scanned yet.</p>
-              ) : (
-                <ul className="space-y-4">
-                  {recentListens.map((event) => (
-                    <li key={event.id} className="flex items-center space-x-4">
-                      <img
-                        src={event.record.thumbUrl || '/placeholder.png'}
-                        alt={event.record.title}
-                        className="w-16 h-16 object-cover rounded shadow-sm bg-gray-200"
-                      />
-                      <div className="flex-1">
-                        <p className="font-semibold">{event.record.title}</p>
-                        <p className="text-sm text-gray-600">{event.record.artist}</p>
-                        <p className="text-xs text-gray-400">
-                          {new Date(event.timestamp).toLocaleString()}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => handleDelete(event.id!)}
-                        className="text-red-500 hover:text-red-700 p-2"
-                        title="Delete Scan"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M3 6h18"></path>
-                          <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-                          <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-                        </svg>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
-          </>
-        )}
-      </main>
-    </div>
+          <RecentListens listens={recentListens} onDelete={handleDelete} className="flex-1 min-h-0" />
+        </div>
+      )}
+    </Layout>
   );
 };
 

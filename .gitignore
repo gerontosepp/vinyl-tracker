@@ -10,3 +10,10 @@ coverage/
 # Playwright
 test-results/
 playwright-report/
+
+# Java
+target/
+.classpath
+.project
+.settings/
+*.class

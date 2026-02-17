@@ -20,3 +20,4 @@ target/
 
 # Secrets
 .secrets.local
+curl_output_*

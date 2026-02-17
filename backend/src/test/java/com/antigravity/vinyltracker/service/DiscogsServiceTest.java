@@ -24,6 +24,7 @@ class DiscogsServiceTest {
         private ObjectMapper objectMapper = new ObjectMapper();
         private AppUser user;
         private TokenEncryptionService tokenService;
+        private com.antigravity.vinyltracker.repository.ListenEventRepository listenEventRepository;
 
         @BeforeEach
         void setUp() {
@@ -37,7 +38,11 @@ class DiscogsServiceTest {
                 org.mockito.Mockito.when(tokenService.decrypt(org.mockito.ArgumentMatchers.anyString()))
                                 .thenAnswer(invocation -> invocation.getArgument(0)); // Return token as-is for test
 
-                discogsService = new DiscogsService(builder, tokenService);
+                // Mock ListenEventRepository
+                listenEventRepository = org.mockito.Mockito
+                                .mock(com.antigravity.vinyltracker.repository.ListenEventRepository.class);
+
+                discogsService = new DiscogsService(builder, tokenService, listenEventRepository);
 
                 user = new AppUser();
                 user.setUsername("testuser");

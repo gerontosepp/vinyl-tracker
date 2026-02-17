@@ -13,4 +13,7 @@ public interface ListenEventRepository extends JpaRepository<ListenEvent, Long> 
 
     List<ListenEvent> findByUserIdAndTimestampBetweenOrderByTimestampDesc(Long userId, LocalDateTime start,
             LocalDateTime end);
+
+    @org.springframework.data.jpa.repository.Query("SELECT le.record.discogsId, COUNT(le) FROM ListenEvent le WHERE le.user.id = :userId GROUP BY le.record.discogsId")
+    List<Object[]> countListensByUserId(Long userId);
 }

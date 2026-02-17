@@ -83,6 +83,8 @@ public class DiscogsDto {
         private Long id;
         @JsonProperty("instance_id")
         private Long instanceId;
+        @JsonProperty("listen_count")
+        private long listenCount;
         @JsonProperty("date_added")
         private String dateAdded;
         private int rating;

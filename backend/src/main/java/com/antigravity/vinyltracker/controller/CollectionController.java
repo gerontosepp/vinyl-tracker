@@ -11,7 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -33,12 +32,14 @@ public class CollectionController {
     public ResponseEntity<DiscogsDto.CollectionResponse> getCollection(
             @RequestParam String username,
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "50") int per_page) {
+            @RequestParam(defaultValue = "50") int per_page,
+            @RequestParam(defaultValue = "artist") String sort,
+            @RequestParam(defaultValue = "asc") String sort_order) {
 
         AppUser user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
 
-        return ResponseEntity.ok(discogsService.getCollection(user, page, per_page));
+        return ResponseEntity.ok(discogsService.getCollection(user, page, per_page, sort, sort_order));
     }
 
     @PostMapping("/qr-codes/selected")

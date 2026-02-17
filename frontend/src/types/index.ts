@@ -51,6 +51,7 @@ export interface CollectionRelease {
   date_added: string;
   rating: number;
   basic_information: DiscogsBasicInfo;
+  listen_count?: number;
 }
 
 export interface CollectionPagination {

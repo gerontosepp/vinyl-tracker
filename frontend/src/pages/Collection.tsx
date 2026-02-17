@@ -222,15 +222,20 @@ const Collection: React.FC = () => {
                                 return (
                                     <div
                                         key={release.id}
-                                        className={`relative group bg-white border rounded-xl p-3 flex gap-4 transition-all hover:shadow-md ${isSelected ? 'border-blue-500 ring-1 ring-blue-500 bg-blue-50' : 'border-gray-200'}`}
+                                        className={`relative group bg-white border rounded-xl p-4 flex gap-4 transition-all hover:shadow-md ${isSelected ? 'border-blue-500 ring-1 ring-blue-500 bg-blue-50' : 'border-gray-200'}`}
                                         onClick={() => toggleSelection(release)}
                                     >
-                                        {/* Selection Checkbox Overlay */}
-                                        <div className="absolute top-3 right-3 z-10">
+                                        {/* Listen Count Badge (Top-Right) */}
+                                        <div className="absolute top-3 right-3 z-10 bg-gray-900/80 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm">
+                                            {release.listen_count || 0} plays
+                                        </div>
+
+                                        {/* Selection Checkbox Overlay (Bottom-Right) */}
+                                        <div className="absolute bottom-3 right-3 z-10">
                                             {isSelected ? (
-                                                <CheckSquare className="text-blue-600 fill-white" size={24} />
+                                                <CheckSquare className="text-blue-600 fill-white bg-white rounded" size={24} />
                                             ) : (
-                                                <Square className="text-gray-300 group-hover:text-gray-400" size={24} />
+                                                <Square className="text-gray-300 group-hover:text-gray-400 bg-white/80 rounded" size={24} />
                                             )}
                                         </div>
 
@@ -244,7 +249,7 @@ const Collection: React.FC = () => {
                                         </div>
 
                                         {/* Info */}
-                                        <div className="flex-1 min-w-0 flex flex-col justify-center">
+                                        <div className="flex-1 min-w-0 flex flex-col justify-center pr-20">
                                             <h3 className="font-bold text-gray-900 truncate" title={release.basic_information.title}>
                                                 {release.basic_information.title}
                                             </h3>

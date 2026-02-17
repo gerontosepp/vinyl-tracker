@@ -14,9 +14,18 @@ const Dashboard: React.FC = () => {
   const [topRecords, setTopRecords] = useState<AnalyticsTopRecord[]>([]);
   const [showScanner, setShowScanner] = useState(false);
 
-  // Date filter state - default to today
-  const [startDate, setStartDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [endDate, setEndDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  // Helper to get local date string YYYY-MM-DD
+  const getTodayString = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Date filter state - default to today (local time)
+  const [startDate, setStartDate] = useState<string>(getTodayString());
+  const [endDate, setEndDate] = useState<string>(getTodayString());
 
   const location = useLocation();
 
@@ -86,6 +95,32 @@ const Dashboard: React.FC = () => {
               <p className="text-gray-500 text-sm">Here's what you've been listening to recently.</p>
             </div>
             <div className="flex gap-2 items-center bg-white p-1.5 rounded-lg shadow-sm border border-gray-100">
+              <button
+                onClick={() => {
+                  setStartDate('');
+                  setEndDate('');
+                }}
+                className={`text-xs px-2 py-1 rounded-md transition-colors ${!startDate && !endDate
+                  ? 'bg-blue-100 text-blue-700 font-medium'
+                  : 'text-gray-500 hover:bg-gray-100'
+                  }`}
+              >
+                All
+              </button>
+              <button
+                onClick={() => {
+                  const today = getTodayString();
+                  setStartDate(today);
+                  setEndDate(today);
+                }}
+                className={`text-xs px-2 py-1 rounded-md transition-colors ${startDate === getTodayString() && endDate === getTodayString()
+                    ? 'bg-blue-100 text-blue-700 font-medium'
+                    : 'text-gray-500 hover:bg-gray-100'
+                  }`}
+              >
+                Today
+              </button>
+              <div className="w-px h-4 bg-gray-200 mx-1"></div>
               <input
                 type="date"
                 value={startDate}

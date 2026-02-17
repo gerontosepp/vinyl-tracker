@@ -30,7 +30,7 @@ You are working on the Vinyl Tracker project. Stick to the following rules stric
 - Use Date for all date and time operations in the frontend.
 
 ## 6. Testing
-- verwende zum Testen der UI folgende die Werte  aus der Datei .secrets.local. Die Werte der aus Datei  sollen nicht  CHat angezeigt werden..
+- verwende zum Testen der UI folgende die Werte  aus der Datei .secrets.local. Die Werte der aus Datei  sollen nicht  CHat angezeigt werden. Vor der Befüll der Eingabefelder müssen diese geleert werden.
     USER
     PASSWORD
     DISCOGS_USER

@@ -127,4 +127,51 @@ describe('API Service', () => {
     });
     expect(result).toEqual(mockUser);
   });
+  it('getCollection should make a GET request to /collection', async () => {
+    const mockResponse = { releases: [] };
+    mockGet.mockResolvedValue({ data: mockResponse });
+    const { getCollection } = await import('./api');
+
+    const result = await getCollection('testuser', 1, 50, 0);
+
+    expect(mockGet).toHaveBeenCalledWith('/collection?username=testuser&page=1&per_page=50');
+    expect(result).toEqual(mockResponse);
+  });
+
+  it('getCollection should include min_plays param when > 0', async () => {
+    mockGet.mockResolvedValue({ data: {} });
+    const { getCollection } = await import('./api');
+    await getCollection('testuser', 1, 50, 5);
+    expect(mockGet).toHaveBeenCalledWith('/collection?username=testuser&page=1&per_page=50&min_plays=5');
+  });
+
+  it('downloadQrCodes should make a GET request to /collection/qr-codes/all with responseType blob', async () => {
+    const mockBlob = new Blob(['pdf'], { type: 'application/pdf' });
+    mockGet.mockResolvedValue({ data: mockBlob });
+    const { downloadQrCodes } = await import('./api');
+
+    const result = await downloadQrCodes('testuser');
+
+    expect(mockGet).toHaveBeenCalledWith('/collection/qr-codes/all?username=testuser', {
+      responseType: 'blob',
+    });
+    expect(result).toEqual(mockBlob);
+  });
+
+  it('downloadQrCodesSelected should make a POST request with selected items', async () => {
+    const mockItems = [{ id: 1, title: 'Album' }];
+    const mockBlob = new Blob(['pdf'], { type: 'application/pdf' });
+    mockPost.mockResolvedValue({ data: mockBlob });
+    const { downloadQrCodesSelected } = await import('./api');
+
+    // @ts-ignore
+    const result = await downloadQrCodesSelected(mockItems);
+
+    expect(mockPost).toHaveBeenCalledWith(
+      '/collection/qr-codes/selected',
+      { items: mockItems },
+      { responseType: 'blob' }
+    );
+    expect(result).toEqual(mockBlob);
+  });
 });

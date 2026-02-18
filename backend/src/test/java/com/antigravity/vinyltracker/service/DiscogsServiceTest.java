@@ -204,17 +204,77 @@ class DiscogsServiceTest {
         }
 
         @Test
+        void getRelease_ShouldThrowException_WhenTokenInvalid() {
+                // Arrange
+                org.mockito.Mockito.when(tokenService.decrypt(org.mockito.ArgumentMatchers.anyString()))
+                                .thenReturn(null);
+
+                // Act & Assert
+                assertThrows(RuntimeException.class, () -> discogsService.getRelease(1L, user));
+        }
+
+        @Test
+        void searchCollectionByBarcode_ShouldThrowException_WhenTokenInvalid() {
+                // Arrange
+                org.mockito.Mockito.when(tokenService.decrypt(org.mockito.ArgumentMatchers.anyString()))
+                                .thenReturn(null);
+
+                // Act & Assert
+                assertThrows(RuntimeException.class, () -> discogsService.searchCollectionByBarcode("123", user));
+        }
+
+        @Test
+        void isReleaseInCollection_ShouldReturnFalse_WhenTokenInvalid() {
+                // Arrange
+                org.mockito.Mockito.when(tokenService.decrypt(org.mockito.ArgumentMatchers.anyString()))
+                                .thenReturn(null);
+
+                // Act
+                boolean result = discogsService.isReleaseInCollection(1L, user);
+
+                // Assert
+                assertFalse(result);
+        }
+
+        @Test
+        void isReleaseInCollection_ShouldReturnFalse_WhenApiThrowsException() {
+                Long releaseId = 999L;
+
+                // Mock API Error (e.g., 500)
+                server.expect(requestTo("https://api.discogs.com/users/" + user.getDiscogsUsername()
+                                + "/collection/releases/" + releaseId))
+                                .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR));
+
+                boolean result = discogsService.isReleaseInCollection(releaseId, user);
+
+                assertFalse(result);
+        }
+
+        @Test
         void getAllCollection_ShouldAggregatePages() throws Exception {
                 // Arrange
                 DiscogsDto.CollectionResponse page1 = new DiscogsDto.CollectionResponse();
                 DiscogsDto.CollectionRelease r1 = new DiscogsDto.CollectionRelease();
                 r1.setId(1L);
                 page1.setReleases(List.of(r1));
-                page1.setPagination(new DiscogsDto.Pagination(1, 1, 1, 100, null));
+                page1.setPagination(new DiscogsDto.Pagination(1, 1, 2, 2, null)); // 2 pages total
 
+                DiscogsDto.CollectionResponse page2 = new DiscogsDto.CollectionResponse();
+                DiscogsDto.CollectionRelease r2 = new DiscogsDto.CollectionRelease();
+                r2.setId(2L);
+                page2.setReleases(List.of(r2));
+                page2.setPagination(new DiscogsDto.Pagination(2, 2, 2, 2, null));
+
+                // Expect Page 1 Call
                 server.expect(requestTo("https://api.discogs.com/users/" + user.getDiscogsUsername() +
                                 "/collection/folders/0/releases?page=1&per_page=100&sort=artist&sort_order=asc"))
                                 .andRespond(withSuccess(objectMapper.writeValueAsString(page1),
+                                                MediaType.APPLICATION_JSON));
+
+                // Expect Page 2 Call
+                server.expect(requestTo("https://api.discogs.com/users/" + user.getDiscogsUsername() +
+                                "/collection/folders/0/releases?page=2&per_page=100&sort=artist&sort_order=asc"))
+                                .andRespond(withSuccess(objectMapper.writeValueAsString(page2),
                                                 MediaType.APPLICATION_JSON));
 
                 org.mockito.Mockito.when(listenEventRepository.findRecordsWithPlays(user.getId()))
@@ -224,7 +284,26 @@ class DiscogsServiceTest {
                 List<DiscogsDto.CollectionRelease> result = discogsService.getAllCollection(user);
 
                 // Assert
-                assertEquals(1, result.size());
+                assertEquals(2, result.size());
                 assertEquals(1L, result.get(0).getId());
+                assertEquals(2L, result.get(1).getId());
+        }
+
+        @Test
+        void getCollection_ShouldHandleEmptyResponse() throws Exception {
+                // Arrange
+                int page = 1;
+                int perPage = 50;
+
+                // Return null/empty
+                server.expect(requestTo("https://api.discogs.com/users/" + user.getDiscogsUsername() +
+                                "/collection/folders/0/releases?page=1&per_page=50&sort=artist&sort_order=asc"))
+                                .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON)); // Empty JSON object
+
+                DiscogsDto.CollectionResponse result = discogsService.getCollection(user, page, perPage, "artist",
+                                "asc", 0);
+
+                assertNotNull(result);
+                assertNull(result.getReleases());
         }
 }

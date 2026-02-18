@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { ScanResult, ListenEvent, User } from '../types';
+import type { ScanResult, ListenEvent, User, AnalyticsTopRecord } from '../types';
 
 const API_Base = '/api';
 
@@ -19,16 +19,19 @@ export const deleteScan = async (id: number, username: string): Promise<void> =>
   await api.delete(`/scan/${id}?username=${username}`);
 };
 
-export const getRecentListens = async (username: string): Promise<ListenEvent[]> => {
-  const response = await api.get<ListenEvent[]>(`/analytics/recent?username=${username}`);
+export const getRecentListens = async (username: string, startDate?: string, endDate?: string): Promise<ListenEvent[]> => {
+  let url = `/analytics/recent?username=${username}`;
+  if (startDate) url += `&from=${startDate}`;
+  if (endDate) url += `&to=${endDate}`;
+  const response = await api.get<ListenEvent[]>(url);
   return response.data;
 };
 
-export const getTopRecords = async (username: string): Promise<Record<string, unknown>[]> => {
-  // Backend returns List<Map.Entry<String, Long>> which serializes to [{"key": "Title", "value": 5}, ...]
-  // or generic object depending on Jackson config.
-  // Let's type it as Record<string, unknown>[] for now and handle mapping in component.
-  const response = await api.get<Record<string, unknown>[]>(`/analytics/top?username=${username}`);
+export const getTopRecords = async (username: string, startDate?: string, endDate?: string): Promise<AnalyticsTopRecord[]> => {
+  let url = `/analytics/top?username=${username}`;
+  if (startDate) url += `&from=${startDate}`;
+  if (endDate) url += `&to=${endDate}`;
+  const response = await api.get<AnalyticsTopRecord[]>(url);
   return response.data;
 };
 
@@ -65,10 +68,35 @@ export const updateDiscogsSettings = async (
   return response.data;
 };
 
+export const getCollection = async (
+  username: string,
+  page: number = 1,
+  perPage: number = 50,
+  minPlays: number = 0
+): Promise<import('../types').CollectionResponse> => {
+  let url = `/collection?username=${username}&page=${page}&per_page=${perPage}`;
+  if (minPlays > 0) {
+    url += `&min_plays=${minPlays}`;
+  }
+  const response = await api.get<import('../types').CollectionResponse>(url);
+  return response.data;
+};
+
 export const downloadQrCodes = async (username: string): Promise<Blob> => {
-  const response = await api.get(`/collection/qr-codes?username=${username}`, {
+  const response = await api.get(`/collection/qr-codes/all?username=${username}`, {
     responseType: 'blob',
   });
+  return response.data;
+};
+
+export const downloadQrCodesSelected = async (
+  items: import('../types').QrCodeItem[]
+): Promise<Blob> => {
+  const response = await api.post(
+    '/collection/qr-codes/selected',
+    { items },
+    { responseType: 'blob' }
+  );
   return response.data;
 };
 

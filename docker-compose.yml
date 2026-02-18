@@ -31,6 +31,8 @@ services:
       context: ./frontend
       target: development
     container_name: vinyl-frontend
+    environment:
+      - VITE_API_TARGET=http://backend:8080
     ports:
       - "3000:3000" # Vite default (or 80 via nginx)
       - "5173:5173" # Dev server

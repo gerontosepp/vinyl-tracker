@@ -20,7 +20,7 @@ public class PdfService {
         this.qrCodeService = qrCodeService;
     }
 
-    public byte[] generateQrCodePdf(List<DiscogsDto.CollectionRelease> releases) throws IOException {
+    public byte[] generateQrCodePdf(List<DiscogsDto.QrCodeItem> items) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
         try {
@@ -40,13 +40,13 @@ public class PdfService {
             table.setSpacingBefore(10f);
             table.setSpacingAfter(10f);
 
-            for (DiscogsDto.CollectionRelease release : releases) {
-                PdfPCell cell = createReleaseCell(release);
+            for (DiscogsDto.QrCodeItem item : items) {
+                PdfPCell cell = createItemCell(item);
                 table.addCell(cell);
             }
 
             // Fill remaining cells if last row is incomplete
-            int remainder = releases.size() % 3;
+            int remainder = items.size() % 3;
             if (remainder != 0) {
                 for (int i = 0; i < (3 - remainder); i++) {
                     PdfPCell emptyCell = new PdfPCell();
@@ -65,27 +65,23 @@ public class PdfService {
         return out.toByteArray();
     }
 
-    private PdfPCell createReleaseCell(DiscogsDto.CollectionRelease release) throws IOException, BadElementException {
+    private PdfPCell createItemCell(DiscogsDto.QrCodeItem item) throws IOException, BadElementException {
         PdfPCell cell = new PdfPCell();
         cell.setBorder(Rectangle.NO_BORDER);
         cell.setPadding(10);
         cell.setHorizontalAlignment(Element.ALIGN_CENTER);
 
-        DiscogsDto.BasicInformation basicInfo = release.getBasicInformation();
-
         // Title and Artist
-        String artistName = basicInfo.getArtists() != null && !basicInfo.getArtists().isEmpty()
-                ? basicInfo.getArtists().get(0).getName()
-                : "Unknown Artist";
+        String artistName = item.getArtist() != null ? item.getArtist() : "Unknown Artist";
 
         Paragraph info = new Paragraph(
-                basicInfo.getTitle() + "\n" + artistName,
+                item.getTitle() + "\n" + artistName,
                 FontFactory.getFont(FontFactory.HELVETICA, 10));
         info.setAlignment(Element.ALIGN_CENTER);
         cell.addElement(info);
 
         // QR Code
-        String qrContent = "discogs-id:" + release.getId();
+        String qrContent = "discogs-id:" + item.getId();
         byte[] qrBytes = qrCodeService.generateQrCodeImage(qrContent, 150, 150);
         Image qrImage = Image.getInstance(qrBytes);
         qrImage.setAlignment(Element.ALIGN_CENTER);
@@ -94,7 +90,7 @@ public class PdfService {
 
         // ID Label
         Paragraph idLabel = new Paragraph(
-                "ID: " + release.getId(),
+                "ID: " + item.getId(),
                 FontFactory.getFont(FontFactory.HELVETICA, 8, Font.ITALIC));
         idLabel.setAlignment(Element.ALIGN_CENTER);
         cell.addElement(idLabel);

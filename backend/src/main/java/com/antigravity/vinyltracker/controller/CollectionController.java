@@ -11,7 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -29,41 +28,65 @@ public class CollectionController {
         this.userRepository = userRepository;
     }
 
-    @GetMapping("/qr-codes")
-    public ResponseEntity<byte[]> generateQrCodes(@RequestParam String username) {
+    @GetMapping
+    public ResponseEntity<DiscogsDto.CollectionResponse> getCollection(
+            @RequestParam String username,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "50") int per_page,
+            @RequestParam(defaultValue = "artist") String sort,
+            @RequestParam(defaultValue = "asc") String sort_order,
+            @RequestParam(required = false) Integer min_plays) {
+
+        AppUser user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+
+        return ResponseEntity.ok(discogsService.getCollection(user, page, per_page, sort, sort_order, min_plays));
+    }
+
+    @PostMapping("/qr-codes/selected")
+    public ResponseEntity<byte[]> generateSelectedQrCodes(@RequestBody DiscogsDto.QrCodeRequest request) {
+        try {
+            byte[] pdfBytes = pdfService.generateQrCodePdf(request.getItems());
+            return createPdfResponse(pdfBytes);
+        } catch (IOException e) {
+            throw new RuntimeException("Error generating PDF", e);
+        }
+    }
+
+    @GetMapping("/qr-codes/all")
+    public ResponseEntity<byte[]> generateAllQrCodes(@RequestParam String username) {
         AppUser user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
 
         try {
-            // For MVP, fetch first page (100 items). Pagination can be improved later.
-
-            DiscogsDto.CollectionResponse response = discogsService.getCollection(user, 1);
-            List<DiscogsDto.CollectionRelease> releases = response != null && response.getReleases() != null
-                    ? new ArrayList<>(response.getReleases())
-                    : new ArrayList<>();
-
-            // Sort by Artist Name
-            releases.sort((r1, r2) -> {
-                String artist1 = r1.getBasicInformation().getArtists() != null
-                        && !r1.getBasicInformation().getArtists().isEmpty()
-                                ? r1.getBasicInformation().getArtists().get(0).getName()
-                                : "";
-                String artist2 = r2.getBasicInformation().getArtists() != null
-                        && !r2.getBasicInformation().getArtists().isEmpty()
-                                ? r2.getBasicInformation().getArtists().get(0).getName()
-                                : "";
+            List<DiscogsDto.CollectionRelease> releases = discogsService.getAllCollection(user);
+            List<DiscogsDto.QrCodeItem> items = releases.stream().map(this::mapToQrItem).sorted((a, b) -> {
+                String artist1 = a.getArtist() != null ? a.getArtist() : "";
+                String artist2 = b.getArtist() != null ? b.getArtist() : "";
                 return artist1.compareToIgnoreCase(artist2);
-            });
+            }).toList();
 
-            byte[] pdfBytes = pdfService.generateQrCodePdf(releases);
-
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=collection_qr_codes.pdf")
-                    .contentType(MediaType.APPLICATION_PDF)
-                    .body(pdfBytes);
+            byte[] pdfBytes = pdfService.generateQrCodePdf(items);
+            return createPdfResponse(pdfBytes);
 
         } catch (IOException e) {
             throw new RuntimeException("Error generating PDF", e);
         }
+    }
+
+    private DiscogsDto.QrCodeItem mapToQrItem(DiscogsDto.CollectionRelease release) {
+        String artist = "Unknown";
+        if (release.getBasicInformation().getArtists() != null
+                && !release.getBasicInformation().getArtists().isEmpty()) {
+            artist = release.getBasicInformation().getArtists().get(0).getName();
+        }
+        return new DiscogsDto.QrCodeItem(release.getId(), release.getBasicInformation().getTitle(), artist);
+    }
+
+    private ResponseEntity<byte[]> createPdfResponse(byte[] pdfBytes) {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=collection_qr_codes.pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdfBytes);
     }
 }

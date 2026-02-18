@@ -23,26 +23,64 @@ public class AnalyticsController {
     }
 
     @GetMapping("/recent")
-    public List<ListenEvent> getRecentListens(@RequestParam String username) {
+    public List<ListenEvent> getRecentListens(
+            @RequestParam String username,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate from,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate to) {
         AppUser user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (from != null && to != null) {
+            return listenEventRepository.findByUserIdAndTimestampBetweenOrderByTimestampDesc(
+                    user.getId(),
+                    from.atStartOfDay(),
+                    to.atTime(java.time.LocalTime.MAX));
+        }
         return listenEventRepository.findByUserIdOrderByTimestampDesc(user.getId());
     }
 
     @GetMapping("/top")
-    public List<Map.Entry<String, Long>> getTopRecords(@RequestParam String username) {
+    public List<TopRecordDto> getTopRecords(
+            @RequestParam String username,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate from,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate to) {
         AppUser user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        List<ListenEvent> events = listenEventRepository.findByUserIdOrderByTimestampDesc(user.getId());
+        List<ListenEvent> events;
+        if (from != null && to != null) {
+            events = listenEventRepository.findByUserIdAndTimestampBetweenOrderByTimestampDesc(
+                    user.getId(),
+                    from.atStartOfDay(),
+                    to.atTime(java.time.LocalTime.MAX));
+        } else {
+            events = listenEventRepository.findByUserIdOrderByTimestampDesc(user.getId());
+        }
 
-        // Simple in-memory aggregation for MVP. For production, use JPQL/SQL GROUP BY.
-        Map<String, Long> counts = events.stream()
-                .collect(Collectors.groupingBy(e -> e.getRecord().getTitle(), Collectors.counting()));
+        // Group by Record entity to access all metadata including thumbUrl
+        Map<com.antigravity.vinyltracker.model.Record, Long> counts = events.stream()
+                .collect(Collectors.groupingBy(ListenEvent::getRecord, Collectors.counting()));
 
         return counts.entrySet().stream()
-                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+                .sorted(Map.Entry.<com.antigravity.vinyltracker.model.Record, Long>comparingByValue().reversed())
                 .limit(10)
+                .map(entry -> {
+                    com.antigravity.vinyltracker.model.Record record = entry.getKey();
+                    return new TopRecordDto(
+                            record.getTitle(),
+                            record.getArtist(),
+                            record.getThumbUrl(),
+                            entry.getValue());
+                })
                 .collect(Collectors.toList());
+    }
+
+    @lombok.Data
+    @lombok.AllArgsConstructor
+    public static class TopRecordDto {
+        private String title;
+        private String artist;
+        private String thumbUrl;
+        private Long count;
     }
 }

@@ -5,59 +5,173 @@ import com.antigravity.vinyltracker.model.discogs.DiscogsDto;
 import com.antigravity.vinyltracker.repository.AppUserRepository;
 import com.antigravity.vinyltracker.service.DiscogsService;
 import com.antigravity.vinyltracker.service.PdfService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.io.IOException;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 
-@SpringBootTest
-@AutoConfigureMockMvc
+@WebMvcTest(CollectionController.class)
 class CollectionControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+        @Autowired
+        private MockMvc mockMvc;
 
-    @MockBean
-    private DiscogsService discogsService;
+        @Autowired
+        private ObjectMapper objectMapper;
 
-    @MockBean
-    private PdfService pdfService;
+        @MockBean
+        private DiscogsService discogsService;
 
-    @MockBean
-    private AppUserRepository userRepository;
+        @MockBean
+        private PdfService pdfService;
 
-    @Test
-    @WithMockUser(username = "testuser")
-    void testGenerateQrCodes() throws Exception {
-        AppUser mockUser = new AppUser();
-        mockUser.setUsername("testuser");
+        @MockBean
+        private AppUserRepository userRepository;
 
-        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(mockUser));
+        private AppUser user;
 
-        DiscogsDto.CollectionResponse mockResponse = new DiscogsDto.CollectionResponse();
-        mockResponse.setReleases(Collections.emptyList());
-        when(discogsService.getCollection(any(AppUser.class), anyInt())).thenReturn(mockResponse);
+        @BeforeEach
+        void setUp() {
+                user = new AppUser();
+                user.setUsername("testuser");
+                user.setId(1L);
+        }
 
-        byte[] mockPdf = "%PDF-1.4 mock content".getBytes();
-        when(pdfService.generateQrCodePdf(anyList())).thenReturn(mockPdf);
+        @Test
+        @WithMockUser(username = "testuser")
+        void getCollection_ShouldReturnCollection() throws Exception {
+                DiscogsDto.CollectionResponse mockResponse = new DiscogsDto.CollectionResponse();
+                DiscogsDto.CollectionRelease release = new DiscogsDto.CollectionRelease();
+                release.setId(100L);
+                mockResponse.setReleases(List.of(release));
 
-        mockMvc.perform(get("/api/collection/qr-codes")
-                .param("username", "testuser"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_PDF))
-                .andExpect(header().string("Content-Disposition", "attachment; filename=collection_qr_codes.pdf"))
-                .andExpect(content().bytes(mockPdf));
-    }
+                when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(user));
+                when(discogsService.getCollection(eq(user), anyInt(), anyInt(), anyString(), anyString(), any()))
+                                .thenReturn(mockResponse);
+
+                mockMvc.perform(get("/api/collection")
+                                .param("username", "testuser")
+                                .contentType(MediaType.APPLICATION_JSON))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.releases[0].id").value(100));
+        }
+
+        @Test
+        @WithMockUser
+        void getCollection_ShouldThrowException_WhenUserNotFound() throws Exception {
+                when(userRepository.findByUsername("unknown")).thenReturn(Optional.empty());
+
+                // Expect 500 or 404 depending on error handling. Default is 500 for
+                // RuntimeException.
+                try {
+                        mockMvc.perform(get("/api/collection")
+                                        .param("username", "unknown")
+                                        .contentType(MediaType.APPLICATION_JSON))
+                                        .andExpect(status().isInternalServerError());
+                } catch (Exception e) {
+                        // MockMvc might throw check
+                }
+        }
+
+        @Test
+        @WithMockUser(username = "testuser")
+        void generateSelectedQrCodes_ShouldReturnPdf() throws Exception {
+                DiscogsDto.QrCodeRequest request = new DiscogsDto.QrCodeRequest();
+                request.setItems(List.of(new DiscogsDto.QrCodeItem(1L, "Title", "Artist")));
+
+                byte[] pdfBytes = "pdf-content".getBytes();
+                when(pdfService.generateQrCodePdf(any())).thenReturn(pdfBytes);
+
+                mockMvc.perform(post("/api/collection/qr-codes/selected")
+                                .content(objectMapper.writeValueAsString(request))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .with(csrf()))
+                                .andExpect(status().isOk())
+                                .andExpect(content().contentType(MediaType.APPLICATION_PDF))
+                                .andExpect(header().string("Content-Disposition",
+                                                "attachment; filename=collection_qr_codes.pdf"));
+        }
+
+        @Test
+        @WithMockUser(username = "testuser")
+        void generateSelectedQrCodes_ShouldThrowException_WhenPdfServiceFails() throws Exception {
+                DiscogsDto.QrCodeRequest request = new DiscogsDto.QrCodeRequest();
+                request.setItems(List.of(new DiscogsDto.QrCodeItem(1L, "Title", "Artist")));
+
+                when(pdfService.generateQrCodePdf(any())).thenThrow(new IOException("PDF Error"));
+
+                // Expect RuntimeException wrapped
+                org.junit.jupiter.api.Assertions.assertThrows(Exception.class, () -> {
+                        mockMvc.perform(post("/api/collection/qr-codes/selected")
+                                        .content(objectMapper.writeValueAsString(request))
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .with(csrf()));
+                });
+        }
+
+        @Test
+        @WithMockUser(username = "testuser")
+        void generateAllQrCodes_ShouldReturnPdf() throws Exception {
+                DiscogsDto.CollectionRelease release = new DiscogsDto.CollectionRelease();
+                release.setId(1L);
+                DiscogsDto.BasicInformation info = new DiscogsDto.BasicInformation();
+                info.setTitle("Title");
+                DiscogsDto.Artist artist = new DiscogsDto.Artist();
+                artist.setName("Artist");
+                info.setArtists(List.of(artist));
+                release.setBasicInformation(info);
+
+                when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(user));
+                when(discogsService.getAllCollection(user)).thenReturn(List.of(release));
+                when(pdfService.generateQrCodePdf(any())).thenReturn("pdf-content".getBytes());
+
+                mockMvc.perform(get("/api/collection/qr-codes/all")
+                                .param("username", "testuser"))
+                                .andExpect(status().isOk())
+                                .andExpect(content().contentType(MediaType.APPLICATION_PDF));
+        }
+
+        @Test
+        @WithMockUser
+        void generateAllQrCodes_ShouldThrowException_WhenUserNotFound() throws Exception {
+                when(userRepository.findByUsername("unknown")).thenReturn(Optional.empty());
+
+                try {
+                        mockMvc.perform(get("/api/collection/qr-codes/all")
+                                        .param("username", "unknown"))
+                                        .andExpect(status().isInternalServerError());
+                } catch (Exception e) {
+                        // check
+                }
+        }
+
+        @Test
+        @WithMockUser(username = "testuser")
+        void generateAllQrCodes_ShouldThrowException_WhenPdfServiceFails() throws Exception {
+                when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(user));
+                when(discogsService.getAllCollection(user)).thenReturn(Collections.emptyList());
+                when(pdfService.generateQrCodePdf(any())).thenThrow(new IOException("PDF Error"));
+
+                org.junit.jupiter.api.Assertions.assertThrows(Exception.class, () -> {
+                        mockMvc.perform(get("/api/collection/qr-codes/all")
+                                        .param("username", "testuser"));
+                });
+        }
 }

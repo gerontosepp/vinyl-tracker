@@ -15,8 +15,8 @@ The project follows a modern containerized micro-architecture:
   - Secure Context support via local SSL.
 
 ### Backend
-- **Framework**: Spring Boot 4.0.2
-- **Language**: Java 24
+- **Framework**: Spring Boot 3.4.2
+- **Language**: Java 21
 - **Database Access**: Spring Data JPA with Hibernate.
 - **API**: RESTful endpoints for scanning, user management, and analytics.
 - **Integration**: Discogs API for record metadata.
@@ -144,7 +144,7 @@ mvn verify
 
 ### CI/CD
 The project includes a GitHub Actions workflow (`.github/workflows/ci.yml`) that automatically:
-- Builds and tests the Backend (Java 24/Maven).
+- Builds and tests the Backend (Java 21/Maven).
 - Builds and tests the Frontend (Node 20/Vite).
 - Enforces >80% test coverage for both.
 - Runs on every push to `main` and PRs.

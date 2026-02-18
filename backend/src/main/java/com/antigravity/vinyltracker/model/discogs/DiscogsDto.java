@@ -83,6 +83,8 @@ public class DiscogsDto {
         private Long id;
         @JsonProperty("instance_id")
         private Long instanceId;
+        @JsonProperty("listen_count")
+        private long listenCount;
         @JsonProperty("date_added")
         private String dateAdded;
         private int rating;
@@ -115,5 +117,21 @@ public class DiscogsDto {
         @JsonProperty("entity_type_name")
         private String entityTypeName;
         private Long id;
+    }
+
+    @Data
+    @lombok.AllArgsConstructor
+    @lombok.NoArgsConstructor
+    public static class QrCodeRequest {
+        private List<QrCodeItem> items;
+    }
+
+    @Data
+    @lombok.AllArgsConstructor
+    @lombok.NoArgsConstructor
+    public static class QrCodeItem {
+        private Long id;
+        private String title;
+        private String artist;
     }
 }

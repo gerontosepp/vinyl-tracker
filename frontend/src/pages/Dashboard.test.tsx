@@ -55,11 +55,13 @@ describe('Dashboard Component', () => {
             </BrowserRouter>
         );
 
-        expect(screen.getByText('Vinyl Tracker')).toBeInTheDocument();
-        expect(screen.getByText('testuser')).toBeInTheDocument();
+        expect(screen.getByText(/Vinyl/i)).toBeInTheDocument();
+        expect(screen.getByText(/Tracker/i)).toBeInTheDocument();
+        expect(screen.getByText(/testuser/i)).toBeInTheDocument();
 
-        // Check for SCAN RECORD button
-        expect(screen.getByText('SCAN RECORD')).toBeInTheDocument();
+
+        // Check for SCAN RECORD button (updated to match new Sidebar/BottomNav)
+        expect(screen.getAllByRole('button', { name: /scan/i })[0]).toBeInTheDocument();
 
         // specific elements should appear after data load
         await waitFor(() => {
@@ -74,7 +76,8 @@ describe('Dashboard Component', () => {
             </BrowserRouter>
         );
 
-        const scanButton = screen.getByText('SCAN RECORD');
+        const scanButtons = screen.getAllByRole('button', { name: /scan/i });
+        const scanButton = scanButtons[0]; // Either desktop or mobile button works
         fireEvent.click(scanButton);
 
         expect(screen.getByTestId('barcode-scanner')).toBeInTheDocument();

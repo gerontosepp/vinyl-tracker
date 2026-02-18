@@ -31,6 +31,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ onScanClick }) => {
             <div className="relative -top-6">
                 <button
                     onClick={onScanClick}
+                    aria-label="Scan Record"
                     className="bg-blue-500 hover:bg-blue-600 text-white rounded-full p-4 shadow-lg flex items-center justify-center transition-transform active:scale-95 w-16 h-16"
                 >
                     <ScanLine size={32} />

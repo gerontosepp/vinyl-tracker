@@ -48,7 +48,7 @@ const RecentListens: React.FC<RecentListensProps> = ({ listens, onDelete, classN
                                 <button
                                     onClick={() => onDelete(event.id)}
                                     className="p-2 text-gray-400 hover:text-red-500 transition-colors rounded-full hover:bg-red-50"
-                                    title="Delete"
+                                    title="Delete Scan"
                                 >
                                     <Trash2 size={18} />
                                 </button>

@@ -1,8 +1,12 @@
 import React from 'react';
-import { Home, Disc, User, Settings } from 'lucide-react';
+import { Home, Disc, User, Settings, ScanLine } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-const Sidebar: React.FC = () => {
+interface SidebarProps {
+    onScanClick?: () => void;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ onScanClick }) => {
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -29,6 +33,17 @@ const Sidebar: React.FC = () => {
                 <NavItem path="/" icon={Home} label="Home" />
                 <NavItem path="/collection" icon={Disc} label="Collection" />
                 <NavItem path="/profile" icon={User} label="Profile" />
+
+                <div className="px-4 mt-4">
+                    <button
+                        onClick={onScanClick}
+                        className="flex flex-col items-center justify-center p-3 w-full bg-blue-500 text-white rounded-xl shadow-lg hover:bg-blue-600 transition-colors"
+                        aria-label="Scan Record"
+                    >
+                        <ScanLine size={24} />
+                        <span className="mt-1 text-xs font-semibold">Scan</span>
+                    </button>
+                </div>
             </nav>
 
             <button
@@ -37,8 +52,6 @@ const Sidebar: React.FC = () => {
             >
                 <Settings size={24} />
             </button>
-
-            {/* Blue scan button placeholder if needed in sidebar, though mockup shows it elsewhere or implied */}
         </aside>
     );
 };

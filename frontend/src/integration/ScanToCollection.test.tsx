@@ -92,12 +92,12 @@ describe('Integration: Scan to Collection Flow', () => {
 
     // 1. Initial Load - verify empty state
     await waitFor(() => {
-      expect(api.getRecentListens).toHaveBeenCalledWith('integration-user');
+      expect(api.getRecentListens).toHaveBeenCalledWith('integration-user', expect.any(String), expect.any(String));
     });
-    expect(screen.getByText(/No records scanned yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/No recent listens/i)).toBeInTheDocument();
 
     // 2. Open Scanner
-    const scanButton = screen.getByText(/SCAN RECORD/i);
+    const scanButton = screen.getAllByRole('button', { name: /scan/i })[0];
     fireEvent.click(scanButton);
 
     // Verify Scanner is shown
@@ -141,6 +141,6 @@ describe('Integration: Scan to Collection Flow', () => {
     expect(await screen.findByText(/Integration Test Album/i)).toBeInTheDocument();
     expect(screen.getByText(/Test Artist/i)).toBeInTheDocument();
     // "No records scanned yet" should be gone
-    expect(screen.queryByText(/No records scanned yet/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/No recent listens/i)).not.toBeInTheDocument();
   });
 });

@@ -26,9 +26,14 @@ jobs:
         distribution: 'temurin'
         cache: 'maven'
         
+    - name: Check Docker
+      run: docker info
+
     - name: Build and Test with Maven
       # The jacoco-check goal is bound to the verify phase, so 'mvn verify' will trigger the coverage check and fail if < 80%
-      run: mvn clean verify
+      env:
+        DOCKER_HOST: unix:///var/run/docker.sock
+      run: mvn clean verify -Dorg.slf4j.simpleLogger.log.org.testcontainers=debug
 
     - name: Set up Docker Buildx
       if: github.ref == 'refs/heads/main'

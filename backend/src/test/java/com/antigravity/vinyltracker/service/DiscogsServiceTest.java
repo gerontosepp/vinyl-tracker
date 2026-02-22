@@ -306,4 +306,54 @@ class DiscogsServiceTest {
                 assertNotNull(result);
                 assertNull(result.getReleases());
         }
+
+        @Test
+        void getCollection_ShouldSortByListens_WhenSortIsListens() throws Exception {
+                // Arrange
+                int page = 1;
+                int perPage = 50;
+                String sort = "listens";
+                String sortOrder = "desc";
+
+                // Mock API returning 2 releases (unsorted by listens)
+                DiscogsDto.CollectionResponse mockResponse = new DiscogsDto.CollectionResponse();
+                DiscogsDto.CollectionRelease r1 = new DiscogsDto.CollectionRelease();
+                r1.setId(100L); // Will have 2 plays
+                DiscogsDto.CollectionRelease r2 = new DiscogsDto.CollectionRelease();
+                r2.setId(200L); // Will have 5 plays
+                mockResponse.setReleases(List.of(r1, r2));
+                mockResponse.setPagination(new DiscogsDto.Pagination(1, 1, 1, 2, null));
+
+                // Expect call with sort=artist (default used by getAllCollection internal call)
+                server.expect(requestTo("https://api.discogs.com/users/" + user.getDiscogsUsername() +
+                                "/collection/folders/0/releases?page=1&per_page=100&sort=artist&sort_order=asc"))
+                                .andRespond(withSuccess(objectMapper.writeValueAsString(mockResponse),
+                                                MediaType.APPLICATION_JSON));
+
+                // Mock Listen Counts
+                com.antigravity.vinyltracker.model.Record rec1 = new com.antigravity.vinyltracker.model.Record();
+                rec1.setDiscogsId(100L);
+                com.antigravity.vinyltracker.model.Record rec2 = new com.antigravity.vinyltracker.model.Record();
+                rec2.setDiscogsId(200L);
+
+                List<Object[]> recordsWithPlays = new java.util.ArrayList<>();
+                recordsWithPlays.add(new Object[] { rec1, 2L });
+                recordsWithPlays.add(new Object[] { rec2, 5L });
+
+                org.mockito.Mockito.when(listenEventRepository.findRecordsWithPlays(user.getId()))
+                                .thenReturn(recordsWithPlays);
+
+                // Act
+                DiscogsDto.CollectionResponse result = discogsService.getCollection(user, page, perPage, sort,
+                                sortOrder, 0);
+
+                // Assert
+                assertNotNull(result);
+                assertEquals(2, result.getReleases().size());
+                // Should be sorted DESC by listens: 200L (5 plays) first, then 100L (2 plays)
+                assertEquals(200L, result.getReleases().get(0).getId());
+                assertEquals(5L, result.getReleases().get(0).getListenCount());
+                assertEquals(100L, result.getReleases().get(1).getId());
+                assertEquals(2L, result.getReleases().get(1).getListenCount());
+        }
 }

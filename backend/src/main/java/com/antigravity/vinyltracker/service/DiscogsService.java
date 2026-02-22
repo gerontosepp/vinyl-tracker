@@ -104,7 +104,7 @@ public class DiscogsService {
             List<Object[]> recordsWithPlays = listenEventRepository.findRecordsWithPlays(user.getId());
 
             // Map to CollectionRelease DTOs
-            List<DiscogsDto.CollectionRelease> allPlayedReleases = recordsWithPlays.stream()
+            List<DiscogsDto.CollectionRelease> allPlayedReleases = new java.util.ArrayList<>(recordsWithPlays.stream()
                     .map(row -> {
                         com.antigravity.vinyltracker.model.Record record = (com.antigravity.vinyltracker.model.Record) row[0];
                         Long count = (Long) row[1];
@@ -139,7 +139,10 @@ public class DiscogsService {
                         return release;
                     })
                     .filter(java.util.Objects::nonNull)
-                    .toList();
+                    .toList());
+
+            // Sort
+            sortReleases(allPlayedReleases, sort, sortOrder);
 
             // Pagination logic for in-memory list
             int start = Math.min((page - 1) * perPage, allPlayedReleases.size());
@@ -151,6 +154,25 @@ public class DiscogsService {
             pagination.setPage(page);
             pagination.setPerPage(perPage);
             pagination.setPages((int) Math.ceil((double) allPlayedReleases.size() / perPage));
+
+            return new DiscogsDto.CollectionResponse(pagedReleases, pagination);
+        }
+
+        // Handle "listens" sort for full collection (requires fetching all)
+        if ("listens".equalsIgnoreCase(sort)) {
+            List<DiscogsDto.CollectionRelease> allReleases = getAllCollection(user);
+            sortReleases(allReleases, sort, sortOrder);
+
+            // Pagination
+            int start = Math.min((page - 1) * perPage, allReleases.size());
+            int end = Math.min(start + perPage, allReleases.size());
+            List<DiscogsDto.CollectionRelease> pagedReleases = allReleases.subList(start, end);
+
+            DiscogsDto.Pagination pagination = new DiscogsDto.Pagination();
+            pagination.setItems(allReleases.size());
+            pagination.setPage(page);
+            pagination.setPerPage(perPage);
+            pagination.setPages((int) Math.ceil((double) allReleases.size() / perPage));
 
             return new DiscogsDto.CollectionResponse(pagedReleases, pagination);
         }
@@ -181,6 +203,28 @@ public class DiscogsService {
         }
 
         return response;
+    }
+
+    private void sortReleases(List<DiscogsDto.CollectionRelease> releases, String sort, String sortOrder) {
+        java.util.Comparator<DiscogsDto.CollectionRelease> comparator = null;
+
+        if ("listens".equalsIgnoreCase(sort)) {
+            comparator = java.util.Comparator.comparingLong(DiscogsDto.CollectionRelease::getListenCount);
+        } else if ("artist".equalsIgnoreCase(sort)) {
+            comparator = java.util.Comparator.comparing(r -> {
+                if (r.getBasicInformation().getArtists() != null && !r.getBasicInformation().getArtists().isEmpty()) {
+                    return r.getBasicInformation().getArtists().get(0).getName().toLowerCase();
+                }
+                return "";
+            });
+        }
+
+        if (comparator != null) {
+            if ("desc".equalsIgnoreCase(sortOrder)) {
+                comparator = comparator.reversed();
+            }
+            releases.sort(comparator);
+        }
     }
 
     public List<DiscogsDto.CollectionRelease> getAllCollection(AppUser user) {

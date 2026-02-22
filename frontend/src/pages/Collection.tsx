@@ -4,7 +4,8 @@ import Layout from '../components/Layout/Layout';
 import { useAuth } from '../context/AuthContext';
 import { getCollection, downloadQrCodes, downloadQrCodesSelected } from '../services/api';
 import type { CollectionRelease, QrCodeItem } from '../types';
-import { Download, ExternalLink, CheckSquare, Square } from 'lucide-react';
+import { Download, ExternalLink, CheckSquare, Square, ArrowUp, ArrowDown } from 'lucide-react';
+
 
 const Collection: React.FC = () => {
     const { user } = useAuth();
@@ -30,6 +31,10 @@ const Collection: React.FC = () => {
     // Filter State
     const [showPlayedOnly, setShowPlayedOnly] = useState(false);
 
+    // Sort State
+    const [sort, setSort] = useState('artist');
+    const [sortOrder, setSortOrder] = useState('asc');
+
     // Fetch Data
     useEffect(() => {
         const fetchData = async () => {
@@ -37,7 +42,7 @@ const Collection: React.FC = () => {
             setLoading(true);
             try {
                 const minPlays = showPlayedOnly ? 1 : 0;
-                const data = await getCollection(user.username, page, perPage, minPlays);
+                const data = await getCollection(user.username, page, perPage, minPlays, sort, sortOrder);
                 setReleases(data.releases);
                 if (data.pagination) {
                     setTotalPages(data.pagination.pages);
@@ -49,7 +54,7 @@ const Collection: React.FC = () => {
             }
         };
         fetchData();
-    }, [user, page, perPage, showPlayedOnly]);
+    }, [user, page, perPage, showPlayedOnly, sort, sortOrder]);
 
     // Selection Logic
     const toggleSelection = (release: CollectionRelease) => {
@@ -173,7 +178,7 @@ const Collection: React.FC = () => {
 
                 {/* Controls & Pagination Top */}
                 <div className="p-4 bg-gray-50 flex flex-wrap justify-between items-center border-b border-gray-100 text-sm">
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 flex-wrap">
                         <button
                             onClick={toggleSelectAllPage}
                             className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
@@ -185,16 +190,36 @@ const Collection: React.FC = () => {
                         <button
                             onClick={() => { setShowPlayedOnly(!showPlayedOnly); setPage(1); }}
                             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-colors ${showPlayedOnly
-                                    ? 'bg-blue-100 border-blue-200 text-blue-800'
-                                    : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                                ? 'bg-blue-100 border-blue-200 text-blue-800'
+                                : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
                                 }`}
                         >
                             <span className="font-medium">Played Only</span>
                             {showPlayedOnly && <span className="text-xs bg-blue-200 px-1.5 rounded-full">ON</span>}
                         </button>
+
+                        {/* Sort Controls */}
+                        <div className="flex items-center gap-2 border-l pl-4 ml-2 border-gray-200">
+                            <span className="text-gray-500 hidden sm:inline">Sort by:</span>
+                            <select
+                                value={sort}
+                                onChange={(e) => { setSort(e.target.value); setPage(1); }}
+                                className="border border-gray-300 rounded p-1.5 bg-white"
+                            >
+                                <option value="artist">Band Name</option>
+                                <option value="listens">Listens</option>
+                            </select>
+                            <button
+                                onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                                className="p-2 border border-gray-300 rounded bg-white hover:bg-gray-50 text-gray-600"
+                                title={sortOrder === 'asc' ? "Ascending" : "Descending"}
+                            >
+                                {sortOrder === 'asc' ? <ArrowUp size={16} /> : <ArrowDown size={16} />}
+                            </button>
+                        </div>
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 mt-2 sm:mt-0">
                         <select
                             value={perPage}
                             onChange={(e) => { setPerPage(Number(e.target.value)); setPage(1); }}

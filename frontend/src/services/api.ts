@@ -72,9 +72,11 @@ export const getCollection = async (
   username: string,
   page: number = 1,
   perPage: number = 50,
-  minPlays: number = 0
+  minPlays: number = 0,
+  sort: string = 'artist',
+  sortOrder: string = 'asc'
 ): Promise<import('../types').CollectionResponse> => {
-  let url = `/collection?username=${username}&page=${page}&per_page=${perPage}`;
+  let url = `/collection?username=${username}&page=${page}&per_page=${perPage}&sort=${sort}&sort_order=${sortOrder}`;
   if (minPlays > 0) {
     url += `&min_plays=${minPlays}`;
   }

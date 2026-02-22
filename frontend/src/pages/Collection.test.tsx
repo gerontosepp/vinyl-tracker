@@ -97,7 +97,7 @@ describe('Collection Component', () => {
             expect(screen.getByText('Album Two')).toBeInTheDocument();
         });
 
-        expect(mockGetCollection).toHaveBeenCalledWith('TestUser', 1, 50, 0);
+        expect(mockGetCollection).toHaveBeenCalledWith('TestUser', 1, 50, 0, 'artist', 'asc');
     });
 
     it('renders empty state correctly', async () => {
@@ -126,7 +126,7 @@ describe('Collection Component', () => {
 
         await waitFor(() => {
             // Should fetch with minPlays = 1
-            expect(mockGetCollection).toHaveBeenLastCalledWith('TestUser', 1, 50, 1);
+            expect(mockGetCollection).toHaveBeenLastCalledWith('TestUser', 1, 50, 1, 'artist', 'asc');
         });
     });
 
@@ -240,7 +240,7 @@ describe('Collection Component', () => {
         fireEvent.click(nextBtn);
 
         await waitFor(() => {
-            expect(mockGetCollection).toHaveBeenLastCalledWith('TestUser', 2, 50, 0);
+            expect(mockGetCollection).toHaveBeenLastCalledWith('TestUser', 2, 50, 0, 'artist', 'asc');
         });
     });
 });

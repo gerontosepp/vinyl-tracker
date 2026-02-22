@@ -134,7 +134,7 @@ describe('API Service', () => {
 
     const result = await getCollection('testuser', 1, 50, 0);
 
-    expect(mockGet).toHaveBeenCalledWith('/collection?username=testuser&page=1&per_page=50');
+    expect(mockGet).toHaveBeenCalledWith('/collection?username=testuser&page=1&per_page=50&sort=artist&sort_order=asc');
     expect(result).toEqual(mockResponse);
   });
 
@@ -142,7 +142,7 @@ describe('API Service', () => {
     mockGet.mockResolvedValue({ data: {} });
     const { getCollection } = await import('./api');
     await getCollection('testuser', 1, 50, 5);
-    expect(mockGet).toHaveBeenCalledWith('/collection?username=testuser&page=1&per_page=50&min_plays=5');
+    expect(mockGet).toHaveBeenCalledWith('/collection?username=testuser&page=1&per_page=50&sort=artist&sort_order=asc&min_plays=5');
   });
 
   it('downloadQrCodes should make a GET request to /collection/qr-codes/all with responseType blob', async () => {

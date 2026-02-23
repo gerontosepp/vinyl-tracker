@@ -15,7 +15,7 @@ The project follows a modern containerized micro-architecture:
   - Secure Context support via local SSL.
 
 ### Backend
-- **Framework**: Spring Boot 3.4.2
+- **Framework**: Spring Boot 3.5.10
 - **Language**: Java 21
 - **Database Access**: Spring Data JPA with Hibernate.
 - **API**: RESTful endpoints for scanning, user management, and analytics.

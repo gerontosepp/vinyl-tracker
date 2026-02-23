@@ -86,24 +86,13 @@ The application requires environment variables for configuration (database crede
    ```
    *Features hot-reloading for frontend.*
 
-2. **Start Production Environment (from source)**:
+2. **Start Production Environment**:
    ```bash
    docker compose -f docker-compose.prod.yml up --build -d
    ```
    *Optimized build, no hot-reloading, runs on port 80.*
 
-3. **Deploy to a Server (without source code)**:
-   Download the required pre-built configuration files directly to your server:
-   ```bash
-   wget https://raw.githubusercontent.com/gerontosepp-dev/AntiGrafity/main/docker-compose.registry.yml -O docker-compose.yml
-   wget https://raw.githubusercontent.com/gerontosepp-dev/AntiGrafity/main/.env.example -O .env
-   ```
-   Open the `.env` file, configure your secrets, and start the app:
-   ```bash
-   docker compose up -d
-   ```
-
-   👉 **[See Detailed Deployment Guide](docs/DEPLOYMENT.md)** for server setup, Proxmox, and HTTPS requirements.
+   👉 **[See Detailed Deployment Guide](docs/DEPLOYMENT.md)** for server setup and HTTPS requirements.
 
 2. **Access the App**:
    - **Frontend**: [https://localhost:5173](https://localhost:5173) (or `https://<YOUR_IP>:5173`)

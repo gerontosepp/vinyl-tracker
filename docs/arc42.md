@@ -144,6 +144,12 @@ The system is deployed as a multi-container Docker application orchestrated by D
 ### 8.3 Error Handling
 - Global exception handling in Spring Boot (`@ControllerAdvice`) to return consistent JSON error responses.
 
+### 8.4 Observability & Logging
+- **Backend Logging**: A global `HandlerInterceptor` tracks HTTP request execution times, final status codes, and implicitly catches and logs thrown exceptions for all `/api/**` endpoints.
+- **Frontend Logging**: 
+    - **Browser Environment**: Axios HTTP interceptors log request latencies and response statuses transparently into the browser console.
+    - **Container Proxy**: The frontend Docker container (Nginx structure and Vite dev-server) intercepts proxy API traffic and logs metrics matching the backend console format for centralized Docker monitoring.
+
 ## 9. Architecture Decisions
 
 | Decision | Reasoning | Status |

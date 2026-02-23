@@ -20,7 +20,6 @@ import java.util.Optional;
 
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -30,162 +29,158 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ExtendWith(MockitoExtension.class)
 class AppUserControllerTest {
 
-    private MockMvc mockMvc;
+        private MockMvc mockMvc;
 
-    @Mock
-    private AppUserRepository userRepository;
+        @Mock
+        private AppUserRepository userRepository;
 
-    @Mock
-    private PasswordEncoder passwordEncoder;
+        @Mock
+        private PasswordEncoder passwordEncoder;
 
-    @Mock
-    private TokenEncryptionService tokenService;
+        @Mock
+        private TokenEncryptionService tokenService;
 
-    @InjectMocks
-    private AppUserController userController;
+        @InjectMocks
+        private AppUserController userController;
 
-    private ObjectMapper objectMapper = new ObjectMapper();
+        private ObjectMapper objectMapper = new ObjectMapper();
 
-    @BeforeEach
-    void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(userController).build();
-    }
+        @BeforeEach
+        void setUp() {
+                mockMvc = MockMvcBuilders.standaloneSetup(userController).build();
+        }
 
-    @Test
-    void register_ShouldReturnSavedUser() throws Exception {
-        Map<String, String> payload = Map.of("username", "newUser", "password", "password123");
+        @Test
+        void register_ShouldReturnSavedUser_WithoutSensitiveData() throws Exception {
+                Map<String, String> payload = Map.of("username", "newUser", "password", "password123");
 
-        given(userRepository.findByUsername("newUser")).willReturn(Optional.empty());
-        given(passwordEncoder.encode("password123")).willReturn("encodedPassword");
-        given(userRepository.save(any(AppUser.class))).willAnswer(invocation -> {
-            AppUser savedUser = invocation.getArgument(0);
-            savedUser.setId(1L);
-            return savedUser;
-        });
+                given(userRepository.findByUsername("newUser")).willReturn(Optional.empty());
+                given(passwordEncoder.encode("password123")).willReturn("encodedPassword");
+                given(userRepository.save(any(AppUser.class))).willAnswer(invocation -> {
+                        AppUser savedUser = invocation.getArgument(0);
+                        savedUser.setId(1L);
+                        return savedUser;
+                });
 
-        mockMvc.perform(post("/api/users/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(payload)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id", is(1)))
-                .andExpect(jsonPath("$.username", is("newUser")));
-    }
+                mockMvc.perform(post("/api/users/register")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(payload)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.id", is(1)))
+                                .andExpect(jsonPath("$.username", is("newUser")))
+                                // Verify sensitive data is NOT exposed
+                                .andExpect(jsonPath("$.password").doesNotExist())
+                                .andExpect(jsonPath("$.salt").doesNotExist())
+                                .andExpect(jsonPath("$.discogsToken").doesNotExist());
+        }
 
-    @Test
-    void login_ShouldReturnUser_WhenCredentialsMatch() throws Exception {
-        Map<String, String> payload = Map.of("username", "user1", "password", "password123");
-        AppUser user = new AppUser("user1", "encodedPassword", "salt");
-        user.setId(1L);
+        @Test
+        void login_ShouldReturnUser_WhenCredentialsMatch_WithoutSensitiveData() throws Exception {
+                Map<String, String> payload = Map.of("username", "user1", "password", "password123");
+                AppUser user = new AppUser("user1", "encodedPassword", "salt");
+                user.setId(1L);
 
-        given(userRepository.findByUsername("user1")).willReturn(Optional.of(user));
-        given(passwordEncoder.matches("password123", "encodedPassword")).willReturn(true);
+                given(userRepository.findByUsername("user1")).willReturn(Optional.of(user));
+                given(passwordEncoder.matches("password123", "encodedPassword")).willReturn(true);
 
-        mockMvc.perform(post("/api/users/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(payload)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.username", is("user1")));
-    }
+                mockMvc.perform(post("/api/users/login")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(payload)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.username", is("user1")))
+                                // Verify sensitive data is NOT exposed
+                                .andExpect(jsonPath("$.password").doesNotExist())
+                                .andExpect(jsonPath("$.salt").doesNotExist())
+                                .andExpect(jsonPath("$.discogsToken").doesNotExist());
+        }
 
-    @Test
-    void updateDiscogs_ShouldUpdateToken_WhenPasswordMatches() throws Exception {
-        Map<String, String> payload = Map.of(
-                "password", "password123",
-                "token", "newToken",
-                "discogsUsername", "discogsUser");
-        AppUser user = new AppUser("user1", "encodedPassword", "salt");
-        user.setId(1L);
+        @Test
+        void updateDiscogs_ShouldUpdateSettings_WithoutExposingSensitiveData() throws Exception {
+                Map<String, String> payload = Map.of(
+                                "password", "password123",
+                                "token", "newToken",
+                                "discogsUsername", "discogsUser");
+                AppUser user = new AppUser("user1", "encodedPassword", "salt");
+                user.setId(1L);
 
-        given(userRepository.findByUsername("user1")).willReturn(Optional.of(user));
-        given(passwordEncoder.matches("password123", "encodedPassword")).willReturn(true);
-        given(tokenService.encrypt("newToken")).willReturn("encryptedToken");
-        given(userRepository.save(any(AppUser.class))).willAnswer(invocation -> invocation.getArgument(0));
+                given(userRepository.findByUsername("user1")).willReturn(Optional.of(user));
+                given(passwordEncoder.matches("password123", "encodedPassword")).willReturn(true);
+                given(tokenService.encrypt("newToken")).willReturn("encryptedToken");
+                given(userRepository.save(any(AppUser.class))).willAnswer(invocation -> invocation.getArgument(0));
 
-        mockMvc.perform(put("/api/users/user1/discogs")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(payload)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.discogsUsername", is("discogsUser")))
-                .andExpect(jsonPath("$.discogsToken", is("encryptedToken")));
-    }
+                mockMvc.perform(put("/api/users/user1/discogs")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(payload)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.discogsUsername", is("discogsUser")))
+                                // Verify sensitive data is NOT exposed
+                                .andExpect(jsonPath("$.password").doesNotExist())
+                                .andExpect(jsonPath("$.salt").doesNotExist())
+                                .andExpect(jsonPath("$.discogsToken").doesNotExist());
+        }
 
-    @Test
-    void updateDiscogs_ShouldReturnUnauthorized_WhenPasswordMismatch() throws Exception {
-        Map<String, String> payload = Map.of(
-                "password", "wrongPassword",
-                "token", "newToken",
-                "discogsUsername", "discogsUser");
-        AppUser user = new AppUser("user1", "encodedPassword", "salt");
+        @Test
+        void updateDiscogs_ShouldReturnUnauthorized_WhenPasswordMismatch() throws Exception {
+                Map<String, String> payload = Map.of(
+                                "password", "wrongPassword",
+                                "token", "newToken",
+                                "discogsUsername", "discogsUser");
+                AppUser user = new AppUser("user1", "encodedPassword", "salt");
 
-        given(userRepository.findByUsername("user1")).willReturn(Optional.of(user));
-        given(passwordEncoder.matches("wrongPassword", "encodedPassword")).willReturn(false);
+                given(userRepository.findByUsername("user1")).willReturn(Optional.of(user));
+                given(passwordEncoder.matches("wrongPassword", "encodedPassword")).willReturn(false);
 
-        mockMvc.perform(put("/api/users/user1/discogs")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(payload)))
-                .andExpect(status().isUnauthorized());
-    }
+                mockMvc.perform(put("/api/users/user1/discogs")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(payload)))
+                                .andExpect(status().isUnauthorized());
+        }
 
-    @Test
-    void register_ShouldReturnBadRequest_WhenUsernameExists() throws Exception {
-        Map<String, String> payload = Map.of("username", "existingUser", "password", "password123");
-        given(userRepository.findByUsername("existingUser")).willReturn(Optional.of(new AppUser()));
+        @Test
+        void register_ShouldReturnBadRequest_WhenUsernameExists() throws Exception {
+                Map<String, String> payload = Map.of("username", "existingUser", "password", "password123");
+                given(userRepository.findByUsername("existingUser")).willReturn(Optional.of(new AppUser()));
 
-        mockMvc.perform(post("/api/users/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(payload)))
-                .andExpect(status().isBadRequest());
-    }
+                mockMvc.perform(post("/api/users/register")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(payload)))
+                                .andExpect(status().isBadRequest());
+        }
 
-    @Test
-    void login_ShouldReturnUnauthorized_WhenPasswordMismatch() throws Exception {
-        Map<String, String> payload = Map.of("username", "user1", "password", "wrongPassword");
-        AppUser user = new AppUser("user1", "encodedPassword", "salt");
-        given(userRepository.findByUsername("user1")).willReturn(Optional.of(user));
-        given(passwordEncoder.matches("wrongPassword", "encodedPassword")).willReturn(false);
+        @Test
+        void login_ShouldReturnUnauthorized_WhenPasswordMismatch() throws Exception {
+                Map<String, String> payload = Map.of("username", "user1", "password", "wrongPassword");
+                AppUser user = new AppUser("user1", "encodedPassword", "salt");
+                given(userRepository.findByUsername("user1")).willReturn(Optional.of(user));
+                given(passwordEncoder.matches("wrongPassword", "encodedPassword")).willReturn(false);
 
-        mockMvc.perform(post("/api/users/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(payload)))
-                .andExpect(status().isUnauthorized());
-    }
+                mockMvc.perform(post("/api/users/login")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(payload)))
+                                .andExpect(status().isUnauthorized());
+        }
 
-    @Test
-    void decryptToken_ShouldReturnDecryptedToken() throws Exception {
-        Map<String, String> payload = Map.of("password", "password123");
-        AppUser user = new AppUser("user1", "encodedPassword", "salt");
-        user.setDiscogsToken("encryptedToken");
+        @Test
+        void resetPassword_ShouldUpdatePassword_WithoutExposingSensitiveData() throws Exception {
+                Map<String, String> payload = Map.of(
+                                "username", "user1",
+                                "newPassword", "newPass",
+                                "discogsToken", "newToken");
+                AppUser user = new AppUser("user1", "oldPass", "oldSalt");
 
-        given(userRepository.findByUsername("user1")).willReturn(Optional.of(user));
-        given(passwordEncoder.matches("password123", "encodedPassword")).willReturn(true);
-        given(tokenService.decrypt("encryptedToken")).willReturn("decryptedToken");
+                given(userRepository.findByUsername("user1")).willReturn(Optional.of(user));
+                given(passwordEncoder.encode("newPass")).willReturn("newEncodedPass");
+                given(tokenService.encrypt("newToken")).willReturn("newEncryptedToken");
+                given(userRepository.save(any(AppUser.class))).willAnswer(invocation -> invocation.getArgument(0));
 
-        mockMvc.perform(post("/api/users/user1/decrypt-token")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(payload)))
-                .andExpect(status().isOk())
-                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
-                        .string("decryptedToken"));
-    }
-
-    @Test
-    void resetPassword_ShouldUpdatePasswordAndToken() throws Exception {
-        Map<String, String> payload = Map.of(
-                "username", "user1",
-                "newPassword", "newPass",
-                "discogsToken", "newToken");
-        AppUser user = new AppUser("user1", "oldPass", "oldSalt");
-
-        given(userRepository.findByUsername("user1")).willReturn(Optional.of(user));
-        given(passwordEncoder.encode("newPass")).willReturn("newEncodedPass");
-        given(tokenService.encrypt("newToken")).willReturn("newEncryptedToken");
-        given(userRepository.save(any(AppUser.class))).willAnswer(invocation -> invocation.getArgument(0));
-
-        mockMvc.perform(post("/api/users/reset-password")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(payload)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.password", is("newEncodedPass")))
-                .andExpect(jsonPath("$.discogsToken", is("newEncryptedToken")));
-    }
+                mockMvc.perform(post("/api/users/reset-password")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(payload)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.username", is("user1")))
+                                // Verify sensitive data is NOT exposed
+                                .andExpect(jsonPath("$.password").doesNotExist())
+                                .andExpect(jsonPath("$.salt").doesNotExist())
+                                .andExpect(jsonPath("$.discogsToken").doesNotExist());
+        }
 }

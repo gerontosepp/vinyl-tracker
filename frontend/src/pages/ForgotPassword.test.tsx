@@ -76,6 +76,7 @@ describe('ForgotPassword Component', () => {
   });
 
   it('handles api error', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     (api.resetPassword as any).mockRejectedValue(new Error('Failed'));
 
     render(<ForgotPassword />);
@@ -96,5 +97,6 @@ describe('ForgotPassword Component', () => {
     await waitFor(() => {
       expect(screen.getByText(/Failed to reset password/i)).toBeInTheDocument();
     });
+    consoleSpy.mockRestore();
   });
 });

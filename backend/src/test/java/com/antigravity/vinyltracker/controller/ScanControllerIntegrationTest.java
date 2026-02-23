@@ -9,7 +9,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Bean;
@@ -24,11 +23,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-// @Transactional doesn't work with RANDOM_PORT because test and server runs in
-// different threads.
-// We must clean up manually or use dirties context.
-class ScanControllerIntegrationTest {
+import com.antigravity.vinyltracker.AbstractIntegrationTest;
+
+// @SpringBootTest is inherited from AbstractIntegrationTest
+class ScanControllerIntegrationTest extends AbstractIntegrationTest {
 
     @LocalServerPort
     private int port;

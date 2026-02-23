@@ -92,7 +92,11 @@ describe('Integration: Scan to Collection Flow', () => {
 
     // 1. Initial Load - verify empty state
     await waitFor(() => {
-      expect(api.getRecentListens).toHaveBeenCalledWith('integration-user', expect.any(String), expect.any(String));
+      expect(api.getRecentListens).toHaveBeenCalledWith(
+        'integration-user',
+        expect.any(String),
+        expect.any(String)
+      );
     });
     expect(screen.getByText(/No recent listens/i)).toBeInTheDocument();
 

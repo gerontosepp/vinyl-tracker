@@ -104,11 +104,8 @@ const Settings: React.FC = () => {
           >
             {isLoading ? 'Saving...' : 'Save Settings'}
           </button>
-
-
-
         </form>
-      </div >
+      </div>
     </Layout>
   );
 };

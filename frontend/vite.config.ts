@@ -43,7 +43,13 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
       include: ['src/**/*.ts', 'src/**/*.tsx'],
-      exclude: ['src/setupTests.ts', 'src/vite-env.d.ts', '**/*.test.ts', '**/*.test.tsx', 'src/types/**'],
+      exclude: [
+        'src/setupTests.ts',
+        'src/vite-env.d.ts',
+        '**/*.test.ts',
+        '**/*.test.tsx',
+        'src/types/**',
+      ],
       thresholds: {
         lines: 80,
       },
@@ -63,6 +69,24 @@ export default defineConfig({
         target: process.env.VITE_API_TARGET || 'http://localhost:8080',
         changeOrigin: true,
         secure: false,
+        configure: (proxy) => {
+          proxy.on('error', (err, req) => {
+            console.error(`[API Error] ${req.method} ${req.url} - Error: ${err.message}`);
+          });
+          proxy.on('proxyReq', (_proxyReq, req) => {
+            (req as any).startTime = Date.now();
+          });
+          proxy.on('proxyRes', (proxyRes, req) => {
+            const start = (req as any).startTime;
+            const duration = start ? Date.now() - start : 0;
+            const status = proxyRes.statusCode;
+            if (status && status >= 400) {
+              console.error(`[API Error] ${req.method} ${req.url} - Status: ${status} - Time: ${duration}ms - Error: HTTP Error ${status}`);
+            } else {
+              console.info(`[API Info] ${req.method} ${req.url} - Status: ${status} - Time: ${duration}ms`);
+            }
+          });
+        },
       },
     },
   },

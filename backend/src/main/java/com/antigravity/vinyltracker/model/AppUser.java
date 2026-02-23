@@ -1,5 +1,6 @@
 package com.antigravity.vinyltracker.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -20,12 +21,15 @@ public class AppUser {
     @Column(name = "discogs_username")
     private String discogsUsername;
 
+    @JsonIgnore
     @Column(name = "discogs_token", columnDefinition = "TEXT")
     private String discogsToken;
 
+    @JsonIgnore
     @Column(nullable = false)
     private String password;
 
+    @JsonIgnore
     @Column(nullable = false)
     private String salt;
 

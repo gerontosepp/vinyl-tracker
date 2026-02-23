@@ -72,24 +72,6 @@ public class AppUserController {
                 .orElse(ResponseEntity.status(401).build());
     }
 
-    // Helper endpoint to check if token is valid/decryptable (for
-    // testing/debugging)
-    @PostMapping("/{username}/decrypt-token")
-    public ResponseEntity<String> decryptToken(@PathVariable String username,
-            @RequestBody Map<String, String> payload) {
-        String password = payload.get("password");
-        return userRepository.findByUsername(username)
-                .filter(user -> passwordEncoder.matches(password, user.getPassword()))
-                .map(user -> {
-                    try {
-                        return ResponseEntity.ok(tokenService.decrypt(user.getDiscogsToken()));
-                    } catch (Exception e) {
-                        return ResponseEntity.internalServerError().body("Decryption failed");
-                    }
-                })
-                .orElse(ResponseEntity.status(401).build());
-    }
-
     @PostMapping("/reset-password")
     public ResponseEntity<UserResponseDto> resetPassword(@RequestBody Map<String, String> payload) {
         String username = payload.get("username");

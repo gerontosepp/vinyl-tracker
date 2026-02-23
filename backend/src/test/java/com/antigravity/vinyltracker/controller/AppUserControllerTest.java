@@ -161,24 +161,6 @@ class AppUserControllerTest {
         }
 
         @Test
-        void decryptToken_ShouldReturnDecryptedToken() throws Exception {
-                Map<String, String> payload = Map.of("password", "password123");
-                AppUser user = new AppUser("user1", "encodedPassword", "salt");
-                user.setDiscogsToken("encryptedToken");
-
-                given(userRepository.findByUsername("user1")).willReturn(Optional.of(user));
-                given(passwordEncoder.matches("password123", "encodedPassword")).willReturn(true);
-                given(tokenService.decrypt("encryptedToken")).willReturn("decryptedToken");
-
-                mockMvc.perform(post("/api/users/user1/decrypt-token")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(payload)))
-                                .andExpect(status().isOk())
-                                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
-                                                .string("decryptedToken"));
-        }
-
-        @Test
         void resetPassword_ShouldUpdatePassword_WithoutExposingSensitiveData() throws Exception {
                 Map<String, String> payload = Map.of(
                                 "username", "user1",

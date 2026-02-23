@@ -1,74 +1,74 @@
-# Deployment Guide
+# Deployment Anleitung
 
-This guide explains how to deploy **Vinyl Tracker** to a server or another machine without transferring source code.
+Diese Anleitung erklärt, wie Sie **Vinyl Tracker** auf einem Server oder auf einem anderen Gerät bereitstellen (deployen) können, ohne den Quellcode dorthin kopieren zu müssen.
 
-## 1. Prerequisites
+## 1. Voraussetzungen
 
-The target machine must have:
-- **Docker** and **Docker Compose** installed.
-- **Git** (optional, not strictly required for registry deployment).
+Die Zielmaschine benötigt:
+- **Docker** und **Docker Compose** installiert.
+- **Git** (optional, nicht zwingend erforderlich für das Deployment über eine Registry).
 
-## 2. Building Images
+## 2. Images bauen
 
-The target machine needs access to the Docker images. You have two options:
+Die Zielmaschine benötigt Zugriff auf die Docker Images. Sie haben zwei Möglichkeiten:
 
-### Option A: Automated via CI/CD (Recommended)
-This project is configured with GitHub Actions to automatically build and push images to the **GitHub Container Registry (GHCR)**.
+### Option A: Automatisiert via CI/CD (Empfohlen)
+Dieses Projekt ist mit GitHub Actions so konfiguriert, dass es automatisch Images baut und in die **GitHub Container Registry (GHCR)** pusht.
 
-1.  Push your changes to the `main` branch.
-2.  Wait for the "CI Pipeline" to complete successfully.
-3.  The images will be available at:
-    - `ghcr.io/<your-username>/vinyl-tracker-backend:latest`
-    - `ghcr.io/<your-username>/vinyl-tracker-frontend:latest`
+1.  Pushen Sie Ihre Änderungen in den `main` Branch.
+2.  Warten Sie, bis die "CI Pipeline" erfolgreich abgeschlossen ist.
+3.  Die Images sind dann verfügbar unter:
+    - `ghcr.io/<ihr-benutzername>/vinyl-tracker-backend:latest`
+    - `ghcr.io/<ihr-benutzername>/vinyl-tracker-frontend:latest`
 
-### Option B: Manual Build
-If you want to push images manually execution from your development machine:
+### Option B: Manueller Build
+Wenn Sie die Images manuell von Ihrem Entwicklungsrechner pushen möchten:
 
-1.  **Login to your Registry**:
+1.  **Beim Registry-Anbieter einloggen**:
     ```bash
     docker login
     ```
-2.  **Run the Build & Push Script**:
+2.  **Das Build & Push Skript ausführen**:
     ```bash
-    # Replace 'myuser/' with your Docker Hub username or registry URL
-    ./push-images.sh myuser/
+    # Ersetzen Sie 'meinbenutzer/' durch Ihren Docker Hub Benutzernamen oder die Registry-URL
+    ./push-images.sh meinbenutzer/
     ```
 
-## 3. Preparation (On Target Machine)
+## 3. Vorbereitung (Auf der Zielmaschine)
 
-You only need **two files** on the target machine (plus certs if using local SSL):
-1.  `docker-compose.registry.yml` (rename to `docker-compose.yml` for convenience).
-2.  `.env` (configuration).
+Sie benötigen lediglich **zwei Dateien** auf der Zielmaschine (plus Zertifikate, falls Sie lokales SSL nutzen):
+1.  `docker-compose.registry.yml` (zur Vereinfachung in `docker-compose.yml` umbenennen).
+2.  `.env` (Konfiguration).
 
-### Transfer Files
-Copy these files via `scp`, SFTP, or USB to your server.
+### Dateien übertragen
+Kopieren Sie diese Dateien via `scp`, SFTP oder per USB-Stick auf Ihren Server.
 
-### Configuration (.env)
-**Crucial Step**: Configure environment variables.
+### Konfiguration (.env)
+**Wichtiger Schritt**: Konfigurieren Sie die Umgebungsvariablen.
 
-1.  Copy `.env.example` (or create a new `.env` file).
-2.  Set secure passwords for `POSTGRES_PASSWORD` and verification keys.
-3.  **Configure Registry Prefix**:
-    - **For CI/CD (Option A)**:
+1.  Kopieren Sie die `.env.example` (oder erstellen Sie eine neue `.env` Datei).
+2.  Setzen Sie sichere Passwörter für `POSTGRES_PASSWORD` und die Verschlüsselungs-Keys.
+3.  **Registry Prefix konfigurieren**:
+    - **Für CI/CD (Option A)**:
       ```bash
-      # Note the trailing slash!
-      REGISTRY_PREFIX=ghcr.io/<your-github-username>/
+      # Beachten Sie den abschließenden Schrägstrich (Slash)!
+      REGISTRY_PREFIX=ghcr.io/<ihr-github-benutzername>/
       ```
-    - **For Manual Push (Option B)**:
+    - **Für manuelles Pushen (Option B)**:
       ```bash
-      REGISTRY_PREFIX=myuser/
+      REGISTRY_PREFIX=meinbenutzer/
       ```
 
-## 4. Start the Application
+## 4. Anwendung starten
 
-Run the application using the registry configuration:
+Starten Sie die Anwendung mit der Registry-Konfiguration:
 
 ```bash
 docker compose -f docker-compose.registry.yml up -d
 ```
-*Note: This will pull the latest images from the registry defined in your `.env`.*
+*Hinweis: Dies lädt die neuesten Images aus der Registry herunter, die Sie in Ihrer `.env` definiert haben.*
 
-The application is now running on **Port 80** of the target machine.
+Die Anwendung läuft nun auf **Port 80** der Zielmaschine.
 
 ## 5. Deployment hinter einem Reverse Proxy (z.B. Proxmox)
 

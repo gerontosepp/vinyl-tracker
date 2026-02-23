@@ -33,7 +33,7 @@ const Dashboard: React.FC = () => {
     if (location.state && (location.state as any).scan) {
       setShowScanner(true);
       // Optional: clear state so refresh doesn't re-open, but tricky with React Router
-      // For now, it's fine. 
+      // For now, it's fine.
       // Better: window.history.replaceState({}, document.title)
       window.history.replaceState({}, document.title);
     }
@@ -92,7 +92,9 @@ const Dashboard: React.FC = () => {
           <div className="flex-none flex justify-between items-center mb-2">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Welcome back, {user?.username}</h1>
-              <p className="text-gray-500 text-sm">Here's what you've been listening to recently.</p>
+              <p className="text-gray-500 text-sm">
+                Here's what you've been listening to recently.
+              </p>
             </div>
             <div className="flex gap-2 items-center bg-white p-1.5 rounded-lg shadow-sm border border-gray-100">
               <button
@@ -100,10 +102,11 @@ const Dashboard: React.FC = () => {
                   setStartDate('');
                   setEndDate('');
                 }}
-                className={`text-xs px-2 py-1 rounded-md transition-colors ${!startDate && !endDate
-                  ? 'bg-blue-100 text-blue-700 font-medium'
-                  : 'text-gray-500 hover:bg-gray-100'
-                  }`}
+                className={`text-xs px-2 py-1 rounded-md transition-colors ${
+                  !startDate && !endDate
+                    ? 'bg-blue-100 text-blue-700 font-medium'
+                    : 'text-gray-500 hover:bg-gray-100'
+                }`}
               >
                 All
               </button>
@@ -113,10 +116,11 @@ const Dashboard: React.FC = () => {
                   setStartDate(today);
                   setEndDate(today);
                 }}
-                className={`text-xs px-2 py-1 rounded-md transition-colors ${startDate === getTodayString() && endDate === getTodayString()
+                className={`text-xs px-2 py-1 rounded-md transition-colors ${
+                  startDate === getTodayString() && endDate === getTodayString()
                     ? 'bg-blue-100 text-blue-700 font-medium'
                     : 'text-gray-500 hover:bg-gray-100'
-                  }`}
+                }`}
               >
                 Today
               </button>
@@ -142,7 +146,11 @@ const Dashboard: React.FC = () => {
           {/* Split Content */}
           <TopRecords data={topRecords} className="flex-1 min-h-0" />
 
-          <RecentListens listens={recentListens} onDelete={handleDelete} className="flex-1 min-h-0" />
+          <RecentListens
+            listens={recentListens}
+            onDelete={handleDelete}
+            className="flex-1 min-h-0"
+          />
         </div>
       )}
     </Layout>

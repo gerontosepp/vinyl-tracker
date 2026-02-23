@@ -74,6 +74,7 @@ describe('Settings Component', () => {
   });
 
   it('displays error on update failure', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     renderComponent();
 
     mockUpdateDiscogs.mockRejectedValueOnce(new Error('Update failed'));
@@ -89,5 +90,6 @@ describe('Settings Component', () => {
         screen.getByText('Failed to update settings. Check your password.')
       ).toBeInTheDocument();
     });
+    consoleSpy.mockRestore();
   });
 });

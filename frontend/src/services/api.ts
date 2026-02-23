@@ -10,6 +10,43 @@ export const api = axios.create({
   },
 });
 
+// Intercept requests to store start time
+api.interceptors.request.use(
+  (config) => {
+    (config as any).metadata = { startTime: Date.now() };
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Intercept responses to log duration and status
+api.interceptors.response.use(
+  (response) => {
+    const config = response.config as any;
+    const duration = config.metadata ? Date.now() - config.metadata.startTime : 0;
+
+    // Only log Info in development if preferred, or log everywhere:
+    console.info(
+      `[API Info] ${config.method?.toUpperCase()} ${config.url} - Status: ${response.status} - Time: ${duration}ms`
+    );
+    return response;
+  },
+  (error) => {
+    const config = error.config as any;
+    const duration = config?.metadata ? Date.now() - config?.metadata?.startTime : 0;
+    const status = error.response ? error.response.status : 'Network/Unknown Error';
+    const method = config?.method?.toUpperCase() || 'UNKNOWN';
+    const url = config?.url || 'UNKNOWN URL';
+
+    console.error(
+      `[API Error] ${method} ${url} - Status: ${status} - Time: ${duration}ms - Error: ${error.message}`
+    );
+    return Promise.reject(error);
+  }
+);
+
 export const scanBarcode = async (barcode: string, username: string): Promise<ScanResult> => {
   const response = await api.post<ScanResult>(`/scan?username=${username}`, { barcode });
   return response.data;
@@ -19,7 +56,11 @@ export const deleteScan = async (id: number, username: string): Promise<void> =>
   await api.delete(`/scan/${id}?username=${username}`);
 };
 
-export const getRecentListens = async (username: string, startDate?: string, endDate?: string): Promise<ListenEvent[]> => {
+export const getRecentListens = async (
+  username: string,
+  startDate?: string,
+  endDate?: string
+): Promise<ListenEvent[]> => {
   let url = `/analytics/recent?username=${username}`;
   if (startDate) url += `&from=${startDate}`;
   if (endDate) url += `&to=${endDate}`;
@@ -27,7 +68,11 @@ export const getRecentListens = async (username: string, startDate?: string, end
   return response.data;
 };
 
-export const getTopRecords = async (username: string, startDate?: string, endDate?: string): Promise<AnalyticsTopRecord[]> => {
+export const getTopRecords = async (
+  username: string,
+  startDate?: string,
+  endDate?: string
+): Promise<AnalyticsTopRecord[]> => {
   let url = `/analytics/top?username=${username}`;
   if (startDate) url += `&from=${startDate}`;
   if (endDate) url += `&to=${endDate}`;

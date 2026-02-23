@@ -43,7 +43,13 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
       include: ['src/**/*.ts', 'src/**/*.tsx'],
-      exclude: ['src/setupTests.ts', 'src/vite-env.d.ts', '**/*.test.ts', '**/*.test.tsx', 'src/types/**'],
+      exclude: [
+        'src/setupTests.ts',
+        'src/vite-env.d.ts',
+        '**/*.test.ts',
+        '**/*.test.tsx',
+        'src/types/**',
+      ],
       thresholds: {
         lines: 80,
       },
@@ -54,9 +60,9 @@ export default defineConfig({
     https:
       fs.existsSync('./certs/key.pem') && fs.existsSync('./certs/cert.pem')
         ? {
-          key: fs.readFileSync('./certs/key.pem'),
-          cert: fs.readFileSync('./certs/cert.pem'),
-        }
+            key: fs.readFileSync('./certs/key.pem'),
+            cert: fs.readFileSync('./certs/cert.pem'),
+          }
         : undefined,
     proxy: {
       '/api': {

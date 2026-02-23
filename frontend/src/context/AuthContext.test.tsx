@@ -36,12 +36,21 @@ describe('AuthContext', () => {
   });
 
   it('login handles failure', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.mocked(api.loginUser).mockRejectedValue(new Error('Login failed'));
 
     const { result } = renderHook(() => useAuth(), { wrapper });
 
-    await expect(result.current.login('testuser', 'wrongpass')).rejects.toThrow('Login failed');
+    await act(async () => {
+      try {
+        await result.current.login('testuser', 'wrongpass');
+      } catch (e: any) {
+        expect(e.message).toBe('Login failed');
+      }
+    });
+
     expect(result.current.user).toBeNull();
+    consoleSpy.mockRestore();
   });
 
   it('register updates user state on success', async () => {

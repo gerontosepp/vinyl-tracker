@@ -6,11 +6,11 @@ import Footer from './Footer';
 vi.stubGlobal('__APP_VERSION__', '1.2.3');
 
 describe('Footer Component', () => {
-    it('renders the footer with correct version', () => {
-        render(<Footer />);
+  it('renders the footer with correct version', () => {
+    render(<Footer />);
 
-        const footerElement = screen.getByRole('contentinfo'); // footer tag has implicit role 'contentinfo'
-        expect(footerElement).toBeInTheDocument();
-        expect(footerElement).toHaveTextContent('v1.2.3');
-    });
+    const footerElement = screen.getByRole('contentinfo'); // footer tag has implicit role 'contentinfo'
+    expect(footerElement).toBeInTheDocument();
+    expect(footerElement).toHaveTextContent('v1.2.3');
+  });
 });

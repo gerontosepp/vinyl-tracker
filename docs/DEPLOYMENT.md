@@ -70,18 +70,30 @@ docker compose -f docker-compose.registry.yml up -d
 
 The application is now running on **Port 80** of the target machine.
 
-## 5. HTTPS & SSL (Important!)
+## 5. Deployment hinter einem Reverse Proxy (z.B. Proxmox)
 
-**Barcode Scanning Requires HTTPS**
-Browsers intentionally block camera access on "insecure" origins (HTTP), with the exception of `localhost`.
+Für den produktiven Einsatz auf einem Server (z.B. als Docker-VM unter Proxmox) wird ein vorgeschalteter **Reverse Proxy** (wie Nginx Proxy Manager, Traefik oder Caddy) dringend empfohlen. Dieser übernimmt das SSL-Zertifikatsmanagement zentral für alle Dienste, sodass `mkcert` überflüssig wird.
 
-### Option A: Reverse Proxy with Domain (Recommended for Servers)
-1.  Point your domain (e.g., `vinyl.example.com`) to the server's IP.
-2.  Set up a Reverse Proxy (Nginx, Traefik, Caddy) in front of the container.
-3.  Use **Let's Encrypt** for a free SSL certificate.
+> **Wichtig:** Barcode-Scanning benötigt für den Kamerazugriff zwingend eine gültige `HTTPS`-Verbindung (Secure Context). Andernfalls blockieren Handy-Browser die Kamera kommentarlos!
 
-### Option B: Local SSL (mkcert)
-For local network (LAN) access without a domain:
-1.  Generate certificates for the server's IP via `mkcert`.
-2.  Place them in the `certs/` folder on the target machine (mounted by docker-compose).
-3.  Install the Root CA on client devices.
+### So funktioniert das Setup mit Nginx Proxy Manager (NPM):
+
+1. **Domain einrichten**: Richte eine DynDNS- oder Sub-Domain ein (z.B. `vinyl.meinedomain.de`), die auf deinen Heimrouter/Server zeigt.
+2. **Vinyl Tracker starten**: Führe `docker compose -f docker-compose.prod.yml up -d` aus (oder die `registry.yml` Variante). Der Frontend-Container läuft nun lokal isoliert auf Port `80`.
+3. **Im Nginx Proxy Manager konfigurieren**:
+   - Erstelle einen neuen Proxy Host.
+   - **Domain Names**: `vinyl.meinedomain.de`
+   - **Scheme**: `http`
+   - **Forward Hostname / IP**: Die interne IP deiner Vinyl Tracker Docker VM (z.B. `192.168.1.100`)
+   - **Forward Port**: `80` (Der Port, auf den der `vinyl-frontend-prod` Container im Netzwerk mappt)
+   - **Websockets Support**: Aktivieren (hilft bei einigen API Headern)
+4. **SSL Zertifikat im NPM anfordern**:
+   - Gehe zum Reiter `SSL`.
+   - Wähle "Request a new SSL Certificate".
+   - Aktiviere "Force SSL".
+   - Speichern. Nginx Proxy Manager besorgt nun via Let's Encrypt ein gültiges Zertifikat.
+
+Ab jetzt erreicht jedes Gerät (auch dein Smartphone) die App über `https://vinyl.meinedomain.de` mit einem zu 100% gültigen und vertrauenswürdigen Zertifikat. Der Kamera-Zugriff für das Barcode-Scanning wird ohne Warnungen gestattet!
+
+### Lokales Setup / Entwicklung (Ohne Domain)
+Für die reine Entwicklung auf einem lokalen Laptop ohne eigene Domain wird weiterhin `docker-compose.yml` (`npm run dev`) zusammen mit `mkcert` verwendet, da hier kein Reverse Proxy zur Verfügung steht, der Let's Encrypt Zertifikate validieren könnte. (Siehe Haupt-README).

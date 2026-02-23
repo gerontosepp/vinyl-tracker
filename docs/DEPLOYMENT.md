@@ -41,7 +41,13 @@ Sie benötigen lediglich **zwei Dateien** auf der Zielmaschine (plus Zertifikate
 2.  `.env` (Konfiguration).
 
 ### Dateien übertragen
-Kopieren Sie diese Dateien via `scp`, SFTP oder per USB-Stick auf Ihren Server.
+Sie können diese Dateien herunterladen, ohne das gesamte Git-Repository clonen zu müssen. Führen Sie auf Ihrem Server einfach folgende Befehle aus:
+
+```bash
+wget https://raw.githubusercontent.com/gerontosepp-dev/AntiGrafity/develop/docker-compose.registry.yml -O docker-compose.yml
+wget https://raw.githubusercontent.com/gerontosepp-dev/AntiGrafity/develop/.env.example -O .env
+```
+*(Alternativ können Sie die beiden Dateien natürlich auch via `scp`, SFTP oder USB-Stick auf Ihren Server kopieren).*
 
 ### Konfiguration (.env)
 **Wichtiger Schritt**: Konfigurieren Sie die Umgebungsvariablen.

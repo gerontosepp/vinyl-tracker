@@ -53,8 +53,9 @@ wget https://raw.githubusercontent.com/gerontosepp-dev/AntiGrafity/develop/.env.
 **Wichtiger Schritt**: Konfigurieren Sie die Umgebungsvariablen.
 
 1.  Kopieren Sie die `.env.example` (oder erstellen Sie eine neue `.env` Datei).
-2.  Setzen Sie sichere Passwörter für `POSTGRES_PASSWORD` und die Verschlüsselungs-Keys.
-3.  **Registry Prefix konfigurieren**:
+2.  Setzen Sie ein sicheres Passwort für `POSTGRES_PASSWORD` und `VINYL_ENCRYPTION_PASSWORD`.
+3.  **Wichtig für den Salt:** Der `VINYL_ENCRYPTION_SALT` **MUSS** ein gültiger Hexadezimal-String sein (nur Zeichen von `0-9` und `a-f`, z.B. 16 Zeichen lang). Nutzen Sie keine Sonderzeichen oder zufällige Buchstabenfolgen wie bei einem normalen Passwort!
+4.  **Registry Prefix konfigurieren**:
     - **Für CI/CD (Option A)**:
       ```bash
       # Beachten Sie den abschließenden Schrägstrich (Slash)!

@@ -1,7 +1,9 @@
 package com.antigravity.vinyltracker.controller;
 
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -29,7 +31,11 @@ public class ImageProxyController {
         }
 
         try {
-            ResponseEntity<byte[]> response = restTemplate.getForEntity(url, byte[].class);
+            HttpHeaders requestHeaders = new HttpHeaders();
+            requestHeaders.set("User-Agent", "VinylTracker/1.0 +https://github.com/gerontosepp-dev/AntiGrafity");
+            HttpEntity<String> entity = new HttpEntity<>(requestHeaders);
+
+            ResponseEntity<byte[]> response = restTemplate.exchange(url, HttpMethod.GET, entity, byte[].class);
 
             HttpHeaders headers = new HttpHeaders();
 

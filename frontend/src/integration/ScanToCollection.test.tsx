@@ -14,6 +14,7 @@ vi.mock('../services/api', () => ({
   getRecentListens: vi.fn(),
   getTopRecords: vi.fn(),
   scanBarcode: vi.fn(),
+  getProxiedImageUrl: vi.fn((url) => `/proxy?url=${url}`),
 }));
 
 // Mock html5-qrcode (Same mock as in BarcodeScanner.test.tsx)

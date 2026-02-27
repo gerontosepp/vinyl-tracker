@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 // Mock dependencies
 vi.mock('../services/api', () => ({
   scanBarcode: vi.fn(),
+  getProxiedImageUrl: vi.fn((url) => `/proxy?url=${url}`),
 }));
 
 vi.mock('../context/AuthContext', () => ({

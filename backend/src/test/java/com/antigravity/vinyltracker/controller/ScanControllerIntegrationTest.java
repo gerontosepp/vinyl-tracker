@@ -4,6 +4,9 @@ import com.antigravity.vinyltracker.model.AppUser;
 import com.antigravity.vinyltracker.model.discogs.DiscogsDto;
 import com.antigravity.vinyltracker.model.dto.ScanDto;
 import com.antigravity.vinyltracker.repository.AppUserRepository;
+import com.antigravity.vinyltracker.repository.ListenEventRepository;
+import com.antigravity.vinyltracker.repository.RecordRepository;
+import com.antigravity.vinyltracker.security.JwtService;
 import com.antigravity.vinyltracker.service.DiscogsService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,9 +39,18 @@ class ScanControllerIntegrationTest extends AbstractIntegrationTest {
     @Autowired
     private AppUserRepository userRepository;
 
+    @Autowired
+    private ListenEventRepository listenEventRepository;
+
+    @Autowired
+    private RecordRepository recordRepository;
+
     // We can't use @MockBean so we rely on the Primary bean defined below
     @Autowired
     private DiscogsService discogsService;
+
+    @Autowired
+    private JwtService jwtService;
 
     @TestConfiguration
     static class TestConfig {
@@ -58,6 +70,8 @@ class ScanControllerIntegrationTest extends AbstractIntegrationTest {
                 .build();
 
         // Clear DB to ensure clean state since no transaction rollback
+        listenEventRepository.deleteAll();
+        recordRepository.deleteAll();
         userRepository.deleteAll();
 
         // Setup User in H2 DB
@@ -89,8 +103,11 @@ class ScanControllerIntegrationTest extends AbstractIntegrationTest {
         ScanDto.Request request = new ScanDto.Request();
         request.setBarcode(barcode);
 
+        String token = jwtService.generateToken("integrationUser");
+
         ScanDto.Result result = restClient.post()
-                .uri("/api/scan?username=integrationUser")
+                .uri("/api/scan")
+                .header("Authorization", "Bearer " + token)
                 .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
                 .body(request)
                 .retrieve()
@@ -103,14 +120,14 @@ class ScanControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void scanBarcode_ShouldFail_WhenUserNotFound() {
+    void scanBarcode_ShouldFail_WhenUserMissing() {
         ScanDto.Request request = new ScanDto.Request();
         request.setBarcode("123");
 
-        // Expect 500
+        // Expect 401/403 since no token is provided
         assertThrows(Exception.class, () -> {
             restClient.post()
-                    .uri("/api/scan?username=nonExistentUser")
+                    .uri("/api/scan")
                     .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
                     .body(request)
                     .retrieve()

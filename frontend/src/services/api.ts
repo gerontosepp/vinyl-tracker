@@ -10,10 +10,14 @@ export const api = axios.create({
   },
 });
 
-// Intercept requests to store start time
+// Intercept requests to store start time and add JWT token
 api.interceptors.request.use(
   (config) => {
     (config as any).metadata = { startTime: Date.now() };
+    const token = localStorage.getItem('vinyl_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => {
@@ -47,21 +51,22 @@ api.interceptors.response.use(
   }
 );
 
-export const scanBarcode = async (barcode: string, username: string): Promise<ScanResult> => {
-  const response = await api.post<ScanResult>(`/scan?username=${username}`, { barcode });
+export const scanBarcode = async (barcode: string, _username: string): Promise<ScanResult> => {
+  const response = await api.post<ScanResult>(`/scan`, { barcode });
   return response.data;
 };
 
-export const deleteScan = async (id: number, username: string): Promise<void> => {
-  await api.delete(`/scan/${id}?username=${username}`);
+export const deleteScan = async (id: number, _username: string): Promise<void> => {
+  await api.delete(`/scan/${id}`);
 };
 
 export const getRecentListens = async (
-  username: string,
+  _username: string,
   startDate?: string,
   endDate?: string
 ): Promise<ListenEvent[]> => {
-  let url = `/analytics/recent?username=${username}`;
+  // Add a dummy query param to easily append the others
+  let url = `/analytics/recent?t=${Date.now()}`;
   if (startDate) url += `&from=${startDate}`;
   if (endDate) url += `&to=${endDate}`;
   const response = await api.get<ListenEvent[]>(url);
@@ -69,11 +74,11 @@ export const getRecentListens = async (
 };
 
 export const getTopRecords = async (
-  username: string,
+  _username: string,
   startDate?: string,
   endDate?: string
 ): Promise<AnalyticsTopRecord[]> => {
-  let url = `/analytics/top?username=${username}`;
+  let url = `/analytics/top?t=${Date.now()}`;
   if (startDate) url += `&from=${startDate}`;
   if (endDate) url += `&to=${endDate}`;
   const response = await api.get<AnalyticsTopRecord[]>(url);
@@ -100,28 +105,28 @@ export const resetPassword = async (
 };
 
 export const updateDiscogsSettings = async (
-  username: string,
+  _username: string,
   token: string,
   discogsUsername: string,
   password: string
 ): Promise<User> => {
-  const response = await api.put(`/users/${username}/discogs`, {
-    token,
+  const response = await api.put(`/users/me/discogs`, {
+    token, // discogs token
     discogsUsername,
-    password,
+    password, // not verified on backend anymore but kept for payload
   });
   return response.data;
 };
 
 export const getCollection = async (
-  username: string,
+  _username: string,
   page: number = 1,
   perPage: number = 50,
   minPlays: number = 0,
   sort: string = 'artist',
   sortOrder: string = 'asc'
 ): Promise<import('../types').CollectionResponse> => {
-  let url = `/collection?username=${username}&page=${page}&per_page=${perPage}&sort=${sort}&sort_order=${sortOrder}`;
+  let url = `/collection?page=${page}&per_page=${perPage}&sort=${sort}&sort_order=${sortOrder}`;
   if (minPlays > 0) {
     url += `&min_plays=${minPlays}`;
   }
@@ -129,8 +134,8 @@ export const getCollection = async (
   return response.data;
 };
 
-export const downloadQrCodes = async (username: string): Promise<Blob> => {
-  const response = await api.get(`/collection/qr-codes/all?username=${username}`, {
+export const downloadQrCodes = async (_username: string): Promise<Blob> => {
+  const response = await api.get(`/collection/qr-codes/all`, {
     responseType: 'blob',
   });
   return response.data;
@@ -147,8 +152,16 @@ export const downloadQrCodesSelected = async (
   return response.data;
 };
 
-// Deprecated or repurposed helpers if needed
-export const getUser = async (username: string): Promise<User> => {
-  const response = await api.get<User>(`/users/${username}`);
+export const getUser = async (_username: string): Promise<User> => {
+  const response = await api.get<User>(`/users/me`);
   return response.data;
 };
+
+// Helper for proxying image requests to avoid CORS
+export const getProxiedImageUrl = (originalUrl: string): string => {
+  if (!originalUrl || !originalUrl.includes('i.discogs.com')) {
+    return originalUrl;
+  }
+  return `${API_Base}/proxy/image?url=${encodeURIComponent(originalUrl)}`;
+};
+

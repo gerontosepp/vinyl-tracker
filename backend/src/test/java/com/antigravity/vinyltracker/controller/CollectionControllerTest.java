@@ -10,7 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
@@ -23,6 +23,7 @@ import java.util.Optional;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import java.security.Principal;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -36,13 +37,16 @@ class CollectionControllerTest {
         @Autowired
         private ObjectMapper objectMapper;
 
-        @MockBean
+        @MockitoBean
         private DiscogsService discogsService;
 
-        @MockBean
+        @MockitoBean
         private PdfService pdfService;
 
-        @MockBean
+        @MockitoBean
+        private com.antigravity.vinyltracker.security.JwtService jwtService;
+
+        @MockitoBean
         private AppUserRepository userRepository;
 
         private AppUser user;
@@ -66,8 +70,10 @@ class CollectionControllerTest {
                 when(discogsService.getCollection(eq(user), anyInt(), anyInt(), anyString(), anyString(), any()))
                                 .thenReturn(mockResponse);
 
+                Principal mockPrincipal = () -> "testuser";
+
                 mockMvc.perform(get("/api/collection")
-                                .param("username", "testuser")
+                                .principal(mockPrincipal)
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.releases[0].id").value(100));
@@ -78,11 +84,13 @@ class CollectionControllerTest {
         void getCollection_ShouldThrowException_WhenUserNotFound() throws Exception {
                 when(userRepository.findByUsername("unknown")).thenReturn(Optional.empty());
 
+                Principal mockPrincipal = () -> "unknown";
+
                 // Expect 500 or 404 depending on error handling. Default is 500 for
                 // RuntimeException.
                 try {
                         mockMvc.perform(get("/api/collection")
-                                        .param("username", "unknown")
+                                        .principal(mockPrincipal)
                                         .contentType(MediaType.APPLICATION_JSON))
                                         .andExpect(status().isInternalServerError());
                 } catch (Exception e) {
@@ -142,8 +150,10 @@ class CollectionControllerTest {
                 when(discogsService.getAllCollection(user)).thenReturn(List.of(release));
                 when(pdfService.generateQrCodePdf(any())).thenReturn("pdf-content".getBytes());
 
+                Principal mockPrincipal = () -> "testuser";
+
                 mockMvc.perform(get("/api/collection/qr-codes/all")
-                                .param("username", "testuser"))
+                                .principal(mockPrincipal))
                                 .andExpect(status().isOk())
                                 .andExpect(content().contentType(MediaType.APPLICATION_PDF));
         }
@@ -153,9 +163,11 @@ class CollectionControllerTest {
         void generateAllQrCodes_ShouldThrowException_WhenUserNotFound() throws Exception {
                 when(userRepository.findByUsername("unknown")).thenReturn(Optional.empty());
 
+                Principal mockPrincipal = () -> "unknown";
+
                 try {
                         mockMvc.perform(get("/api/collection/qr-codes/all")
-                                        .param("username", "unknown"))
+                                        .principal(mockPrincipal))
                                         .andExpect(status().isInternalServerError());
                 } catch (Exception e) {
                         // check
@@ -169,9 +181,11 @@ class CollectionControllerTest {
                 when(discogsService.getAllCollection(user)).thenReturn(Collections.emptyList());
                 when(pdfService.generateQrCodePdf(any())).thenThrow(new IOException("PDF Error"));
 
+                Principal mockPrincipal = () -> "testuser";
+
                 org.junit.jupiter.api.Assertions.assertThrows(Exception.class, () -> {
                         mockMvc.perform(get("/api/collection/qr-codes/all")
-                                        .param("username", "testuser"));
+                                        .principal(mockPrincipal));
                 });
         }
 }

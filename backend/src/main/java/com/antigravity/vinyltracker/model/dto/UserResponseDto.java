@@ -13,12 +13,18 @@ public class UserResponseDto {
     private Long id;
     private String username;
     private String discogsUsername;
+    private String token;
 
-    public static UserResponseDto fromEntity(AppUser user) {
+    public static UserResponseDto fromEntity(AppUser user, String token) {
         UserResponseDto dto = new UserResponseDto();
         dto.setId(user.getId());
         dto.setUsername(user.getUsername());
         dto.setDiscogsUsername(user.getDiscogsUsername());
+        dto.setToken(token);
         return dto;
+    }
+
+    public static UserResponseDto fromEntity(AppUser user) {
+        return fromEntity(user, null);
     }
 }

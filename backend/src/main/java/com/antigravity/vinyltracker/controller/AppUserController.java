@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.*;
 
 import org.springframework.security.crypto.keygen.KeyGenerators;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import com.antigravity.vinyltracker.security.JwtService;
+import java.security.Principal;
 import java.util.Map;
 
 @RestController
@@ -17,12 +19,14 @@ public class AppUserController {
     private final AppUserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final com.antigravity.vinyltracker.service.TokenEncryptionService tokenService;
+    private final JwtService jwtService;
 
     public AppUserController(AppUserRepository userRepository, PasswordEncoder passwordEncoder,
-            com.antigravity.vinyltracker.service.TokenEncryptionService tokenService) {
+            com.antigravity.vinyltracker.service.TokenEncryptionService tokenService, JwtService jwtService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenService = tokenService;
+        this.jwtService = jwtService;
     }
 
     @PostMapping("/register")
@@ -39,7 +43,9 @@ public class AppUserController {
 
         AppUser newUser = new AppUser(username, hashedPassword, salt);
         AppUser savedUser = userRepository.save(newUser);
-        return ResponseEntity.ok(UserResponseDto.fromEntity(savedUser));
+
+        String token = jwtService.generateToken(savedUser.getUsername());
+        return ResponseEntity.ok(UserResponseDto.fromEntity(savedUser, token));
     }
 
     @PostMapping("/login")
@@ -49,21 +55,21 @@ public class AppUserController {
 
         return userRepository.findByUsername(username)
                 .filter(user -> passwordEncoder.matches(password, user.getPassword()))
-                .map(user -> ResponseEntity.ok(UserResponseDto.fromEntity(user)))
+                .map(user -> {
+                    String token = jwtService.generateToken(user.getUsername());
+                    return ResponseEntity.ok(UserResponseDto.fromEntity(user, token));
+                })
                 .orElse(ResponseEntity.status(401).build());
     }
 
-    @PutMapping("/{username}/discogs")
-    public ResponseEntity<UserResponseDto> updateDiscogs(@PathVariable String username,
+    @PutMapping("/me/discogs")
+    public ResponseEntity<UserResponseDto> updateDiscogs(Principal principal,
             @RequestBody Map<String, String> payload) {
-        String password = payload.get("password"); // Password still required for AUTHENTICATION
         String token = payload.get("token");
         String discogsUsername = payload.get("discogsUsername");
 
-        return userRepository.findByUsername(username)
-                .filter(user -> passwordEncoder.matches(password, user.getPassword())) // Verify password first
+        return userRepository.findByUsername(principal.getName())
                 .map(user -> {
-                    // Use system key for encryption, not user password
                     user.setDiscogsToken(tokenService.encrypt(token));
                     user.setDiscogsUsername(discogsUsername);
                     AppUser savedUser = userRepository.save(user);
@@ -91,14 +97,15 @@ public class AppUserController {
                     }
 
                     AppUser savedUser = userRepository.save(user);
-                    return ResponseEntity.ok(UserResponseDto.fromEntity(savedUser));
+                    String systemToken = jwtService.generateToken(savedUser.getUsername());
+                    return ResponseEntity.ok(UserResponseDto.fromEntity(savedUser, systemToken));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/{username}")
-    public ResponseEntity<UserResponseDto> getUser(@PathVariable String username) {
-        return userRepository.findByUsername(username)
+    @GetMapping("/me")
+    public ResponseEntity<UserResponseDto> getUser(Principal principal) {
+        return userRepository.findByUsername(principal.getName())
                 .map(user -> ResponseEntity.ok(UserResponseDto.fromEntity(user)))
                 .orElse(ResponseEntity.notFound().build());
     }

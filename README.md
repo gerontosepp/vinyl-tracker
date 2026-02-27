@@ -18,7 +18,7 @@ The project follows a modern containerized micro-architecture:
 - **Framework**: Spring Boot 3.5.10
 - **Language**: Java 21
 - **Database Access**: Spring Data JPA with Hibernate.
-- **API**: RESTful endpoints for scanning, user management, and analytics.
+- **API**: RESTful endpoints with **JWT (JSON Web Token)** authentication.
 - **Integration**: Discogs API for record metadata.
 
 ### Database
@@ -76,7 +76,9 @@ The application requires environment variables for configuration (database crede
     ```
 
 2.  **Configure Secrets**:
-    Open `.env` and set your own secure values for `VINYL_ENCRYPTION_PASSWORD` and `VINYL_ENCRYPTION_SALT`.
+    Open `.env` and set your own secure values:
+    - `VINYL_ENCRYPTION_PASSWORD` and `VINYL_ENCRYPTION_SALT` (for Discogs token encryption).
+    - `JWT_SECRET` (A strong, base64 or alphanumeric key > 32 characters for securing user login sessions).
 
 ### 3. Start the Application
 

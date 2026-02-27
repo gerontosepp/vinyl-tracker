@@ -5,6 +5,7 @@ import com.antigravity.vinyltracker.model.ListenEvent;
 import com.antigravity.vinyltracker.repository.AppUserRepository;
 import com.antigravity.vinyltracker.repository.ListenEventRepository;
 import org.springframework.web.bind.annotation.*;
+import java.security.Principal;
 
 import java.util.List;
 import java.util.Map;
@@ -24,10 +25,10 @@ public class AnalyticsController {
 
     @GetMapping("/recent")
     public List<ListenEvent> getRecentListens(
-            @RequestParam String username,
+            Principal principal,
             @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate from,
             @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate to) {
-        AppUser user = userRepository.findByUsername(username)
+        AppUser user = userRepository.findByUsername(principal.getName())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (from != null && to != null) {
@@ -41,10 +42,10 @@ public class AnalyticsController {
 
     @GetMapping("/top")
     public List<TopRecordDto> getTopRecords(
-            @RequestParam String username,
+            Principal principal,
             @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate from,
             @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate to) {
-        AppUser user = userRepository.findByUsername(username)
+        AppUser user = userRepository.findByUsername(principal.getName())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         List<ListenEvent> events;

@@ -9,6 +9,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.security.Principal;
 
 import java.io.IOException;
 import java.util.List;
@@ -30,15 +31,15 @@ public class CollectionController {
 
     @GetMapping
     public ResponseEntity<DiscogsDto.CollectionResponse> getCollection(
-            @RequestParam String username,
+            Principal principal,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "50") int per_page,
             @RequestParam(defaultValue = "artist") String sort,
             @RequestParam(defaultValue = "asc") String sort_order,
             @RequestParam(required = false) Integer min_plays) {
 
-        AppUser user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+        AppUser user = userRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new RuntimeException("User not found: " + principal.getName()));
 
         return ResponseEntity.ok(discogsService.getCollection(user, page, per_page, sort, sort_order, min_plays));
     }
@@ -54,9 +55,9 @@ public class CollectionController {
     }
 
     @GetMapping("/qr-codes/all")
-    public ResponseEntity<byte[]> generateAllQrCodes(@RequestParam String username) {
-        AppUser user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+    public ResponseEntity<byte[]> generateAllQrCodes(Principal principal) {
+        AppUser user = userRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new RuntimeException("User not found: " + principal.getName()));
 
         try {
             List<DiscogsDto.CollectionRelease> releases = discogsService.getAllCollection(user);

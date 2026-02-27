@@ -4,6 +4,7 @@ import com.antigravity.vinyltracker.model.dto.ScanDto;
 import com.antigravity.vinyltracker.service.ScanService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.security.Principal;
 
 @RestController
 @RequestMapping("/api/scan")
@@ -18,9 +19,8 @@ public class ScanController {
     @PostMapping
     public ResponseEntity<ScanDto.Result> scanBarcode(
             @RequestBody ScanDto.Request request,
-            @RequestParam String username // Simple auth for MVP
-    ) {
-        ScanDto.Result result = scanService.processScan(request.getBarcode(), username);
+            Principal principal) {
+        ScanDto.Result result = scanService.processScan(request.getBarcode(), principal.getName());
         if (result.isSuccess()) {
             return ResponseEntity.ok(result);
         } else {
@@ -31,9 +31,9 @@ public class ScanController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteScan(
             @PathVariable Long id,
-            @RequestParam String username) {
+            Principal principal) {
         try {
-            scanService.deleteScan(id, username);
+            scanService.deleteScan(id, principal.getName());
             return ResponseEntity.noContent().build();
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().build();

@@ -55,7 +55,7 @@ graph LR
 ### 3.2 Technical Context
 - **Protocol**: HTTP/HTTPS (REST).
 - **Format**: JSON, PDF (for exports).
-- **Security**: JWT (or Session-based) Authentication, BCrypt password hashing, AES encryption for API tokens.
+- **Security**: JWT (JSON Web Token) based Authentication via Authorization Headers (Bearer Token), BCrypt password hashing, AES encryption for API tokens.
 
 ## 4. Solution Strategy
 
@@ -133,7 +133,7 @@ The system is deployed as a multi-container Docker application orchestrated by D
 ## 8. Cross-cutting Concepts
 
 ### 8.1 Security
-- **Authentication**: Custom implementation using Spring Security.
+- **Authentication**: Stateless authentication using **JSON Web Tokens (JWT)**. The token (issued on Login/Register) is verified on every subsequent request via an `Authorization: Bearer` header.
 - **Data Protection**:
     - User passwords are hashed with **BCrypt**.
     - Sensitive external tokens (Discogs PAT) are encrypted using **AES-256** (via Spring Security Crypto) with a salt and key defined in environment variables.

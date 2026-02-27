@@ -2,6 +2,7 @@ export interface User {
   id: number;
   username: string;
   discogsUsername?: string;
+  token?: string;
 }
 
 export interface TrackedRecord {

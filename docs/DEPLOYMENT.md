@@ -54,7 +54,9 @@ wget https://raw.githubusercontent.com/gerontosepp-dev/AntiGrafity/develop/.env.
 
 1.  Kopieren Sie die `.env.example` (oder erstellen Sie eine neue `.env` Datei).
 2.  Setzen Sie ein sicheres Passwort für `POSTGRES_PASSWORD` und `VINYL_ENCRYPTION_PASSWORD`.
-3.  **Wichtig für den Salt:** Der `VINYL_ENCRYPTION_SALT` **MUSS** ein gültiger Hexadezimal-String sein (nur Zeichen von `0-9` und `a-f`, z.B. 16 Zeichen lang). Nutzen Sie keine Sonderzeichen oder zufällige Buchstabenfolgen wie bei einem normalen Passwort!
+3.  **Wichtig für den Salt & JWT:** 
+    - Der `VINYL_ENCRYPTION_SALT` **MUSS** ein gültiger Hexadezimal-String sein (z.B. 16 Zeichen).
+    - Der `JWT_SECRET` **MUSS** ein sicheres, langes Passwort (mindestens 32 Zeichen) zur Session-Sicherung sein.
 4.  **Registry Prefix konfigurieren**:
     - **Für CI/CD (Option A)**:
       ```bash

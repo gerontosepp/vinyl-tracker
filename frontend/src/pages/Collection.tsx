@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout/Layout';
 import { useAuth } from '../context/AuthContext';
-import { getCollection, downloadQrCodes, downloadQrCodesSelected } from '../services/api';
+import { getCollection, downloadQrCodes, downloadQrCodesSelected, getProxiedImageUrl } from '../services/api';
 import type { CollectionRelease, QrCodeItem } from '../types';
 import { Download, ExternalLink, CheckSquare, Square, ArrowUp, ArrowDown } from 'lucide-react';
 
@@ -159,11 +159,10 @@ const Collection: React.FC = () => {
             <button
               onClick={handleDownloadSelected}
               disabled={selectedCount === 0 || generating}
-              className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                selectedCount > 0
+              className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${selectedCount > 0
                   ? 'bg-blue-600 text-white hover:bg-blue-700'
                   : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-              }`}
+                }`}
             >
               <Download size={16} />
               QR Selected ({selectedCount})
@@ -199,11 +198,10 @@ const Collection: React.FC = () => {
                 setShowPlayedOnly(!showPlayedOnly);
                 setPage(1);
               }}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-colors ${
-                showPlayedOnly
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-colors ${showPlayedOnly
                   ? 'bg-blue-100 border-blue-200 text-blue-800'
                   : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-              }`}
+                }`}
             >
               <span className="font-medium">Played Only</span>
               {showPlayedOnly && (
@@ -314,7 +312,7 @@ const Collection: React.FC = () => {
                     <div className="w-20 h-20 flex-shrink-0 bg-gray-200 rounded-lg overflow-hidden">
                       {release.basic_information.thumb ? (
                         <img
-                          src={release.basic_information.thumb}
+                          src={getProxiedImageUrl(release.basic_information.thumb)}
                           alt="cover"
                           className="w-full h-full object-cover"
                         />

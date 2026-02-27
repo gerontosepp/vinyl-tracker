@@ -1,4 +1,5 @@
 import React from 'react';
+import { getProxiedImageUrl } from '../../services/api';
 import type { AnalyticsTopRecord } from '../../types';
 
 interface TopRecordsProps {
@@ -23,7 +24,7 @@ const TopRecords: React.FC<TopRecordsProps> = ({ data, className = '' }) => {
               <div className="w-12 h-12 flex-shrink-0 bg-gray-200 rounded-md overflow-hidden">
                 {record.thumbUrl ? (
                   <img
-                    src={record.thumbUrl}
+                    src={getProxiedImageUrl(record.thumbUrl)}
                     alt={record.title}
                     className="w-full h-full object-cover"
                   />

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Trash2 } from 'lucide-react';
+import { getProxiedImageUrl } from '../../services/api';
 import type { ListenEvent } from '../../types';
 
 interface RecentListensProps {
@@ -27,7 +28,11 @@ const RecentListens: React.FC<RecentListensProps> = ({ listens, onDelete, classN
               {/* Cover Image */}
               <div className="relative flex-shrink-0">
                 <img
-                  src={event.record.thumbUrl || '/placeholder.png'}
+                  src={
+                    event.record.thumbUrl
+                      ? getProxiedImageUrl(event.record.thumbUrl)
+                      : '/placeholder.png'
+                  }
                   alt={event.record.title}
                   className="w-16 h-16 md:w-full md:h-40 object-cover rounded-md md:rounded-lg bg-gray-200"
                 />

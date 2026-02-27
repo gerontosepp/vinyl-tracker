@@ -61,13 +61,13 @@ describe('API Service', () => {
     expect(result).toEqual(mockUser);
   });
 
-  it('getUser should make a GET request to /users/:username', async () => {
+  it('getUser should make a GET request to /users/me', async () => {
     const mockUser = { id: 1, username: 'testuser' };
     mockGet.mockResolvedValue({ data: mockUser });
 
     const result = await getUser('testuser');
 
-    expect(mockGet).toHaveBeenCalledWith('/users/testuser');
+    expect(mockGet).toHaveBeenCalledWith('/users/me');
     expect(result).toEqual(mockUser);
   });
 
@@ -77,7 +77,8 @@ describe('API Service', () => {
 
     const result = await getRecentListens('testuser');
 
-    expect(mockGet).toHaveBeenCalledWith('/analytics/recent?username=testuser');
+    // Using expect.stringContaining as there's a timestamp query parameter now
+    expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('/analytics/recent?t='));
     expect(result).toEqual(mockListens);
   });
 
@@ -87,7 +88,7 @@ describe('API Service', () => {
 
     const result = await scanBarcode('12345', 'testuser');
 
-    expect(mockPost).toHaveBeenCalledWith('/scan?username=testuser', { barcode: '12345' });
+    expect(mockPost).toHaveBeenCalledWith('/scan', { barcode: '12345' });
     expect(result).toEqual(mockResult);
   });
 
@@ -95,7 +96,7 @@ describe('API Service', () => {
     mockDelete.mockResolvedValue({});
     const { deleteScan } = await import('./api');
     await deleteScan(123, 'testuser');
-    expect(mockDelete).toHaveBeenCalledWith('/scan/123?username=testuser');
+    expect(mockDelete).toHaveBeenCalledWith('/scan/123');
   });
 
   it('resetPassword should make a POST request to /users/reset-password', async () => {
@@ -113,14 +114,14 @@ describe('API Service', () => {
     expect(result).toEqual(mockUser);
   });
 
-  it('updateDiscogsSettings should make a PUT request to /users/:username/discogs', async () => {
+  it('updateDiscogsSettings should make a PUT request to /users/me/discogs', async () => {
     const mockUser = { id: 1, username: 'testuser' };
     mockPut.mockResolvedValue({ data: mockUser });
     const { updateDiscogsSettings } = await import('./api');
 
     const result = await updateDiscogsSettings('testuser', 'token123', 'discogsUser', 'pass123');
 
-    expect(mockPut).toHaveBeenCalledWith('/users/testuser/discogs', {
+    expect(mockPut).toHaveBeenCalledWith('/users/me/discogs', {
       token: 'token123',
       discogsUsername: 'discogsUser',
       password: 'pass123',
@@ -135,7 +136,7 @@ describe('API Service', () => {
     const result = await getCollection('testuser', 1, 50, 0);
 
     expect(mockGet).toHaveBeenCalledWith(
-      '/collection?username=testuser&page=1&per_page=50&sort=artist&sort_order=asc'
+      '/collection?page=1&per_page=50&sort=artist&sort_order=asc'
     );
     expect(result).toEqual(mockResponse);
   });
@@ -145,7 +146,7 @@ describe('API Service', () => {
     const { getCollection } = await import('./api');
     await getCollection('testuser', 1, 50, 5);
     expect(mockGet).toHaveBeenCalledWith(
-      '/collection?username=testuser&page=1&per_page=50&sort=artist&sort_order=asc&min_plays=5'
+      '/collection?page=1&per_page=50&sort=artist&sort_order=asc&min_plays=5'
     );
   });
 
@@ -156,7 +157,7 @@ describe('API Service', () => {
 
     const result = await downloadQrCodes('testuser');
 
-    expect(mockGet).toHaveBeenCalledWith('/collection/qr-codes/all?username=testuser', {
+    expect(mockGet).toHaveBeenCalledWith('/collection/qr-codes/all', {
       responseType: 'blob',
     });
     expect(result).toEqual(mockBlob);

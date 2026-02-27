@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { useAuth } from '../context/AuthContext';
-import { scanBarcode } from '../services/api';
+import { scanBarcode, getProxiedImageUrl } from '../services/api';
 import type { ScanResult } from '../types';
 
 const BarcodeScanner: React.FC = () => {
@@ -131,7 +131,7 @@ const BarcodeScanner: React.FC = () => {
           {scanResult.record && (
             <div className="mt-2 text-center">
               <img
-                src={scanResult.record.thumbUrl}
+                src={getProxiedImageUrl(scanResult.record.thumbUrl)}
                 alt="Cover"
                 className="w-32 h-32 mx-auto rounded shadow"
               />

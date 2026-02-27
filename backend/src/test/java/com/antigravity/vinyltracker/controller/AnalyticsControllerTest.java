@@ -15,6 +15,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.security.Principal;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -70,8 +72,10 @@ class AnalyticsControllerTest {
 
         given(listenEventRepository.findByUserIdOrderByTimestampDesc(1L)).willReturn(List.of(event));
 
+        Principal mockPrincipal = () -> "testuser";
+
         mockMvc.perform(get("/api/analytics/recent")
-                .param("username", "testuser")
+                .principal(mockPrincipal)
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
@@ -93,8 +97,10 @@ class AnalyticsControllerTest {
         given(listenEventRepository.findByUserIdOrderByTimestampDesc(1L))
                 .willReturn(List.of(event1, event2, event3));
 
+        Principal mockPrincipal = () -> "testuser";
+
         mockMvc.perform(get("/api/analytics/top")
-                .param("username", "testuser")
+                .principal(mockPrincipal)
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)));

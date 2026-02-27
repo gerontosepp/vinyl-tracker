@@ -18,14 +18,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    // Auto-login removed as we require password now.
-    // In a real app, we would check for a valid session/token here.
+    // Attempt auto-login if token exists
+    const token = localStorage.getItem('vinyl_token');
+    const username = localStorage.getItem('vinyl_user');
+    if (token && username) {
+      import('../services/api').then((api) => {
+        api.getUser(username)
+          .then((u) => setUser(u))
+          .catch(() => logout());
+      });
+    }
   }, []);
 
   const login = async (username: string, password: string) => {
     setIsLoading(true);
     try {
       const userData = await loginUser(username, password);
+      // Wait, token is included in userData now
+      if (userData.token) {
+        localStorage.setItem('vinyl_token', userData.token);
+      }
       setUser(userData);
       localStorage.setItem('vinyl_user', username);
     } catch (error) {
@@ -40,6 +52,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
     try {
       const userData = await registerUser(username, password);
+      if (userData.token) {
+        localStorage.setItem('vinyl_token', userData.token);
+      }
       setUser(userData);
       localStorage.setItem('vinyl_user', username);
     } catch (error) {
@@ -72,6 +87,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = () => {
     setUser(null);
     localStorage.removeItem('vinyl_user');
+    localStorage.removeItem('vinyl_token');
   };
 
   return (

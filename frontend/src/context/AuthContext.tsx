@@ -23,7 +23,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const username = localStorage.getItem('vinyl_user');
     if (token && username) {
       import('../services/api').then((api) => {
-        api.getUser(username)
+        api
+          .getUser(username)
           .then((u) => setUser(u))
           .catch(() => logout());
       });

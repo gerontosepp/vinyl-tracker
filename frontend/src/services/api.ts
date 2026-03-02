@@ -12,8 +12,8 @@ export const api = axios.create({
 
 // Intercept requests to store start time and add JWT token
 api.interceptors.request.use(
-  (config) => {
-    (config as any).metadata = { startTime: Date.now() };
+  (config: import('axios').InternalAxiosRequestConfig & { metadata?: { startTime: number } }) => {
+    config.metadata = { startTime: Date.now() };
     const token = localStorage.getItem('vinyl_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -28,7 +28,9 @@ api.interceptors.request.use(
 // Intercept responses to log duration and status
 api.interceptors.response.use(
   (response) => {
-    const config = response.config as any;
+    const config = response.config as import('axios').InternalAxiosRequestConfig & {
+      metadata?: { startTime: number };
+    };
     const duration = config.metadata ? Date.now() - config.metadata.startTime : 0;
 
     // Only log Info in development if preferred, or log everywhere:
@@ -38,8 +40,10 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    const config = error.config as any;
-    const duration = config?.metadata ? Date.now() - config?.metadata?.startTime : 0;
+    const config = error.config as
+      | (import('axios').InternalAxiosRequestConfig & { metadata?: { startTime: number } })
+      | undefined;
+    const duration = config?.metadata ? Date.now() - config.metadata.startTime : 0;
     const status = error.response ? error.response.status : 'Network/Unknown Error';
     const method = config?.method?.toUpperCase() || 'UNKNOWN';
     const url = config?.url || 'UNKNOWN URL';
@@ -164,4 +168,3 @@ export const getProxiedImageUrl = (originalUrl: string): string => {
   }
   return `${API_Base}/proxy/image?url=${encodeURIComponent(originalUrl)}`;
 };
-

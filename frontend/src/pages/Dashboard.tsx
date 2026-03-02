@@ -12,7 +12,10 @@ const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const [recentListens, setRecentListens] = useState<ListenEvent[]>([]);
   const [topRecords, setTopRecords] = useState<AnalyticsTopRecord[]>([]);
-  const [showScanner, setShowScanner] = useState(false);
+  const location = useLocation();
+  const [showScanner, setShowScanner] = useState<boolean>(() => {
+    return !!(location.state && (location.state as { scan?: boolean }).scan);
+  });
 
   // Helper to get local date string YYYY-MM-DD
   const getTodayString = () => {
@@ -27,13 +30,9 @@ const Dashboard: React.FC = () => {
   const [startDate, setStartDate] = useState<string>(getTodayString());
   const [endDate, setEndDate] = useState<string>(getTodayString());
 
-  const location = useLocation();
-
   useEffect(() => {
-    if (location.state && (location.state as any).scan) {
-      setShowScanner(true);
-      // Optional: clear state so refresh doesn't re-open, but tricky with React Router
-      // For now, it's fine.
+    if (location.state && (location.state as { scan?: boolean }).scan) {
+      // Clear state so refresh doesn't re-open, but tricky with React Router
       // Better: window.history.replaceState({}, document.title)
       window.history.replaceState({}, document.title);
     }
@@ -89,14 +88,14 @@ const Dashboard: React.FC = () => {
       ) : (
         <div className="flex flex-col h-[calc(100vh-6rem)] md:h-[calc(100vh-5rem)] space-y-4">
           {/* Welcome Section - Fixed Height */}
-          <div className="flex-none flex justify-between items-center mb-2">
+          <div className="flex-none flex flex-col xl:flex-row justify-between items-start xl:items-center gap-3 mb-3 shrink-0">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Welcome back, {user?.username}</h1>
               <p className="text-gray-500 text-sm">
                 Here's what you've been listening to recently.
               </p>
             </div>
-            <div className="flex gap-2 items-center bg-white p-1.5 rounded-lg shadow-sm border border-gray-100">
+            <div className="flex gap-2 items-center bg-white p-1.5 rounded-lg shadow-sm border border-gray-100 w-full md:w-auto max-w-full overflow-x-auto">
               <button
                 onClick={() => {
                   setStartDate('');

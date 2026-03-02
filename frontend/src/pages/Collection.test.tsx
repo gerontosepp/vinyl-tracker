@@ -215,7 +215,7 @@ describe('Collection Component', () => {
   });
 
   it('handles QR Code generation for all items', async () => {
-    // @ts-ignore
+    // @ts-expect-error Testing error behavior
     mockGetCollection.mockResolvedValue({ releases: [], pagination: null });
     mockDownloadQrCodes.mockResolvedValue(new Blob(['pdf'], { type: 'application/pdf' }));
 

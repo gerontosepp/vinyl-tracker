@@ -169,7 +169,7 @@ describe('API Service', () => {
     mockPost.mockResolvedValue({ data: mockBlob });
     const { downloadQrCodesSelected } = await import('./api');
 
-    // @ts-ignore
+    // @ts-expect-error: Mock items mismatch with actual strict typing
     const result = await downloadQrCodesSelected(mockItems);
 
     expect(mockPost).toHaveBeenCalledWith(

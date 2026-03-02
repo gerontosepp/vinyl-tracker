@@ -1,10 +1,9 @@
 package com.antigravity.vinyltracker.controller;
 
-import com.antigravity.vinyltracker.model.AppUser;
 import com.antigravity.vinyltracker.model.ListenEvent;
 import com.antigravity.vinyltracker.model.Record;
-import com.antigravity.vinyltracker.repository.AppUserRepository;
-import com.antigravity.vinyltracker.repository.ListenEventRepository;
+import com.antigravity.vinyltracker.model.dto.TopRecordDto;
+import com.antigravity.vinyltracker.service.AnalyticsService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,12 +15,12 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.security.Principal;
-
 import java.util.List;
-import java.util.Optional;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -33,25 +32,17 @@ class AnalyticsControllerTest {
     private MockMvc mockMvc;
 
     @Mock
-    private ListenEventRepository listenEventRepository;
-
-    @Mock
-    private AppUserRepository userRepository;
+    private AnalyticsService analyticsService;
 
     @InjectMocks
     private AnalyticsController analyticsController;
 
-    private AppUser user;
     private Record record1;
     private Record record2;
 
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(analyticsController).build();
-
-        user = new AppUser();
-        user.setId(1L);
-        user.setUsername("testuser");
 
         record1 = new Record();
         record1.setId(1L);
@@ -64,13 +55,12 @@ class AnalyticsControllerTest {
 
     @Test
     void getRecentListens_ShouldReturnList_WhenUserExists() throws Exception {
-        given(userRepository.findByUsername("testuser")).willReturn(Optional.of(user));
-
         ListenEvent event = new ListenEvent();
         event.setId(1L);
         event.setRecord(record1);
 
-        given(listenEventRepository.findByUserIdOrderByTimestampDesc(1L)).willReturn(List.of(event));
+        given(analyticsService.getRecentListens(eq("testuser"), any(), any()))
+                .willReturn(List.of(event));
 
         Principal mockPrincipal = () -> "testuser";
 
@@ -84,18 +74,11 @@ class AnalyticsControllerTest {
 
     @Test
     void getTopRecords_ShouldReturnAggregatedCounts() throws Exception {
-        given(userRepository.findByUsername("testuser")).willReturn(Optional.of(user));
+        TopRecordDto top1 = new TopRecordDto("Album One", "Artist", "url", 2L);
+        TopRecordDto top2 = new TopRecordDto("Album Two", "Artist", "url", 1L);
 
-        // Simulate 3 listens: 2x Album One, 1x Album Two
-        ListenEvent event1 = new ListenEvent();
-        event1.setRecord(record1);
-        ListenEvent event2 = new ListenEvent();
-        event2.setRecord(record1);
-        ListenEvent event3 = new ListenEvent();
-        event3.setRecord(record2);
-
-        given(listenEventRepository.findByUserIdOrderByTimestampDesc(1L))
-                .willReturn(List.of(event1, event2, event3));
+        given(analyticsService.getTopRecords(eq("testuser"), any(), any()))
+                .willReturn(List.of(top1, top2));
 
         Principal mockPrincipal = () -> "testuser";
 
@@ -103,11 +86,9 @@ class AnalyticsControllerTest {
                 .principal(mockPrincipal)
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(2)));
-        // Order is not strictly guaranteed by hash map but usually sorted by value desc
-        // in controller
-        // .andExpect(jsonPath("$[0].key", is("Album One"))) // Might be flaky depending
-        // on map implementation if counts equal
-        // .andExpect(jsonPath("$[0].value", is(2)));
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].title", is("Album One")))
+                .andExpect(jsonPath("$[0].count", is(2)))
+                .andExpect(jsonPath("$[1].title", is("Album Two")));
     }
 }

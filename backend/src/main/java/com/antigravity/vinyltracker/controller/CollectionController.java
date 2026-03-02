@@ -1,10 +1,7 @@
 package com.antigravity.vinyltracker.controller;
 
-import com.antigravity.vinyltracker.model.AppUser;
 import com.antigravity.vinyltracker.model.discogs.DiscogsDto;
-import com.antigravity.vinyltracker.repository.AppUserRepository;
-import com.antigravity.vinyltracker.service.DiscogsService;
-import com.antigravity.vinyltracker.service.PdfService;
+import com.antigravity.vinyltracker.service.CollectionService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -12,21 +9,15 @@ import org.springframework.web.bind.annotation.*;
 import java.security.Principal;
 
 import java.io.IOException;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/collection")
 public class CollectionController {
 
-    private final DiscogsService discogsService;
-    private final PdfService pdfService;
-    private final AppUserRepository userRepository;
+    private final CollectionService collectionService;
 
-    public CollectionController(DiscogsService discogsService, PdfService pdfService,
-            AppUserRepository userRepository) {
-        this.discogsService = discogsService;
-        this.pdfService = pdfService;
-        this.userRepository = userRepository;
+    public CollectionController(CollectionService collectionService) {
+        this.collectionService = collectionService;
     }
 
     @GetMapping
@@ -38,16 +29,14 @@ public class CollectionController {
             @RequestParam(defaultValue = "asc") String sort_order,
             @RequestParam(required = false) Integer min_plays) {
 
-        AppUser user = userRepository.findByUsername(principal.getName())
-                .orElseThrow(() -> new RuntimeException("User not found: " + principal.getName()));
-
-        return ResponseEntity.ok(discogsService.getCollection(user, page, per_page, sort, sort_order, min_plays));
+        return ResponseEntity
+                .ok(collectionService.getCollection(principal.getName(), page, per_page, sort, sort_order, min_plays));
     }
 
     @PostMapping("/qr-codes/selected")
     public ResponseEntity<byte[]> generateSelectedQrCodes(@RequestBody DiscogsDto.QrCodeRequest request) {
         try {
-            byte[] pdfBytes = pdfService.generateQrCodePdf(request.getItems());
+            byte[] pdfBytes = collectionService.generateSelectedQrCodesPdf(request);
             return createPdfResponse(pdfBytes);
         } catch (IOException e) {
             throw new RuntimeException("Error generating PDF", e);
@@ -56,32 +45,12 @@ public class CollectionController {
 
     @GetMapping("/qr-codes/all")
     public ResponseEntity<byte[]> generateAllQrCodes(Principal principal) {
-        AppUser user = userRepository.findByUsername(principal.getName())
-                .orElseThrow(() -> new RuntimeException("User not found: " + principal.getName()));
-
         try {
-            List<DiscogsDto.CollectionRelease> releases = discogsService.getAllCollection(user);
-            List<DiscogsDto.QrCodeItem> items = releases.stream().map(this::mapToQrItem).sorted((a, b) -> {
-                String artist1 = a.getArtist() != null ? a.getArtist() : "";
-                String artist2 = b.getArtist() != null ? b.getArtist() : "";
-                return artist1.compareToIgnoreCase(artist2);
-            }).toList();
-
-            byte[] pdfBytes = pdfService.generateQrCodePdf(items);
+            byte[] pdfBytes = collectionService.generateAllQrCodesPdf(principal.getName());
             return createPdfResponse(pdfBytes);
-
         } catch (IOException e) {
             throw new RuntimeException("Error generating PDF", e);
         }
-    }
-
-    private DiscogsDto.QrCodeItem mapToQrItem(DiscogsDto.CollectionRelease release) {
-        String artist = "Unknown";
-        if (release.getBasicInformation().getArtists() != null
-                && !release.getBasicInformation().getArtists().isEmpty()) {
-            artist = release.getBasicInformation().getArtists().get(0).getName();
-        }
-        return new DiscogsDto.QrCodeItem(release.getId(), release.getBasicInformation().getTitle(), artist);
     }
 
     private ResponseEntity<byte[]> createPdfResponse(byte[] pdfBytes) {

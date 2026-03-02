@@ -60,9 +60,9 @@ export default defineConfig({
     https:
       fs.existsSync('./certs/key.pem') && fs.existsSync('./certs/cert.pem')
         ? {
-          key: fs.readFileSync('./certs/key.pem'),
-          cert: fs.readFileSync('./certs/cert.pem'),
-        }
+            key: fs.readFileSync('./certs/key.pem'),
+            cert: fs.readFileSync('./certs/cert.pem'),
+          }
         : undefined,
     proxy: {
       '/api': {
@@ -81,9 +81,13 @@ export default defineConfig({
             const duration = start ? Date.now() - start : 0;
             const status = proxyRes.statusCode;
             if (status && status >= 400) {
-              console.error(`[API Error] ${req.method} ${req.url} - Status: ${status} - Time: ${duration}ms - Error: HTTP Error ${status}`);
+              console.error(
+                `[API Error] ${req.method} ${req.url} - Status: ${status} - Time: ${duration}ms - Error: HTTP Error ${status}`
+              );
             } else {
-              console.info(`[API Info] ${req.method} ${req.url} - Status: ${status} - Time: ${duration}ms`);
+              console.info(
+                `[API Info] ${req.method} ${req.url} - Status: ${status} - Time: ${duration}ms`
+              );
             }
           });
         },

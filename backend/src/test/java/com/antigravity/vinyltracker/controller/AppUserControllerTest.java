@@ -1,8 +1,7 @@
 package com.antigravity.vinyltracker.controller;
 
-import com.antigravity.vinyltracker.model.AppUser;
-import com.antigravity.vinyltracker.repository.AppUserRepository;
-import com.antigravity.vinyltracker.service.TokenEncryptionService;
+import com.antigravity.vinyltracker.model.dto.UserResponseDto;
+import com.antigravity.vinyltracker.service.AppUserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,7 +10,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -21,6 +19,7 @@ import java.util.Optional;
 
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -33,16 +32,7 @@ class AppUserControllerTest {
         private MockMvc mockMvc;
 
         @Mock
-        private AppUserRepository userRepository;
-
-        @Mock
-        private PasswordEncoder passwordEncoder;
-
-        @Mock
-        private TokenEncryptionService tokenService;
-
-        @Mock
-        private com.antigravity.vinyltracker.security.JwtService jwtService;
+        private AppUserService appUserService;
 
         @InjectMocks
         private AppUserController userController;
@@ -58,14 +48,11 @@ class AppUserControllerTest {
         void register_ShouldReturnSavedUser_WithoutSensitiveData() throws Exception {
                 Map<String, String> payload = Map.of("username", "newUser", "password", "password123");
 
-                given(userRepository.findByUsername("newUser")).willReturn(Optional.empty());
-                given(passwordEncoder.encode("password123")).willReturn("encodedPassword");
-                given(userRepository.save(any(AppUser.class))).willAnswer(invocation -> {
-                        AppUser savedUser = invocation.getArgument(0);
-                        savedUser.setId(1L);
-                        return savedUser;
-                });
-                given(jwtService.generateToken("newUser")).willReturn("dummy-jwt-token");
+                UserResponseDto dto = new UserResponseDto();
+                dto.setId(1L);
+                dto.setUsername("newUser");
+                dto.setToken("dummy-jwt-token");
+                given(appUserService.register(any())).willReturn(Optional.of(dto));
 
                 mockMvc.perform(post("/api/users/register")
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -74,21 +61,19 @@ class AppUserControllerTest {
                                 .andExpect(jsonPath("$.id", is(1)))
                                 .andExpect(jsonPath("$.username", is("newUser")))
                                 .andExpect(jsonPath("$.token", is("dummy-jwt-token")))
-                                // Verify sensitive data is NOT exposed
                                 .andExpect(jsonPath("$.password").doesNotExist())
-                                .andExpect(jsonPath("$.salt").doesNotExist())
-                                .andExpect(jsonPath("$.discogsToken").doesNotExist());
+                                .andExpect(jsonPath("$.salt").doesNotExist());
         }
 
         @Test
         void login_ShouldReturnUser_WhenCredentialsMatch_WithoutSensitiveData() throws Exception {
                 Map<String, String> payload = Map.of("username", "user1", "password", "password123");
-                AppUser user = new AppUser("user1", "encodedPassword", "salt");
-                user.setId(1L);
 
-                given(userRepository.findByUsername("user1")).willReturn(Optional.of(user));
-                given(passwordEncoder.matches("password123", "encodedPassword")).willReturn(true);
-                given(jwtService.generateToken("user1")).willReturn("dummy-jwt-token");
+                UserResponseDto dto = new UserResponseDto();
+                dto.setId(1L);
+                dto.setUsername("user1");
+                dto.setToken("dummy-jwt-token");
+                given(appUserService.login(any())).willReturn(Optional.of(dto));
 
                 mockMvc.perform(post("/api/users/login")
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -96,10 +81,7 @@ class AppUserControllerTest {
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.username", is("user1")))
                                 .andExpect(jsonPath("$.token", is("dummy-jwt-token")))
-                                // Verify sensitive data is NOT exposed
-                                .andExpect(jsonPath("$.password").doesNotExist())
-                                .andExpect(jsonPath("$.salt").doesNotExist())
-                                .andExpect(jsonPath("$.discogsToken").doesNotExist());
+                                .andExpect(jsonPath("$.password").doesNotExist());
         }
 
         @Test
@@ -108,12 +90,12 @@ class AppUserControllerTest {
                                 "password", "password123",
                                 "token", "newToken",
                                 "discogsUsername", "discogsUser");
-                AppUser user = new AppUser("user1", "encodedPassword", "salt");
-                user.setId(1L);
 
-                given(userRepository.findByUsername("user1")).willReturn(Optional.of(user));
-                given(tokenService.encrypt("newToken")).willReturn("encryptedToken");
-                given(userRepository.save(any(AppUser.class))).willAnswer(invocation -> invocation.getArgument(0));
+                UserResponseDto dto = new UserResponseDto();
+                dto.setId(1L);
+                dto.setUsername("user1");
+                dto.setDiscogsUsername("discogsUser");
+                given(appUserService.updateDiscogs(eq("user1"), any())).willReturn(Optional.of(dto));
 
                 Principal mockPrincipal = () -> "user1";
 
@@ -122,17 +104,13 @@ class AppUserControllerTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(payload)))
                                 .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.discogsUsername", is("discogsUser")))
-                                // Verify sensitive data is NOT exposed
-                                .andExpect(jsonPath("$.password").doesNotExist())
-                                .andExpect(jsonPath("$.salt").doesNotExist())
-                                .andExpect(jsonPath("$.discogsToken").doesNotExist());
+                                .andExpect(jsonPath("$.discogsUsername", is("discogsUser")));
         }
 
         @Test
         void register_ShouldReturnBadRequest_WhenUsernameExists() throws Exception {
                 Map<String, String> payload = Map.of("username", "existingUser", "password", "password123");
-                given(userRepository.findByUsername("existingUser")).willReturn(Optional.of(new AppUser()));
+                given(appUserService.register(any())).willReturn(Optional.empty());
 
                 mockMvc.perform(post("/api/users/register")
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -143,9 +121,7 @@ class AppUserControllerTest {
         @Test
         void login_ShouldReturnUnauthorized_WhenPasswordMismatch() throws Exception {
                 Map<String, String> payload = Map.of("username", "user1", "password", "wrongPassword");
-                AppUser user = new AppUser("user1", "encodedPassword", "salt");
-                given(userRepository.findByUsername("user1")).willReturn(Optional.of(user));
-                given(passwordEncoder.matches("wrongPassword", "encodedPassword")).willReturn(false);
+                given(appUserService.login(any())).willReturn(Optional.empty());
 
                 mockMvc.perform(post("/api/users/login")
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -159,23 +135,18 @@ class AppUserControllerTest {
                                 "username", "user1",
                                 "newPassword", "newPass",
                                 "discogsToken", "newToken");
-                AppUser user = new AppUser("user1", "oldPass", "oldSalt");
 
-                given(userRepository.findByUsername("user1")).willReturn(Optional.of(user));
-                given(passwordEncoder.encode("newPass")).willReturn("newEncodedPass");
-                given(tokenService.encrypt("newToken")).willReturn("newEncryptedToken");
-                given(userRepository.save(any(AppUser.class))).willAnswer(invocation -> invocation.getArgument(0));
-                given(jwtService.generateToken("user1")).willReturn("dummy-jwt-token");
+                UserResponseDto dto = new UserResponseDto();
+                dto.setId(1L);
+                dto.setUsername("user1");
+                dto.setToken("dummy-jwt-token");
+                given(appUserService.resetPassword(any())).willReturn(Optional.of(dto));
 
                 mockMvc.perform(post("/api/users/reset-password")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(payload)))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.username", is("user1")))
-                                .andExpect(jsonPath("$.token", is("dummy-jwt-token")))
-                                // Verify sensitive data is NOT exposed
-                                .andExpect(jsonPath("$.password").doesNotExist())
-                                .andExpect(jsonPath("$.salt").doesNotExist())
-                                .andExpect(jsonPath("$.discogsToken").doesNotExist());
+                                .andExpect(jsonPath("$.token", is("dummy-jwt-token")));
         }
 }

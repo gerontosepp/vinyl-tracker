@@ -1,5 +1,6 @@
 package com.antigravity.vinyltracker.controller;
 
+import com.antigravity.vinyltracker.service.ImageProxyService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,9 @@ class ImageProxyControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @MockitoBean
+    private ImageProxyService imageProxyService;
 
     @MockitoBean
     private com.antigravity.vinyltracker.security.JwtService jwtService;

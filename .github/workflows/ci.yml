@@ -126,4 +126,30 @@ jobs:
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
 
+  cleanup-ghcr:
+    needs: [backend-build, frontend-build]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - name: Delete old backend images
+        uses: snok/container-retention-policy@v2
+        with:
+          image-names: vinyl-tracker-backend
+          cut-off: 1s
+          keep-at-least: 3
+          account-type: personal
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Delete old frontend images
+        uses: snok/container-retention-policy@v2
+        with:
+          image-names: vinyl-tracker-frontend
+          cut-off: 1s
+          keep-at-least: 3
+          account-type: personal
+          token: ${{ secrets.GITHUB_TOKEN }}
+
 

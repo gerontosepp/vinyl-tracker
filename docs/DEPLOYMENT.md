@@ -13,13 +13,14 @@ Die Zielmaschine benötigt:
 Die Zielmaschine benötigt Zugriff auf die Docker Images. Sie haben zwei Möglichkeiten:
 
 ### Option A: Automatisiert via CI/CD (Empfohlen)
-Dieses Projekt ist mit GitHub Actions so konfiguriert, dass es automatisch Images baut und in die **GitHub Container Registry (GHCR)** pusht.
+Dieses Projekt ist mit GitHub Actions so konfiguriert, dass es automatisch Images baut und in die **GitHub Container Registry (GHCR)** pusht, sobald ein neues Release erstellt wird.
 
-1.  Pushen Sie Ihre Änderungen in den `main` Branch.
-2.  Warten Sie, bis die "CI Pipeline" erfolgreich abgeschlossen ist.
-3.  Die Images sind dann verfügbar unter:
-    - `ghcr.io/<ihr-benutzername>/vinyl-tracker-backend:latest`
-    - `ghcr.io/<ihr-benutzername>/vinyl-tracker-frontend:latest`
+1.  Mergen Sie Ihre fertigen Features aus `develop` in den `main` Branch.
+2.  Erstellen Sie auf GitHub ein **neues Release** (z.B. `v1.5.0`), das auf den `main` Branch zeigt.
+3.  Warten Sie, bis die "CI Pipeline" für dieses Tag erfolgreich abgeschlossen ist.
+4.  Die Images sind dann mit dem entsprechenden Versions-Tag sowie als `latest` verfügbar unter:
+    - `ghcr.io/<ihr-benutzername>/vinyl-tracker-backend:latest` (oder `:v1.5.0`)
+    - `ghcr.io/<ihr-benutzername>/vinyl-tracker-frontend:latest` (oder `:v1.5.0`)
 
 ### Option B: Manueller Build
 Wenn Sie die Images manuell von Ihrem Entwicklungsrechner pushen möchten:
@@ -75,7 +76,7 @@ Starten Sie die Anwendung mit der Registry-Konfiguration:
 ```bash
 docker compose -f docker-compose.registry.yml up -d
 ```
-*Hinweis: Dies lädt die neuesten Images aus der Registry herunter, die Sie in Ihrer `.env` definiert haben.*
+*Hinweis: Dies lädt standardmäßig die `latest` Images aus der Registry herunter, es sei denn, Sie haben in der `docker-compose.registry.yml` explizit andere Versionstags (z.B. `:v1.5.0`) definiert.*
 
 Die Anwendung läuft nun auf **Port 80** der Zielmaschine.
 

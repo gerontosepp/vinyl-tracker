@@ -78,6 +78,9 @@ describe('Collection Component', () => {
           register: vi.fn(),
           updateDiscogs: vi.fn(),
           isLoading: false,
+          isSyncing: false,
+          syncMessage: '',
+          performSync: vi.fn(),
         }}
       >
         <BrowserRouter>

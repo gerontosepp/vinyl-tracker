@@ -27,6 +27,12 @@ public class CollectionService {
         return discogsService.getCollection(user, page, per_page, sort, sort_order, min_plays);
     }
 
+    public com.antigravity.vinyltracker.model.dto.SyncResultDto forceSync(String username) {
+        AppUser user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+        return discogsService.syncCollection(user);
+    }
+
     public byte[] generateSelectedQrCodesPdf(DiscogsDto.QrCodeRequest request) throws IOException {
         return pdfService.generateQrCodePdf(request.getItems());
     }

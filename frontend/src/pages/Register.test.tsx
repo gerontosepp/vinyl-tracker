@@ -14,6 +14,9 @@ vi.spyOn(AuthContext, 'useAuth').mockReturnValue({
   updateDiscogs: vi.fn(),
   logout: vi.fn(),
   isLoading: false,
+  isSyncing: false,
+  syncMessage: '',
+  performSync: vi.fn(),
 });
 
 const renderComponent = () => {

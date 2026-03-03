@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout/Layout';
 
 const Settings: React.FC = () => {
-  const { user, updateDiscogs, isLoading } = useAuth();
+  const { user, updateDiscogs, isLoading, isSyncing, performSync } = useAuth();
   const [discogsUsername, setDiscogsUsername] = useState(user?.discogsUsername || '');
   const [token, setToken] = useState(''); // Don't verify existing token for security, just let set new
   const [password, setPassword] = useState(''); // Required to encrypt
@@ -34,6 +34,7 @@ const Settings: React.FC = () => {
       // Clear sensitive fields
       setToken('');
       setPassword('');
+      // Background sync will be triggered by AuthContext
     } catch (err) {
       console.error(err);
       setError('Failed to update settings. Check your password.');
@@ -107,6 +108,21 @@ const Settings: React.FC = () => {
               {isLoading ? 'Saving...' : 'Save Settings'}
             </button>
           </form>
+
+          <hr className="my-8" />
+
+          <h2 className="text-lg font-semibold mb-4">Manual Synchronization</h2>
+          <p className="text-sm text-gray-500 mb-4">
+            Your collection is automatically verified when you log in. If you made recent changes on Discogs
+            and want them to appear immediately, you can force a manual sync here.
+          </p>
+          <button
+            onClick={() => { if (user) performSync(user.username) }}
+            disabled={isSyncing}
+            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:bg-green-300 w-full md:w-auto flex items-center justify-center gap-2"
+          >
+            Force Sync Collection
+          </button>
         </div>
       </div>
     </Layout>

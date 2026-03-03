@@ -33,6 +33,13 @@ public class CollectionController {
                 .ok(collectionService.getCollection(principal.getName(), page, per_page, sort, sort_order, min_plays));
     }
 
+    @PostMapping("/sync")
+    public ResponseEntity<com.antigravity.vinyltracker.model.dto.SyncResultDto> forceSyncCollection(
+            Principal principal) {
+        com.antigravity.vinyltracker.model.dto.SyncResultDto result = collectionService.forceSync(principal.getName());
+        return ResponseEntity.ok(result);
+    }
+
     @PostMapping("/qr-codes/selected")
     public ResponseEntity<byte[]> generateSelectedQrCodes(@RequestBody DiscogsDto.QrCodeRequest request) {
         try {

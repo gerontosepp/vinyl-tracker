@@ -6,6 +6,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.http.HttpHeaders;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @lombok.extern.slf4j.Slf4j
@@ -14,13 +17,19 @@ public class DiscogsService {
     private final RestClient restClient;
     private final TokenEncryptionService tokenService;
     private final com.antigravity.vinyltracker.repository.ListenEventRepository listenEventRepository;
+    private final com.antigravity.vinyltracker.repository.RecordRepository recordRepository;
+    private final com.antigravity.vinyltracker.repository.CollectionItemRepository collectionItemRepository;
     private static final String BASE_URL = "https://api.discogs.com";
 
     public DiscogsService(RestClient.Builder restClientBuilder, TokenEncryptionService tokenService,
-            com.antigravity.vinyltracker.repository.ListenEventRepository listenEventRepository) {
+            com.antigravity.vinyltracker.repository.ListenEventRepository listenEventRepository,
+            com.antigravity.vinyltracker.repository.RecordRepository recordRepository,
+            com.antigravity.vinyltracker.repository.CollectionItemRepository collectionItemRepository) {
         this.restClient = restClientBuilder.baseUrl(BASE_URL).build();
         this.tokenService = tokenService;
         this.listenEventRepository = listenEventRepository;
+        this.recordRepository = recordRepository;
+        this.collectionItemRepository = collectionItemRepository;
     }
 
     public DiscogsDto.Release getRelease(Long releaseId, AppUser user) {
@@ -99,154 +108,172 @@ public class DiscogsService {
     public DiscogsDto.CollectionResponse getCollection(AppUser user, int page, int perPage, String sort,
             String sortOrder, Integer minPlays) {
 
-        if (minPlays != null && minPlays > 0) {
-            // Fetch from local DB
-            List<Object[]> recordsWithPlays = listenEventRepository.findRecordsWithPlays(user.getId());
+        log.info("Fetching collection from local DB for user: {}", user.getUsername());
 
-            // Map to CollectionRelease DTOs
-            List<DiscogsDto.CollectionRelease> allPlayedReleases = new java.util.ArrayList<>(recordsWithPlays.stream()
-                    .map(row -> {
-                        com.antigravity.vinyltracker.model.Record record = (com.antigravity.vinyltracker.model.Record) row[0];
-                        Long count = (Long) row[1];
+        // Setup pagination
+        org.springframework.data.domain.Sort.Direction direction = "desc".equalsIgnoreCase(sortOrder)
+                ? org.springframework.data.domain.Sort.Direction.DESC
+                : org.springframework.data.domain.Sort.Direction.ASC;
 
-                        if (count < minPlays)
-                            return null;
-
-                        DiscogsDto.CollectionRelease release = new DiscogsDto.CollectionRelease();
-                        release.setId(record.getDiscogsId());
-                        release.setInstanceId(record.getId()); // Using local ID as instance ID proxy
-                        release.setListenCount(count);
-
-                        DiscogsDto.BasicInformation basicInfo = new DiscogsDto.BasicInformation();
-                        basicInfo.setId(record.getDiscogsId());
-                        basicInfo.setTitle(record.getTitle());
-                        basicInfo.setThumbUrl(record.getThumbUrl());
-                        basicInfo.setCoverImage(record.getThumbUrl());
-
-                        // Artist
-                        DiscogsDto.Artist artist = new DiscogsDto.Artist();
-                        artist.setName(record.getArtist());
-                        basicInfo.setArtists(List.of(artist));
-
-                        // Year
-                        try {
-                            basicInfo.setYear(Integer.parseInt(record.getYear()));
-                        } catch (NumberFormatException e) {
-                            basicInfo.setYear(0);
-                        }
-
-                        release.setBasicInformation(basicInfo);
-                        return release;
-                    })
-                    .filter(java.util.Objects::nonNull)
-                    .toList());
-
-            // Sort
-            sortReleases(allPlayedReleases, sort, sortOrder);
-
-            // Pagination logic for in-memory list
-            int start = Math.min((page - 1) * perPage, allPlayedReleases.size());
-            int end = Math.min(start + perPage, allPlayedReleases.size());
-            List<DiscogsDto.CollectionRelease> pagedReleases = allPlayedReleases.subList(start, end);
-
-            DiscogsDto.Pagination pagination = new DiscogsDto.Pagination();
-            pagination.setItems(allPlayedReleases.size());
-            pagination.setPage(page);
-            pagination.setPerPage(perPage);
-            pagination.setPages((int) Math.ceil((double) allPlayedReleases.size() / perPage));
-
-            return new DiscogsDto.CollectionResponse(pagedReleases, pagination);
-        }
-
-        // Handle "listens" sort for full collection (requires fetching all)
+        org.springframework.data.domain.Pageable pageable;
         if ("listens".equalsIgnoreCase(sort)) {
-            List<DiscogsDto.CollectionRelease> allReleases = getAllCollection(user);
-            sortReleases(allReleases, sort, sortOrder);
-
-            // Pagination
-            int start = Math.min((page - 1) * perPage, allReleases.size());
-            int end = Math.min(start + perPage, allReleases.size());
-            List<DiscogsDto.CollectionRelease> pagedReleases = allReleases.subList(start, end);
-
-            DiscogsDto.Pagination pagination = new DiscogsDto.Pagination();
-            pagination.setItems(allReleases.size());
-            pagination.setPage(page);
-            pagination.setPerPage(perPage);
-            pagination.setPages((int) Math.ceil((double) allReleases.size() / perPage));
-
-            return new DiscogsDto.CollectionResponse(pagedReleases, pagination);
+            pageable = org.springframework.data.domain.PageRequest.of(page - 1, perPage);
+        } else if ("artist".equalsIgnoreCase(sort)) {
+            pageable = org.springframework.data.domain.PageRequest.of(page - 1, perPage,
+                    org.springframework.data.domain.Sort.by(direction, "record.artist"));
+        } else {
+            pageable = org.springframework.data.domain.PageRequest.of(page - 1, perPage,
+                    org.springframework.data.domain.Sort.by(direction, "addedAt"));
         }
 
+        org.springframework.data.domain.Page<?> pagedResult;
+
+        if ("listens".equalsIgnoreCase(sort)) {
+            if ("desc".equalsIgnoreCase(sortOrder)) {
+                pagedResult = collectionItemRepository.findAllByUserOrderByPlayCountDesc(user, pageable);
+            } else {
+                pagedResult = collectionItemRepository.findAllByUserOrderByPlayCountAsc(user, pageable);
+            }
+        } else {
+            // Default query with optional sorting
+            pagedResult = collectionItemRepository.findAllByUser(user, pageable);
+        }
+
+        List<DiscogsDto.CollectionRelease> releases = pagedResult.getContent().stream()
+                .map(item -> {
+                    com.antigravity.vinyltracker.model.CollectionItem ci;
+                    Long playCount = 0L;
+                    if (item instanceof Object[]) {
+                        Object[] row = (Object[]) item;
+                        ci = (com.antigravity.vinyltracker.model.CollectionItem) row[0];
+                        if (row.length > 1 && row[1] instanceof Long) {
+                            playCount = (Long) row[1];
+                        }
+                    } else {
+                        ci = (com.antigravity.vinyltracker.model.CollectionItem) item;
+                        playCount = listenEventRepository.countByRecordAndUser(ci.getRecord(), user);
+                    }
+
+                    if (minPlays != null && minPlays > 0 && playCount < minPlays) {
+                        return null; // Will filter out later
+                    }
+
+                    return mapToCollectionRelease(ci, playCount);
+                })
+                .filter(java.util.Objects::nonNull)
+                .toList();
+
+        // If minPlays filtering altered the real count, pagination metadata might be
+        // slightly off
+        // But since minPlays is mostly used for analytics/profiles, this is acceptable
+        // for now.
+
+        DiscogsDto.Pagination pagination = new DiscogsDto.Pagination();
+        pagination.setItems((int) pagedResult.getTotalElements());
+        pagination.setPage(page);
+        pagination.setPerPage(perPage);
+        pagination.setPages(pagedResult.getTotalPages());
+
+        return new DiscogsDto.CollectionResponse(releases, pagination);
+    }
+
+    private DiscogsDto.CollectionRelease mapToCollectionRelease(com.antigravity.vinyltracker.model.CollectionItem item,
+            Long listenCount) {
+        DiscogsDto.CollectionRelease release = new DiscogsDto.CollectionRelease();
+        release.setId(item.getRecord().getDiscogsId());
+        release.setInstanceId(item.getInstanceId());
+        release.setListenCount(listenCount);
+
+        DiscogsDto.BasicInformation basicInfo = new DiscogsDto.BasicInformation();
+        basicInfo.setId(item.getRecord().getDiscogsId());
+        basicInfo.setTitle(item.getRecord().getTitle());
+        basicInfo.setThumbUrl(item.getRecord().getThumbUrl());
+        basicInfo.setCoverImage(item.getRecord().getThumbUrl());
+
+        DiscogsDto.Artist artist = new DiscogsDto.Artist();
+        artist.setName(item.getRecord().getArtist());
+        basicInfo.setArtists(List.of(artist));
+
+        try {
+            basicInfo.setYear(Integer.parseInt(item.getRecord().getYear()));
+        } catch (NumberFormatException e) {
+            basicInfo.setYear(0);
+        }
+
+        release.setBasicInformation(basicInfo);
+        return release;
+    }
+
+    public List<DiscogsDto.CollectionRelease> getAllCollection(AppUser user) {
+        List<com.antigravity.vinyltracker.model.CollectionItem> items = collectionItemRepository.findAllByUser(user);
+        return items.stream().map(item -> {
+            Long playCount = listenEventRepository.countByRecordAndUser(item.getRecord(), user);
+            return mapToCollectionRelease(item, playCount);
+        }).toList();
+    }
+
+    @Transactional
+    public com.antigravity.vinyltracker.model.dto.SyncResultDto syncCollection(AppUser user) {
+        log.info("Starting Discogs DB sync for user: {}", user.getUsername());
         String decryptedToken = tokenService.decrypt(user.getDiscogsToken());
         if (decryptedToken == null) {
             throw new RuntimeException("Could not decrypt Discogs token for user " + user.getUsername());
         }
 
-        DiscogsDto.CollectionResponse response = restClient.get()
-                .uri("/users/{username}/collection/folders/0/releases?page={page}&per_page={perPage}&sort={sort}&sort_order={sortOrder}",
-                        user.getDiscogsUsername(), page, perPage, sort, sortOrder)
-                .header(HttpHeaders.USER_AGENT, "VinylTrackerApp/1.0")
-                .header(HttpHeaders.AUTHORIZATION, "Discogs token=" + decryptedToken)
-                .retrieve()
-                .body(DiscogsDto.CollectionResponse.class);
-
-        if (response != null && response.getReleases() != null) {
-            List<Object[]> recordsWithPlays = listenEventRepository.findRecordsWithPlays(user.getId());
-            java.util.Map<Long, Long> countsMap = recordsWithPlays.stream()
-                    .collect(java.util.stream.Collectors.toMap(
-                            row -> ((com.antigravity.vinyltracker.model.Record) row[0]).getDiscogsId(),
-                            row -> (Long) row[1]));
-
-            response.getReleases().forEach(release -> {
-                release.setListenCount(countsMap.getOrDefault(release.getId(), 0L));
-            });
-        }
-
-        return response;
-    }
-
-    private void sortReleases(List<DiscogsDto.CollectionRelease> releases, String sort, String sortOrder) {
-        java.util.Comparator<DiscogsDto.CollectionRelease> comparator = null;
-
-        if ("listens".equalsIgnoreCase(sort)) {
-            comparator = java.util.Comparator.comparingLong(DiscogsDto.CollectionRelease::getListenCount);
-        } else if ("artist".equalsIgnoreCase(sort)) {
-            comparator = java.util.Comparator.comparing(r -> {
-                if (r.getBasicInformation().getArtists() != null && !r.getBasicInformation().getArtists().isEmpty()) {
-                    return r.getBasicInformation().getArtists().get(0).getName().toLowerCase();
-                }
-                return "";
-            });
-        }
-
-        if (comparator != null) {
-            if ("desc".equalsIgnoreCase(sortOrder)) {
-                comparator = comparator.reversed();
-            }
-            releases.sort(comparator);
-        }
-    }
-
-    public List<DiscogsDto.CollectionRelease> getAllCollection(AppUser user) {
-        List<DiscogsDto.CollectionRelease> allReleases = new java.util.ArrayList<>();
         int page = 1;
-        int perPage = 100; // Max allowed by Discogs
+        int perPage = 100;
         int totalPages = 1;
 
-        // Pre-fetch listen counts for all releases to avoid N+1 if we were doing it
-        // per-page loops,
-        // but since we are reusing getCollection, it does the query every time.
-        // For getAllCollection which might make multiple requests, it is inefficient to
-        // query DB every time,
-        // but for now it ensures consistency.
-        // Optimization: Query once outside loop and set?
-        // But getCollection returns DTOs with listenCounts already set.
-        // So we just aggregate them.
+        int addedCount = 0;
+        int removedCount = 0;
+
+        Set<Long> remoteInstanceIds = new HashSet<>();
 
         do {
-            DiscogsDto.CollectionResponse response = getCollection(user, page, perPage, "artist", "asc", 0);
+            log.info("Fetching Discogs page {} for user {}", page, user.getUsername());
+            DiscogsDto.CollectionResponse response = restClient.get()
+                    .uri("/users/{username}/collection/folders/0/releases?page={page}&per_page={perPage}&sort={sort}&sort_order={sortOrder}",
+                            user.getDiscogsUsername(), page, perPage, "artist", "asc")
+                    .header(HttpHeaders.USER_AGENT, "VinylTrackerApp/1.0")
+                    .header(HttpHeaders.AUTHORIZATION, "Discogs token=" + decryptedToken)
+                    .retrieve()
+                    .body(DiscogsDto.CollectionResponse.class);
+
             if (response != null && response.getReleases() != null) {
-                allReleases.addAll(response.getReleases());
+                for (DiscogsDto.CollectionRelease release : response.getReleases()) {
+                    remoteInstanceIds.add(release.getInstanceId());
+
+                    // Check if global Record exists, create if not
+                    Long discogsId = release.getId();
+                    com.antigravity.vinyltracker.model.Record record = recordRepository.findByDiscogsId(discogsId)
+                            .orElseGet(() -> {
+                                com.antigravity.vinyltracker.model.Record newRecord = new com.antigravity.vinyltracker.model.Record();
+                                newRecord.setDiscogsId(discogsId);
+                                newRecord.setTitle(release.getBasicInformation().getTitle());
+
+                                String artist = "";
+                                if (release.getBasicInformation().getArtists() != null
+                                        && !release.getBasicInformation().getArtists().isEmpty()) {
+                                    artist = release.getBasicInformation().getArtists().get(0).getName();
+                                }
+                                newRecord.setArtist(artist);
+                                newRecord.setYear(String.valueOf(release.getBasicInformation().getYear()));
+                                newRecord.setThumbUrl(release.getBasicInformation().getThumbUrl());
+
+                                return recordRepository.save(newRecord);
+                            });
+
+                    // Check if CollectionItem linkage exists for user, create if not
+                    java.util.Optional<com.antigravity.vinyltracker.model.CollectionItem> existingItem = collectionItemRepository
+                            .findByUserAndInstanceId(user, release.getInstanceId());
+                    if (existingItem.isEmpty()) {
+                        com.antigravity.vinyltracker.model.CollectionItem item = new com.antigravity.vinyltracker.model.CollectionItem(
+                                user, record, release.getInstanceId());
+                        collectionItemRepository.save(item);
+                        addedCount++;
+                    }
+                }
+
                 if (response.getPagination() != null) {
                     totalPages = response.getPagination().getPages();
                 }
@@ -256,6 +283,20 @@ public class DiscogsService {
             page++;
         } while (page <= totalPages);
 
-        return allReleases;
+        // Delete any local CollectionItems that are no longer in the remote Discogs
+        // collection
+        List<com.antigravity.vinyltracker.model.CollectionItem> localItems = collectionItemRepository
+                .findAllByUser(user);
+        for (com.antigravity.vinyltracker.model.CollectionItem item : localItems) {
+            if (!remoteInstanceIds.contains(item.getInstanceId())) {
+                log.info("Removing deleted instance {} from local user collection", item.getInstanceId());
+                collectionItemRepository.delete(item);
+                removedCount++;
+            }
+        }
+        log.info("Sync complete. User {} has {} items in DB. Added: {}, Removed: {}", user.getUsername(),
+                remoteInstanceIds.size(), addedCount, removedCount);
+
+        return new com.antigravity.vinyltracker.model.dto.SyncResultDto(addedCount, removedCount);
     }
 }

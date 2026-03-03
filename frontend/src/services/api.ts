@@ -138,6 +138,11 @@ export const getCollection = async (
   return response.data;
 };
 
+export const forceSyncCollection = async (_username: string): Promise<import('../types').SyncResult> => {
+  const response = await api.post<import('../types').SyncResult>(`/collection/sync`);
+  return response.data;
+};
+
 export const downloadQrCodes = async (_username: string): Promise<Blob> => {
   const response = await api.get(`/collection/qr-codes/all`, {
     responseType: 'blob',

@@ -66,6 +66,7 @@ public class AppUserService {
                     user.setDiscogsToken(tokenService.encrypt(token));
                     user.setDiscogsUsername(discogsUsername);
                     AppUser savedUser = userRepository.save(user);
+
                     return UserResponseDto.fromEntity(savedUser);
                 });
     }

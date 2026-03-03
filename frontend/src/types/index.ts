@@ -24,6 +24,11 @@ export interface ScanResult {
   record?: TrackedRecord;
 }
 
+export interface SyncResult {
+  added: number;
+  removed: number;
+}
+
 export interface AnalyticsTopRecord {
   recordTitle: string; // Keeping for backward compatibility if needed, though title is better
   title: string;

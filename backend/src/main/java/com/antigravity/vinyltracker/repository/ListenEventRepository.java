@@ -16,4 +16,7 @@ public interface ListenEventRepository extends JpaRepository<ListenEvent, Long> 
 
     @org.springframework.data.jpa.repository.Query("SELECT le.record, COUNT(le) FROM ListenEvent le WHERE le.user.id = :userId GROUP BY le.record ORDER BY le.record.artist ASC")
     List<Object[]> findRecordsWithPlays(Long userId);
+
+    Long countByRecordAndUser(com.antigravity.vinyltracker.model.Record record,
+            com.antigravity.vinyltracker.model.AppUser user);
 }

@@ -138,7 +138,7 @@ jobs:
         uses: snok/container-retention-policy@v2
         with:
           image-names: vinyl-tracker-backend
-          cut-off: 1s
+          cut-off: 1s UTC
           keep-at-least: 3
           account-type: personal
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -147,7 +147,7 @@ jobs:
         uses: snok/container-retention-policy@v2
         with:
           image-names: vinyl-tracker-frontend
-          cut-off: 1s
+          cut-off: 1s UTC
           keep-at-least: 3
           account-type: personal
           token: ${{ secrets.GITHUB_TOKEN }}

@@ -32,8 +32,10 @@ const Layout: React.FC<LayoutProps> = ({ children, onScanClick }) => {
 
       {/* Sync Global Toast Notification */}
       {(isSyncing || syncMessage) && (
-        <div className={`fixed bottom-32 md:bottom-8 right-4 md:right-8 left-4 md:left-auto p-4 rounded-xl shadow-lg border border-gray-100 flex items-center space-x-3 z-50 text-sm font-medium transition-all duration-300 transform translate-y-0 opacity-100 max-w-full md:max-w-md
-          ${syncMessage.includes('Failed') ? 'bg-red-50 text-red-700 border-red-200' : 'bg-white text-gray-800'}`}>
+        <div
+          className={`fixed bottom-32 md:bottom-8 right-4 md:right-8 left-4 md:left-auto p-4 rounded-xl shadow-lg border border-gray-100 flex items-center space-x-3 z-50 text-sm font-medium transition-all duration-300 transform translate-y-0 opacity-100 max-w-full md:max-w-md
+          ${syncMessage.includes('Failed') ? 'bg-red-50 text-red-700 border-red-200' : 'bg-white text-gray-800'}`}
+        >
           {isSyncing ? (
             <>
               <div className="w-5 h-5 rounded-full border-2 border-blue-600 border-t-transparent animate-spin"></div>
@@ -43,7 +45,14 @@ const Layout: React.FC<LayoutProps> = ({ children, onScanClick }) => {
             <>
               {!syncMessage.includes('Failed') && (
                 <div className="w-5 h-5 rounded-full bg-green-500 text-white flex items-center justify-center">
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="3"
+                      d="M5 13l4 4L19 7"
+                    ></path>
+                  </svg>
                 </div>
               )}
               <span>{syncMessage}</span>

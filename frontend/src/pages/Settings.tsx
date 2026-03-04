@@ -113,11 +113,13 @@ const Settings: React.FC = () => {
 
           <h2 className="text-lg font-semibold mb-4">Manual Synchronization</h2>
           <p className="text-sm text-gray-500 mb-4">
-            Your collection is automatically verified when you log in. If you made recent changes on Discogs
-            and want them to appear immediately, you can force a manual sync here.
+            Your collection is automatically verified when you log in. If you made recent changes on
+            Discogs and want them to appear immediately, you can force a manual sync here.
           </p>
           <button
-            onClick={() => { if (user) performSync(user.username) }}
+            onClick={() => {
+              if (user) performSync(user.username);
+            }}
             disabled={isSyncing}
             className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:bg-green-300 w-full md:w-auto flex items-center justify-center gap-2"
           >

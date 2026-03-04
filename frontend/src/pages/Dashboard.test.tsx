@@ -12,9 +12,9 @@ vi.mock('../components/BarcodeScanner', () => ({
 }));
 // ResizeObserver mock for Recharts
 window.ResizeObserver = class ResizeObserver {
-  observe() { }
-  unobserve() { }
-  disconnect() { }
+  observe() {}
+  unobserve() {}
+  disconnect() {}
 };
 
 describe('Dashboard Component', () => {

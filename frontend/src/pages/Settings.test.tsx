@@ -77,7 +77,7 @@ describe('Settings Component', () => {
   });
 
   it('displays error on update failure', async () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     renderComponent();
 
     mockUpdateDiscogs.mockRejectedValueOnce(new Error('Update failed'));

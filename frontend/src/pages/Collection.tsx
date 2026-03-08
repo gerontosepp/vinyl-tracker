@@ -185,44 +185,17 @@ const Collection: React.FC = () => {
         </div>
 
         {/* Controls & Pagination Top (Sticky with Glassmorphism) */}
-        <div className="sticky top-0 z-20 p-4 md:px-6 bg-slate-50/70 dark:bg-slate-900/60 backdrop-blur-xl flex flex-wrap justify-between items-center border-b border-slate-200/50 dark:border-slate-700/50 text-sm transition-colors shadow-sm">
-          <div className="flex items-center gap-4 flex-wrap">
-            <button
-              onClick={toggleSelectAllPage}
-              className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium transition-colors"
-            >
-              {isAllPageSelected ? (
-                <CheckSquare className="text-indigo-600 dark:text-indigo-400" size={20} />
-              ) : (
-                <Square size={20} />
-              )}
-              Select Page
-            </button>
-
-            <button
-              onClick={() => {
-                setShowPlayedOnly(!showPlayedOnly);
-                setPage(1);
-              }}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all duration-200 ${showPlayedOnly
-                ? 'bg-indigo-50 dark:bg-indigo-900/40 border-indigo-200 dark:border-indigo-800/50 text-indigo-800 dark:text-indigo-300'
-                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm'
-                }`}
-            >
-              <span className="font-semibold">Played Only</span>
-              {showPlayedOnly && (
-                <span className="text-[10px] font-bold bg-indigo-200 dark:bg-indigo-800 text-indigo-800 dark:text-indigo-200 px-1.5 py-0.5 rounded-full">ON</span>
-              )}
-            </button>
-
-            <div className="relative group flex-1 min-w-[12rem] sm:max-w-xs md:ml-4">
+        <div className="sticky top-0 z-20 p-4 md:px-6 bg-slate-50/70 dark:bg-slate-900/60 backdrop-blur-xl flex flex-col xl:flex-row justify-between items-stretch xl:items-center gap-4 border-b border-slate-200/50 dark:border-slate-700/50 text-sm transition-colors shadow-sm">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full xl:w-auto">
+            {/* Search Bar - Full width on very small screens */}
+            <div className="relative group w-full sm:w-64 order-1 sm:order-none shrink-0">
               <Search
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 group-focus-within:text-indigo-500 transition-colors"
                 size={16}
               />
               <input
                 type="text"
-                placeholder="Search artist or title..."
+                placeholder="Search collection..."
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
@@ -243,31 +216,64 @@ const Collection: React.FC = () => {
               )}
             </div>
 
-            {/* Sort Controls */}
-            <div className="flex items-center gap-2 border-l pl-4 ml-2 border-slate-200 dark:border-slate-700/60 w-full sm:w-auto mt-3 sm:mt-0 justify-between sm:justify-start">
-              <span className="text-slate-500 dark:text-slate-400 font-medium">Sort by:</span>
-              <select
-                value={sort}
-                onChange={(e) => {
-                  setSort(e.target.value);
+            {/* Filter Buttons & Sort - Scroll horizontally on small screens */}
+            <div className="flex items-center gap-3 order-2 sm:order-none overflow-x-auto pb-1 sm:pb-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden w-full sm:w-auto">
+              <button
+                onClick={toggleSelectAllPage}
+                className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium transition-colors shrink-0"
+              >
+                {isAllPageSelected ? (
+                  <CheckSquare className="text-indigo-600 dark:text-indigo-400" size={18} />
+                ) : (
+                  <Square size={18} />
+                )}
+                <span className="whitespace-nowrap">Select Page</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowPlayedOnly(!showPlayedOnly);
                   setPage(1);
                 }}
-                className="border border-slate-200 dark:border-slate-700/60 rounded-xl py-1.5 px-3 bg-white/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100 shadow-sm font-medium focus:ring-2 focus:ring-indigo-500/50 outline-none backdrop-blur-sm cursor-pointer hover:bg-white dark:hover:bg-slate-800 transition-all duration-200"
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all duration-200 shrink-0 ${showPlayedOnly
+                  ? 'bg-indigo-50 dark:bg-indigo-900/40 border-indigo-200 dark:border-indigo-800/50 text-indigo-800 dark:text-indigo-300'
+                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm'
+                  }`}
               >
-                <option value="artist">Band Name</option>
-                <option value="listens">Listens</option>
-              </select>
-              <button
-                onClick={() => setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))}
-                className="p-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 shadow-sm transition-colors"
-                title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
-              >
-                {sortOrder === 'asc' ? <ArrowUp size={16} /> : <ArrowDown size={16} />}
+                <span className="font-semibold whitespace-nowrap">Played Only</span>
+                {showPlayedOnly && (
+                  <span className="text-[10px] font-bold bg-indigo-200 dark:bg-indigo-800 text-indigo-800 dark:text-indigo-200 px-1.5 py-0.5 rounded-full">ON</span>
+                )}
               </button>
+
+              <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 shrink-0 mr-1 ml-1" />
+
+              {/* Sort Controls */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className="text-slate-500 dark:text-slate-400 font-medium hidden sm:inline">Sort:</span>
+                <select
+                  value={sort}
+                  onChange={(e) => {
+                    setSort(e.target.value);
+                    setPage(1);
+                  }}
+                  className="border border-slate-200 dark:border-slate-700/60 rounded-xl py-1.5 px-2.5 bg-white/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100 shadow-sm font-medium focus:ring-2 focus:ring-indigo-500/50 outline-none backdrop-blur-sm cursor-pointer hover:bg-white dark:hover:bg-slate-800 transition-all duration-200"
+                >
+                  <option value="artist">Band Name</option>
+                  <option value="listens">Listens</option>
+                </select>
+                <button
+                  onClick={() => setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))}
+                  className="p-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 shadow-sm transition-colors"
+                  title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+                >
+                  {sortOrder === 'asc' ? <ArrowUp size={16} /> : <ArrowDown size={16} />}
+                </button>
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 mt-4 lg:mt-0">
+          <div className="flex items-center justify-between xl:justify-end gap-4 w-full xl:w-auto shrink-0 order-3 border-t xl:border-t-0 pt-3 xl:pt-0 border-slate-200 dark:border-slate-700/60 mt-1 xl:mt-0">
             <select
               value={perPage}
               onChange={(e) => {

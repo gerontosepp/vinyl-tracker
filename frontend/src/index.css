@@ -51,8 +51,12 @@
   }
 }
 
-/* Custom CSS Animations */
+/* Custom Utilities */
 @layer utilities {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
   .animate-slide-up {
     animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }

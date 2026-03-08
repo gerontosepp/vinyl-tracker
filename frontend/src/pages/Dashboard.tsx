@@ -86,8 +86,8 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       ) : (
-        <div className="flex flex-col h-[calc(100vh-6rem)] md:h-[calc(100vh-5rem)] space-y-4">
-          {/* Welcome Section - Fixed Height */}
+        <div className="flex flex-col md:h-[calc(100vh-5rem)] space-y-6">
+          {/* Welcome Section - Fixed Height on Desktop */}
           <div className="flex-none flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 mb-4 shrink-0">
             <div>
               <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
@@ -104,8 +104,8 @@ const Dashboard: React.FC = () => {
                   setEndDate('');
                 }}
                 className={`text-xs px-3 py-1.5 rounded-lg transition-all duration-200 ${!startDate && !endDate
-                    ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-bold shadow-sm'
-                    : 'text-slate-500 dark:text-slate-400 font-medium hover:bg-slate-50 dark:hover:bg-slate-700/50'
+                  ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-bold shadow-sm'
+                  : 'text-slate-500 dark:text-slate-400 font-medium hover:bg-slate-50 dark:hover:bg-slate-700/50'
                   }`}
               >
                 All
@@ -117,8 +117,8 @@ const Dashboard: React.FC = () => {
                   setEndDate(today);
                 }}
                 className={`text-xs px-3 py-1.5 rounded-lg transition-all duration-200 ${startDate === getTodayString() && endDate === getTodayString()
-                    ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-bold shadow-sm'
-                    : 'text-slate-500 dark:text-slate-400 font-medium hover:bg-slate-50 dark:hover:bg-slate-700/50'
+                  ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-bold shadow-sm'
+                  : 'text-slate-500 dark:text-slate-400 font-medium hover:bg-slate-50 dark:hover:bg-slate-700/50'
                   }`}
               >
                 Today
@@ -143,12 +143,12 @@ const Dashboard: React.FC = () => {
           </div>
 
           {/* Split Content */}
-          <TopRecords data={topRecords} className="flex-1 min-h-0" />
+          <TopRecords data={topRecords} className="flex-none md:flex-1 min-h-0" />
 
           <RecentListens
             listens={recentListens}
             onDelete={handleDelete}
-            className="flex-1 min-h-0"
+            className="flex-none md:flex-1 min-h-0"
           />
         </div>
       )}

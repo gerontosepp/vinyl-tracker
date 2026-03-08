@@ -74,10 +74,10 @@ const Dashboard: React.FC = () => {
   return (
     <Layout onScanClick={() => setShowScanner(true)}>
       {showScanner ? (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 animate-fade-in h-full transition-colors">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-700/50 p-6 sm:p-8 animate-fade-in h-full transition-colors">
           <button
             onClick={() => setShowScanner(false)}
-            className="mb-4 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 flex items-center gap-1"
+            className="mb-6 text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-1.5 transition-colors"
           >
             &larr; Back to Dashboard
           </button>
@@ -88,26 +88,25 @@ const Dashboard: React.FC = () => {
       ) : (
         <div className="flex flex-col h-[calc(100vh-6rem)] md:h-[calc(100vh-5rem)] space-y-4">
           {/* Welcome Section - Fixed Height */}
-          <div className="flex-none flex flex-col xl:flex-row justify-between items-start xl:items-center gap-3 mb-3 shrink-0">
+          <div className="flex-none flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 mb-4 shrink-0">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                 Welcome back, {user?.username}
               </h1>
-              <p className="text-gray-500 dark:text-gray-400 text-sm">
+              <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mt-1">
                 Here's what you've been listening to recently.
               </p>
             </div>
-            <div className="flex gap-2 items-center bg-white dark:bg-gray-800 p-1.5 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 w-full md:w-auto max-w-full overflow-x-auto transition-colors">
+            <div className="flex gap-2 items-center bg-white dark:bg-slate-800 p-1.5 rounded-xl shadow-sm border border-slate-200/50 dark:border-slate-700/50 w-full md:w-auto max-w-full overflow-x-auto transition-colors">
               <button
                 onClick={() => {
                   setStartDate('');
                   setEndDate('');
                 }}
-                className={`text-xs px-2 py-1 rounded-md transition-colors ${
-                  !startDate && !endDate
-                    ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-medium'
-                    : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-                }`}
+                className={`text-xs px-3 py-1.5 rounded-lg transition-all duration-200 ${!startDate && !endDate
+                    ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-bold shadow-sm'
+                    : 'text-slate-500 dark:text-slate-400 font-medium hover:bg-slate-50 dark:hover:bg-slate-700/50'
+                  }`}
               >
                 All
               </button>
@@ -117,28 +116,27 @@ const Dashboard: React.FC = () => {
                   setStartDate(today);
                   setEndDate(today);
                 }}
-                className={`text-xs px-2 py-1 rounded-md transition-colors ${
-                  startDate === getTodayString() && endDate === getTodayString()
-                    ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-medium'
-                    : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-                }`}
+                className={`text-xs px-3 py-1.5 rounded-lg transition-all duration-200 ${startDate === getTodayString() && endDate === getTodayString()
+                    ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-bold shadow-sm'
+                    : 'text-slate-500 dark:text-slate-400 font-medium hover:bg-slate-50 dark:hover:bg-slate-700/50'
+                  }`}
               >
                 Today
               </button>
-              <div className="w-px h-4 bg-gray-200 dark:bg-gray-700 mx-1"></div>
+              <div className="w-px h-5 bg-slate-200 dark:bg-slate-700 mx-1"></div>
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="bg-transparent border-gray-200 dark:border-gray-600 rounded-md text-xs py-1 px-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-gray-100"
+                className="bg-transparent border-slate-200 dark:border-slate-700 rounded-lg text-xs py-1.5 px-2 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-slate-900 dark:text-slate-100 outline-none font-medium"
                 title="Start Date"
               />
-              <span className="text-gray-400 dark:text-gray-500">-</span>
+              <span className="text-slate-400 dark:text-slate-500 font-medium">-</span>
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="bg-transparent border-gray-200 dark:border-gray-600 rounded-md text-xs py-1 px-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-gray-100"
+                className="bg-transparent border-slate-200 dark:border-slate-700 rounded-lg text-xs py-1.5 px-2 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-slate-900 dark:text-slate-100 outline-none font-medium"
                 title="End Date"
               />
             </div>

@@ -12,23 +12,28 @@ interface RecentListensProps {
 const RecentListens: React.FC<RecentListensProps> = ({ listens, onDelete, className = '' }) => {
   return (
     <div
-      className={`bg-white dark:bg-gray-800 rounded-xl shadow-sm flex flex-col overflow-hidden transition-colors ${className}`}
+      className={`bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-700/50 flex flex-col overflow-hidden transition-all duration-300 hover:shadow-md hover:border-slate-300/50 dark:hover:border-slate-600/50 ${className}`}
     >
-      <div className="p-6 pb-2 border-b border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 z-10 transition-colors">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Recent Listens</h2>
+      <div className="p-6 pb-4 border-b border-slate-100 dark:border-slate-700/50 bg-white dark:bg-slate-800 z-10 transition-colors">
+        <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Recent Listens</h2>
       </div>
 
       {/* Scrollable Container */}
       <div className="flex-1 overflow-y-auto p-6 pt-4">
         {/* Grid Layout inside scrollable area */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-5 md:gap-8">
           {listens.map((event) => (
             <div
               key={event.id}
-              className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4 flex md:flex-col gap-4 items-center md:items-start group border border-gray-100 dark:border-gray-700 transition-colors"
+              className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700/60 rounded-2xl p-4 flex flex-col gap-3 group border hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
             >
+              {/* Listen Status Badge (Top-Right of Image) */}
+              <div className="absolute top-3 right-3 z-10 bg-slate-900/80 dark:bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-full backdrop-blur-md shadow-sm border border-white/10 font-bold opacity-0 group-hover:opacity-100 transition-opacity">
+                Recent
+              </div>
+
               {/* Cover Image */}
-              <div className="relative flex-shrink-0">
+              <div className="w-full aspect-square bg-slate-100 dark:bg-slate-700/50 rounded-xl overflow-hidden relative shadow-inner">
                 <img
                   src={
                     event.record.thumbUrl
@@ -36,47 +41,50 @@ const RecentListens: React.FC<RecentListensProps> = ({ listens, onDelete, classN
                       : '/placeholder.png'
                   }
                   alt={event.record.title}
-                  className="w-16 h-16 md:w-full md:h-40 object-cover rounded-md md:rounded-lg bg-gray-200 dark:bg-gray-700"
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
               </div>
 
-              {/* Info */}
-              <div className="flex-1 min-w-0 w-full">
-                <h3
-                  className="font-bold text-gray-900 dark:text-gray-100 truncate"
-                  title={event.record.title}
-                >
-                  {event.record.title}
-                </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                  {event.record.artist}
-                </p>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                  {new Date(event.timestamp).toLocaleString(undefined, {
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </p>
-              </div>
+              {/* Info & Actions */}
+              <div className="flex-1 min-w-0 flex flex-col pt-1">
+                <div className="flex justify-between items-start gap-2">
+                  <div className="flex-1 min-w-0">
+                    <h3
+                      className="font-bold text-slate-900 dark:text-slate-100 truncate text-base leading-tight mb-1"
+                      title={event.record.title}
+                    >
+                      {event.record.title}
+                    </h3>
+                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400 truncate">
+                      {event.record.artist}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => onDelete(event.id)}
+                    className="p-1.5 -mr-1.5 -mt-1 text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 flex-shrink-0 opacity-0 group-hover:opacity-100"
+                    title="Delete Scan"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
 
-              {/* Actions */}
-              <div className="flex flex-col items-end gap-2 md:w-full md:flex-row md:justify-end md:mt-auto">
-                <button
-                  onClick={() => onDelete(event.id)}
-                  className="p-2 text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors rounded-full hover:bg-red-50 dark:hover:bg-red-900/20"
-                  title="Delete Scan"
-                >
-                  <Trash2 size={18} />
-                </button>
+                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700/50 flex justify-between items-center w-full z-20">
+                  <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">
+                    {new Date(event.timestamp).toLocaleString(undefined, {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </span>
+                </div>
               </div>
             </div>
           ))}
         </div>
 
         {listens.length === 0 && (
-          <div className="text-center py-12 text-gray-400 dark:text-gray-500 border-dashed border-2 border-gray-100 dark:border-gray-700 rounded-xl">
+          <div className="text-center py-12 px-4 shadow-sm text-slate-500 dark:text-slate-400 font-medium border-dashed border-2 border-slate-200 dark:border-slate-700 rounded-2xl bg-white dark:bg-slate-800/50">
             <p>No recent listens. Scan a record to get started!</p>
           </div>
         )}

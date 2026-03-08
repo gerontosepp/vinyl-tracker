@@ -155,44 +155,43 @@ const Collection: React.FC = () => {
 
   return (
     <Layout onScanClick={handleScan}>
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm flex flex-col h-[calc(100vh-6rem)] md:h-[calc(100vh-5rem)] transition-colors">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm flex flex-col h-[calc(100vh-6rem)] md:h-[calc(100vh-5rem)] transition-colors border border-slate-200/50 dark:border-slate-700/50">
         {/* Header / Actions */}
-        <div className="p-4 border-b border-gray-100 dark:border-gray-700 flex flex-col md:flex-row justify-between items-center gap-4">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">My Collection</h1>
+        <div className="p-5 md:p-6 border-b border-slate-100 dark:border-slate-700/50 flex flex-col md:flex-row justify-between items-center gap-4">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">My Collection</h1>
 
-          <div className="flex gap-2 w-full md:w-auto">
+          <div className="flex gap-3 w-full md:w-auto">
             <button
               onClick={handleDownloadSelected}
               disabled={selectedCount === 0 || generating}
-              className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                selectedCount > 0
-                  ? 'bg-blue-600 text-white hover:bg-blue-700'
-                  : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-              }`}
+              className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${selectedCount > 0
+                  ? 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md hover:-translate-y-0.5'
+                  : 'bg-slate-100 text-slate-400 dark:bg-slate-700/50 dark:text-slate-500 cursor-not-allowed'
+                }`}
             >
-              <Download size={16} />
+              <Download size={18} />
               QR Selected ({selectedCount})
             </button>
             <button
               onClick={handleDownloadAll}
               disabled={generating}
-              className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-slate-100 dark:bg-slate-700/50 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
             >
-              <Download size={16} />
+              <Download size={18} />
               QR All
             </button>
           </div>
         </div>
 
         {/* Controls & Pagination Top */}
-        <div className="p-4 bg-gray-50 dark:bg-gray-900/50 flex flex-wrap justify-between items-center border-b border-gray-100 dark:border-gray-700 text-sm transition-colors">
+        <div className="p-4 md:px-6 bg-slate-50/50 dark:bg-slate-800/20 flex flex-wrap justify-between items-center border-b border-slate-100 dark:border-slate-700/50 text-sm transition-colors">
           <div className="flex items-center gap-4 flex-wrap">
             <button
               onClick={toggleSelectAllPage}
-              className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+              className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium transition-colors"
             >
               {isAllPageSelected ? (
-                <CheckSquare className="text-blue-600" size={20} />
+                <CheckSquare className="text-indigo-600 dark:text-indigo-400" size={20} />
               ) : (
                 <Square size={20} />
               )}
@@ -204,35 +203,34 @@ const Collection: React.FC = () => {
                 setShowPlayedOnly(!showPlayedOnly);
                 setPage(1);
               }}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-colors ${
-                showPlayedOnly
-                  ? 'bg-blue-100 dark:bg-blue-900/40 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-300'
-                  : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
-              }`}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all duration-200 ${showPlayedOnly
+                  ? 'bg-indigo-50 dark:bg-indigo-900/40 border-indigo-200 dark:border-indigo-800/50 text-indigo-800 dark:text-indigo-300'
+                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm'
+                }`}
             >
-              <span className="font-medium">Played Only</span>
+              <span className="font-semibold">Played Only</span>
               {showPlayedOnly && (
-                <span className="text-xs bg-blue-200 px-1.5 rounded-full">ON</span>
+                <span className="text-[10px] font-bold bg-indigo-200 dark:bg-indigo-800 text-indigo-800 dark:text-indigo-200 px-1.5 py-0.5 rounded-full">ON</span>
               )}
             </button>
 
             {/* Sort Controls */}
-            <div className="flex items-center gap-2 border-l pl-4 ml-2 border-gray-200 dark:border-gray-700">
-              <span className="text-gray-500 dark:text-gray-400 hidden sm:inline">Sort by:</span>
+            <div className="flex items-center gap-2 border-l pl-4 ml-2 border-slate-200 dark:border-slate-700">
+              <span className="text-slate-500 dark:text-slate-400 hidden sm:inline font-medium">Sort by:</span>
               <select
                 value={sort}
                 onChange={(e) => {
                   setSort(e.target.value);
                   setPage(1);
                 }}
-                className="border border-gray-300 dark:border-gray-600 rounded p-1.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                className="border border-slate-200 dark:border-slate-700 rounded-lg p-1.5 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm font-medium focus:ring-2 focus:ring-indigo-500/20 outline-none"
               >
                 <option value="artist">Band Name</option>
                 <option value="listens">Listens</option>
               </select>
               <button
                 onClick={() => setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))}
-                className="p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300"
+                className="p-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 shadow-sm transition-colors"
                 title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
               >
                 {sortOrder === 'asc' ? <ArrowUp size={16} /> : <ArrowDown size={16} />}
@@ -240,14 +238,14 @@ const Collection: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-4 mt-2 sm:mt-0">
+          <div className="flex items-center gap-4 mt-4 sm:mt-0">
             <select
               value={perPage}
               onChange={(e) => {
                 setPerPage(Number(e.target.value));
                 setPage(1);
               }}
-              className="border border-gray-300 dark:border-gray-600 rounded p-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              className="border border-slate-200 dark:border-slate-700 rounded-lg p-1.5 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm font-medium focus:ring-2 focus:ring-indigo-500/20 outline-none"
             >
               <option value={20}>20 / page</option>
               <option value={30}>30 / page</option>
@@ -255,21 +253,21 @@ const Collection: React.FC = () => {
               <option value={50}>50 / page</option>
               <option value={100}>100 (Max)</option>
             </select>
-            <span className="text-gray-500 dark:text-gray-400">
+            <span className="text-slate-500 dark:text-slate-400 font-medium">
               Page {page} of {totalPages}
             </span>
             <div className="flex gap-1">
               <button
                 disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="p-1 px-2 border border-gray-300 dark:border-gray-600 rounded hover:bg-white dark:hover:bg-gray-700 bg-transparent text-gray-600 dark:text-gray-300 disabled:opacity-50"
+                className="p-1 px-2.5 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-white dark:hover:bg-slate-700 bg-transparent text-slate-600 dark:text-slate-300 disabled:opacity-40 transition-colors shadow-sm"
               >
                 &lt;
               </button>
               <button
                 disabled={page >= totalPages}
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                className="p-1 px-2 border border-gray-300 dark:border-gray-600 rounded hover:bg-white dark:hover:bg-gray-700 bg-transparent text-gray-600 dark:text-gray-300 disabled:opacity-50"
+                className="p-1 px-2.5 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-white dark:hover:bg-slate-700 bg-transparent text-slate-600 dark:text-slate-300 disabled:opacity-40 transition-colors shadow-sm"
               >
                 &gt;
               </button>
@@ -278,13 +276,13 @@ const Collection: React.FC = () => {
         </div>
 
         {/* List Content */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50/30 dark:bg-slate-900/20">
           {loading ? (
             <div className="flex justify-center items-center h-full text-gray-400 dark:text-gray-500">
               Loading collection...
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-5 md:gap-8">
               {releases.map((release) => {
                 const isSelected = selectedItems.has(release.id);
                 const artist = release.basic_information.artists?.[0]?.name || 'Unknown';
@@ -292,63 +290,63 @@ const Collection: React.FC = () => {
                 return (
                   <div
                     key={release.id}
-                    className={`relative group bg-white dark:bg-gray-800 border rounded-xl p-4 flex gap-4 transition-all hover:shadow-md ${isSelected ? 'border-blue-500 ring-1 ring-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700'}`}
+                    className={`relative group bg-white dark:bg-slate-800 border rounded-2xl p-4 flex flex-col gap-3 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer ${isSelected ? 'border-indigo-500 ring-2 ring-indigo-500/50 bg-indigo-50/50 dark:bg-indigo-900/20' : 'border-slate-200 dark:border-slate-700/60 shadow-sm'}`}
                     onClick={() => toggleSelection(release)}
                   >
                     {/* Listen Count Badge (Top-Right) */}
-                    <div className="absolute top-3 right-3 z-10 bg-gray-900/80 dark:bg-black/60 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm">
+                    <div className="absolute top-3 right-3 z-10 bg-slate-900/80 dark:bg-black/60 text-white text-xs px-2.5 py-1 rounded-full backdrop-blur-md shadow-sm border border-white/10 font-medium">
                       {release.listen_count || 0} plays
                     </div>
 
-                    {/* Selection Checkbox Overlay (Bottom-Right) */}
-                    <div className="absolute bottom-3 right-3 z-10">
+                    {/* Selection Checkbox Overlay (Bottom-Right of Image) */}
+                    <div className="absolute top-3 left-3 z-10 transition-transform hover:scale-105">
                       {isSelected ? (
                         <CheckSquare
-                          className="text-blue-600 dark:text-blue-400 fill-white dark:fill-gray-900 bg-white dark:bg-transparent rounded"
+                          className="text-indigo-500 dark:text-indigo-400 fill-white dark:fill-slate-900 drop-shadow-md"
                           size={24}
                         />
                       ) : (
                         <Square
-                          className="text-gray-300 dark:text-gray-600 group-hover:text-gray-400 dark:group-hover:text-gray-500 bg-white/80 dark:bg-gray-800/80 rounded"
+                          className="text-white drop-shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
                           size={24}
                         />
                       )}
                     </div>
 
                     {/* Cover */}
-                    <div className="w-20 h-20 flex-shrink-0 bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden">
+                    <div className="w-full aspect-square bg-slate-100 dark:bg-slate-700/50 rounded-xl overflow-hidden relative shadow-inner">
                       {release.basic_information.thumb ? (
                         <img
                           src={getProxiedImageUrl(release.basic_information.thumb)}
                           alt="cover"
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-gray-500 text-xs">
+                        <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 text-sm font-medium gap-2">
+                          <span className="text-4xl opacity-50 grayscale">💿</span>
                           No Cover
                         </div>
                       )}
                     </div>
 
                     {/* Info */}
-                    <div className="flex-1 min-w-0 flex flex-col justify-center pr-20">
+                    <div className="flex-1 min-w-0 flex flex-col pt-1">
                       <h3
-                        className="font-bold text-gray-900 dark:text-gray-100 truncate"
+                        className="font-bold text-slate-900 dark:text-slate-100 truncate text-base leading-tight mb-1"
                         title={release.basic_information.title}
                       >
                         {release.basic_information.title}
                       </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 truncate">{artist}</p>
+                      <p className="text-sm text-slate-500 dark:text-slate-400 truncate font-medium">{artist}</p>
 
-                      {/* Open in Discogs Link (stops selection toggle) */}
                       <a
                         href={`https://www.discogs.com/release/${release.id}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mt-2 text-xs text-blue-500 hover:underline flex items-center gap-1 w-fit z-20"
+                        className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700/50 text-xs font-semibold text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300 flex items-center gap-1.5 w-full z-20 transition-colors"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        View on Discogs <ExternalLink size={10} />
+                        View on Discogs <ExternalLink size={14} />
                       </a>
                     </div>
                   </div>

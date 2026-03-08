@@ -12,26 +12,26 @@ const TopRecords: React.FC<TopRecordsProps> = ({ data, className = '' }) => {
 
   return (
     <div
-      className={`bg-white dark:bg-gray-800 rounded-xl shadow-sm flex flex-col overflow-hidden transition-colors ${className}`}
+      className={`bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-700/50 flex flex-col overflow-hidden transition-all duration-300 hover:shadow-md hover:border-slate-300/50 dark:hover:border-slate-600/50 ${className}`}
     >
-      <div className="p-6 pb-2 border-b border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 z-10 transition-colors">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Top Records</h2>
+      <div className="p-6 pb-4 border-b border-slate-100 dark:border-slate-700/50 bg-white dark:bg-slate-800 z-10 transition-colors">
+        <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Top Records</h2>
       </div>
 
       <div className="flex-1 overflow-y-auto p-6 pt-4 space-y-6">
         {data.map((record, index) => (
-          <div key={index}>
+          <div key={index} className="group transition-all duration-200 hover:bg-slate-50/50 dark:hover:bg-slate-700/20 -mx-4 p-4 rounded-xl">
             <div className="flex gap-4 mb-2">
               {/* Cover Image */}
-              <div className="w-12 h-12 flex-shrink-0 bg-gray-200 dark:bg-gray-700 rounded-md overflow-hidden">
+              <div className="w-14 h-14 flex-shrink-0 bg-slate-100 dark:bg-slate-700 rounded-lg overflow-hidden relative shadow-sm">
                 {record.thumbUrl ? (
                   <img
                     src={getProxiedImageUrl(record.thumbUrl)}
                     alt={record.title}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-gray-500 text-xs">
+                  <div className="w-full h-full flex items-center justify-center text-slate-400 dark:text-slate-500 text-xs font-medium">
                     No Cover
                   </div>
                 )}
@@ -39,28 +39,28 @@ const TopRecords: React.FC<TopRecordsProps> = ({ data, className = '' }) => {
 
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-start">
-                  <div className="truncate pr-2">
+                  <div className="truncate pr-4">
                     <h3
-                      className="font-bold text-gray-900 dark:text-gray-100 leading-tight truncate"
+                      className="font-bold text-slate-900 dark:text-slate-100 leading-tight truncate"
                       title={record.title || record.recordTitle}
                     >
                       {record.title || record.recordTitle}
                     </h3>
                     {record.artist && (
-                      <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                      <p className="text-sm font-medium text-slate-500 dark:text-slate-400 truncate mt-0.5">
                         {record.artist}
                       </p>
                     )}
                   </div>
-                  <span className="text-sm font-medium text-blue-600 dark:text-blue-400 flex-shrink-0">
+                  <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400 flex-shrink-0 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded-full">
                     {record.count} plays
                   </span>
                 </div>
 
                 {/* Progress Bar */}
-                <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden mt-2">
+                <div className="w-full bg-slate-100 dark:bg-slate-700/50 rounded-full h-2 overflow-hidden mt-3 shadow-inner">
                   <div
-                    className="bg-blue-500 h-1.5 rounded-full transition-all duration-500"
+                    className="bg-indigo-500 hover:bg-indigo-400 h-full rounded-full transition-all duration-1000 ease-out"
                     style={{ width: `${(record.count / maxCount) * 100}%` }}
                   ></div>
                 </div>
@@ -69,7 +69,7 @@ const TopRecords: React.FC<TopRecordsProps> = ({ data, className = '' }) => {
           </div>
         ))}
         {data.length === 0 && (
-          <p className="text-gray-400 dark:text-gray-500 text-center py-4">
+          <p className="text-slate-400 dark:text-slate-500 text-center py-8 font-medium border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl">
             No records listened to yet.
           </p>
         )}

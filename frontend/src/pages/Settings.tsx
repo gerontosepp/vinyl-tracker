@@ -45,17 +45,17 @@ const Settings: React.FC = () => {
 
   return (
     <Layout onScanClick={handleScan}>
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 max-w-2xl mx-auto space-y-8 transition-colors">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-700/50 p-6 md:p-8 max-w-2xl mx-auto space-y-8 transition-colors">
         <div>
-          <h1 className="text-2xl font-bold mb-6 text-gray-900 dark:text-gray-100">Settings</h1>
+          <h1 className="text-2xl font-bold mb-6 text-slate-900 dark:text-slate-100 tracking-tight">Settings</h1>
 
-          <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
+          <h2 className="text-lg font-semibold mb-4 text-slate-900 dark:text-slate-100">
             Appearance
           </h2>
           <div className="mb-8">
             <label
               htmlFor="themeSelect"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+              className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2"
             >
               Theme Preference
             </label>
@@ -63,7 +63,7 @@ const Settings: React.FC = () => {
               id="themeSelect"
               value={theme}
               onChange={(e) => setTheme(e.target.value as 'light' | 'dark' | 'system')}
-              className="mt-1 block border border-gray-300 dark:border-gray-600 rounded p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              className="mt-1 block w-full md:w-auto border border-slate-300 dark:border-slate-600 rounded-xl p-2.5 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all"
             >
               <option value="light">Light</option>
               <option value="dark">Dark</option>
@@ -71,24 +71,24 @@ const Settings: React.FC = () => {
             </select>
           </div>
 
-          <hr className="my-8 border-gray-200 dark:border-gray-700" />
+          <hr className="my-8 border-slate-200 dark:border-slate-700/50" />
 
-          <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
+          <h2 className="text-lg font-semibold mb-4 text-slate-900 dark:text-slate-100">
             Discogs Integration
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
             To enable scanning, please provide your Discogs credentials. Your token is encrypted
             securely using your password.
           </p>
 
-          {msg && <div className="bg-green-100 text-green-700 p-2 mb-4 rounded">{msg}</div>}
-          {error && <div className="bg-red-100 text-red-700 p-2 mb-4 rounded">{error}</div>}
+          {msg && <div className="bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 p-3 mb-6 rounded-xl text-sm font-medium">{msg}</div>}
+          {error && <div className="bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800 p-3 mb-6 rounded-xl text-sm font-medium">{error}</div>}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label
                 htmlFor="discogsUsername"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5"
               >
                 Discogs Username
               </label>
@@ -97,13 +97,13 @@ const Settings: React.FC = () => {
                 type="text"
                 value={discogsUsername}
                 onChange={(e) => setDiscogsUsername(e.target.value)}
-                className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                className="block w-full border border-slate-300 dark:border-slate-600 rounded-xl p-2.5 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all"
               />
             </div>
             <div>
               <label
                 htmlFor="token"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5"
               >
                 New Discogs Token
               </label>
@@ -112,17 +112,17 @@ const Settings: React.FC = () => {
                 type="password"
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
-                className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                className="block w-full border border-slate-300 dark:border-slate-600 rounded-xl p-2.5 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all"
                 placeholder="Enter only if changing"
               />
             </div>
 
-            <hr className="my-4 border-gray-200 dark:border-gray-700" />
+            <hr className="my-6 border-slate-200 dark:border-slate-700/50" />
 
             <div>
               <label
                 htmlFor="password"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5"
               >
                 Current Password (Required)
               </label>
@@ -131,7 +131,7 @@ const Settings: React.FC = () => {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded p-2 bg-yellow-50 dark:bg-yellow-900 dark:text-gray-100"
+                className="block w-full border border-amber-300 dark:border-amber-700/50 rounded-xl p-2.5 bg-amber-50 dark:bg-amber-900/20 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all"
                 required
                 placeholder="Required to encrypt token"
               />
@@ -140,18 +140,18 @@ const Settings: React.FC = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-blue-300 w-full md:w-auto"
+              className="bg-indigo-600 font-semibold text-white px-6 py-2.5 rounded-xl hover:bg-indigo-700 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 disabled:bg-indigo-400 w-full md:w-auto mt-2"
             >
               {isLoading ? 'Saving...' : 'Save Settings'}
             </button>
           </form>
 
-          <hr className="my-8 border-gray-200 dark:border-gray-700" />
+          <hr className="my-8 border-slate-200 dark:border-slate-700/50" />
 
-          <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
+          <h2 className="text-lg font-semibold mb-4 text-slate-900 dark:text-slate-100">
             Manual Synchronization
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
             Your collection is automatically verified when you log in. If you made recent changes on
             Discogs and want them to appear immediately, you can force a manual sync here.
           </p>
@@ -160,7 +160,7 @@ const Settings: React.FC = () => {
               if (user) performSync(user.username);
             }}
             disabled={isSyncing}
-            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:bg-green-300 w-full md:w-auto flex items-center justify-center gap-2"
+            className="bg-emerald-600 font-semibold text-white px-6 py-2.5 rounded-xl hover:bg-emerald-700 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 disabled:bg-emerald-400 w-full md:w-auto flex items-center justify-center gap-2"
           >
             Force Sync Collection
           </button>

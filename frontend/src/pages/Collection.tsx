@@ -165,8 +165,8 @@ const Collection: React.FC = () => {
               onClick={handleDownloadSelected}
               disabled={selectedCount === 0 || generating}
               className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${selectedCount > 0
-                  ? 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md hover:-translate-y-0.5'
-                  : 'bg-slate-100 text-slate-400 dark:bg-slate-700/50 dark:text-slate-500 cursor-not-allowed'
+                ? 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md hover:-translate-y-0.5'
+                : 'bg-slate-100 text-slate-400 dark:bg-slate-700/50 dark:text-slate-500 cursor-not-allowed'
                 }`}
             >
               <Download size={18} />
@@ -183,8 +183,8 @@ const Collection: React.FC = () => {
           </div>
         </div>
 
-        {/* Controls & Pagination Top */}
-        <div className="p-4 md:px-6 bg-slate-50/50 dark:bg-slate-800/20 flex flex-wrap justify-between items-center border-b border-slate-100 dark:border-slate-700/50 text-sm transition-colors">
+        {/* Controls & Pagination Top (Sticky with Glassmorphism) */}
+        <div className="sticky top-0 z-20 p-4 md:px-6 bg-slate-50/70 dark:bg-slate-900/60 backdrop-blur-xl flex flex-wrap justify-between items-center border-b border-slate-200/50 dark:border-slate-700/50 text-sm transition-colors shadow-sm">
           <div className="flex items-center gap-4 flex-wrap">
             <button
               onClick={toggleSelectAllPage}
@@ -204,8 +204,8 @@ const Collection: React.FC = () => {
                 setPage(1);
               }}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all duration-200 ${showPlayedOnly
-                  ? 'bg-indigo-50 dark:bg-indigo-900/40 border-indigo-200 dark:border-indigo-800/50 text-indigo-800 dark:text-indigo-300'
-                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm'
+                ? 'bg-indigo-50 dark:bg-indigo-900/40 border-indigo-200 dark:border-indigo-800/50 text-indigo-800 dark:text-indigo-300'
+                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm'
                 }`}
             >
               <span className="font-semibold">Played Only</span>
@@ -223,7 +223,7 @@ const Collection: React.FC = () => {
                   setSort(e.target.value);
                   setPage(1);
                 }}
-                className="border border-slate-200 dark:border-slate-700 rounded-lg p-1.5 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm font-medium focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                className="border border-slate-200 dark:border-slate-700/60 rounded-lg p-1.5 bg-white/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100 shadow-sm font-medium focus:ring-2 focus:ring-indigo-500/20 outline-none backdrop-blur-sm cursor-pointer"
               >
                 <option value="artist">Band Name</option>
                 <option value="listens">Listens</option>
@@ -245,7 +245,7 @@ const Collection: React.FC = () => {
                 setPerPage(Number(e.target.value));
                 setPage(1);
               }}
-              className="border border-slate-200 dark:border-slate-700 rounded-lg p-1.5 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm font-medium focus:ring-2 focus:ring-indigo-500/20 outline-none"
+              className="border border-slate-200 dark:border-slate-700/60 rounded-lg p-1.5 bg-white/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100 shadow-sm font-medium focus:ring-2 focus:ring-indigo-500/20 outline-none backdrop-blur-sm cursor-pointer"
             >
               <option value={20}>20 / page</option>
               <option value={30}>30 / page</option>

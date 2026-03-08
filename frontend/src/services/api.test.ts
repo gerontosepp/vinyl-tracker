@@ -3,11 +3,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getRecentListens, scanBarcode, loginUser, registerUser, getUser } from './api';
 
 // Mock axios
-const { mockPost, mockGet, mockDelete, mockPut } = vi.hoisted(() => ({
+const { mockPost, mockGet, mockDelete, mockPut, interceptorCallbacks } = vi.hoisted(() => ({
   mockPost: vi.fn(),
   mockGet: vi.fn(),
   mockDelete: vi.fn(),
   mockPut: vi.fn(),
+  interceptorCallbacks: {
+    req: [] as any[],
+    res: [] as any[],
+  },
 }));
 
 vi.mock('axios', () => ({
@@ -18,8 +22,12 @@ vi.mock('axios', () => ({
       delete: mockDelete,
       put: mockPut,
       interceptors: {
-        request: { use: vi.fn() },
-        response: { use: vi.fn() },
+        request: {
+          use: (s: any, e: any) => interceptorCallbacks.req.push({ s, e })
+        },
+        response: {
+          use: (s: any, e: any) => interceptorCallbacks.res.push({ s, e })
+        },
       },
     })),
     post: mockPost,
@@ -178,5 +186,82 @@ describe('API Service', () => {
       { responseType: 'blob' }
     );
     expect(result).toEqual(mockBlob);
+  });
+
+  it('should add authorization token and start time to request metadata via interceptor', async () => {
+
+    // Get the request interceptor
+    const reqInterceptor = interceptorCallbacks.req[0].s;
+
+    // Execute interceptor with token
+    localStorage.setItem('vinyl_token', 'fake-token-123');
+    const config = { headers: {} as any };
+    const newConfig = reqInterceptor(config);
+
+    expect(newConfig.headers.Authorization).toBe('Bearer fake-token-123');
+    expect(newConfig.metadata.startTime).toBeDefined();
+
+    // Execute interceptor without token
+    localStorage.removeItem('vinyl_token');
+    const configNoToken = { headers: {} as any };
+    const newConfigNoToken = reqInterceptor(configNoToken);
+
+    expect(newConfigNoToken.headers.Authorization).toBeUndefined();
+    expect(newConfigNoToken.metadata.startTime).toBeDefined();
+
+    // Test request interceptor error callback
+    const reqErrorInterceptor = interceptorCallbacks.req[0].e;
+    const error = new Error('Request error');
+    await expect(reqErrorInterceptor(error)).rejects.toThrow('Request error');
+  });
+
+  it('should log response time via response interceptor', async () => {
+    const consoleInfoSpy = vi.spyOn(console, 'info').mockImplementation(() => { });
+
+    // Get the response interceptor
+    const resInterceptor = interceptorCallbacks.res[0].s;
+
+    const response = {
+      status: 200,
+      config: {
+        method: 'get',
+        url: '/test',
+        metadata: { startTime: Date.now() - 100 },
+      },
+    };
+
+    const result = resInterceptor(response);
+
+    expect(result).toBe(response);
+    expect(consoleInfoSpy).toHaveBeenCalledWith(expect.stringContaining('[API Info] GET /test - Status: 200 - Time:'));
+
+    consoleInfoSpy.mockRestore();
+  });
+
+  it('should log error time and status via response interceptor error callback', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
+
+    // Get the response error interceptor
+    const resErrorInterceptor = interceptorCallbacks.res[0].e;
+
+    const errorWithResponse = {
+      message: 'Server Error',
+      response: { status: 500 },
+      config: {
+        method: 'post',
+        url: '/test-error',
+        metadata: { startTime: Date.now() - 50 },
+      },
+    };
+
+    await expect(resErrorInterceptor(errorWithResponse)).rejects.toBe(errorWithResponse);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('[API Error] POST /test-error - Status: 500 - Time:'));
+
+    // Test with missing config/response
+    const plainError = { message: 'Network error' };
+    await expect(resErrorInterceptor(plainError)).rejects.toBe(plainError);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('[API Error] UNKNOWN UNKNOWN URL - Status: Network/Unknown Error - Time: 0ms'));
+
+    consoleErrorSpy.mockRestore();
   });
 });

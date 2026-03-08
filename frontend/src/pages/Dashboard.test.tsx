@@ -5,6 +5,12 @@ import { BrowserRouter } from 'react-router-dom';
 import * as api from '../services/api';
 import * as useAuthHook from '../context/useAuth';
 
+const getTodayString = () => {
+  const d = new Date();
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().split('T')[0];
+};
+
 // Mock dependencies
 vi.mock('../services/api');
 vi.mock('../components/BarcodeScanner', () => ({
@@ -12,9 +18,9 @@ vi.mock('../components/BarcodeScanner', () => ({
 }));
 // ResizeObserver mock for Recharts
 window.ResizeObserver = class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
+  observe() { }
+  unobserve() { }
+  disconnect() { }
 };
 
 describe('Dashboard Component', () => {
@@ -146,5 +152,45 @@ describe('Dashboard Component', () => {
 
     expect(confirmSpy).toHaveBeenCalled();
     expect(deleteScanSpy).not.toHaveBeenCalled();
+  });
+
+  it('handles date filtering interactions', async () => {
+    vi.spyOn(api, 'getRecentListens').mockClear();
+    vi.spyOn(api, 'getTopRecords').mockClear();
+
+    render(
+      <BrowserRouter>
+        <Dashboard />
+      </BrowserRouter>
+    );
+    await waitFor(() => screen.getByText('In Rainbows'));
+
+    // Click All button first to clear dates
+    const allBtn = screen.getByText('All');
+    fireEvent.click(allBtn);
+
+    await waitFor(() => {
+      expect(api.getRecentListens).toHaveBeenCalledWith('testuser', '', '');
+    });
+
+    // Then click Today button to trigger change
+    const todayBtn = screen.getByText('Today');
+    fireEvent.click(todayBtn);
+
+    const todayStr = getTodayString();
+    await waitFor(() => {
+      expect(api.getRecentListens).toHaveBeenCalledWith('testuser', todayStr, todayStr);
+    });
+
+    // Change input dates
+    const startDateInput = screen.getByTitle('Start Date');
+    const endDateInput = screen.getByTitle('End Date');
+
+    fireEvent.change(startDateInput, { target: { value: '2023-01-01' } });
+    fireEvent.change(endDateInput, { target: { value: '2023-12-31' } });
+
+    await waitFor(() => {
+      expect(api.getRecentListens).toHaveBeenCalledWith('testuser', '2023-01-01', '2023-12-31');
+    });
   });
 });

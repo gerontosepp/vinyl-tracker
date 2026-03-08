@@ -256,4 +256,38 @@ describe('Collection Component', () => {
       expect(mockGetCollection).toHaveBeenLastCalledWith('TestUser', 2, 50, 0, 'artist', 'asc', '');
     });
   });
+
+  it('handles sorting and items per page changes', async () => {
+    mockGetCollection.mockResolvedValue({
+      releases: mockReleases,
+      pagination: { items: 100, page: 1, pages: 2, per_page: 50, urls: { next: '' } },
+    });
+
+    renderCollection();
+    await waitFor(() => expect(screen.getByText('Album One')).toBeInTheDocument());
+
+    // Change sort to listens
+    const sortSelect = screen.getAllByRole('combobox')[0];
+    fireEvent.change(sortSelect, { target: { value: 'listens' } });
+
+    await waitFor(() => {
+      expect(mockGetCollection).toHaveBeenLastCalledWith('TestUser', 1, 50, 0, 'listens', 'asc', '');
+    });
+
+    // Change sort order
+    const sortOrderBtn = screen.getByTitle('Ascending');
+    fireEvent.click(sortOrderBtn);
+
+    await waitFor(() => {
+      expect(mockGetCollection).toHaveBeenLastCalledWith('TestUser', 1, 50, 0, 'listens', 'desc', '');
+    });
+
+    // Change perPage
+    const perPageSelect = screen.getAllByRole('combobox')[1];
+    fireEvent.change(perPageSelect, { target: { value: '20' } });
+
+    await waitFor(() => {
+      expect(mockGetCollection).toHaveBeenLastCalledWith('TestUser', 1, 20, 0, 'listens', 'desc', '');
+    });
+  });
 });

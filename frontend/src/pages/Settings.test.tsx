@@ -109,7 +109,7 @@ describe('Settings Component', () => {
   });
 
   it('displays error on update failure', async () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
     renderComponent();
 
     mockUpdateDiscogs.mockRejectedValueOnce(new Error('Update failed'));
@@ -126,5 +126,27 @@ describe('Settings Component', () => {
       ).toBeInTheDocument();
     });
     consoleSpy.mockRestore();
+  });
+
+  it('calls performSync when syncing button is clicked', () => {
+    const mockPerformSync = vi.fn();
+    vi.mocked(useAuthHook.useAuth).mockReturnValue({
+      user: mockUser,
+      login: vi.fn(),
+      register: vi.fn(),
+      updateDiscogs: mockUpdateDiscogs,
+      logout: vi.fn(),
+      isLoading: false,
+      isSyncing: false,
+      syncMessage: '',
+      performSync: mockPerformSync,
+    });
+
+    renderComponent();
+
+    const syncBtn = screen.getByRole('button', { name: /Force Sync Collection/i });
+    fireEvent.click(syncBtn);
+
+    expect(mockPerformSync).toHaveBeenCalledWith('testuser');
   });
 });

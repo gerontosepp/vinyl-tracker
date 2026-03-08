@@ -22,10 +22,11 @@ const RecentListens: React.FC<RecentListensProps> = ({ listens, onDelete, classN
       <div className="flex-1 overflow-y-auto p-6 pt-4">
         {/* Grid Layout inside scrollable area */}
         <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-5 md:gap-8">
-          {listens.map((event) => (
+          {listens.map((event, index) => (
             <div
               key={event.id}
-              className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700/60 rounded-2xl p-4 flex flex-col gap-3 group border hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+              className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700/60 rounded-2xl p-4 flex flex-col gap-3 group border hover:shadow-xl hover:-translate-y-1 transition-all duration-300 animate-slide-up"
+              style={{ animationDelay: `${(index % 6) * 75}ms`, opacity: 0 }}
             >
               {/* Listen Status Badge (Top-Right of Image) */}
               <div className="absolute top-3 right-3 z-10 bg-slate-900/80 dark:bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-full backdrop-blur-md shadow-sm border border-white/10 font-bold opacity-0 group-hover:opacity-100 transition-opacity">
@@ -84,8 +85,16 @@ const RecentListens: React.FC<RecentListensProps> = ({ listens, onDelete, classN
         </div>
 
         {listens.length === 0 && (
-          <div className="text-center py-12 px-4 shadow-sm text-slate-500 dark:text-slate-400 font-medium border-dashed border-2 border-slate-200 dark:border-slate-700 rounded-2xl bg-white dark:bg-slate-800/50">
-            <p>No recent listens. Scan a record to get started!</p>
+          <div className="flex flex-col items-center justify-center py-12 px-4 text-center border-2 border-dashed border-slate-200 dark:border-slate-700/60 rounded-2xl bg-white dark:bg-slate-800/30 animate-fade-in">
+            <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700/50 rounded-full flex items-center justify-center mb-4 text-slate-400 dark:text-slate-500 shadow-inner">
+              <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-slate-700 dark:text-slate-300 mb-1">No Recent Listens</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 max-w-[250px]">
+              Scan a record to start building your history of recently played albums.
+            </p>
           </div>
         )}
       </div>

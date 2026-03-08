@@ -20,7 +20,7 @@ const TopRecords: React.FC<TopRecordsProps> = ({ data, className = '' }) => {
 
       <div className="flex-1 overflow-y-auto p-6 pt-4 space-y-6">
         {data.map((record, index) => (
-          <div key={index} className="group transition-all duration-200 hover:bg-slate-50/50 dark:hover:bg-slate-700/20 -mx-4 p-4 rounded-xl">
+          <div key={index} className="group transition-all duration-300 hover:bg-slate-50/50 dark:hover:bg-slate-700/20 -mx-4 p-4 rounded-xl animate-slide-up" style={{ animationDelay: `${(index % 5) * 100}ms`, opacity: 0 }}>
             <div className="flex gap-4 mb-2">
               {/* Cover Image */}
               <div className="w-14 h-14 flex-shrink-0 bg-slate-100 dark:bg-slate-700 rounded-lg overflow-hidden relative shadow-sm">
@@ -69,9 +69,17 @@ const TopRecords: React.FC<TopRecordsProps> = ({ data, className = '' }) => {
           </div>
         ))}
         {data.length === 0 && (
-          <p className="text-slate-400 dark:text-slate-500 text-center py-8 font-medium border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl">
-            No records listened to yet.
-          </p>
+          <div className="flex flex-col items-center justify-center py-12 px-4 text-center border-2 border-dashed border-slate-200 dark:border-slate-700/60 rounded-2xl bg-slate-50/50 dark:bg-slate-800/30 animate-fade-in">
+            <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700/50 rounded-full flex items-center justify-center mb-4 text-slate-400 dark:text-slate-500 shadow-inner">
+              <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-slate-700 dark:text-slate-300 mb-1">No Top Records</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 max-w-[250px]">
+              Start listening to some music and your most played records will appear here over time.
+            </p>
+          </div>
         )}
       </div>
     </div>

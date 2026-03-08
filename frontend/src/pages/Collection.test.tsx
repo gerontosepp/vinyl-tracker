@@ -102,7 +102,8 @@ describe('Collection Component', () => {
 
     renderCollection();
 
-    expect(screen.getByText('Loading collection...')).toBeInTheDocument();
+    // Check for skeleton loader instead of text
+    expect(document.querySelector('.animate-pulse')).toBeInTheDocument();
 
     await waitFor(() => {
       expect(screen.getByText('Album One')).toBeInTheDocument();
@@ -121,7 +122,7 @@ describe('Collection Component', () => {
     renderCollection();
 
     await waitFor(() => {
-      expect(screen.getByText('No records found in your collection yet.')).toBeInTheDocument();
+      expect(screen.getByText('Your collection is empty')).toBeInTheDocument();
     });
   });
 

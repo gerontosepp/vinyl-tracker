@@ -9,7 +9,7 @@ import {
   getProxiedImageUrl,
 } from '../services/api';
 import type { CollectionRelease, QrCodeItem } from '../types';
-import { Download, ExternalLink, CheckSquare, Square, ArrowUp, ArrowDown } from 'lucide-react';
+import { Download, ExternalLink, CheckSquare, Square, ArrowUp, ArrowDown, Search, X } from 'lucide-react';
 
 const Collection: React.FC = () => {
   const { user } = useAuth();
@@ -24,6 +24,7 @@ const Collection: React.FC = () => {
   // Loading State
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [search, setSearch] = useState('');
 
   // Persistent Selection State: Store map of ID -> QrCodeItem to keep track of details
   const [selectedItems, setSelectedItems] = useState<Map<number, QrCodeItem>>(new Map());
@@ -214,16 +215,44 @@ const Collection: React.FC = () => {
               )}
             </button>
 
+            <div className="relative group flex-1 min-w-[12rem] sm:max-w-xs md:ml-4">
+              <Search
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 group-focus-within:text-indigo-500 transition-colors"
+                size={16}
+              />
+              <input
+                type="text"
+                placeholder="Search artist or title..."
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
+                className="pl-9 pr-8 py-1.5 border border-slate-200 dark:border-slate-700/60 rounded-xl bg-white/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all duration-300 backdrop-blur-sm"
+              />
+              {search && (
+                <button
+                  onClick={() => {
+                    setSearch('');
+                    setPage(1);
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-1"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+
             {/* Sort Controls */}
-            <div className="flex items-center gap-2 border-l pl-4 ml-2 border-slate-200 dark:border-slate-700">
-              <span className="text-slate-500 dark:text-slate-400 hidden sm:inline font-medium">Sort by:</span>
+            <div className="flex items-center gap-2 border-l pl-4 ml-2 border-slate-200 dark:border-slate-700/60 w-full sm:w-auto mt-3 sm:mt-0 justify-between sm:justify-start">
+              <span className="text-slate-500 dark:text-slate-400 font-medium">Sort by:</span>
               <select
                 value={sort}
                 onChange={(e) => {
                   setSort(e.target.value);
                   setPage(1);
                 }}
-                className="border border-slate-200 dark:border-slate-700/60 rounded-lg p-1.5 bg-white/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100 shadow-sm font-medium focus:ring-2 focus:ring-indigo-500/20 outline-none backdrop-blur-sm cursor-pointer"
+                className="border border-slate-200 dark:border-slate-700/60 rounded-xl py-1.5 px-3 bg-white/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100 shadow-sm font-medium focus:ring-2 focus:ring-indigo-500/50 outline-none backdrop-blur-sm cursor-pointer hover:bg-white dark:hover:bg-slate-800 transition-all duration-200"
               >
                 <option value="artist">Band Name</option>
                 <option value="listens">Listens</option>
@@ -238,14 +267,14 @@ const Collection: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-4 mt-4 sm:mt-0">
+          <div className="flex items-center gap-4 mt-4 lg:mt-0">
             <select
               value={perPage}
               onChange={(e) => {
                 setPerPage(Number(e.target.value));
                 setPage(1);
               }}
-              className="border border-slate-200 dark:border-slate-700/60 rounded-lg p-1.5 bg-white/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100 shadow-sm font-medium focus:ring-2 focus:ring-indigo-500/20 outline-none backdrop-blur-sm cursor-pointer"
+              className="border border-slate-200 dark:border-slate-700/60 rounded-xl py-1.5 px-3 bg-white/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100 shadow-sm font-medium focus:ring-2 focus:ring-indigo-500/50 outline-none backdrop-blur-sm cursor-pointer hover:bg-white dark:hover:bg-slate-800 transition-all duration-200 hidden sm:block"
             >
               <option value={20}>20 / page</option>
               <option value={30}>30 / page</option>
@@ -278,19 +307,35 @@ const Collection: React.FC = () => {
         {/* List Content */}
         <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50/30 dark:bg-slate-900/20">
           {loading ? (
-            <div className="flex justify-center items-center h-full text-gray-400 dark:text-gray-500">
-              Loading collection...
+            <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-5 md:gap-8">
+              {[...Array(perPage || 20)].map((_, i) => (
+                <div key={i} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-2xl p-4 flex flex-col gap-3 shadow-sm animate-pulse">
+                  {/* Skeleton Cover */}
+                  <div className="w-full aspect-square bg-slate-200 dark:bg-slate-700/50 rounded-xl"></div>
+
+                  {/* Skeleton Text */}
+                  <div className="flex-1 flex flex-col pt-1 gap-2">
+                    <div className="h-4 bg-slate-200 dark:bg-slate-700/50 rounded-md w-3/4"></div>
+                    <div className="h-3 bg-slate-200 dark:bg-slate-700/50 rounded-md w-1/2"></div>
+
+                    <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700/50">
+                      <div className="h-3 bg-slate-200 dark:bg-slate-700/50 rounded-md w-2/5"></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
             <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-5 md:gap-8">
-              {releases.map((release) => {
+              {releases.map((release, index) => {
                 const isSelected = selectedItems.has(release.id);
                 const artist = release.basic_information.artists?.[0]?.name || 'Unknown';
 
                 return (
                   <div
                     key={release.id}
-                    className={`relative group bg-white dark:bg-slate-800 border rounded-2xl p-4 flex flex-col gap-3 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer ${isSelected ? 'border-indigo-500 ring-2 ring-indigo-500/50 bg-indigo-50/50 dark:bg-indigo-900/20' : 'border-slate-200 dark:border-slate-700/60 shadow-sm'}`}
+                    className={`relative group bg-white dark:bg-slate-800 border rounded-2xl p-4 flex flex-col gap-3 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer animate-slide-up ${isSelected ? 'border-indigo-500 ring-2 ring-indigo-500/50 bg-indigo-50/50 dark:bg-indigo-900/20' : 'border-slate-200 dark:border-slate-700/60 shadow-sm'}`}
+                    style={{ animationDelay: `${(index % 12) * 50}ms`, opacity: 0 }}
                     onClick={() => toggleSelection(release)}
                   >
                     {/* Listen Count Badge (Top-Right) */}
@@ -356,8 +401,20 @@ const Collection: React.FC = () => {
           )}
 
           {!loading && releases.length === 0 && (
-            <div className="text-center py-20 text-gray-400 dark:text-gray-500">
-              No records found in your collection yet.
+            <div className="flex flex-col items-center justify-center py-20 px-4 text-center mt-8 max-w-md mx-auto animate-fade-in">
+              <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6 text-slate-400 dark:text-slate-500 shadow-inner">
+                <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-slate-700 dark:text-slate-300 mb-2">
+                {search ? 'No matches found' : 'Your collection is empty'}
+              </h3>
+              <p className="text-base text-slate-500 dark:text-slate-400">
+                {search
+                  ? `We couldn't find any records matching "${search}". Try adjusting your filters.`
+                  : 'It looks like you haven\'t synced your Discogs collection yet, or there are no records.'}
+              </p>
             </div>
           )}
         </div>

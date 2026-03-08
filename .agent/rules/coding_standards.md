@@ -2,10 +2,6 @@
 trigger: always_on
 ---
 
----
-trigger: always_on
----
-
 1. **Backend Tech Stack & Architecture**: 
    - Use Java 21+ and Spring Boot.
    - Use Lombok for boilerplate code (e.g., `@Data`, `@RequiredArgsConstructor`).

@@ -2,10 +2,6 @@
 trigger: always_on
 ---
 
----
-trigger: always_on
----
-
 1. **Mandatory Testing**: Never modify business logic or UI behavior without adding or updating the corresponding tests.
 2. **Testing Frameworks**: 
    - Backend: Use JUnit 5, Mockito, and Spring Boot Test `@SpringBootTest`.

@@ -2,10 +2,6 @@
 trigger: always_on
 ---
 
----
-trigger: always_on
----
-
 1. **Keep Docs Sync**: If you change features, configuration, or setup steps, you MUST update `README.md` immediately. Do not wait for a separate documentation task.
 2. **Self-Documenting Code**: 
    - Write clear, descriptive semantic variable and method names.

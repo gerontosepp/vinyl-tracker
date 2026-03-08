@@ -22,8 +22,8 @@ const NavItem = ({
   <button
     onClick={() => navigate(path)}
     className={`flex flex-col items-center justify-center py-4 px-2 w-[calc(100%-1rem)] rounded-2xl mx-2 transition-all duration-200 ${isActive
-        ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/20 shadow-sm'
-        : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100/50 dark:hover:bg-slate-800/50'
+      ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/20 shadow-sm'
+      : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100/50 dark:hover:bg-slate-800/50'
       }`}
   >
     <Icon size={26} strokeWidth={isActive ? 2.5 : 2} className={isActive ? 'drop-shadow-sm' : ''} />
@@ -39,11 +39,14 @@ const Sidebar: React.FC<SidebarProps> = ({ onScanClick }) => {
 
   return (
     <aside className="hidden md:flex flex-col w-24 h-screen bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl fixed left-0 top-0 border-r border-slate-200/50 dark:border-slate-800/50 z-20 items-center py-8 transition-colors shadow-[4px_0_24px_-12px_rgba(0,0,0,0.05)]">
-      <h1 className="text-xl font-black mb-12 text-center leading-tight text-slate-900 dark:text-white tracking-tighter">
-        Vinyl
-        <br />
-        <span className="text-indigo-600 dark:text-indigo-400">Tracker</span>
-      </h1>
+      <div className="flex flex-col items-center mb-12">
+        <img src="/logo.png" alt="Vinyl Tracker Logo" className="w-16 h-16 mb-2 rounded-full shadow-md" />
+        <h1 className="text-xl font-black text-center leading-tight text-slate-900 dark:text-white tracking-tighter">
+          Vinyl
+          <br />
+          <span className="text-indigo-600 dark:text-indigo-400">Tracker</span>
+        </h1>
+      </div>
 
       <nav className="flex-1 flex flex-col gap-4 w-full">
         <NavItem path="/" icon={Home} label="Home" isActive={isActive('/')} navigate={navigate} />

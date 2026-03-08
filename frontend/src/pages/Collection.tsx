@@ -25,9 +25,21 @@ const Collection: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
   // Persistent Selection State: Store map of ID -> QrCodeItem to keep track of details
   const [selectedItems, setSelectedItems] = useState<Map<number, QrCodeItem>>(new Map());
+
+  // Debounce search input
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      if (search !== debouncedSearch) {
+        setDebouncedSearch(search);
+        setPage(1); // Reset page to 1 on new search
+      }
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [search, debouncedSearch]);
 
   const handleScan = () => {
     navigate('/', { state: { scan: true } });
@@ -47,7 +59,7 @@ const Collection: React.FC = () => {
       setLoading(true);
       try {
         const minPlays = showPlayedOnly ? 1 : 0;
-        const data = await getCollection(user.username, page, perPage, minPlays, sort, sortOrder);
+        const data = await getCollection(user.username, page, perPage, minPlays, sort, sortOrder, debouncedSearch);
         setReleases(data.releases);
         if (data.pagination) {
           setTotalPages(data.pagination.pages);
@@ -59,7 +71,7 @@ const Collection: React.FC = () => {
       }
     };
     fetchData();
-  }, [user, page, perPage, showPlayedOnly, sort, sortOrder]);
+  }, [user, page, perPage, showPlayedOnly, sort, sortOrder, debouncedSearch]);
 
   // Selection Logic
   const toggleSelection = (release: CollectionRelease) => {

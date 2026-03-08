@@ -167,7 +167,7 @@ class DiscogsServiceTest {
                                 org.mockito.ArgumentMatchers.eq(user))).thenReturn(5L);
 
                 DiscogsDto.CollectionResponse result = discogsService.getCollection(user, page, perPage, sort,
-                                sortOrder, null);
+                                sortOrder, null, null);
 
                 assertNotNull(result);
                 assertEquals(1, result.getReleases().size());
@@ -254,10 +254,11 @@ class DiscogsServiceTest {
                                 org.mockito.ArgumentMatchers.any(org.springframework.data.domain.Pageable.class)))
                                 .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of()));
 
-                DiscogsDto.CollectionResponse result = discogsService.getCollection(user, 1, 50, "artist", "asc", 0);
+                DiscogsDto.CollectionResponse response = discogsService.getCollection(user, 1, 10, "artist", "asc",
+                                null, null);
 
-                assertNotNull(result);
-                assertTrue(result.getReleases().isEmpty());
+                assertNotNull(response);
+                assertTrue(response.getReleases().isEmpty());
         }
 
         @Test
@@ -283,7 +284,8 @@ class DiscogsServiceTest {
                                 org.mockito.ArgumentMatchers.any(org.springframework.data.domain.Pageable.class)))
                                 .thenReturn(mockPage);
 
-                DiscogsDto.CollectionResponse result = discogsService.getCollection(user, 1, 50, "listens", "desc", 0);
+                DiscogsDto.CollectionResponse result = discogsService.getCollection(user, 1, 50, "listens", "desc", 0,
+                                null);
 
                 assertNotNull(result);
                 assertEquals(2, result.getReleases().size());

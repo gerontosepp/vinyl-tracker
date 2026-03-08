@@ -27,10 +27,12 @@ public class CollectionController {
             @RequestParam(defaultValue = "50") int per_page,
             @RequestParam(defaultValue = "artist") String sort,
             @RequestParam(defaultValue = "asc") String sort_order,
-            @RequestParam(required = false) Integer min_plays) {
+            @RequestParam(required = false) Integer min_plays,
+            @RequestParam(required = false) String search) {
 
         return ResponseEntity
-                .ok(collectionService.getCollection(principal.getName(), page, per_page, sort, sort_order, min_plays));
+                .ok(collectionService.getCollection(principal.getName(), page, per_page, sort, sort_order, min_plays,
+                        search));
     }
 
     @PostMapping("/sync")

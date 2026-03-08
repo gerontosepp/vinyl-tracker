@@ -106,7 +106,7 @@ public class DiscogsService {
     }
 
     public DiscogsDto.CollectionResponse getCollection(AppUser user, int page, int perPage, String sort,
-            String sortOrder, Integer minPlays) {
+            String sortOrder, Integer minPlays, String search) {
 
         log.info("Fetching collection from local DB for user: {}", user.getUsername());
 
@@ -127,16 +127,32 @@ public class DiscogsService {
         }
 
         org.springframework.data.domain.Page<?> pagedResult;
+        boolean hasSearch = search != null && !search.trim().isEmpty();
+        String searchLower = hasSearch ? search.trim().toLowerCase() : "";
 
         if ("listens".equalsIgnoreCase(sort)) {
             if ("desc".equalsIgnoreCase(sortOrder)) {
-                pagedResult = collectionItemRepository.findAllByUserOrderByPlayCountDesc(user, pageable);
+                if (hasSearch) {
+                    pagedResult = collectionItemRepository.searchByUserAndKeywordOrderByPlayCountDesc(user, searchLower,
+                            pageable);
+                } else {
+                    pagedResult = collectionItemRepository.findAllByUserOrderByPlayCountDesc(user, pageable);
+                }
             } else {
-                pagedResult = collectionItemRepository.findAllByUserOrderByPlayCountAsc(user, pageable);
+                if (hasSearch) {
+                    pagedResult = collectionItemRepository.searchByUserAndKeywordOrderByPlayCountAsc(user, searchLower,
+                            pageable);
+                } else {
+                    pagedResult = collectionItemRepository.findAllByUserOrderByPlayCountAsc(user, pageable);
+                }
             }
         } else {
             // Default query with optional sorting
-            pagedResult = collectionItemRepository.findAllByUser(user, pageable);
+            if (hasSearch) {
+                pagedResult = collectionItemRepository.searchByUserAndKeyword(user, searchLower, pageable);
+            } else {
+                pagedResult = collectionItemRepository.findAllByUser(user, pageable);
+            }
         }
 
         List<DiscogsDto.CollectionRelease> releases = pagedResult.getContent().stream()

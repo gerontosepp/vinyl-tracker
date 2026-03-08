@@ -21,10 +21,10 @@ public class CollectionService {
     }
 
     public DiscogsDto.CollectionResponse getCollection(String username, int page, int per_page, String sort,
-            String sort_order, Integer min_plays) {
+            String sort_order, Integer min_plays, String search) {
         AppUser user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
-        return discogsService.getCollection(user, page, per_page, sort, sort_order, min_plays);
+        return discogsService.getCollection(user, page, per_page, sort, sort_order, min_plays, search);
     }
 
     public com.antigravity.vinyltracker.model.dto.SyncResultDto forceSync(String username) {

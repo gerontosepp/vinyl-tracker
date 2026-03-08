@@ -128,11 +128,15 @@ export const getCollection = async (
   perPage: number = 50,
   minPlays: number = 0,
   sort: string = 'artist',
-  sortOrder: string = 'asc'
+  sortOrder: string = 'asc',
+  search?: string
 ): Promise<import('../types').CollectionResponse> => {
   let url = `/collection?page=${page}&per_page=${perPage}&sort=${sort}&sort_order=${sortOrder}`;
   if (minPlays > 0) {
     url += `&min_plays=${minPlays}`;
+  }
+  if (search) {
+    url += `&search=${encodeURIComponent(search)}`;
   }
   const response = await api.get<import('../types').CollectionResponse>(url);
   return response.data;

@@ -46,9 +46,10 @@ public class CollectionServiceTest {
     void getCollection_Success() {
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
         DiscogsDto.CollectionResponse mockResponse = new DiscogsDto.CollectionResponse();
-        when(discogsService.getCollection(testUser, 1, 50, "artist", "asc", 0)).thenReturn(mockResponse);
+        when(discogsService.getCollection(testUser, 1, 50, "artist", "asc", 0, null)).thenReturn(mockResponse);
 
-        DiscogsDto.CollectionResponse result = collectionService.getCollection("testuser", 1, 50, "artist", "asc", 0);
+        DiscogsDto.CollectionResponse result = collectionService.getCollection("testuser", 1, 50, "artist", "asc", 0,
+                null);
         assertEquals(mockResponse, result);
     }
 

@@ -51,7 +51,7 @@ class CollectionControllerTest {
                 mockResponse.setReleases(List.of(release));
 
                 when(collectionService.getCollection(eq("testuser"), anyInt(), anyInt(), anyString(), anyString(),
-                                any()))
+                                any(), any()))
                                 .thenReturn(mockResponse);
 
                 Principal mockPrincipal = () -> "testuser";
@@ -66,7 +66,8 @@ class CollectionControllerTest {
         @Test
         @WithMockUser
         void getCollection_ShouldThrowException_WhenUserNotFound() throws Exception {
-                when(collectionService.getCollection(anyString(), anyInt(), anyInt(), anyString(), anyString(), any()))
+                when(collectionService.getCollection(anyString(), anyInt(), anyInt(), anyString(), anyString(), any(),
+                                any()))
                                 .thenThrow(new RuntimeException("User not found"));
 
                 try {

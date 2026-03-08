@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import Dashboard from './Dashboard';
 import { BrowserRouter } from 'react-router-dom';
 import * as api from '../services/api';
-import * as authContext from '../context/AuthContext';
+import * as useAuthHook from '../context/useAuth';
 
 // Mock dependencies
 vi.mock('../services/api');
@@ -24,7 +24,7 @@ describe('Dashboard Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Default logged in user
-    vi.spyOn(authContext, 'useAuth').mockReturnValue({
+    vi.spyOn(useAuthHook, 'useAuth').mockReturnValue({
       user: mockUser,
       login: vi.fn(),
       register: vi.fn(),

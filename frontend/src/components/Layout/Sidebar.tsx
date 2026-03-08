@@ -22,7 +22,9 @@ const NavItem = ({
   <button
     onClick={() => navigate(path)}
     className={`flex flex-col items-center justify-center p-4 w-full transition-colors ${
-      isActive ? 'text-black' : 'text-gray-400 hover:text-gray-600'
+      isActive
+        ? 'text-black dark:text-white'
+        : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
     }`}
   >
     <Icon size={28} strokeWidth={isActive ? 2.5 : 2} />
@@ -37,8 +39,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onScanClick }) => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <aside className="hidden md:flex flex-col w-24 h-screen bg-gray-50 fixed left-0 top-0 border-r border-gray-200 z-20 items-center py-8">
-      <h1 className="text-xl font-bold mb-12 text-center leading-tight">
+    <aside className="hidden md:flex flex-col w-24 h-screen bg-gray-50 dark:bg-gray-900 fixed left-0 top-0 border-r border-gray-200 dark:border-gray-800 z-20 items-center py-8 transition-colors">
+      <h1 className="text-xl font-bold mb-12 text-center leading-tight text-gray-900 dark:text-white">
         Vinyl
         <br />
         Tracker
@@ -75,7 +77,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onScanClick }) => {
 
       <button
         onClick={() => navigate('/settings')}
-        className="p-4 text-gray-400 hover:text-gray-600"
+        className="p-4 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
       >
         <Settings size={24} />
       </button>

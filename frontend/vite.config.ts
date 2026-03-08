@@ -62,9 +62,9 @@ export default defineConfig({
     https:
       fs.existsSync('./certs/key.pem') && fs.existsSync('./certs/cert.pem')
         ? {
-            key: fs.readFileSync('./certs/key.pem'),
-            cert: fs.readFileSync('./certs/cert.pem'),
-          }
+          key: fs.readFileSync('./certs/key.pem'),
+          cert: fs.readFileSync('./certs/cert.pem'),
+        }
         : undefined,
     proxy: {
       '/api': {
@@ -72,14 +72,18 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
         configure: (proxy) => {
+          interface ProxyRequestWithMeta extends import('http').IncomingMessage {
+            startTime?: number;
+          }
+
           proxy.on('error', (err, req) => {
             console.error(`[API Error] ${req.method} ${req.url} - Error: ${err.message}`);
           });
-          proxy.on('proxyReq', (_proxyReq, req) => {
-            (req as any).startTime = Date.now();
+          proxy.on('proxyReq', (_proxyReq, req: ProxyRequestWithMeta) => {
+            req.startTime = Date.now();
           });
-          proxy.on('proxyRes', (proxyRes, req) => {
-            const start = (req as any).startTime;
+          proxy.on('proxyRes', (proxyRes, req: ProxyRequestWithMeta) => {
+            const start = req.startTime;
             const duration = start ? Date.now() - start : 0;
             const status = proxyRes.statusCode;
             if (status && status >= 400) {

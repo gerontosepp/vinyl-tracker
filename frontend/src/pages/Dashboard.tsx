@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import { getRecentListens, getTopRecords, deleteScan } from '../services/api';
 import type { ListenEvent, AnalyticsTopRecord } from '../types';
 import BarcodeScanner from '../components/BarcodeScanner';
@@ -74,10 +74,10 @@ const Dashboard: React.FC = () => {
   return (
     <Layout onScanClick={() => setShowScanner(true)}>
       {showScanner ? (
-        <div className="bg-white rounded-xl shadow-sm p-4 animate-fade-in h-full">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 animate-fade-in h-full transition-colors">
           <button
             onClick={() => setShowScanner(false)}
-            className="mb-4 text-sm text-gray-500 hover:text-gray-800 flex items-center gap-1"
+            className="mb-4 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 flex items-center gap-1"
           >
             &larr; Back to Dashboard
           </button>
@@ -90,12 +90,14 @@ const Dashboard: React.FC = () => {
           {/* Welcome Section - Fixed Height */}
           <div className="flex-none flex flex-col xl:flex-row justify-between items-start xl:items-center gap-3 mb-3 shrink-0">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Welcome back, {user?.username}</h1>
-              <p className="text-gray-500 text-sm">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                Welcome back, {user?.username}
+              </h1>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
                 Here's what you've been listening to recently.
               </p>
             </div>
-            <div className="flex gap-2 items-center bg-white p-1.5 rounded-lg shadow-sm border border-gray-100 w-full md:w-auto max-w-full overflow-x-auto">
+            <div className="flex gap-2 items-center bg-white dark:bg-gray-800 p-1.5 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 w-full md:w-auto max-w-full overflow-x-auto transition-colors">
               <button
                 onClick={() => {
                   setStartDate('');
@@ -103,8 +105,8 @@ const Dashboard: React.FC = () => {
                 }}
                 className={`text-xs px-2 py-1 rounded-md transition-colors ${
                   !startDate && !endDate
-                    ? 'bg-blue-100 text-blue-700 font-medium'
-                    : 'text-gray-500 hover:bg-gray-100'
+                    ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-medium'
+                    : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
               >
                 All
@@ -117,26 +119,26 @@ const Dashboard: React.FC = () => {
                 }}
                 className={`text-xs px-2 py-1 rounded-md transition-colors ${
                   startDate === getTodayString() && endDate === getTodayString()
-                    ? 'bg-blue-100 text-blue-700 font-medium'
-                    : 'text-gray-500 hover:bg-gray-100'
+                    ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-medium'
+                    : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
               >
                 Today
               </button>
-              <div className="w-px h-4 bg-gray-200 mx-1"></div>
+              <div className="w-px h-4 bg-gray-200 dark:bg-gray-700 mx-1"></div>
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="border-gray-200 rounded-md text-xs py-1 px-2 focus:ring-blue-500 focus:border-blue-500"
+                className="bg-transparent border-gray-200 dark:border-gray-600 rounded-md text-xs py-1 px-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-gray-100"
                 title="Start Date"
               />
-              <span className="text-gray-400">-</span>
+              <span className="text-gray-400 dark:text-gray-500">-</span>
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="border-gray-200 rounded-md text-xs py-1 px-2 focus:ring-blue-500 focus:border-blue-500"
+                className="bg-transparent border-gray-200 dark:border-gray-600 rounded-md text-xs py-1 px-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-gray-100"
                 title="End Date"
               />
             </div>

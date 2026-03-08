@@ -1,7 +1,7 @@
 import React, { type ReactNode } from 'react';
 import Sidebar from './Sidebar';
 import BottomNav from './BottomNav';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 
 interface LayoutProps {
   children: ReactNode;
@@ -18,7 +18,7 @@ const Layout: React.FC<LayoutProps> = ({ children, onScanClick }) => {
   const syncMessage = authContext?.syncMessage || '';
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col md:flex-row transition-colors">
       {/* Desktop Sidebar */}
       <Sidebar onScanClick={handleScan} />
 
@@ -33,8 +33,8 @@ const Layout: React.FC<LayoutProps> = ({ children, onScanClick }) => {
       {/* Sync Global Toast Notification */}
       {(isSyncing || syncMessage) && (
         <div
-          className={`fixed bottom-32 md:bottom-8 right-4 md:right-8 left-4 md:left-auto p-4 rounded-xl shadow-lg border border-gray-100 flex items-center space-x-3 z-50 text-sm font-medium transition-all duration-300 transform translate-y-0 opacity-100 max-w-full md:max-w-md
-          ${syncMessage.includes('Failed') ? 'bg-red-50 text-red-700 border-red-200' : 'bg-white text-gray-800'}`}
+          className={`fixed bottom-32 md:bottom-8 right-4 md:right-8 left-4 md:left-auto p-4 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 flex items-center space-x-3 z-50 text-sm font-medium transition-all duration-300 transform translate-y-0 opacity-100 max-w-full md:max-w-md
+          ${syncMessage.includes('Failed') ? 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-200 border-red-200 dark:border-red-800' : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200'}`}
         >
           {isSyncing ? (
             <>

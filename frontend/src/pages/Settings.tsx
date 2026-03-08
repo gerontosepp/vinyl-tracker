@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
+import { useTheme } from '../context/useTheme';
 import { useNavigate } from 'react-router-dom';
 
 import Layout from '../components/Layout/Layout';
 
 const Settings: React.FC = () => {
   const { user, updateDiscogs, isLoading, isSyncing, performSync } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [discogsUsername, setDiscogsUsername] = useState(user?.discogsUsername || '');
   const [token, setToken] = useState(''); // Don't verify existing token for security, just let set new
   const [password, setPassword] = useState(''); // Required to encrypt
@@ -43,12 +45,38 @@ const Settings: React.FC = () => {
 
   return (
     <Layout onScanClick={handleScan}>
-      <div className="bg-white rounded-xl shadow-sm p-6 max-w-2xl mx-auto space-y-8">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 max-w-2xl mx-auto space-y-8 transition-colors">
         <div>
-          <h1 className="text-2xl font-bold mb-6">Settings</h1>
+          <h1 className="text-2xl font-bold mb-6 text-gray-900 dark:text-gray-100">Settings</h1>
 
-          <h2 className="text-lg font-semibold mb-4">Discogs Integration</h2>
-          <p className="text-sm text-gray-500 mb-4">
+          <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
+            Appearance
+          </h2>
+          <div className="mb-8">
+            <label
+              htmlFor="themeSelect"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
+              Theme Preference
+            </label>
+            <select
+              id="themeSelect"
+              value={theme}
+              onChange={(e) => setTheme(e.target.value as 'light' | 'dark' | 'system')}
+              className="mt-1 block border border-gray-300 dark:border-gray-600 rounded p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+            >
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+              <option value="system">System Default</option>
+            </select>
+          </div>
+
+          <hr className="my-8 border-gray-200 dark:border-gray-700" />
+
+          <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
+            Discogs Integration
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
             To enable scanning, please provide your Discogs credentials. Your token is encrypted
             securely using your password.
           </p>
@@ -58,7 +86,10 @@ const Settings: React.FC = () => {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="discogsUsername" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="discogsUsername"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
                 Discogs Username
               </label>
               <input
@@ -66,11 +97,14 @@ const Settings: React.FC = () => {
                 type="text"
                 value={discogsUsername}
                 onChange={(e) => setDiscogsUsername(e.target.value)}
-                className="mt-1 block w-full border border-gray-300 rounded p-2"
+                className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               />
             </div>
             <div>
-              <label htmlFor="token" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="token"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
                 New Discogs Token
               </label>
               <input
@@ -78,15 +112,18 @@ const Settings: React.FC = () => {
                 type="password"
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
-                className="mt-1 block w-full border border-gray-300 rounded p-2"
+                className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 placeholder="Enter only if changing"
               />
             </div>
 
-            <hr className="my-4" />
+            <hr className="my-4 border-gray-200 dark:border-gray-700" />
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
                 Current Password (Required)
               </label>
               <input
@@ -94,7 +131,7 @@ const Settings: React.FC = () => {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 block w-full border border-gray-300 rounded p-2 bg-yellow-50"
+                className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded p-2 bg-yellow-50 dark:bg-yellow-900 dark:text-gray-100"
                 required
                 placeholder="Required to encrypt token"
               />
@@ -109,10 +146,12 @@ const Settings: React.FC = () => {
             </button>
           </form>
 
-          <hr className="my-8" />
+          <hr className="my-8 border-gray-200 dark:border-gray-700" />
 
-          <h2 className="text-lg font-semibold mb-4">Manual Synchronization</h2>
-          <p className="text-sm text-gray-500 mb-4">
+          <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
+            Manual Synchronization
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
             Your collection is automatically verified when you log in. If you made recent changes on
             Discogs and want them to appear immediately, you can force a manual sync here.
           </p>

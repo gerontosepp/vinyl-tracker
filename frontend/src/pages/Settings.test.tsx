@@ -1,14 +1,39 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
 import { vi, describe, it, expect } from 'vitest';
+import { BrowserRouter } from 'react-router-dom';
 import Settings from './Settings';
-import * as AuthContext from '../context/AuthContext';
+import * as useAuthHook from '../context/useAuth';
+import { ThemeProvider } from '../context/ThemeContext';
+import * as useThemeHook from '../context/useTheme';
+
+// Mock matchMedia for jsdom
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn().mockImplementation((query) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(), // deprecated
+    removeListener: vi.fn(), // deprecated
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});
+
+vi.mock('../context/useAuth', () => ({
+  useAuth: vi.fn(),
+}));
+
+vi.mock('../context/useTheme', () => ({
+  useTheme: vi.fn(),
+}));
 
 // Mock AuthContext
 const mockUpdateDiscogs = vi.fn();
 const mockUser = { id: 1, username: 'testuser', discogsUsername: 'testdiscogs' };
 
-vi.spyOn(AuthContext, 'useAuth').mockReturnValue({
+vi.spyOn(useAuthHook, 'useAuth').mockReturnValue({
   user: mockUser,
   login: vi.fn(),
   register: vi.fn(),
@@ -17,13 +42,20 @@ vi.spyOn(AuthContext, 'useAuth').mockReturnValue({
   isLoading: false,
   isSyncing: false,
   syncMessage: '',
-  performSync: vi.fn(),
+  performSync: vi.fn() as any, // Cast to any to avoid type complaints about missing promise return
+});
+
+vi.spyOn(useThemeHook, 'useTheme').mockReturnValue({
+  theme: 'system',
+  setTheme: vi.fn(),
 });
 
 const renderComponent = () => {
   return render(
     <BrowserRouter>
-      <Settings />
+      <ThemeProvider>
+        <Settings />
+      </ThemeProvider>
     </BrowserRouter>
   );
 };

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout/Layout';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import {
   getCollection,
   downloadQrCodes,
@@ -155,10 +155,10 @@ const Collection: React.FC = () => {
 
   return (
     <Layout onScanClick={handleScan}>
-      <div className="bg-white rounded-xl shadow-sm flex flex-col h-[calc(100vh-6rem)] md:h-[calc(100vh-5rem)]">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm flex flex-col h-[calc(100vh-6rem)] md:h-[calc(100vh-5rem)] transition-colors">
         {/* Header / Actions */}
-        <div className="p-4 border-b border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
-          <h1 className="text-2xl font-bold">My Collection</h1>
+        <div className="p-4 border-b border-gray-100 dark:border-gray-700 flex flex-col md:flex-row justify-between items-center gap-4">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">My Collection</h1>
 
           <div className="flex gap-2 w-full md:w-auto">
             <button
@@ -176,7 +176,7 @@ const Collection: React.FC = () => {
             <button
               onClick={handleDownloadAll}
               disabled={generating}
-              className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200"
+              className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
             >
               <Download size={16} />
               QR All
@@ -185,11 +185,11 @@ const Collection: React.FC = () => {
         </div>
 
         {/* Controls & Pagination Top */}
-        <div className="p-4 bg-gray-50 flex flex-wrap justify-between items-center border-b border-gray-100 text-sm">
+        <div className="p-4 bg-gray-50 dark:bg-gray-900/50 flex flex-wrap justify-between items-center border-b border-gray-100 dark:border-gray-700 text-sm transition-colors">
           <div className="flex items-center gap-4 flex-wrap">
             <button
               onClick={toggleSelectAllPage}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+              className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
             >
               {isAllPageSelected ? (
                 <CheckSquare className="text-blue-600" size={20} />
@@ -206,8 +206,8 @@ const Collection: React.FC = () => {
               }}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-colors ${
                 showPlayedOnly
-                  ? 'bg-blue-100 border-blue-200 text-blue-800'
-                  : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                  ? 'bg-blue-100 dark:bg-blue-900/40 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-300'
+                  : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
               }`}
             >
               <span className="font-medium">Played Only</span>
@@ -217,22 +217,22 @@ const Collection: React.FC = () => {
             </button>
 
             {/* Sort Controls */}
-            <div className="flex items-center gap-2 border-l pl-4 ml-2 border-gray-200">
-              <span className="text-gray-500 hidden sm:inline">Sort by:</span>
+            <div className="flex items-center gap-2 border-l pl-4 ml-2 border-gray-200 dark:border-gray-700">
+              <span className="text-gray-500 dark:text-gray-400 hidden sm:inline">Sort by:</span>
               <select
                 value={sort}
                 onChange={(e) => {
                   setSort(e.target.value);
                   setPage(1);
                 }}
-                className="border border-gray-300 rounded p-1.5 bg-white"
+                className="border border-gray-300 dark:border-gray-600 rounded p-1.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               >
                 <option value="artist">Band Name</option>
                 <option value="listens">Listens</option>
               </select>
               <button
                 onClick={() => setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))}
-                className="p-2 border border-gray-300 rounded bg-white hover:bg-gray-50 text-gray-600"
+                className="p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300"
                 title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
               >
                 {sortOrder === 'asc' ? <ArrowUp size={16} /> : <ArrowDown size={16} />}
@@ -247,7 +247,7 @@ const Collection: React.FC = () => {
                 setPerPage(Number(e.target.value));
                 setPage(1);
               }}
-              className="border border-gray-300 rounded p-1"
+              className="border border-gray-300 dark:border-gray-600 rounded p-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             >
               <option value={20}>20 / page</option>
               <option value={30}>30 / page</option>
@@ -255,21 +255,21 @@ const Collection: React.FC = () => {
               <option value={50}>50 / page</option>
               <option value={100}>100 (Max)</option>
             </select>
-            <span className="text-gray-500">
+            <span className="text-gray-500 dark:text-gray-400">
               Page {page} of {totalPages}
             </span>
             <div className="flex gap-1">
               <button
                 disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="p-1 px-2 border rounded hover:bg-white disabled:opacity-50"
+                className="p-1 px-2 border border-gray-300 dark:border-gray-600 rounded hover:bg-white dark:hover:bg-gray-700 bg-transparent text-gray-600 dark:text-gray-300 disabled:opacity-50"
               >
                 &lt;
               </button>
               <button
                 disabled={page >= totalPages}
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                className="p-1 px-2 border rounded hover:bg-white disabled:opacity-50"
+                className="p-1 px-2 border border-gray-300 dark:border-gray-600 rounded hover:bg-white dark:hover:bg-gray-700 bg-transparent text-gray-600 dark:text-gray-300 disabled:opacity-50"
               >
                 &gt;
               </button>
@@ -280,7 +280,7 @@ const Collection: React.FC = () => {
         {/* List Content */}
         <div className="flex-1 overflow-y-auto p-4">
           {loading ? (
-            <div className="flex justify-center items-center h-full text-gray-400">
+            <div className="flex justify-center items-center h-full text-gray-400 dark:text-gray-500">
               Loading collection...
             </div>
           ) : (
@@ -292,11 +292,11 @@ const Collection: React.FC = () => {
                 return (
                   <div
                     key={release.id}
-                    className={`relative group bg-white border rounded-xl p-4 flex gap-4 transition-all hover:shadow-md ${isSelected ? 'border-blue-500 ring-1 ring-blue-500 bg-blue-50' : 'border-gray-200'}`}
+                    className={`relative group bg-white dark:bg-gray-800 border rounded-xl p-4 flex gap-4 transition-all hover:shadow-md ${isSelected ? 'border-blue-500 ring-1 ring-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700'}`}
                     onClick={() => toggleSelection(release)}
                   >
                     {/* Listen Count Badge (Top-Right) */}
-                    <div className="absolute top-3 right-3 z-10 bg-gray-900/80 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm">
+                    <div className="absolute top-3 right-3 z-10 bg-gray-900/80 dark:bg-black/60 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm">
                       {release.listen_count || 0} plays
                     </div>
 
@@ -304,19 +304,19 @@ const Collection: React.FC = () => {
                     <div className="absolute bottom-3 right-3 z-10">
                       {isSelected ? (
                         <CheckSquare
-                          className="text-blue-600 fill-white bg-white rounded"
+                          className="text-blue-600 dark:text-blue-400 fill-white dark:fill-gray-900 bg-white dark:bg-transparent rounded"
                           size={24}
                         />
                       ) : (
                         <Square
-                          className="text-gray-300 group-hover:text-gray-400 bg-white/80 rounded"
+                          className="text-gray-300 dark:text-gray-600 group-hover:text-gray-400 dark:group-hover:text-gray-500 bg-white/80 dark:bg-gray-800/80 rounded"
                           size={24}
                         />
                       )}
                     </div>
 
                     {/* Cover */}
-                    <div className="w-20 h-20 flex-shrink-0 bg-gray-200 rounded-lg overflow-hidden">
+                    <div className="w-20 h-20 flex-shrink-0 bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden">
                       {release.basic_information.thumb ? (
                         <img
                           src={getProxiedImageUrl(release.basic_information.thumb)}
@@ -324,7 +324,7 @@ const Collection: React.FC = () => {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+                        <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-gray-500 text-xs">
                           No Cover
                         </div>
                       )}
@@ -333,12 +333,12 @@ const Collection: React.FC = () => {
                     {/* Info */}
                     <div className="flex-1 min-w-0 flex flex-col justify-center pr-20">
                       <h3
-                        className="font-bold text-gray-900 truncate"
+                        className="font-bold text-gray-900 dark:text-gray-100 truncate"
                         title={release.basic_information.title}
                       >
                         {release.basic_information.title}
                       </h3>
-                      <p className="text-sm text-gray-600 truncate">{artist}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 truncate">{artist}</p>
 
                       {/* Open in Discogs Link (stops selection toggle) */}
                       <a
@@ -358,7 +358,7 @@ const Collection: React.FC = () => {
           )}
 
           {!loading && releases.length === 0 && (
-            <div className="text-center py-20 text-gray-400">
+            <div className="text-center py-20 text-gray-400 dark:text-gray-500">
               No records found in your collection yet.
             </div>
           )}

@@ -37,6 +37,8 @@ The project follows a modern containerized micro-architecture:
 - **Analytics**: View most played records and listening trends.
 - **QR Code Generation**: Generate a PDF with QR codes for your entire collection, sorted by artist.
 - **Quick Logging**: Scan generated QR codes to instantly log a listen without searching.
+- **Collection Management**: Search, filter (e.g., "Played Only"), and sort your vinyl catalog. Force a manual sync with Discogs at any time.
+- **Modern UI**: Fully responsive, mobile-first design with dark mode, glassmorphism, and smooth micro-animations.
 - **Observability**: Built-in comprehensive API request and error logging tracking latency across the frontend and backend Docker containers.
 
 ## Deployment & Running

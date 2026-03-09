@@ -135,21 +135,17 @@ jobs:
       contents: read
     steps:
       - name: Delete old backend images
-        uses: snok/container-retention-policy@v2
+        uses: actions/delete-package-versions@v5
         with:
-          image-names: vinyl-tracker-backend
-          cut-off: 1s UTC
-          keep-at-least: 3
-          account-type: personal
-          token: ${{ secrets.GITHUB_TOKEN }}
+          package-name: 'vinyl-tracker-backend'
+          package-type: 'container'
+          min-versions-to-keep: 3
 
       - name: Delete old frontend images
-        uses: snok/container-retention-policy@v2
+        uses: actions/delete-package-versions@v5
         with:
-          image-names: vinyl-tracker-frontend
-          cut-off: 1s UTC
-          keep-at-least: 3
-          account-type: personal
-          token: ${{ secrets.GITHUB_TOKEN }}
+          package-name: 'vinyl-tracker-frontend'
+          package-type: 'container'
+          min-versions-to-keep: 3
 
 

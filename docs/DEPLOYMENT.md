@@ -15,6 +15,10 @@ Die Zielmaschine benötigt Zugriff auf die Docker Images. Sie haben zwei Möglic
 ### Option A: Automatisiert via CI/CD (Empfohlen)
 Dieses Projekt ist mit GitHub Actions so konfiguriert, dass es automatisch Images baut und in die **GitHub Container Registry (GHCR)** pusht, sobald ein neues Release erstellt wird.
 
+Voraussetzung für den Backend-Build in CI ist zusätzlich ein Online-Dependency-Scan via Sonatype OSS Index. Dafür müssen im GitHub-Repository diese **Actions Secrets** gesetzt sein:
+- `OSSINDEX_USERNAME`
+- `OSSINDEX_TOKEN`
+
 1.  Mergen Sie Ihre fertigen Features aus `develop` in den `main` Branch.
 2.  Erstellen Sie auf GitHub ein **neues Release** (z.B. `v1.5.0`), das auf den `main` Branch zeigt.
 3.  Warten Sie, bis die "CI Pipeline" für dieses Tag erfolgreich abgeschlossen ist.
@@ -64,6 +68,8 @@ wget https://raw.githubusercontent.com/gerontosepp-dev/AntiGrafity/develop/.env.
       # Beachten Sie den abschließenden Schrägstrich (Slash)!
       REGISTRY_PREFIX=ghcr.io/<ihr-github-benutzername>/
       ```
+        - **CI-Secrets prüfen**:
+            Stellen Sie sicher, dass `OSSINDEX_USERNAME` und `OSSINDEX_TOKEN` im GitHub-Repository unter Settings -> Secrets and variables -> Actions hinterlegt sind, damit der Backend-Job erfolgreich durchläuft.
     - **Für manuelles Pushen (Option B)**:
       ```bash
       REGISTRY_PREFIX=meinbenutzer/

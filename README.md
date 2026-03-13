@@ -157,12 +157,44 @@ mvn verify
 ```
 *Note: `mvn verify` runs unit/integration tests and enforcing >80% code coverage via JaCoCo.*
 
+**Run Online Dependency Vulnerability Scan:**
+```bash
+cd backend
+export OSSINDEX_USERNAME=<your-ossindex-username>
+export OSSINDEX_TOKEN=<your-ossindex-token>
+mvn -Psecurity-online verify
+```
+*The `security-online` Maven profile queries Sonatype OSS Index, fails the build for findings with CVSS >= 7.0, and writes a report to `backend/target/ossindex-audit.json`.*
+
+**Local Maven Authentication Setup:**
+Create `~/.m2/settings.xml` with an `ossindex` server entry so Maven can use the credentials from your shell environment:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"
+                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                    xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0 https://maven.apache.org/xsd/settings-1.2.0.xsd">
+    <servers>
+        <server>
+            <id>ossindex</id>
+            <username>${env.OSSINDEX_USERNAME}</username>
+            <password>${env.OSSINDEX_TOKEN}</password>
+        </server>
+    </servers>
+</settings>
+```
+
 ### CI/CD
 The project includes a GitHub Actions workflow (`.github/workflows/ci.yml`) that automatically:
 - Builds and tests the Backend (Java 21/Maven).
 - Builds and tests the Frontend (Node 20/Vite).
 - Enforces >80% test coverage for both.
+- Runs the backend online dependency vulnerability audit through the `security-online` Maven profile.
 - Runs on every push to `main` and PRs.
+
+Required GitHub Actions secrets for the backend security audit:
+- `OSSINDEX_USERNAME`
+- `OSSINDEX_TOKEN`
 
 ## License
 

@@ -137,6 +137,7 @@ The system is deployed as a multi-container Docker application orchestrated by D
 - **Data Protection**:
     - User passwords are hashed with **BCrypt**.
     - Sensitive external tokens (Discogs PAT) are encrypted using **AES-256** (via Spring Security Crypto) with a salt and key defined in environment variables.
+- **Dependency Security**: The backend provides an opt-in Maven profile `security-online` that audits dependencies against the Sonatype OSS Index online service during `verify`.
 
 ### 8.2 Validation
 - Input validation using Jakarta Validation API (`@Valid`, `@NotNull`, etc.).
@@ -153,7 +154,7 @@ The system is deployed as a multi-container Docker application orchestrated by D
 ### 8.5 Delivery Workflow
 - **Branch Strategy**: The project uses a simplified flow with two main branches: `develop` (for new features) and `main` (for stable releases). Development happens in temporary feature branches that are merged into `develop`.
 - **Versioning**: Before merging into `main`, version bumps across the frontend, backend, and documentation are automated via the `./release.sh` script on the `develop` branch.
-- **Continuous Deployment (CD)**: Releases are managed via GitHub Releases. Creating a new GitHub Release (e.g. `v1.5.0`) pointing to `main` issues a Git Tag. The GitHub Actions CI pipeline listens to tags matching `v*.*.*`, builds the frontend and backend Docker Images, tags them appropriately (`latest` and `v1.5.0`), and pushes them to the GitHub Container Registry (GHCR).
+- **Continuous Deployment (CD)**: Releases are managed via GitHub Releases. Creating a new GitHub Release (e.g. `v1.5.0`) pointing to `main` issues a Git Tag. The GitHub Actions CI pipeline listens to tags matching `v*.*.*`, runs backend tests and the `security-online` dependency audit, builds the frontend and backend Docker Images, tags them appropriately (`latest` and `v1.5.0`), and pushes them to the GitHub Container Registry (GHCR).
 
 ## 9. Architecture Decisions
 
@@ -167,6 +168,7 @@ The system is deployed as a multi-container Docker application orchestrated by D
 ## 10. Quality Requirements
 
 - **Test Coverage**: Strict requirement of >80% line coverage for both Backend (JaCoCo) and Frontend (Vitest). Enforced by CI/CD.
+- **Dependency Hygiene**: Backend dependencies are checked in CI against Sonatype OSS Index; builds fail for findings with CVSS >= 7.0.
 - **Responsiveness**: The UI must adapt to mobile screens (< 768px) for usable barcode scanning on phones.
 - **Performance**: API responses should be < 200ms (excluding external Discogs calls).
 

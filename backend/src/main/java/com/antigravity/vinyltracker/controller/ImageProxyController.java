@@ -1,6 +1,7 @@
 package com.antigravity.vinyltracker.controller;
 
 import com.antigravity.vinyltracker.service.ImageProxyService;
+import com.antigravity.vinyltracker.service.ImageProxyUrlValidator;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,14 +14,16 @@ import org.springframework.web.bind.annotation.RestController;
 public class ImageProxyController {
 
     private final ImageProxyService imageProxyService;
+    private final ImageProxyUrlValidator imageProxyUrlValidator;
 
-    public ImageProxyController(ImageProxyService imageProxyService) {
+    public ImageProxyController(ImageProxyService imageProxyService, ImageProxyUrlValidator imageProxyUrlValidator) {
         this.imageProxyService = imageProxyService;
+        this.imageProxyUrlValidator = imageProxyUrlValidator;
     }
 
     @GetMapping("/image")
     public ResponseEntity<byte[]> proxyImage(@RequestParam("url") String url) {
-        if (url == null || !url.startsWith("http")) {
+        if (!imageProxyUrlValidator.isAllowed(url)) {
             return ResponseEntity.badRequest().build();
         }
 

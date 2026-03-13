@@ -83,6 +83,7 @@ The application requires environment variables for configuration (database crede
     - `JWT_SECRET` (A strong, base64 or alphanumeric key > 32 characters for securing user login sessions).
     - `CORS_ALLOWED_ORIGINS` (Comma-separated allowlist, e.g. `https://localhost:5173,https://127.0.0.1:5173`).
     - `CORS_ALLOW_CREDENTIALS` (`false` by default; set `true` only if cookie-based auth is required).
+    - `IMAGE_PROXY_ALLOWED_HOSTS` (Comma-separated allowlist for `/api/proxy/image`, e.g. `i.discogs.com,s.discogs.com,api.discogs.com`).
 
 ### 3. Start the Application
 

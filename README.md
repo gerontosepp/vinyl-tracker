@@ -81,6 +81,8 @@ The application requires environment variables for configuration (database crede
     Open `.env` and set your own secure values:
     - `VINYL_ENCRYPTION_PASSWORD` and `VINYL_ENCRYPTION_SALT` (for Discogs token encryption).
     - `JWT_SECRET` (A strong, base64 or alphanumeric key > 32 characters for securing user login sessions).
+    - `CORS_ALLOWED_ORIGINS` (Comma-separated allowlist, e.g. `https://localhost:5173,https://127.0.0.1:5173`).
+    - `CORS_ALLOW_CREDENTIALS` (`false` by default; set `true` only if cookie-based auth is required).
 
 ### 3. Start the Application
 

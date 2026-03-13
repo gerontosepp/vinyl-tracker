@@ -33,6 +33,9 @@ class ImageProxyControllerTest {
     @MockitoBean
     private com.antigravity.vinyltracker.security.JwtService jwtService;
 
+    @MockitoBean
+    private com.antigravity.vinyltracker.security.AuthCookieService authCookieService;
+
     @Test
     void proxyImage_ShouldReturnBadRequest_WhenUrlIsMissing() throws Exception {
         when(imageProxyUrlValidator.isAllowed(anyString())).thenReturn(false);

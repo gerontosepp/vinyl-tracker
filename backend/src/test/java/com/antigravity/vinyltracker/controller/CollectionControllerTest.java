@@ -38,6 +38,9 @@ class CollectionControllerTest {
         @MockitoBean
         private com.antigravity.vinyltracker.security.JwtService jwtService;
 
+        @MockitoBean
+        private com.antigravity.vinyltracker.security.AuthCookieService authCookieService;
+
         @BeforeEach
         void setUp() {
         }

@@ -14,6 +14,7 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
 describe('AuthContext', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(api.getUser).mockImplementation(() => new Promise(() => {}));
   });
 
   it('provides default values', () => {
@@ -33,7 +34,6 @@ describe('AuthContext', () => {
     });
 
     expect(result.current.user).toEqual(mockUser);
-    expect(localStorage.getItem('vinyl_user')).toBe('testuser');
   });
 
   it('login handles failure', async () => {
@@ -91,6 +91,7 @@ describe('AuthContext', () => {
   it('logout clears user state', async () => {
     const mockUser = { id: 1, username: 'testuser' };
     vi.mocked(api.loginUser).mockResolvedValue(mockUser);
+    vi.mocked(api.logoutUser).mockResolvedValue();
 
     const { result } = renderHook(() => useAuth(), { wrapper });
 
@@ -103,6 +104,6 @@ describe('AuthContext', () => {
     });
 
     expect(result.current.user).toBeNull();
-    expect(localStorage.getItem('vinyl_user')).toBeNull();
+    expect(api.logoutUser).toHaveBeenCalled();
   });
 });

@@ -21,6 +21,7 @@
 /Users/opolm/develop/AntiGrafity/backend/src/main/java/com/antigravity/vinyltracker/repository/CollectionItemRepository.java
 /Users/opolm/develop/AntiGrafity/backend/src/main/java/com/antigravity/vinyltracker/repository/ListenEventRepository.java
 /Users/opolm/develop/AntiGrafity/backend/src/main/java/com/antigravity/vinyltracker/repository/RecordRepository.java
+/Users/opolm/develop/AntiGrafity/backend/src/main/java/com/antigravity/vinyltracker/security/AuthCookieService.java
 /Users/opolm/develop/AntiGrafity/backend/src/main/java/com/antigravity/vinyltracker/security/JwtAuthenticationFilter.java
 /Users/opolm/develop/AntiGrafity/backend/src/main/java/com/antigravity/vinyltracker/security/JwtService.java
 /Users/opolm/develop/AntiGrafity/backend/src/main/java/com/antigravity/vinyltracker/service/AnalyticsService.java

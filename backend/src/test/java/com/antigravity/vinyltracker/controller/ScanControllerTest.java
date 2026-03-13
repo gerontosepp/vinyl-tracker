@@ -30,6 +30,9 @@ public class ScanControllerTest {
     @MockitoBean
     private JwtService jwtService;
 
+    @MockitoBean
+    private com.antigravity.vinyltracker.security.AuthCookieService authCookieService;
+
     @Test
     @WithMockUser(username = "testuser")
     public void scanBarcode_Success() throws Exception {

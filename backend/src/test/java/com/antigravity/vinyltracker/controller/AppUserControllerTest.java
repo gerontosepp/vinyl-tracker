@@ -1,6 +1,7 @@
 package com.antigravity.vinyltracker.controller;
 
 import com.antigravity.vinyltracker.model.dto.UserResponseDto;
+import com.antigravity.vinyltracker.security.AuthCookieService;
 import com.antigravity.vinyltracker.service.AppUserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,6 +11,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseCookie;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -23,6 +25,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -33,6 +36,9 @@ class AppUserControllerTest {
 
         @Mock
         private AppUserService appUserService;
+
+        @Mock
+        private AuthCookieService authCookieService;
 
         @InjectMocks
         private AppUserController userController;
@@ -53,14 +59,17 @@ class AppUserControllerTest {
                 dto.setUsername("newUser");
                 dto.setToken("dummy-jwt-token");
                 given(appUserService.register(any())).willReturn(Optional.of(dto));
+                given(authCookieService.createAuthCookie(eq("dummy-jwt-token")))
+                                .willReturn(ResponseCookie.from("vinyl_token", "dummy-jwt-token").build());
 
                 mockMvc.perform(post("/api/users/register")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(payload)))
                                 .andExpect(status().isOk())
+                                .andExpect(header().string("Set-Cookie", org.hamcrest.Matchers.containsString("vinyl_token=")))
                                 .andExpect(jsonPath("$.id", is(1)))
                                 .andExpect(jsonPath("$.username", is("newUser")))
-                                .andExpect(jsonPath("$.token", is("dummy-jwt-token")))
+                                .andExpect(jsonPath("$.token").doesNotExist())
                                 .andExpect(jsonPath("$.password").doesNotExist())
                                 .andExpect(jsonPath("$.salt").doesNotExist());
         }
@@ -74,13 +83,16 @@ class AppUserControllerTest {
                 dto.setUsername("user1");
                 dto.setToken("dummy-jwt-token");
                 given(appUserService.login(any())).willReturn(Optional.of(dto));
+                given(authCookieService.createAuthCookie(eq("dummy-jwt-token")))
+                                .willReturn(ResponseCookie.from("vinyl_token", "dummy-jwt-token").build());
 
                 mockMvc.perform(post("/api/users/login")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(payload)))
                                 .andExpect(status().isOk())
+                                .andExpect(header().string("Set-Cookie", org.hamcrest.Matchers.containsString("vinyl_token=")))
                                 .andExpect(jsonPath("$.username", is("user1")))
-                                .andExpect(jsonPath("$.token", is("dummy-jwt-token")))
+                                .andExpect(jsonPath("$.token").doesNotExist())
                                 .andExpect(jsonPath("$.password").doesNotExist());
         }
 
@@ -141,12 +153,25 @@ class AppUserControllerTest {
                 dto.setUsername("user1");
                 dto.setToken("dummy-jwt-token");
                 given(appUserService.resetPassword(any())).willReturn(Optional.of(dto));
+                given(authCookieService.createAuthCookie(eq("dummy-jwt-token")))
+                                .willReturn(ResponseCookie.from("vinyl_token", "dummy-jwt-token").build());
 
                 mockMvc.perform(post("/api/users/reset-password")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(payload)))
                                 .andExpect(status().isOk())
+                                .andExpect(header().string("Set-Cookie", org.hamcrest.Matchers.containsString("vinyl_token=")))
                                 .andExpect(jsonPath("$.username", is("user1")))
-                                .andExpect(jsonPath("$.token", is("dummy-jwt-token")));
+                                .andExpect(jsonPath("$.token").doesNotExist());
+        }
+
+        @Test
+        void logout_ShouldClearAuthCookie() throws Exception {
+                given(authCookieService.createClearingCookie())
+                                .willReturn(ResponseCookie.from("vinyl_token", "").maxAge(0).build());
+
+                mockMvc.perform(post("/api/users/logout"))
+                                .andExpect(status().isNoContent())
+                                .andExpect(header().string("Set-Cookie", org.hamcrest.Matchers.containsString("vinyl_token=")));
         }
 }

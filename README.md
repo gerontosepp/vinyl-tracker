@@ -84,6 +84,9 @@ The application requires environment variables for configuration (database crede
     - `CORS_ALLOWED_ORIGINS` (Comma-separated allowlist, e.g. `https://localhost:5173,https://127.0.0.1:5173`).
     - `CORS_ALLOW_CREDENTIALS` (`false` by default; set `true` only if cookie-based auth is required).
     - `IMAGE_PROXY_ALLOWED_HOSTS` (Comma-separated allowlist for `/api/proxy/image`, e.g. `i.discogs.com,s.discogs.com,api.discogs.com`).
+    - `AUTH_COOKIE_NAME`, `AUTH_COOKIE_MAX_AGE_SECONDS`, `AUTH_COOKIE_SECURE`, `AUTH_COOKIE_SAME_SITE` (controls the backend HttpOnly session cookie used for authentication).
+
+   Authentication hardening note: The frontend no longer stores JWT in `localStorage`. Login issues a backend-managed HttpOnly cookie and authenticated API requests rely on that cookie.
 
 ### 3. Start the Application
 

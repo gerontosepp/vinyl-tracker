@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-import { getRecentListens, scanBarcode, loginUser, registerUser, getUser } from './api';
+import { getRecentListens, scanBarcode, loginUser, registerUser, getUser, logoutUser } from './api';
 
 // Mock axios
 const { mockPost, mockGet, mockDelete, mockPut, interceptorCallbacks } = vi.hoisted(() => ({
@@ -136,6 +136,14 @@ describe('API Service', () => {
     });
     expect(result).toEqual(mockUser);
   });
+
+  it('logoutUser should make a POST request to /users/logout', async () => {
+    mockPost.mockResolvedValue({});
+
+    await logoutUser();
+
+    expect(mockPost).toHaveBeenCalledWith('/users/logout');
+  });
   it('getCollection should make a GET request to /collection', async () => {
     const mockResponse = { releases: [] };
     mockGet.mockResolvedValue({ data: mockResponse });
@@ -188,26 +196,17 @@ describe('API Service', () => {
     expect(result).toEqual(mockBlob);
   });
 
-  it('should add authorization token and start time to request metadata via interceptor', async () => {
+  it('should add request metadata via interceptor without authorization header', async () => {
 
     // Get the request interceptor
     const reqInterceptor = interceptorCallbacks.req[0].s;
 
-    // Execute interceptor with token
-    localStorage.setItem('vinyl_token', 'fake-token-123');
+    // Execute interceptor
     const config = { headers: {} as any };
     const newConfig = reqInterceptor(config);
 
-    expect(newConfig.headers.Authorization).toBe('Bearer fake-token-123');
+    expect(newConfig.headers.Authorization).toBeUndefined();
     expect(newConfig.metadata.startTime).toBeDefined();
-
-    // Execute interceptor without token
-    localStorage.removeItem('vinyl_token');
-    const configNoToken = { headers: {} as any };
-    const newConfigNoToken = reqInterceptor(configNoToken);
-
-    expect(newConfigNoToken.headers.Authorization).toBeUndefined();
-    expect(newConfigNoToken.metadata.startTime).toBeDefined();
 
     // Test request interceptor error callback
     const reqErrorInterceptor = interceptorCallbacks.req[0].e;

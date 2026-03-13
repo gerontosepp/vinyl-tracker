@@ -5,19 +5,16 @@ const API_Base = '/api';
 
 export const api = axios.create({
   baseURL: API_Base,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Intercept requests to store start time and add JWT token
+// Intercept requests to store start time
 api.interceptors.request.use(
   (config: import('axios').InternalAxiosRequestConfig & { metadata?: { startTime: number } }) => {
     config.metadata = { startTime: Date.now() };
-    const token = localStorage.getItem('vinyl_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
     return config;
   },
   (error) => {
@@ -106,6 +103,10 @@ export const resetPassword = async (
 ): Promise<User> => {
   const response = await api.post('/users/reset-password', { username, newPassword, discogsToken });
   return response.data;
+};
+
+export const logoutUser = async (): Promise<void> => {
+  await api.post('/users/logout');
 };
 
 export const updateDiscogsSettings = async (

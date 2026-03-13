@@ -1,6 +1,6 @@
 import { createContext, useState, useEffect, type ReactNode } from 'react';
 import type { User } from '../types';
-import { loginUser, registerUser, updateDiscogsSettings } from '../services/api';
+import { getUser, loginUser, logoutUser, registerUser, updateDiscogsSettings } from '../services/api';
 
 interface AuthContextType {
   user: User | null;
@@ -41,29 +41,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    // Attempt auto-login if token exists
-    const token = localStorage.getItem('vinyl_token');
-    const username = localStorage.getItem('vinyl_user');
-    if (token && username) {
-      import('../services/api').then((api) => {
-        api
-          .getUser(username)
-          .then((u) => setUser(u))
-          .catch(() => logout());
-      });
-    }
+    // Try restoring session from HttpOnly cookie.
+    getUser('')
+      .then((u) => setUser(u))
+      .catch(() => setUser(null));
   }, []);
 
   const login = async (username: string, password: string) => {
     setIsLoading(true);
     try {
       const userData = await loginUser(username, password);
-      // Wait, token is included in userData now
-      if (userData.token) {
-        localStorage.setItem('vinyl_token', userData.token);
-      }
       setUser(userData);
-      localStorage.setItem('vinyl_user', username);
 
       // Trigger background sync non-blocking, but only if they have Discogs integration configured
       if (userData.discogsUsername) {
@@ -81,11 +69,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
     try {
       const userData = await registerUser(username, password);
-      if (userData.token) {
-        localStorage.setItem('vinyl_token', userData.token);
-      }
       setUser(userData);
-      localStorage.setItem('vinyl_user', username);
     } catch (error) {
       console.error('Registration failed', error);
       throw error;
@@ -116,9 +100,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = () => {
+    logoutUser().catch((error) => {
+      console.error('Logout failed', error);
+    });
     setUser(null);
-    localStorage.removeItem('vinyl_user');
-    localStorage.removeItem('vinyl_token');
   };
 
   return (

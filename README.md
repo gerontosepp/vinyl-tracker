@@ -143,6 +143,8 @@ npm test
 | `npm run test:e2e` | Runs end-to-end tests (Playwright) - requires local env running |
 | `npm run prepare` | Sets up Husky git hooks |
 
+Current high-risk regression coverage focuses on authentication, dashboard scanner access, and manual Discogs sync flows in Playwright plus backend negative-path tests for scan validation and ownership checks.
+
 ### Backend
 Located in `/backend`.
 

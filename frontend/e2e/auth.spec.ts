@@ -70,6 +70,9 @@ test.describe('Authentication', () => {
     await page.route('**/api/analytics/top*', async (route) => {
       await route.fulfill({ status: 200, body: JSON.stringify([]) });
     });
+    await page.route('**/api/users/logout', async (route) => {
+      await route.fulfill({ status: 204, body: '' });
+    });
 
     await page.goto('/login');
     await page.getByPlaceholder('Enter your username').fill('testuser');
@@ -77,8 +80,10 @@ test.describe('Authentication', () => {
     await page.getByRole('button', { name: 'Login' }).click();
     await expect(page).toHaveURL('/');
 
-    // Now logout
-    await page.getByRole('button', { name: 'Logout' }).click();
+    await expect(page.getByRole('heading', { name: 'Top Records', exact: true })).toBeVisible();
+    await page.locator('aside').getByText('Profile', { exact: true }).click();
+    await expect(page).toHaveURL('/profile');
+    await page.getByRole('button', { name: 'Sign Out' }).click();
     await expect(page).toHaveURL('/login');
   });
 });

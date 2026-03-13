@@ -30,7 +30,15 @@ test.describe('Dashboard', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify([{ key: 'Test Artist', value: 5 }]),
+        body: JSON.stringify([
+          {
+            recordTitle: 'Test Album',
+            title: 'Test Album',
+            artist: 'Test Artist',
+            thumbUrl: '',
+            count: 5,
+          },
+        ]),
       });
     });
 
@@ -43,14 +51,14 @@ test.describe('Dashboard', () => {
   });
 
   test('should display dashboard sections', async ({ page }) => {
-    await expect(page.getByText('Top Records')).toBeVisible();
-    await expect(page.getByText('Recent Listens')).toBeVisible();
-    await expect(page.getByText('Test Album')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Top Records', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Recent Listens', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Test Album' }).first()).toBeVisible();
     await expect(page.getByText('Test Artist').first()).toBeVisible();
   });
 
   test('should toggle scanner', async ({ page }) => {
-    const scanButton = page.getByRole('button', { name: 'SCAN RECORD' });
+    const scanButton = page.locator('aside').getByRole('button', { name: 'Scan Record' });
     await expect(scanButton).toBeVisible();
     await scanButton.click();
 

@@ -19,6 +19,7 @@ import java.security.Principal;
 import com.antigravity.vinyltracker.security.JwtService;
 
 @WebMvcTest(ScanController.class)
+@SuppressWarnings("null")
 public class ScanControllerTest {
 
     @Autowired
@@ -55,6 +56,24 @@ public class ScanControllerTest {
 
     @Test
     @WithMockUser(username = "testuser")
+    public void scanBarcode_ShouldReturnBadRequest_WhenBusinessValidationFails() throws Exception {
+        ScanDto.Result result = new ScanDto.Result(false, "Release not found in collection or invalid barcode.", null);
+        when(scanService.processScan("999999", "testuser")).thenReturn(result);
+
+        Principal mockPrincipal = () -> "testuser";
+
+        mockMvc.perform(post("/api/scan")
+                .principal(mockPrincipal)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"barcode\":\"999999\"}")
+                .with(csrf()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.message").value("Release not found in collection or invalid barcode."));
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
     public void deleteScan_Success() throws Exception {
         doNothing().when(scanService).deleteScan(1L, "testuser");
 
@@ -79,5 +98,16 @@ public class ScanControllerTest {
                 .principal(mockPrincipal)
                 .with(csrf()))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void scanBarcode_ShouldRequireAuthentication() throws Exception {
+        mockMvc.perform(post("/api/scan")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"barcode\":\"123456\"}")
+                .with(csrf()))
+                .andExpect(status().isUnauthorized());
+
+        verifyNoInteractions(scanService);
     }
 }

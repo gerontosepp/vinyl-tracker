@@ -23,6 +23,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("null")
 class ScanServiceTest {
 
     @Mock
@@ -120,5 +121,73 @@ class ScanServiceTest {
 
         assertTrue(result.isSuccess());
         assertEquals("Now playing: Custom Code Release", result.getMessage());
+    }
+
+    @Test
+    void processScan_ShouldReturnFailure_WhenCustomCodeIsInvalid() {
+        String username = "testuser";
+
+        when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
+
+        ScanDto.Result result = scanService.processScan("discogs-id:not-a-number", username);
+
+        assertFalse(result.isSuccess());
+        assertEquals("Invalid custom barcode format", result.getMessage());
+        verifyNoInteractions(discogsService);
+        verify(recordRepository, never()).save(any(Record.class));
+        verify(listenEventRepository, never()).save(any(ListenEvent.class));
+    }
+
+    @Test
+    void processScan_ShouldThrow_WhenUserDoesNotExist() {
+        when(userRepository.findByUsername("missing-user")).thenReturn(Optional.empty());
+
+        RuntimeException exception = assertThrows(RuntimeException.class,
+                () -> scanService.processScan("123456789", "missing-user"));
+
+        assertEquals("User not found: missing-user", exception.getMessage());
+        verifyNoInteractions(discogsService, recordRepository, listenEventRepository);
+    }
+
+    @Test
+    void deleteScan_ShouldDeleteEvent_WhenOwnedByCurrentUser() {
+        ListenEvent event = new ListenEvent();
+        event.setId(10L);
+        event.setUser(user);
+
+        when(listenEventRepository.findById(10L)).thenReturn(Optional.of(event));
+
+        scanService.deleteScan(10L, "testuser");
+
+        verify(listenEventRepository).delete(event);
+    }
+
+    @Test
+    void deleteScan_ShouldThrow_WhenScanDoesNotExist() {
+        when(listenEventRepository.findById(77L)).thenReturn(Optional.empty());
+
+        RuntimeException exception = assertThrows(RuntimeException.class,
+                () -> scanService.deleteScan(77L, "testuser"));
+
+        assertEquals("Scan not found", exception.getMessage());
+        verify(listenEventRepository, never()).delete(any(ListenEvent.class));
+    }
+
+    @Test
+    void deleteScan_ShouldThrow_WhenScanBelongsToAnotherUser() {
+        AppUser otherUser = new AppUser();
+        otherUser.setUsername("someone-else");
+
+        ListenEvent event = new ListenEvent();
+        event.setId(11L);
+        event.setUser(otherUser);
+
+        when(listenEventRepository.findById(11L)).thenReturn(Optional.of(event));
+
+        RuntimeException exception = assertThrows(RuntimeException.class,
+                () -> scanService.deleteScan(11L, "testuser"));
+
+        assertEquals("Unauthorized to delete this scan", exception.getMessage());
+        verify(listenEventRepository, never()).delete(any(ListenEvent.class));
     }
 }

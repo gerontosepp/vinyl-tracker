@@ -3,6 +3,7 @@ package com.antigravity.vinyltracker.security;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -14,11 +15,21 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
-    @Value("${jwt.secret:defaultSecretKeyWithSufficientLengthForHS256_32bytesMin!}")
+    @Value("${jwt.secret}")
     private String secretKey;
 
     @Value("${jwt.expiration:86400000}") // 1 day in ms
     private long jwtExpiration;
+
+    @PostConstruct
+    void validateConfiguration() {
+        if (secretKey == null || secretKey.isBlank()) {
+            throw new IllegalStateException("JWT secret must be configured via jwt.secret / JWT_SECRET");
+        }
+        if (secretKey.length() < 32) {
+            throw new IllegalStateException("JWT secret must contain at least 32 characters");
+        }
+    }
 
     private SecretKey getSigningKey() {
         byte[] keyBytes = secretKey.getBytes(StandardCharsets.UTF_8);

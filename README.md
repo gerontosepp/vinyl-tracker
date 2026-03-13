@@ -80,7 +80,7 @@ The application requires environment variables for configuration (database crede
 2.  **Configure Secrets**:
     Open `.env` and set your own secure values:
     - `VINYL_ENCRYPTION_PASSWORD` and `VINYL_ENCRYPTION_SALT` (for Discogs token encryption).
-    - `JWT_SECRET` (A strong, base64 or alphanumeric key > 32 characters for securing user login sessions).
+    - `JWT_SECRET` (Required. Must be a strong key with at least 32 characters for securing user login sessions. Backend startup fails fast if missing/too short).
     - `CORS_ALLOWED_ORIGINS` (Comma-separated allowlist, e.g. `https://localhost:5173,https://127.0.0.1:5173`).
     - `CORS_ALLOW_CREDENTIALS` (`false` by default; set `true` only if cookie-based auth is required).
     - `IMAGE_PROXY_ALLOWED_HOSTS` (Comma-separated allowlist for `/api/proxy/image`, e.g. `i.discogs.com,s.discogs.com,api.discogs.com`).

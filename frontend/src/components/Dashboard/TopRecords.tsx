@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useMemo } from 'react';
 import { getProxiedImageUrl } from '../../services/api';
 import type { AnalyticsTopRecord } from '../../types';
 
@@ -8,7 +8,7 @@ interface TopRecordsProps {
 }
 
 const TopRecords: React.FC<TopRecordsProps> = ({ data, className = '' }) => {
-  const maxCount = Math.max(...data.map((r) => r.count), 0);
+  const maxCount = useMemo(() => Math.max(...data.map((r) => r.count), 0), [data]);
 
   return (
     <div
@@ -86,4 +86,4 @@ const TopRecords: React.FC<TopRecordsProps> = ({ data, className = '' }) => {
   );
 };
 
-export default TopRecords;
+export default memo(TopRecords);

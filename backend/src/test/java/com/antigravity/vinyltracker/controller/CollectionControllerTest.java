@@ -108,12 +108,12 @@ class CollectionControllerTest {
 
                 when(collectionService.generateSelectedQrCodesPdf(any())).thenThrow(new IOException("PDF Error"));
 
-                org.junit.jupiter.api.Assertions.assertThrows(Exception.class, () -> {
-                        mockMvc.perform(post("/api/collection/qr-codes/selected")
-                                        .content(objectMapper.writeValueAsString(request))
-                                        .contentType(MediaType.APPLICATION_JSON)
-                                        .with(csrf()));
-                });
+                mockMvc.perform(post("/api/collection/qr-codes/selected")
+                                .content(objectMapper.writeValueAsString(request))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .with(csrf()))
+                                .andExpect(status().isInternalServerError())
+                                .andExpect(content().contentType("application/problem+json"));
         }
 
         @Test
@@ -149,9 +149,9 @@ class CollectionControllerTest {
 
                 Principal mockPrincipal = () -> "testuser";
 
-                org.junit.jupiter.api.Assertions.assertThrows(Exception.class, () -> {
-                        mockMvc.perform(get("/api/collection/qr-codes/all")
-                                        .principal(mockPrincipal));
-                });
+                mockMvc.perform(get("/api/collection/qr-codes/all")
+                                .principal(mockPrincipal))
+                                .andExpect(status().isInternalServerError())
+                                .andExpect(content().contentType("application/problem+json"));
         }
 }

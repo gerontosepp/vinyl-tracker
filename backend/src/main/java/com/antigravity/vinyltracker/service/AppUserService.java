@@ -1,6 +1,10 @@
 package com.antigravity.vinyltracker.service;
 
 import com.antigravity.vinyltracker.model.AppUser;
+import com.antigravity.vinyltracker.model.dto.LoginRequestDto;
+import com.antigravity.vinyltracker.model.dto.RegisterRequestDto;
+import com.antigravity.vinyltracker.model.dto.ResetPasswordRequestDto;
+import com.antigravity.vinyltracker.model.dto.UpdateDiscogsRequestDto;
 import com.antigravity.vinyltracker.model.dto.UserResponseDto;
 import com.antigravity.vinyltracker.repository.AppUserRepository;
 import org.springframework.security.crypto.keygen.KeyGenerators;
@@ -8,7 +12,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import com.antigravity.vinyltracker.security.JwtService;
 import org.springframework.stereotype.Service;
 
-import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -27,9 +30,9 @@ public class AppUserService {
         this.jwtService = jwtService;
     }
 
-    public Optional<UserResponseDto> register(Map<String, String> payload) {
-        String username = payload.get("username");
-        String password = payload.get("password");
+    public Optional<UserResponseDto> register(RegisterRequestDto payload) {
+        String username = payload.getUsername();
+        String password = payload.getPassword();
 
         if (userRepository.findByUsername(username).isPresent()) {
             return Optional.empty();
@@ -45,9 +48,9 @@ public class AppUserService {
         return Optional.of(UserResponseDto.fromEntity(savedUser, token));
     }
 
-    public Optional<UserResponseDto> login(Map<String, String> payload) {
-        String username = payload.get("username");
-        String password = payload.get("password");
+    public Optional<UserResponseDto> login(LoginRequestDto payload) {
+        String username = payload.getUsername();
+        String password = payload.getPassword();
 
         return userRepository.findByUsername(username)
                 .filter(user -> passwordEncoder.matches(password, user.getPassword()))
@@ -57,9 +60,9 @@ public class AppUserService {
                 });
     }
 
-    public Optional<UserResponseDto> updateDiscogs(String username, Map<String, String> payload) {
-        String token = payload.get("token");
-        String discogsUsername = payload.get("discogsUsername");
+    public Optional<UserResponseDto> updateDiscogs(String username, UpdateDiscogsRequestDto payload) {
+        String token = payload.getToken();
+        String discogsUsername = payload.getDiscogsUsername();
 
         return userRepository.findByUsername(username)
                 .map(user -> {
@@ -71,10 +74,10 @@ public class AppUserService {
                 });
     }
 
-    public Optional<UserResponseDto> resetPassword(Map<String, String> payload) {
-        String username = payload.get("username");
-        String newPassword = payload.get("newPassword");
-        String discogsToken = payload.get("discogsToken");
+    public Optional<UserResponseDto> resetPassword(ResetPasswordRequestDto payload) {
+        String username = payload.getUsername();
+        String newPassword = payload.getNewPassword();
+        String discogsToken = payload.getDiscogsToken();
 
         return userRepository.findByUsername(username)
                 .map(user -> {

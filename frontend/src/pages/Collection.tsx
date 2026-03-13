@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout/Layout';
 import { useAuth } from '../context/useAuth';
@@ -10,6 +10,7 @@ import {
 } from '../services/api';
 import type { CollectionRelease, QrCodeItem } from '../types';
 import { Download, ExternalLink, CheckSquare, Square, ArrowUp, ArrowDown, Search, X } from 'lucide-react';
+import { getErrorMessage } from '../utils/error';
 
 const Collection: React.FC = () => {
   const { user } = useAuth();
@@ -64,8 +65,8 @@ const Collection: React.FC = () => {
         if (data.pagination) {
           setTotalPages(data.pagination.pages);
         }
-      } catch (error) {
-        console.error('Failed to fetch collection', error);
+      } catch (error: unknown) {
+        console.error('Failed to fetch collection:', getErrorMessage(error, 'Unknown collection error'));
       } finally {
         setLoading(false);
       }
@@ -120,8 +121,11 @@ const Collection: React.FC = () => {
   };
 
   // Derived Selection State for UI
-  const isAllPageSelected = releases.length > 0 && releases.every((r) => selectedItems.has(r.id));
-  const selectedCount = selectedItems.size;
+  const isAllPageSelected = useMemo(
+    () => releases.length > 0 && releases.every((r) => selectedItems.has(r.id)),
+    [releases, selectedItems]
+  );
+  const selectedCount = useMemo(() => selectedItems.size, [selectedItems]);
 
   // QR Code Generation
   const handleDownloadSelected = async () => {
@@ -131,9 +135,10 @@ const Collection: React.FC = () => {
       const items = Array.from(selectedItems.values());
       const blob = await downloadQrCodesSelected(items);
       downloadBlob(blob, 'selected_qr_codes.pdf');
-    } catch (e) {
-      console.error(e);
-      alert('Failed to generate QR codes.');
+    } catch (error: unknown) {
+      const message = getErrorMessage(error, 'Failed to generate QR codes.');
+      console.error('Failed to generate selected QR codes:', message);
+      alert(message);
     } finally {
       setGenerating(false);
     }
@@ -147,9 +152,10 @@ const Collection: React.FC = () => {
     try {
       const blob = await downloadQrCodes(user.username);
       downloadBlob(blob, 'collection_qr_codes.pdf');
-    } catch (e) {
-      console.error(e);
-      alert('Failed to generate QR codes.');
+    } catch (error: unknown) {
+      const message = getErrorMessage(error, 'Failed to generate QR codes.');
+      console.error('Failed to generate all QR codes:', message);
+      alert(message);
     } finally {
       setGenerating(false);
     }

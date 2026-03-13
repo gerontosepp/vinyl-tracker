@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../context/useAuth';
 import { getRecentListens, getTopRecords, deleteScan } from '../services/api';
 import type { ListenEvent, AnalyticsTopRecord } from '../types';
@@ -7,6 +7,7 @@ import Layout from '../components/Layout/Layout';
 import TopRecords from '../components/Dashboard/TopRecords';
 import RecentListens from '../components/Dashboard/RecentListens';
 import { useLocation } from 'react-router-dom';
+import { getErrorMessage } from '../utils/error';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -38,7 +39,7 @@ const Dashboard: React.FC = () => {
     }
   }, [location]);
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = useCallback(async (id: number) => {
     if (!user || !window.confirm('Delete this scan?')) return;
     try {
       await deleteScan(id, user.username);
@@ -46,11 +47,12 @@ const Dashboard: React.FC = () => {
       // Refresh top records as well
       const tops = await getTopRecords(user.username, startDate, endDate);
       setTopRecords(tops);
-    } catch (e) {
-      console.error('Failed to delete scan', e);
-      alert('Failed to delete scan');
+    } catch (error: unknown) {
+      const message = getErrorMessage(error, 'Failed to delete scan');
+      console.error('Failed to delete scan:', message);
+      alert(message);
     }
-  };
+  }, [user, startDate, endDate]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -61,8 +63,8 @@ const Dashboard: React.FC = () => {
 
         const tops = await getTopRecords(user.username, startDate, endDate);
         setTopRecords(tops);
-      } catch (e) {
-        console.error('Failed to load dashboard data', e);
+      } catch (error: unknown) {
+        console.error('Failed to load dashboard data:', getErrorMessage(error, 'Unknown dashboard error'));
       }
     };
 

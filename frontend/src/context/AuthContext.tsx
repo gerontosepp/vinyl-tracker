@@ -1,6 +1,7 @@
 import { createContext, useState, useEffect, type ReactNode } from 'react';
 import type { User } from '../types';
 import { getUser, loginUser, logoutUser, registerUser, updateDiscogsSettings } from '../services/api';
+import { getErrorMessage } from '../utils/error';
 
 interface AuthContextType {
   user: User | null;
@@ -31,8 +32,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const added = result?.added || 0;
       const removed = result?.removed || 0;
       setSyncMessage(`Synced successfully! Added: ${added}, Removed: ${removed}`);
-    } catch (error) {
-      console.error('Background sync failed', error);
+    } catch (error: unknown) {
+      console.error('Background sync failed:', getErrorMessage(error, 'Unknown sync error'));
       setSyncMessage('Failed to synchronize collection.');
     } finally {
       setIsSyncing(false);
@@ -57,8 +58,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (userData.discogsUsername) {
         performSync(username).catch(console.error);
       }
-    } catch (error) {
-      console.error('Login failed', error);
+    } catch (error: unknown) {
+      console.error('Login failed:', getErrorMessage(error, 'Unknown login error'));
       throw error;
     } finally {
       setIsLoading(false);
@@ -70,8 +71,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const userData = await registerUser(username, password);
       setUser(userData);
-    } catch (error) {
-      console.error('Registration failed', error);
+    } catch (error: unknown) {
+      console.error('Registration failed:', getErrorMessage(error, 'Unknown registration error'));
       throw error;
     } finally {
       setIsLoading(false);
@@ -91,8 +92,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(updatedUser);
       // Trigger background sync non-blocking
       performSync(updatedUser.username).catch(console.error);
-    } catch (error) {
-      console.error('Update settings failed', error);
+    } catch (error: unknown) {
+      console.error('Update settings failed:', getErrorMessage(error, 'Unknown update error'));
       throw error;
     } finally {
       setIsLoading(false);
@@ -100,8 +101,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = () => {
-    logoutUser().catch((error) => {
-      console.error('Logout failed', error);
+    logoutUser().catch((error: unknown) => {
+      console.error('Logout failed:', getErrorMessage(error, 'Unknown logout error'));
     });
     setUser(null);
   };

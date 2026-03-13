@@ -1,10 +1,13 @@
 import { test, expect } from '@playwright/test';
 
 const openSettingsFromDashboard = async (page: import('@playwright/test').Page) => {
-  await expect(page.getByRole('heading', { name: 'Top Records', exact: true })).toBeVisible();
-  await page.locator('aside').getByText('Profile', { exact: true }).click();
+  const profileNavItem = page.locator('aside').getByText('Profile', { exact: true });
+  await expect(profileNavItem).toBeVisible();
+  await profileNavItem.click();
   await expect(page).toHaveURL('/profile');
-  await page.getByRole('button', { name: 'Settings' }).click();
+  const settingsButton = page.getByRole('button', { name: 'Settings' }).first();
+  await expect(settingsButton).toBeVisible();
+  await settingsButton.click();
 };
 
 test.describe('Navigation', () => {

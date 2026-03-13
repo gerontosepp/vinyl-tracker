@@ -1,6 +1,10 @@
 package com.antigravity.vinyltracker.service;
 
 import com.antigravity.vinyltracker.model.AppUser;
+import com.antigravity.vinyltracker.model.dto.LoginRequestDto;
+import com.antigravity.vinyltracker.model.dto.RegisterRequestDto;
+import com.antigravity.vinyltracker.model.dto.ResetPasswordRequestDto;
+import com.antigravity.vinyltracker.model.dto.UpdateDiscogsRequestDto;
 import com.antigravity.vinyltracker.model.dto.UserResponseDto;
 import com.antigravity.vinyltracker.repository.AppUserRepository;
 import com.antigravity.vinyltracker.security.JwtService;
@@ -12,15 +16,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("null")
 public class AppUserServiceTest {
 
     @Mock
@@ -48,6 +51,10 @@ public class AppUserServiceTest {
 
     @Test
     void register_Success() {
+        RegisterRequestDto payload = new RegisterRequestDto();
+        payload.setUsername("newuser");
+        payload.setPassword("password");
+
         when(userRepository.findByUsername("newuser")).thenReturn(Optional.empty());
         when(passwordEncoder.encode("password")).thenReturn("encoded!@#");
         when(userRepository.save(any(AppUser.class))).thenAnswer(i -> {
@@ -57,8 +64,7 @@ public class AppUserServiceTest {
         });
         when(jwtService.generateToken("newuser")).thenReturn("jwt-token-123");
 
-        Optional<UserResponseDto> result = appUserService
-                .register(Map.of("username", "newuser", "password", "password"));
+        Optional<UserResponseDto> result = appUserService.register(payload);
 
         assertTrue(result.isPresent());
         assertEquals("newuser", result.get().getUsername());
@@ -67,19 +73,26 @@ public class AppUserServiceTest {
 
     @Test
     void register_UserExists() {
+        RegisterRequestDto payload = new RegisterRequestDto();
+        payload.setUsername("testuser");
+        payload.setPassword("password");
+
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
-        Optional<UserResponseDto> result = appUserService
-                .register(Map.of("username", "testuser", "password", "password"));
+        Optional<UserResponseDto> result = appUserService.register(payload);
         assertFalse(result.isPresent());
     }
 
     @Test
     void login_Success() {
+        LoginRequestDto payload = new LoginRequestDto();
+        payload.setUsername("testuser");
+        payload.setPassword("mypsw");
+
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
         when(passwordEncoder.matches("mypsw", "encodedPsw")).thenReturn(true);
         when(jwtService.generateToken("testuser")).thenReturn("jwt-token-abc");
 
-        Optional<UserResponseDto> result = appUserService.login(Map.of("username", "testuser", "password", "mypsw"));
+        Optional<UserResponseDto> result = appUserService.login(payload);
 
         assertTrue(result.isPresent());
         assertEquals("testuser", result.get().getUsername());
@@ -88,22 +101,29 @@ public class AppUserServiceTest {
 
     @Test
     void login_InvalidPassword() {
+        LoginRequestDto payload = new LoginRequestDto();
+        payload.setUsername("testuser");
+        payload.setPassword("wrongpsw");
+
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
         when(passwordEncoder.matches("wrongpsw", "encodedPsw")).thenReturn(false);
 
-        Optional<UserResponseDto> result = appUserService.login(Map.of("username", "testuser", "password", "wrongpsw"));
+        Optional<UserResponseDto> result = appUserService.login(payload);
 
         assertFalse(result.isPresent());
     }
 
     @Test
     void updateDiscogs_Success() {
+        UpdateDiscogsRequestDto payload = new UpdateDiscogsRequestDto();
+        payload.setToken("newToken");
+        payload.setDiscogsUsername("testDiscname");
+
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
         when(tokenService.encrypt("newToken")).thenReturn("encryptedToken");
         when(userRepository.save(any(AppUser.class))).thenReturn(testUser);
 
-        Optional<UserResponseDto> result = appUserService.updateDiscogs("testuser",
-                Map.of("token", "newToken", "discogsUsername", "testDiscname"));
+        Optional<UserResponseDto> result = appUserService.updateDiscogs("testuser", payload);
 
         assertTrue(result.isPresent());
         assertEquals("testuser", result.get().getUsername());
@@ -114,14 +134,18 @@ public class AppUserServiceTest {
 
     @Test
     void resetPassword_Success() {
+        ResetPasswordRequestDto payload = new ResetPasswordRequestDto();
+        payload.setUsername("testuser");
+        payload.setNewPassword("newpsw");
+        payload.setDiscogsToken("newDiscogs");
+
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
         when(passwordEncoder.encode("newpsw")).thenReturn("newEncoded");
         when(tokenService.encrypt("newDiscogs")).thenReturn("encDiscogs");
         when(userRepository.save(any(AppUser.class))).thenReturn(testUser);
         when(jwtService.generateToken("testuser")).thenReturn("new-jwt-token");
 
-        Optional<UserResponseDto> result = appUserService.resetPassword(
-                Map.of("username", "testuser", "newPassword", "newpsw", "discogsToken", "newDiscogs"));
+        Optional<UserResponseDto> result = appUserService.resetPassword(payload);
 
         assertTrue(result.isPresent());
         assertEquals("new-jwt-token", result.get().getToken());

@@ -1,5 +1,6 @@
 package com.antigravity.vinyltracker.controller;
 
+import com.antigravity.vinyltracker.exception.GlobalExceptionHandler;
 import com.antigravity.vinyltracker.model.dto.UserResponseDto;
 import com.antigravity.vinyltracker.security.AuthCookieService;
 import com.antigravity.vinyltracker.service.AppUserService;
@@ -14,6 +15,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseCookie;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
 import java.security.Principal;
 import java.util.Map;
@@ -23,13 +25,16 @@ import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("null")
 class AppUserControllerTest {
 
         private MockMvc mockMvc;
@@ -47,7 +52,12 @@ class AppUserControllerTest {
 
         @BeforeEach
         void setUp() {
-                mockMvc = MockMvcBuilders.standaloneSetup(userController).build();
+                LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
+                validator.afterPropertiesSet();
+                mockMvc = MockMvcBuilders.standaloneSetup(userController)
+                                .setControllerAdvice(new GlobalExceptionHandler())
+                                .setValidator(validator)
+                                .build();
         }
 
         @Test
@@ -173,5 +183,20 @@ class AppUserControllerTest {
                 mockMvc.perform(post("/api/users/logout"))
                                 .andExpect(status().isNoContent())
                                 .andExpect(header().string("Set-Cookie", org.hamcrest.Matchers.containsString("vinyl_token=")));
+        }
+
+        @Test
+        void register_ShouldReturnBadRequest_WhenPayloadInvalid() throws Exception {
+                Map<String, String> invalidPayload = Map.of("username", "", "password", "");
+
+                mockMvc.perform(post("/api/users/register")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(invalidPayload)))
+                                .andExpect(status().isBadRequest())
+                                .andExpect(content().contentType("application/problem+json"))
+                                .andExpect(jsonPath("$.title", is("Validation failed")))
+                                .andExpect(jsonPath("$.status", is(400)));
+
+                verifyNoInteractions(appUserService);
         }
 }

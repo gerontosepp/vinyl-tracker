@@ -145,6 +145,8 @@ npm test
 
 Current high-risk regression coverage focuses on authentication, dashboard scanner access, and manual Discogs sync flows in Playwright plus backend negative-path tests for scan validation and ownership checks.
 
+Architecture hardening (v1.6.x): User endpoints now use validated request DTOs (no loose map payloads), frontend error handling relies on typed unknown-to-message extraction, and dashboard/list views include memoization in critical render paths.
+
 ### Backend
 Located in `/backend`.
 

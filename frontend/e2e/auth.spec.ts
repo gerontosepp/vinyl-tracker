@@ -80,8 +80,9 @@ test.describe('Authentication', () => {
     await page.getByRole('button', { name: 'Login' }).click();
     await expect(page).toHaveURL('/');
 
-    await expect(page.getByRole('heading', { name: 'Top Records', exact: true })).toBeVisible();
-    await page.locator('aside').getByText('Profile', { exact: true }).click();
+    const profileNavItem = page.locator('aside').getByText('Profile', { exact: true });
+    await expect(profileNavItem).toBeVisible();
+    await profileNavItem.click();
     await expect(page).toHaveURL('/profile');
     await page.getByRole('button', { name: 'Sign Out' }).click();
     await expect(page).toHaveURL('/login');

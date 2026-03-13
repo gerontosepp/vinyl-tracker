@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Trash2 } from 'lucide-react';
 import { getProxiedImageUrl } from '../../services/api';
 import type { ListenEvent } from '../../types';
@@ -102,4 +102,4 @@ const RecentListens: React.FC<RecentListensProps> = ({ listens, onDelete, classN
   );
 };
 
-export default RecentListens;
+export default memo(RecentListens);

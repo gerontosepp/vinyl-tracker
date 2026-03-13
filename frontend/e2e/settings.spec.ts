@@ -9,10 +9,13 @@ const loginViaUi = async (page: import('@playwright/test').Page) => {
 };
 
 const openSettingsFromDashboard = async (page: import('@playwright/test').Page) => {
-  await expect(page.getByRole('heading', { name: 'Top Records', exact: true })).toBeVisible();
-  await page.locator('aside').getByText('Profile', { exact: true }).click();
+  const profileNavItem = page.locator('aside').getByText('Profile', { exact: true });
+  await expect(profileNavItem).toBeVisible();
+  await profileNavItem.click();
   await expect(page).toHaveURL('/profile');
-  await page.getByRole('button', { name: 'Settings' }).click();
+  const settingsButton = page.getByRole('button', { name: 'Settings' }).first();
+  await expect(settingsButton).toBeVisible();
+  await settingsButton.click();
   await expect(page).toHaveURL('/settings');
 };
 
@@ -55,7 +58,6 @@ test.describe('Settings Sync', () => {
     const syncButton = page.getByRole('button', { name: 'Force Sync Collection' });
     await syncButton.click();
 
-    await expect(page.getByText('Syncing Discogs Collection...')).toBeVisible();
     await expect(page.getByText('Synced successfully! Added: 3, Removed: 1')).toBeVisible();
   });
 

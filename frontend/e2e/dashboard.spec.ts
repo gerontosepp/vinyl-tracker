@@ -53,8 +53,8 @@ test.describe('Dashboard', () => {
   test('should display dashboard sections', async ({ page }) => {
     await expect(page.getByRole('heading', { name: 'Top Records', exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Recent Listens', exact: true })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Test Album' }).first()).toBeVisible();
     await expect(page.getByText('Test Artist').first()).toBeVisible();
+    await expect(page.getByText('5 plays')).toBeVisible();
   });
 
   test('should toggle scanner', async ({ page }) => {

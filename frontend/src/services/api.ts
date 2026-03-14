@@ -2,6 +2,21 @@ import axios from 'axios';
 import type { ScanResult, ListenEvent, User, AnalyticsTopRecord } from '../types';
 
 const API_Base = '/api';
+const AUTH_TOKEN_KEY = 'vinyl_auth_token';
+
+const readAuthToken = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  return window.localStorage.getItem(AUTH_TOKEN_KEY);
+};
+
+const storeAuthToken = (token?: string | null): void => {
+  if (typeof window === 'undefined') return;
+  if (token && token.trim().length > 0) {
+    window.localStorage.setItem(AUTH_TOKEN_KEY, token);
+  } else {
+    window.localStorage.removeItem(AUTH_TOKEN_KEY);
+  }
+};
 
 export const api = axios.create({
   baseURL: API_Base,
@@ -15,6 +30,10 @@ export const api = axios.create({
 api.interceptors.request.use(
   (config: import('axios').InternalAxiosRequestConfig & { metadata?: { startTime: number } }) => {
     config.metadata = { startTime: Date.now() };
+    const token = readAuthToken();
+    if (token && !config.headers.Authorization) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => {
@@ -88,11 +107,13 @@ export const getTopRecords = async (
 
 export const loginUser = async (username: string, password: string): Promise<User> => {
   const response = await api.post('/users/login', { username, password });
+  storeAuthToken(response.data?.token);
   return response.data;
 };
 
 export const registerUser = async (username: string, password: string): Promise<User> => {
   const response = await api.post('/users/register', { username, password });
+  storeAuthToken(response.data?.token);
   return response.data;
 };
 
@@ -102,11 +123,13 @@ export const resetPassword = async (
   discogsToken: string
 ): Promise<User> => {
   const response = await api.post('/users/reset-password', { username, newPassword, discogsToken });
+  storeAuthToken(response.data?.token);
   return response.data;
 };
 
 export const logoutUser = async (): Promise<void> => {
   await api.post('/users/logout');
+  storeAuthToken(null);
 };
 
 export const updateDiscogsSettings = async (

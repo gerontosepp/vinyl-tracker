@@ -46,6 +46,7 @@ const Collection: React.FC = () => {
   const [generating, setGenerating] = useState(false);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [loadStatus, setLoadStatus] = useState('');
 
   // Persistent Selection State: Store map of ID -> QrCodeItem to keep track of details
   const [selectedItems, setSelectedItems] = useState<Map<number, QrCodeItem>>(new Map());
@@ -94,6 +95,17 @@ const Collection: React.FC = () => {
         setReleases(data.releases);
         if (data.pagination) {
           setTotalPages(data.pagination.pages);
+          const loadedAt = new Intl.DateTimeFormat('de-DE', {
+            hour: '2-digit',
+            minute: '2-digit',
+          }).format(new Date());
+          setLoadStatus(`${data.pagination.items} Eintraege • ${loadedAt}`);
+        } else {
+          const loadedAt = new Intl.DateTimeFormat('de-DE', {
+            hour: '2-digit',
+            minute: '2-digit',
+          }).format(new Date());
+          setLoadStatus(`${data.releases.length} Eintraege • ${loadedAt}`);
         }
       } catch (error: unknown) {
         if (isCanceledRequest(error)) {
@@ -103,6 +115,7 @@ const Collection: React.FC = () => {
           'Failed to fetch collection:',
           getErrorMessage(error, 'Unknown collection error')
         );
+        setLoadStatus('Fehler beim Laden');
       } finally {
         if (!controller.signal.aborted) {
           setLoading(false);
@@ -342,6 +355,28 @@ const Collection: React.FC = () => {
           </div>
 
           <div className="flex items-center justify-between xl:justify-end gap-4 w-full xl:w-auto shrink-0 order-3 border-t xl:border-t-0 pt-3 xl:pt-0 border-slate-200 dark:border-slate-700/60 mt-1 xl:mt-0">
+            {!loading && loadStatus && (
+              <div
+                className={`hidden 2xl:inline-flex items-center gap-2 text-xs font-medium max-w-[18rem] truncate ${
+                  loadStatus.startsWith('Fehler')
+                    ? 'text-red-600 dark:text-red-300'
+                    : 'text-slate-500 dark:text-slate-400'
+                }`}
+                role="status"
+                aria-live="polite"
+                title={`Discogs-Stand: ${loadStatus}`}
+              >
+                <span
+                  className={`h-1.5 w-1.5 rounded-full shrink-0 ${
+                    loadStatus.startsWith('Fehler')
+                      ? 'bg-red-500 dark:bg-red-400'
+                      : 'bg-emerald-500 dark:bg-emerald-400'
+                  }`}
+                />
+                <span className="truncate">Discogs: {loadStatus}</span>
+              </div>
+            )}
+
             <select
               value={perPage}
               onChange={(e) => {

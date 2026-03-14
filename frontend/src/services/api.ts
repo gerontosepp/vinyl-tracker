@@ -4,6 +4,10 @@ import type { ScanResult, ListenEvent, User, AnalyticsTopRecord } from '../types
 const API_Base = '/api';
 const AUTH_TOKEN_KEY = 'vinyl_auth_token';
 
+interface RequestOptions {
+  signal?: AbortSignal;
+}
+
 const readAuthToken = (): string | null => {
   if (typeof window === 'undefined') return null;
   return window.localStorage.getItem(AUTH_TOKEN_KEY);
@@ -83,25 +87,31 @@ export const deleteScan = async (id: number, _username: string): Promise<void> =
 export const getRecentListens = async (
   _username: string,
   startDate?: string,
-  endDate?: string
+  endDate?: string,
+  options?: RequestOptions
 ): Promise<ListenEvent[]> => {
   // Add a dummy query param to easily append the others
   let url = `/analytics/recent?t=${Date.now()}`;
   if (startDate) url += `&from=${startDate}`;
   if (endDate) url += `&to=${endDate}`;
-  const response = await api.get<ListenEvent[]>(url);
+  const response = options?.signal
+    ? await api.get<ListenEvent[]>(url, { signal: options.signal })
+    : await api.get<ListenEvent[]>(url);
   return response.data;
 };
 
 export const getTopRecords = async (
   _username: string,
   startDate?: string,
-  endDate?: string
+  endDate?: string,
+  options?: RequestOptions
 ): Promise<AnalyticsTopRecord[]> => {
   let url = `/analytics/top?t=${Date.now()}`;
   if (startDate) url += `&from=${startDate}`;
   if (endDate) url += `&to=${endDate}`;
-  const response = await api.get<AnalyticsTopRecord[]>(url);
+  const response = options?.signal
+    ? await api.get<AnalyticsTopRecord[]>(url, { signal: options.signal })
+    : await api.get<AnalyticsTopRecord[]>(url);
   return response.data;
 };
 
@@ -153,7 +163,8 @@ export const getCollection = async (
   minPlays: number = 0,
   sort: string = 'artist',
   sortOrder: string = 'asc',
-  search?: string
+  search?: string,
+  options?: RequestOptions
 ): Promise<import('../types').CollectionResponse> => {
   let url = `/collection?page=${page}&per_page=${perPage}&sort=${sort}&sort_order=${sortOrder}`;
   if (minPlays > 0) {
@@ -162,7 +173,9 @@ export const getCollection = async (
   if (search) {
     url += `&search=${encodeURIComponent(search)}`;
   }
-  const response = await api.get<import('../types').CollectionResponse>(url);
+  const response = options?.signal
+    ? await api.get<import('../types').CollectionResponse>(url, { signal: options.signal })
+    : await api.get<import('../types').CollectionResponse>(url);
   return response.data;
 };
 
@@ -193,6 +206,7 @@ export const downloadQrCodesSelected = async (
 
 export const getUser = async (_username: string): Promise<User> => {
   const response = await api.get<User>(`/users/me`);
+  storeAuthToken(response.data?.token);
   return response.data;
 };
 

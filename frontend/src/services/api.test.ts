@@ -23,10 +23,10 @@ vi.mock('axios', () => ({
       put: mockPut,
       interceptors: {
         request: {
-          use: (s: any, e: any) => interceptorCallbacks.req.push({ s, e })
+          use: (s: any, e: any) => interceptorCallbacks.req.push({ s, e }),
         },
         response: {
-          use: (s: any, e: any) => interceptorCallbacks.res.push({ s, e })
+          use: (s: any, e: any) => interceptorCallbacks.res.push({ s, e }),
         },
       },
     })),
@@ -197,7 +197,6 @@ describe('API Service', () => {
   });
 
   it('should add request metadata via interceptor without authorization header', async () => {
-
     // Get the request interceptor
     const reqInterceptor = interceptorCallbacks.req[0].s;
 
@@ -215,7 +214,7 @@ describe('API Service', () => {
   });
 
   it('should log response time via response interceptor', async () => {
-    const consoleInfoSpy = vi.spyOn(console, 'info').mockImplementation(() => { });
+    const consoleInfoSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
 
     // Get the response interceptor
     const resInterceptor = interceptorCallbacks.res[0].s;
@@ -232,13 +231,15 @@ describe('API Service', () => {
     const result = resInterceptor(response);
 
     expect(result).toBe(response);
-    expect(consoleInfoSpy).toHaveBeenCalledWith(expect.stringContaining('[API Info] GET /test - Status: 200 - Time:'));
+    expect(consoleInfoSpy).toHaveBeenCalledWith(
+      expect.stringContaining('[API Info] GET /test - Status: 200 - Time:')
+    );
 
     consoleInfoSpy.mockRestore();
   });
 
   it('should log error time and status via response interceptor error callback', async () => {
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     // Get the response error interceptor
     const resErrorInterceptor = interceptorCallbacks.res[0].e;
@@ -254,12 +255,18 @@ describe('API Service', () => {
     };
 
     await expect(resErrorInterceptor(errorWithResponse)).rejects.toBe(errorWithResponse);
-    expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('[API Error] POST /test-error - Status: 500 - Time:'));
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect.stringContaining('[API Error] POST /test-error - Status: 500 - Time:')
+    );
 
     // Test with missing config/response
     const plainError = { message: 'Network error' };
     await expect(resErrorInterceptor(plainError)).rejects.toBe(plainError);
-    expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('[API Error] UNKNOWN UNKNOWN URL - Status: Network/Unknown Error - Time: 0ms'));
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect.stringContaining(
+        '[API Error] UNKNOWN UNKNOWN URL - Status: Network/Unknown Error - Time: 0ms'
+      )
+    );
 
     consoleErrorSpy.mockRestore();
   });

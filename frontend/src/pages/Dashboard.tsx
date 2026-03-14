@@ -9,6 +9,16 @@ import RecentListens from '../components/Dashboard/RecentListens';
 import { useLocation } from 'react-router-dom';
 import { getErrorMessage } from '../utils/error';
 
+const isCanceledRequest = (error: unknown): boolean => {
+  return (
+    (error instanceof DOMException && error.name === 'AbortError') ||
+    (typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      (error as { code?: string }).code === 'ERR_CANCELED')
+  );
+};
+
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const [recentListens, setRecentListens] = useState<ListenEvent[]>([]);
@@ -39,38 +49,57 @@ const Dashboard: React.FC = () => {
     }
   }, [location]);
 
-  const handleDelete = useCallback(async (id: number) => {
-    if (!user || !window.confirm('Delete this scan?')) return;
-    try {
-      await deleteScan(id, user.username);
-      setRecentListens((prev) => prev.filter((item) => item.id !== id));
-      // Refresh top records as well
-      const tops = await getTopRecords(user.username, startDate, endDate);
-      setTopRecords(tops);
-    } catch (error: unknown) {
-      const message = getErrorMessage(error, 'Failed to delete scan');
-      console.error('Failed to delete scan:', message);
-      alert(message);
-    }
-  }, [user, startDate, endDate]);
-
-  useEffect(() => {
-    const loadData = async () => {
-      if (!user) return;
+  const handleDelete = useCallback(
+    async (id: number) => {
+      if (!user || !window.confirm('Delete this scan?')) return;
       try {
-        const recents = await getRecentListens(user.username, startDate, endDate);
-        setRecentListens(recents);
-
+        await deleteScan(id, user.username);
+        setRecentListens((prev) => prev.filter((item) => item.id !== id));
+        // Refresh top records as well
         const tops = await getTopRecords(user.username, startDate, endDate);
         setTopRecords(tops);
       } catch (error: unknown) {
-        console.error('Failed to load dashboard data:', getErrorMessage(error, 'Unknown dashboard error'));
+        const message = getErrorMessage(error, 'Failed to delete scan');
+        console.error('Failed to delete scan:', message);
+        alert(message);
+      }
+    },
+    [user, startDate, endDate]
+  );
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const loadData = async () => {
+      if (!user) return;
+      try {
+        const recents = await getRecentListens(user.username, startDate, endDate, {
+          signal: controller.signal,
+        });
+        setRecentListens(recents);
+
+        const tops = await getTopRecords(user.username, startDate, endDate, {
+          signal: controller.signal,
+        });
+        setTopRecords(tops);
+      } catch (error: unknown) {
+        if (isCanceledRequest(error)) {
+          return;
+        }
+        console.error(
+          'Failed to load dashboard data:',
+          getErrorMessage(error, 'Unknown dashboard error')
+        );
       }
     };
 
     if (user) {
       loadData();
     }
+
+    return () => {
+      controller.abort();
+    };
   }, [user, showScanner, startDate, endDate]);
 
   return (
@@ -105,10 +134,11 @@ const Dashboard: React.FC = () => {
                   setStartDate('');
                   setEndDate('');
                 }}
-                className={`text-xs px-3 py-1.5 rounded-lg transition-all duration-200 ${!startDate && !endDate
-                  ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-bold shadow-sm'
-                  : 'text-slate-500 dark:text-slate-400 font-medium hover:bg-slate-50 dark:hover:bg-slate-700/50'
-                  }`}
+                className={`text-xs px-3 py-1.5 rounded-lg transition-all duration-200 ${
+                  !startDate && !endDate
+                    ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-bold shadow-sm'
+                    : 'text-slate-500 dark:text-slate-400 font-medium hover:bg-slate-50 dark:hover:bg-slate-700/50'
+                }`}
               >
                 All
               </button>
@@ -118,10 +148,11 @@ const Dashboard: React.FC = () => {
                   setStartDate(today);
                   setEndDate(today);
                 }}
-                className={`text-xs px-3 py-1.5 rounded-lg transition-all duration-200 ${startDate === getTodayString() && endDate === getTodayString()
-                  ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-bold shadow-sm'
-                  : 'text-slate-500 dark:text-slate-400 font-medium hover:bg-slate-50 dark:hover:bg-slate-700/50'
-                  }`}
+                className={`text-xs px-3 py-1.5 rounded-lg transition-all duration-200 ${
+                  startDate === getTodayString() && endDate === getTodayString()
+                    ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-bold shadow-sm'
+                    : 'text-slate-500 dark:text-slate-400 font-medium hover:bg-slate-50 dark:hover:bg-slate-700/50'
+                }`}
               >
                 Today
               </button>

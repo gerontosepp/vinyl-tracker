@@ -82,8 +82,16 @@ const BarcodeScanner: React.FC = () => {
               try {
                 const apiResult = await scanBarcode(result, user.username);
                 setScanResult(apiResult);
-              } catch (e: any) {
-                const msg = e.response?.data?.message || 'Network error or backend failure';
+              } catch (error: unknown) {
+                const msg =
+                  typeof error === 'object' &&
+                  error !== null &&
+                  'response' in error &&
+                  typeof (error as { response?: { data?: { message?: string } } }).response?.data
+                    ?.message === 'string'
+                    ? (error as { response?: { data?: { message?: string } } }).response?.data
+                        ?.message
+                    : 'Network error or backend failure';
                 setScanResult({ success: false, message: msg });
               }
             }

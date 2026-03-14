@@ -18,9 +18,9 @@ vi.mock('../components/BarcodeScanner', () => ({
 }));
 // ResizeObserver mock for Recharts
 window.ResizeObserver = class ResizeObserver {
-  observe() { }
-  unobserve() { }
-  disconnect() { }
+  observe() {}
+  unobserve() {}
+  disconnect() {}
 };
 
 describe('Dashboard Component', () => {
@@ -170,7 +170,7 @@ describe('Dashboard Component', () => {
     fireEvent.click(allBtn);
 
     await waitFor(() => {
-      expect(api.getRecentListens).toHaveBeenCalledWith('testuser', '', '');
+      expect(api.getRecentListens).toHaveBeenCalledWith('testuser', '', '', expect.any(Object));
     });
 
     // Then click Today button to trigger change
@@ -179,7 +179,12 @@ describe('Dashboard Component', () => {
 
     const todayStr = getTodayString();
     await waitFor(() => {
-      expect(api.getRecentListens).toHaveBeenCalledWith('testuser', todayStr, todayStr);
+      expect(api.getRecentListens).toHaveBeenCalledWith(
+        'testuser',
+        todayStr,
+        todayStr,
+        expect.any(Object)
+      );
     });
 
     // Change input dates
@@ -190,7 +195,12 @@ describe('Dashboard Component', () => {
     fireEvent.change(endDateInput, { target: { value: '2023-12-31' } });
 
     await waitFor(() => {
-      expect(api.getRecentListens).toHaveBeenCalledWith('testuser', '2023-01-01', '2023-12-31');
+      expect(api.getRecentListens).toHaveBeenCalledWith(
+        'testuser',
+        '2023-01-01',
+        '2023-12-31',
+        expect.any(Object)
+      );
     });
   });
 });

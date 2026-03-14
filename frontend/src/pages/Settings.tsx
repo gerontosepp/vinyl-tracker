@@ -47,7 +47,9 @@ const Settings: React.FC = () => {
     <Layout onScanClick={handleScan}>
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-700/50 p-6 md:p-8 max-w-2xl mx-auto space-y-8 transition-colors">
         <div>
-          <h1 className="text-2xl font-bold mb-6 text-slate-900 dark:text-slate-100 tracking-tight">Settings</h1>
+          <h1 className="text-2xl font-bold mb-6 text-slate-900 dark:text-slate-100 tracking-tight">
+            Settings
+          </h1>
 
           <h2 className="text-lg font-semibold mb-4 text-slate-900 dark:text-slate-100">
             Appearance
@@ -81,8 +83,16 @@ const Settings: React.FC = () => {
             securely using your password.
           </p>
 
-          {msg && <div className="bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 p-3 mb-6 rounded-xl text-sm font-medium">{msg}</div>}
-          {error && <div className="bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800 p-3 mb-6 rounded-xl text-sm font-medium">{error}</div>}
+          {msg && (
+            <div className="bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 p-3 mb-6 rounded-xl text-sm font-medium">
+              {msg}
+            </div>
+          )}
+          {error && (
+            <div className="bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800 p-3 mb-6 rounded-xl text-sm font-medium">
+              {error}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>

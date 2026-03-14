@@ -26,7 +26,11 @@ const Login: React.FC = () => {
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 p-4 transition-colors">
       <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md w-full max-w-sm transition-colors">
         <div className="flex flex-col items-center justify-center gap-3 mb-6">
-          <img src="/logo.png" alt="Vinyl Tracker Logo" className="w-20 h-20 rounded-full shadow-lg" />
+          <img
+            src="/logo.png"
+            alt="Vinyl Tracker Logo"
+            className="w-20 h-20 rounded-full shadow-lg"
+          />
           <div className="flex items-center justify-center gap-2">
             <h1 className="text-2xl font-bold text-center text-gray-900 dark:text-gray-100">
               Vinyl Tracker

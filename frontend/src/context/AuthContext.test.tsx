@@ -20,7 +20,7 @@ describe('AuthContext', () => {
   it('provides default values', () => {
     const { result } = renderHook(() => useAuth(), { wrapper });
     expect(result.current.user).toBeNull();
-    expect(result.current.isLoading).toBe(false);
+    expect(result.current.isLoading).toBe(true);
   });
 
   it('login updates user state on success', async () => {

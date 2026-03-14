@@ -4,7 +4,9 @@
   --color-brand-500: var(--color-sky-500);
   --color-brand-600: var(--color-sky-600);
 
-  --font-sans: 'Outfit', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  --font-sans:
+    'Outfit', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    'Segoe UI Symbol', 'Noto Color Emoji';
 
   /* Overwrite gray with slate */
   --color-gray-50: var(--color-slate-50);

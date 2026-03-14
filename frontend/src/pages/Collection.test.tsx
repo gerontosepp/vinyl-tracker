@@ -110,7 +110,16 @@ describe('Collection Component', () => {
       expect(screen.getByText('Album Two')).toBeInTheDocument();
     });
 
-    expect(mockGetCollection).toHaveBeenCalledWith('TestUser', 1, 50, 0, 'artist', 'asc', '');
+    expect(mockGetCollection).toHaveBeenCalledWith(
+      'TestUser',
+      1,
+      50,
+      0,
+      'artist',
+      'asc',
+      '',
+      expect.any(Object)
+    );
   });
 
   it('renders empty state correctly', async () => {
@@ -139,7 +148,16 @@ describe('Collection Component', () => {
 
     await waitFor(() => {
       // Should fetch with minPlays = 1
-      expect(mockGetCollection).toHaveBeenLastCalledWith('TestUser', 1, 50, 1, 'artist', 'asc', '');
+      expect(mockGetCollection).toHaveBeenLastCalledWith(
+        'TestUser',
+        1,
+        50,
+        1,
+        'artist',
+        'asc',
+        '',
+        expect.any(Object)
+      );
     });
   });
 
@@ -253,7 +271,16 @@ describe('Collection Component', () => {
     fireEvent.click(nextBtn);
 
     await waitFor(() => {
-      expect(mockGetCollection).toHaveBeenLastCalledWith('TestUser', 2, 50, 0, 'artist', 'asc', '');
+      expect(mockGetCollection).toHaveBeenLastCalledWith(
+        'TestUser',
+        2,
+        50,
+        0,
+        'artist',
+        'asc',
+        '',
+        expect.any(Object)
+      );
     });
   });
 
@@ -271,7 +298,16 @@ describe('Collection Component', () => {
     fireEvent.change(sortSelect, { target: { value: 'listens' } });
 
     await waitFor(() => {
-      expect(mockGetCollection).toHaveBeenLastCalledWith('TestUser', 1, 50, 0, 'listens', 'asc', '');
+      expect(mockGetCollection).toHaveBeenLastCalledWith(
+        'TestUser',
+        1,
+        50,
+        0,
+        'listens',
+        'asc',
+        '',
+        expect.any(Object)
+      );
     });
 
     // Change sort order
@@ -279,7 +315,16 @@ describe('Collection Component', () => {
     fireEvent.click(sortOrderBtn);
 
     await waitFor(() => {
-      expect(mockGetCollection).toHaveBeenLastCalledWith('TestUser', 1, 50, 0, 'listens', 'desc', '');
+      expect(mockGetCollection).toHaveBeenLastCalledWith(
+        'TestUser',
+        1,
+        50,
+        0,
+        'listens',
+        'desc',
+        '',
+        expect.any(Object)
+      );
     });
 
     // Change perPage
@@ -287,7 +332,16 @@ describe('Collection Component', () => {
     fireEvent.change(perPageSelect, { target: { value: '20' } });
 
     await waitFor(() => {
-      expect(mockGetCollection).toHaveBeenLastCalledWith('TestUser', 1, 20, 0, 'listens', 'desc', '');
+      expect(mockGetCollection).toHaveBeenLastCalledWith(
+        'TestUser',
+        1,
+        20,
+        0,
+        'listens',
+        'desc',
+        '',
+        expect.any(Object)
+      );
     });
   });
 });

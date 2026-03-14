@@ -18,7 +18,9 @@ const Profile: React.FC = () => {
           <div className="w-24 h-24 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mx-auto mb-4 text-indigo-600 dark:text-indigo-400 text-3xl font-black tracking-tighter shadow-inner">
             {user?.username?.charAt(0).toUpperCase()}
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">{user?.username}</h1>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+            {user?.username}
+          </h1>
           <p className="text-slate-500 dark:text-slate-400 font-medium">Member</p>
         </div>
 

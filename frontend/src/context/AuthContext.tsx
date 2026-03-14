@@ -1,6 +1,12 @@
-import { createContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useState, useEffect, useRef, type ReactNode } from 'react';
 import type { User } from '../types';
-import { getUser, loginUser, logoutUser, registerUser, updateDiscogsSettings } from '../services/api';
+import {
+  getUser,
+  loginUser,
+  logoutUser,
+  registerUser,
+  updateDiscogsSettings,
+} from '../services/api';
 import { getErrorMessage } from '../utils/error';
 
 interface AuthContextType {
@@ -19,25 +25,39 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState('');
+  const syncInFlightRef = useRef<Promise<void> | null>(null);
 
   const performSync = async (usernameToSync: string) => {
-    setIsSyncing(true);
-    setSyncMessage('');
+    if (syncInFlightRef.current) {
+      return syncInFlightRef.current;
+    }
+
+    const syncPromise = (async () => {
+      setIsSyncing(true);
+      setSyncMessage('');
+      try {
+        const api = await import('../services/api');
+        const result = await api.forceSyncCollection(usernameToSync);
+        const added = result?.added || 0;
+        const removed = result?.removed || 0;
+        setSyncMessage(`Synced successfully! Added: ${added}, Removed: ${removed}`);
+      } catch (error: unknown) {
+        console.error('Background sync failed:', getErrorMessage(error, 'Unknown sync error'));
+        setSyncMessage('Failed to synchronize collection.');
+      } finally {
+        setIsSyncing(false);
+        setTimeout(() => setSyncMessage(''), 5000); // Clear toast after 5s
+      }
+    })();
+
+    syncInFlightRef.current = syncPromise;
     try {
-      const api = await import('../services/api');
-      const result = await api.forceSyncCollection(usernameToSync);
-      const added = result?.added || 0;
-      const removed = result?.removed || 0;
-      setSyncMessage(`Synced successfully! Added: ${added}, Removed: ${removed}`);
-    } catch (error: unknown) {
-      console.error('Background sync failed:', getErrorMessage(error, 'Unknown sync error'));
-      setSyncMessage('Failed to synchronize collection.');
+      await syncPromise;
     } finally {
-      setIsSyncing(false);
-      setTimeout(() => setSyncMessage(''), 5000); // Clear toast after 5s
+      syncInFlightRef.current = null;
     }
   };
 
@@ -45,7 +65,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Try restoring session from HttpOnly cookie.
     getUser('')
       .then((u) => setUser(u))
-      .catch(() => setUser(null));
+      .catch(() => setUser(null))
+      .finally(() => setIsLoading(false));
   }, []);
 
   const login = async (username: string, password: string) => {

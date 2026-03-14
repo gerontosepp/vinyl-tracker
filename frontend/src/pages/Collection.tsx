@@ -9,8 +9,27 @@ import {
   getProxiedImageUrl,
 } from '../services/api';
 import type { CollectionRelease, QrCodeItem } from '../types';
-import { Download, ExternalLink, CheckSquare, Square, ArrowUp, ArrowDown, Search, X } from 'lucide-react';
+import {
+  Download,
+  ExternalLink,
+  CheckSquare,
+  Square,
+  ArrowUp,
+  ArrowDown,
+  Search,
+  X,
+} from 'lucide-react';
 import { getErrorMessage } from '../utils/error';
+
+const isCanceledRequest = (error: unknown): boolean => {
+  return (
+    (error instanceof DOMException && error.name === 'AbortError') ||
+    (typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      (error as { code?: string }).code === 'ERR_CANCELED')
+  );
+};
 
 const Collection: React.FC = () => {
   const { user } = useAuth();
@@ -55,23 +74,46 @@ const Collection: React.FC = () => {
 
   // Fetch Data
   useEffect(() => {
+    const controller = new AbortController();
+
     const fetchData = async () => {
       if (!user) return;
       setLoading(true);
       try {
         const minPlays = showPlayedOnly ? 1 : 0;
-        const data = await getCollection(user.username, page, perPage, minPlays, sort, sortOrder, debouncedSearch);
+        const data = await getCollection(
+          user.username,
+          page,
+          perPage,
+          minPlays,
+          sort,
+          sortOrder,
+          debouncedSearch,
+          { signal: controller.signal }
+        );
         setReleases(data.releases);
         if (data.pagination) {
           setTotalPages(data.pagination.pages);
         }
       } catch (error: unknown) {
-        console.error('Failed to fetch collection:', getErrorMessage(error, 'Unknown collection error'));
+        if (isCanceledRequest(error)) {
+          return;
+        }
+        console.error(
+          'Failed to fetch collection:',
+          getErrorMessage(error, 'Unknown collection error')
+        );
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     };
     fetchData();
+
+    return () => {
+      controller.abort();
+    };
   }, [user, page, perPage, showPlayedOnly, sort, sortOrder, debouncedSearch]);
 
   // Selection Logic
@@ -177,16 +219,19 @@ const Collection: React.FC = () => {
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm flex flex-col h-[calc(100vh-6rem)] md:h-[calc(100vh-5rem)] transition-colors border border-slate-200/50 dark:border-slate-700/50">
         {/* Header / Actions */}
         <div className="p-5 md:p-6 border-b border-slate-100 dark:border-slate-700/50 flex flex-col md:flex-row justify-between items-center gap-4">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">My Collection</h1>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+            My Collection
+          </h1>
 
           <div className="flex gap-3 w-full md:w-auto">
             <button
               onClick={handleDownloadSelected}
               disabled={selectedCount === 0 || generating}
-              className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${selectedCount > 0
-                ? 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md hover:-translate-y-0.5'
-                : 'bg-slate-100 text-slate-400 dark:bg-slate-700/50 dark:text-slate-500 cursor-not-allowed'
-                }`}
+              className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                selectedCount > 0
+                  ? 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md hover:-translate-y-0.5'
+                  : 'bg-slate-100 text-slate-400 dark:bg-slate-700/50 dark:text-slate-500 cursor-not-allowed'
+              }`}
             >
               <Download size={18} />
               QR Selected ({selectedCount})
@@ -253,14 +298,17 @@ const Collection: React.FC = () => {
                   setShowPlayedOnly(!showPlayedOnly);
                   setPage(1);
                 }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all duration-200 shrink-0 ${showPlayedOnly
-                  ? 'bg-indigo-50 dark:bg-indigo-900/40 border-indigo-200 dark:border-indigo-800/50 text-indigo-800 dark:text-indigo-300'
-                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm'
-                  }`}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all duration-200 shrink-0 ${
+                  showPlayedOnly
+                    ? 'bg-indigo-50 dark:bg-indigo-900/40 border-indigo-200 dark:border-indigo-800/50 text-indigo-800 dark:text-indigo-300'
+                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm'
+                }`}
               >
                 <span className="font-semibold whitespace-nowrap">Played Only</span>
                 {showPlayedOnly && (
-                  <span className="text-[10px] font-bold bg-indigo-200 dark:bg-indigo-800 text-indigo-800 dark:text-indigo-200 px-1.5 py-0.5 rounded-full">ON</span>
+                  <span className="text-[10px] font-bold bg-indigo-200 dark:bg-indigo-800 text-indigo-800 dark:text-indigo-200 px-1.5 py-0.5 rounded-full">
+                    ON
+                  </span>
                 )}
               </button>
 
@@ -268,7 +316,9 @@ const Collection: React.FC = () => {
 
               {/* Sort Controls */}
               <div className="flex items-center gap-1.5 shrink-0">
-                <span className="text-slate-500 dark:text-slate-400 font-medium hidden sm:inline">Sort:</span>
+                <span className="text-slate-500 dark:text-slate-400 font-medium hidden sm:inline">
+                  Sort:
+                </span>
                 <select
                   value={sort}
                   onChange={(e) => {
@@ -333,7 +383,10 @@ const Collection: React.FC = () => {
           {loading ? (
             <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-5 md:gap-8">
               {[...Array(perPage || 20)].map((_, i) => (
-                <div key={i} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-2xl p-4 flex flex-col gap-3 shadow-sm animate-pulse">
+                <div
+                  key={i}
+                  className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-2xl p-4 flex flex-col gap-3 shadow-sm animate-pulse"
+                >
                   {/* Skeleton Cover */}
                   <div className="w-full aspect-square bg-slate-200 dark:bg-slate-700/50 rounded-xl"></div>
 
@@ -406,7 +459,9 @@ const Collection: React.FC = () => {
                       >
                         {release.basic_information.title}
                       </h3>
-                      <p className="text-sm text-slate-500 dark:text-slate-400 truncate font-medium">{artist}</p>
+                      <p className="text-sm text-slate-500 dark:text-slate-400 truncate font-medium">
+                        {artist}
+                      </p>
 
                       <a
                         href={`https://www.discogs.com/release/${release.id}`}
@@ -428,7 +483,12 @@ const Collection: React.FC = () => {
             <div className="flex flex-col items-center justify-center py-20 px-4 text-center mt-8 max-w-md mx-auto animate-fade-in">
               <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6 text-slate-400 dark:text-slate-500 shadow-inner">
                 <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"
+                  />
                 </svg>
               </div>
               <h3 className="text-xl font-bold text-slate-700 dark:text-slate-300 mb-2">
@@ -437,7 +497,7 @@ const Collection: React.FC = () => {
               <p className="text-base text-slate-500 dark:text-slate-400">
                 {search
                   ? `We couldn't find any records matching "${search}". Try adjusting your filters.`
-                  : 'It looks like you haven\'t synced your Discogs collection yet, or there are no records.'}
+                  : "It looks like you haven't synced your Discogs collection yet, or there are no records."}
               </p>
             </div>
           )}

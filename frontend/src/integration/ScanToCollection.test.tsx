@@ -96,7 +96,8 @@ describe('Integration: Scan to Collection Flow', () => {
       expect(api.getRecentListens).toHaveBeenCalledWith(
         'integration-user',
         expect.any(String),
-        expect.any(String)
+        expect.any(String),
+        expect.any(Object)
       );
     });
     expect(screen.getByText(/No recent listens/i)).toBeInTheDocument();

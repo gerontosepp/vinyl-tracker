@@ -19,6 +19,9 @@ Voraussetzung für den Backend-Build in CI ist zusätzlich ein Online-Dependency
 - `OSSINDEX_USERNAME`
 - `OSSINDEX_TOKEN`
 
+Zusätzlich wird der Backend-Job mit `mvn clean verify -Psecurity-online` ausgeführt. Dabei laufen Unit-Tests (Surefire) und Integrationstests (Failsafe). In CI wird für den Integrations-Shutdown explizit ein robuster Timeout gesetzt:
+- `-Dtest.integration.forkedProcessExitTimeoutInSeconds=120`
+
 1.  Mergen Sie Ihre fertigen Features aus `develop` in den `main` Branch.
 2.  Erstellen Sie auf GitHub ein **neues Release** (z.B. `v1.5.0`), das auf den `main` Branch zeigt.
 3.  Warten Sie, bis die "CI Pipeline" für dieses Tag erfolgreich abgeschlossen ist.

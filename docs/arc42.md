@@ -168,7 +168,8 @@ The system is deployed as a multi-container Docker application orchestrated by D
 ## 10. Quality Requirements
 
 - **Test Coverage**: Strict requirement of >80% line coverage for both Backend (JaCoCo) and Frontend (Vitest). Enforced by CI/CD.
-- **Dependency Hygiene**: Backend dependencies are checked in CI against Sonatype OSS Index; builds fail for findings with CVSS >= 7.0.
+- **Dependency Hygiene**: Backend dependencies are checked in CI against Sonatype OSS Index; findings are reported to an audit artifact (`ossindex-audit.json`) with the current configuration set to non-blocking (`fail=false`).
+- **Test Execution Split**: Unit tests run via Surefire during `test`, while integration tests run via Failsafe during `verify`. This improves local feedback speed while keeping full validation in CI.
 - **Responsiveness**: The UI must adapt to mobile screens (< 768px) for usable barcode scanning on phones.
 - **Performance**: API responses should be < 200ms (excluding external Discogs calls).
 

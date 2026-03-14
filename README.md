@@ -150,12 +150,27 @@ Architecture hardening (v1.6.x): User endpoints now use validated request DTOs (
 ### Backend
 Located in `/backend`.
 
-**Run Tests:**
+**Run Unit Tests (fast local feedback):**
+```bash
+cd backend
+mvn test
+```
+
+**Run Full Validation (unit + integration + coverage checks):**
 ```bash
 cd backend
 mvn verify
 ```
-*Note: `mvn verify` runs unit/integration tests and enforcing >80% code coverage via JaCoCo.*
+*Note: `mvn test` executes unit tests via Surefire. `mvn verify` additionally executes integration tests via Failsafe and enforces >80% code coverage via JaCoCo.*
+
+**Test JVM Fork Shutdown Timeouts:**
+- Unit tests (Surefire): `test.unit.forkedProcessExitTimeoutInSeconds` (default `30`)
+- Integration tests (Failsafe): `test.integration.forkedProcessExitTimeoutInSeconds` (default `120`)
+
+You can override them at runtime, for example:
+```bash
+mvn verify -Dtest.integration.forkedProcessExitTimeoutInSeconds=120
+```
 
 **Run Online Dependency Vulnerability Scan:**
 ```bash
@@ -164,7 +179,7 @@ export OSSINDEX_USERNAME=<your-ossindex-username>
 export OSSINDEX_TOKEN=<your-ossindex-token>
 mvn -Psecurity-online verify
 ```
-*The `security-online` Maven profile queries Sonatype OSS Index, fails the build for findings with CVSS >= 7.0, and writes a report to `backend/target/ossindex-audit.json`.*
+*The `security-online` Maven profile queries Sonatype OSS Index and writes a report to `backend/target/ossindex-audit.json`. The current configuration is non-blocking (`fail=false`), so findings are reported but do not fail the build.*
 
 **Local Maven Authentication Setup:**
 Create `~/.m2/settings.xml` with an `ossindex` server entry so Maven can use the credentials from your shell environment:

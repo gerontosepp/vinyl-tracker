@@ -5,6 +5,13 @@ import Settings from './Settings';
 import * as useAuthHook from '../context/useAuth';
 import { ThemeProvider } from '../context/ThemeContext';
 import * as useThemeHook from '../context/useTheme';
+import * as api from '../services/api';
+
+vi.mock('../services/api');
+vi.spyOn(api, 'getCollection').mockResolvedValue({
+  releases: [],
+  pagination: { items: 0, page: 1, pages: 1, per_page: 50, urls: {} },
+});
 
 // Mock matchMedia for jsdom
 Object.defineProperty(window, 'matchMedia', {
@@ -63,7 +70,7 @@ const renderComponent = () => {
 describe('Settings Component', () => {
   it('renders settings form with user data', () => {
     renderComponent();
-    expect(screen.getByText('Settings')).toBeInTheDocument();
+    expect(screen.getByText('Profile & Settings')).toBeInTheDocument();
     expect(screen.getByDisplayValue('testdiscogs')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Required to encrypt token')).toBeInTheDocument();
   });
@@ -71,12 +78,12 @@ describe('Settings Component', () => {
   it('validates password requirement', async () => {
     renderComponent();
 
-    fireEvent.change(screen.getByRole('textbox', { name: /Discogs Username/i }), {
+    fireEvent.change(screen.getAllByRole('textbox')[0], {
       target: { value: 'newdiscogs' },
     });
     // Don't fill password
 
-    fireEvent.click(screen.getByRole('button', { name: /Save Settings/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Save Connectivity/i }));
 
     // Since HTML5 validation blocks submission, updateDiscogs won't be called.
     // We can't easily check for the browser tooltip in jsdom, but we can verify no API call.
@@ -88,10 +95,10 @@ describe('Settings Component', () => {
   it('calls updateDiscogs on valid submission', async () => {
     renderComponent();
 
-    fireEvent.change(screen.getByRole('textbox', { name: /Discogs Username/i }), {
+    fireEvent.change(screen.getAllByRole('textbox')[0], {
       target: { value: 'newdiscogs' },
     });
-    fireEvent.change(screen.getByLabelText(/New Discogs Token/i), {
+    fireEvent.change(screen.getByPlaceholderText('Enter only if changing'), {
       target: { value: 'newtoken' },
     });
     fireEvent.change(screen.getByPlaceholderText('Required to encrypt token'), {
@@ -100,7 +107,7 @@ describe('Settings Component', () => {
 
     mockUpdateDiscogs.mockResolvedValueOnce({});
 
-    fireEvent.click(screen.getByRole('button', { name: /Save Settings/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Save Connectivity/i }));
 
     await waitFor(() => {
       expect(mockUpdateDiscogs).toHaveBeenCalledWith('newdiscogs', 'newtoken', 'password123');
@@ -118,7 +125,7 @@ describe('Settings Component', () => {
       target: { value: 'wrongpassword' },
     });
 
-    fireEvent.click(screen.getByRole('button', { name: /Save Settings/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Save Connectivity/i }));
 
     await waitFor(() => {
       expect(

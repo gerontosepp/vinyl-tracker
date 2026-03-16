@@ -41,20 +41,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onScanClick }) => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <aside className="hidden md:flex flex-col w-24 h-screen bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl fixed left-0 top-0 border-r border-slate-200/50 dark:border-slate-800/50 z-20 items-center py-8 transition-colors shadow-[4px_0_24px_-12px_rgba(0,0,0,0.05)]">
-      <div className="flex flex-col items-center mb-12">
-        <img
-          src="/logo.png"
-          alt="Vinyl Tracker Logo"
-          className="w-16 h-16 mb-2 rounded-full shadow-md"
-        />
-        <h1 className="text-xl font-black text-center leading-tight text-slate-900 dark:text-white tracking-tighter">
-          Vinyl
-          <br />
-          <span className="text-indigo-600 dark:text-indigo-400">Tracker</span>
-        </h1>
-      </div>
-
+    <aside className="hidden md:flex flex-col w-24 h-[calc(100vh-4rem)] bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl fixed left-0 top-16 border-r border-slate-200/50 dark:border-slate-700 z-20 items-center py-6 transition-colors shadow-[4px_0_24px_-12px_rgba(0,0,0,0.05)]">
       <nav className="flex-1 flex flex-col gap-4 w-full">
         <NavItem path="/" icon={Home} label="Home" isActive={isActive('/')} navigate={navigate} />
         <NavItem

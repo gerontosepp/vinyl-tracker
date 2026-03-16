@@ -32,7 +32,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ onScanClick }) => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-t border-slate-200/50 dark:border-slate-800/50 flex justify-between items-center px-6 py-2 z-50 h-[80px] pb-safe transition-colors shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)]">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-t border-slate-200/50 dark:border-slate-700 flex justify-between items-center px-6 py-2 z-50 h-[80px] pb-safe transition-colors shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)]">
       <NavItem path="/" icon={Home} isActive={isActive('/')} navigate={navigate} />
       <NavItem
         path="/collection"

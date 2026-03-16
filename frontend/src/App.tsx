@@ -9,7 +9,6 @@ import ForgotPassword from './pages/ForgotPassword';
 import Settings from './pages/Settings';
 import Dashboard from './pages/Dashboard';
 import Collection from './pages/Collection';
-import Profile from './pages/Profile';
 
 import './index.css';
 
@@ -49,7 +48,7 @@ function App() {
               path="/profile"
               element={
                 <ProtectedRoute>
-                  <Profile />
+                  <Settings />
                 </ProtectedRoute>
               }
             />

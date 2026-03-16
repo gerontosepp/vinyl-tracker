@@ -314,6 +314,81 @@ class DiscogsServiceTest {
         }
 
         @Test
+        void getCollectionValue_ShouldParseTextualDiscogsValueResponse() {
+                String responseJson = """
+                                {
+                                  \"minimum\": \"$150.00\",
+                                  \"median\": \"$300.50\",
+                                  \"maximum\": \"$5,000.75\"
+                                }
+                                """;
+
+                server.expect(requestTo("https://api.discogs.com/users/testdiscogs/collection/value"))
+                                .andRespond(withSuccess(responseJson, MediaType.APPLICATION_JSON));
+
+                DiscogsDto.ValueResponse result = discogsService.getCollectionValue(user);
+
+                assertNotNull(result);
+                assertNotNull(result.getMedian());
+                assertEquals("$", result.getMedian().getCurrency());
+                assertEquals(300.50, result.getMedian().getValue());
+                assertEquals(5000.75, result.getMaximum().getValue());
+        }
+
+                                @Test
+                                void syncCollection_ShouldHandleOptionalYearAndUnknownFields() {
+                                                                String responseJson = """
+                                                                                                                                {
+                                                                                                                                        \"pagination\": {
+                                                                                                                                                \"page\": 1,
+                                                                                                                                                \"pages\": 1,
+                                                                                                                                                \"per_page\": 100,
+                                                                                                                                                \"items\": 1,
+                                                                                                                                                \"urls\": {}
+                                                                                                                                        },
+                                                                                                                                        \"releases\": [
+                                                                                                                                                {
+                                                                                                                                                        \"id\": 12345,
+                                                                                                                                                        \"instance_id\": 67890,
+                                                                                                                                                        \"rating\": 0,
+                                                                                                                                                        \"date_added\": \"2024-02-01T00:00:00-08:00\",
+                                                                                                                                                        \"extra_field\": \"ignore me\",
+                                                                                                                                                        \"basic_information\": {
+                                                                                                                                                                \"id\": 12345,
+                                                                                                                                                                \"title\": \"Test Album\",
+                                                                                                                                                                \"year\": null,
+                                                                                                                                                                \"thumb\": \"https://example.com/thumb.jpg\",
+                                                                                                                                                                \"cover_image\": \"https://example.com/cover.jpg\",
+                                                                                                                                                                \"genres\": [\"Electronic\"],
+                                                                                                                                                                \"styles\": [\"House\"],
+                                                                                                                                                                \"artists\": [{ \"name\": \"Test Artist\", \"anv\": \"Ignored\" }],
+                                                                                                                                                                \"labels\": []
+                                                                                                                                                        }
+                                                                                                                                                }
+                                                                                                                                        ]
+                                                                                                                                }
+                                                                                                                                """;
+
+                                                                server.expect(requestTo("https://api.discogs.com/users/testdiscogs/collection/folders/0/releases?page=1&per_page=100&sort=artist&sort_order=asc"))
+                                                                                                                                .andRespond(withSuccess(responseJson, MediaType.APPLICATION_JSON));
+
+                                                                org.mockito.Mockito.when(recordRepository.findByDiscogsId(12345L))
+                                                                                                                                .thenReturn(java.util.Optional.empty());
+                                                                org.mockito.Mockito.when(recordRepository.save(org.mockito.ArgumentMatchers.any()))
+                                                                                                                                .thenAnswer(invocation -> invocation.getArgument(0));
+                                                                org.mockito.Mockito.when(collectionItemRepository.findByUserAndInstanceId(user, 67890L))
+                                                                                                                                .thenReturn(java.util.Optional.empty());
+                                                                org.mockito.Mockito.when(collectionItemRepository.findAllByUser(user))
+                                                                                                                                .thenReturn(List.of());
+
+                                                                com.antigravity.vinyltracker.model.dto.SyncResultDto result = discogsService.syncCollection(user);
+
+                                                                assertNotNull(result);
+                                                                assertEquals(1, result.getAdded());
+                                                                assertEquals(0, result.getRemoved());
+                                }
+
+        @Test
         void getCollection_ShouldMapGenresFromRecord() {
                 com.antigravity.vinyltracker.model.Record mockRecord = new com.antigravity.vinyltracker.model.Record();
                 mockRecord.setDiscogsId(100L);

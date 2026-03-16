@@ -294,7 +294,10 @@ public class DiscogsService {
                                     artist = release.getBasicInformation().getArtists().get(0).getName();
                                 }
                                 newRecord.setArtist(artist);
-                                newRecord.setYear(String.valueOf(release.getBasicInformation().getYear()));
+                                Integer releaseYear = release.getBasicInformation() != null
+                                    ? release.getBasicInformation().getYear()
+                                    : null;
+                                newRecord.setYear(releaseYear != null ? String.valueOf(releaseYear) : "");
                                 newRecord.setThumbUrl(release.getBasicInformation().getThumbUrl());
                                 newRecord.setGenres(extractDiscogsTags(release.getBasicInformation()));
 

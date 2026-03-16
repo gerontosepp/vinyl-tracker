@@ -23,3 +23,4 @@ target/
 .secrets.local
 curl_output_*
 
+frontend/dev-dist/

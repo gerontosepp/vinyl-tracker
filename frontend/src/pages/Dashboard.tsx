@@ -33,6 +33,17 @@ import {
 } from 'recharts';
 
 const GENRE_COLORS = ['#3b82f6', '#f43f5e', '#10b981', '#8b5cf6', '#f59e0b', '#64748b'];
+const VALUE_HISTORY_STORAGE_PREFIX = 'dashboard_collection_value_history_v1';
+const MAX_VALUE_HISTORY_POINTS = 60;
+
+type CollectionValueTrendPoint = {
+  timestamp: string;
+  label: string;
+  minimum: number;
+  median: number;
+  maximum: number;
+  currency: string;
+};
 
 const isCanceledRequest = (error: unknown): boolean => {
   return (
@@ -54,6 +65,9 @@ const Dashboard: React.FC = () => {
   const [isGenreLoading, setIsGenreLoading] = useState(true);
   const [collectionValueError, setCollectionValueError] = useState('');
   const [genreError, setGenreError] = useState('');
+  const [collectionValueHistory, setCollectionValueHistory] = useState<CollectionValueTrendPoint[]>(
+    []
+  );
   const location = useLocation();
   const [showScanner, setShowScanner] = useState<boolean>(() => {
     return !!(location.state && (location.state as { scan?: boolean }).scan);
@@ -71,6 +85,101 @@ const Dashboard: React.FC = () => {
   // Date filter state - default to today (local time)
   const [startDate, setStartDate] = useState<string>(getTodayString());
   const [endDate, setEndDate] = useState<string>(getTodayString());
+
+  const getValueHistoryStorageKey = (username: string) => {
+    return `${VALUE_HISTORY_STORAGE_PREFIX}_${username}`;
+  };
+
+  const formatTrendLabel = (date: Date) => {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const appendCollectionValueHistory = useCallback(
+    (value: CollectionValueResponse) => {
+      if (!user) return;
+
+      const minValue = value.minimum?.value;
+      const medianValue = value.median?.value;
+      const maxValue = value.maximum?.value;
+
+      if (
+        typeof minValue !== 'number' ||
+        typeof medianValue !== 'number' ||
+        typeof maxValue !== 'number'
+      ) {
+        return;
+      }
+
+      const now = new Date();
+      const nextPoint: CollectionValueTrendPoint = {
+        timestamp: now.toISOString(),
+        label: formatTrendLabel(now),
+        minimum: minValue,
+        median: medianValue,
+        maximum: maxValue,
+        currency:
+          value.median?.currency || value.minimum?.currency || value.maximum?.currency || '$',
+      };
+
+      setCollectionValueHistory((previous) => {
+        const last = previous[previous.length - 1];
+        const isDuplicateLastPoint =
+          !!last &&
+          last.minimum === nextPoint.minimum &&
+          last.median === nextPoint.median &&
+          last.maximum === nextPoint.maximum;
+
+        const updated = isDuplicateLastPoint
+          ? previous
+          : [...previous, nextPoint].slice(-MAX_VALUE_HISTORY_POINTS);
+
+        if (typeof window !== 'undefined') {
+          window.localStorage.setItem(
+            getValueHistoryStorageKey(user.username),
+            JSON.stringify(updated)
+          );
+        }
+
+        return updated;
+      });
+    },
+    [user]
+  );
+
+  useEffect(() => {
+    if (!user || typeof window === 'undefined') {
+      setCollectionValueHistory([]);
+      return;
+    }
+
+    try {
+      const raw = window.localStorage.getItem(getValueHistoryStorageKey(user.username));
+      if (!raw) {
+        setCollectionValueHistory([]);
+        return;
+      }
+
+      const parsed = JSON.parse(raw) as CollectionValueTrendPoint[];
+      if (!Array.isArray(parsed)) {
+        setCollectionValueHistory([]);
+        return;
+      }
+
+      setCollectionValueHistory(
+        parsed
+          .filter(
+            (point) =>
+              typeof point?.timestamp === 'string' &&
+              typeof point?.minimum === 'number' &&
+              typeof point?.median === 'number' &&
+              typeof point?.maximum === 'number'
+          )
+          .slice(-MAX_VALUE_HISTORY_POINTS)
+      );
+    } catch {
+      setCollectionValueHistory([]);
+    }
+  }, [user]);
 
   useEffect(() => {
     if (location.state && (location.state as { scan?: boolean }).scan) {
@@ -132,6 +241,7 @@ const Dashboard: React.FC = () => {
       try {
         const val = await getCollectionValue({ signal: controller.signal });
         setCollectionValue(val);
+        appendCollectionValueHistory(val);
       } catch (error: unknown) {
         if (!isCanceledRequest(error)) {
           setCollectionValue(null);
@@ -165,7 +275,7 @@ const Dashboard: React.FC = () => {
     return () => {
       controller.abort();
     };
-  }, [user, showScanner, startDate, endDate]);
+  }, [user, showScanner, startDate, endDate, appendCollectionValueHistory]);
 
   return (
     <Layout onScanClick={() => setShowScanner(true)}>
@@ -287,24 +397,38 @@ const Dashboard: React.FC = () => {
                   )}
                 </div>
               </div>
+              <div className="flex flex-wrap items-center gap-3 mb-3 text-xs font-semibold text-slate-500 dark:text-slate-300">
+                <div className="inline-flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-green-500"></span>
+                  Minimum
+                </div>
+                <div className="inline-flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+                  Median
+                </div>
+                <div className="inline-flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                  Maximum
+                </div>
+              </div>
               <div className="h-48 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart
-                    data={
-                      collectionValue && collectionValue.minimum && collectionValue.maximum
-                        ? [
-                            { name: 'Min', value: collectionValue.minimum.value },
-                            { name: 'Median', value: collectionValue.median.value },
-                            { name: 'Max', value: collectionValue.maximum.value },
-                          ]
-                        : []
-                    }
+                    data={collectionValueHistory}
                     margin={{ top: 5, right: 0, left: 0, bottom: 0 }}
                   >
                     <defs>
-                      <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4} />
+                      <linearGradient id="colorMedian" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.35} />
                         <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="colorMinimum" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#22c55e" stopOpacity={0.2} />
+                        <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="colorMaximum" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.2} />
+                        <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid
@@ -314,11 +438,12 @@ const Dashboard: React.FC = () => {
                       opacity={0.2}
                     />
                     <XAxis
-                      dataKey="name"
+                      dataKey="label"
                       axisLine={false}
                       tickLine={false}
                       tick={{ fontSize: 12, fill: '#64748b' }}
                       dy={10}
+                      minTickGap={24}
                     />
                     <YAxis
                       axisLine={false}
@@ -334,25 +459,45 @@ const Dashboard: React.FC = () => {
                         borderRadius: '8px',
                         color: '#f8fafc',
                       }}
-                      itemStyle={{ color: '#818cf8', fontWeight: 'bold' }}
-                      formatter={(value: number | string) => [
-                        `${collectionValue?.median?.currency || '$'} ${Number(value).toLocaleString(
-                          undefined,
-                          {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          }
-                        )}`,
-                        'Estimated Value',
+                      itemStyle={{ color: '#cbd5e1', fontWeight: 'bold' }}
+                      labelFormatter={(_, payload) => {
+                        const ts = payload?.[0]?.payload?.timestamp;
+                        if (!ts) return 'Unbekannter Zeitpunkt';
+                        return new Date(ts).toLocaleString();
+                      }}
+                      formatter={(value: number | string, name: string, item) => [
+                        `${item?.payload?.currency || collectionValue?.median?.currency || '$'} ${Number(
+                          value
+                        ).toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}`,
+                        name === 'minimum' ? 'Minimum' : name === 'maximum' ? 'Maximum' : 'Median',
                       ]}
                     />
                     <Area
                       type="monotone"
-                      dataKey="value"
+                      dataKey="minimum"
+                      stroke="#22c55e"
+                      strokeWidth={2}
+                      fillOpacity={1}
+                      fill="url(#colorMinimum)"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="median"
                       stroke="#6366f1"
                       strokeWidth={3}
                       fillOpacity={1}
-                      fill="url(#colorValue)"
+                      fill="url(#colorMedian)"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="maximum"
+                      stroke="#f59e0b"
+                      strokeWidth={2}
+                      fillOpacity={1}
+                      fill="url(#colorMaximum)"
                     />
                   </AreaChart>
                 </ResponsiveContainer>

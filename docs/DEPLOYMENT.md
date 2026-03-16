@@ -83,9 +83,11 @@ wget https://raw.githubusercontent.com/gerontosepp-dev/AntiGrafity/develop/.env.
 Starten Sie die Anwendung mit der Registry-Konfiguration:
 
 ```bash
-docker compose -f docker-compose.registry.yml up -d
+docker compose up -d
 ```
-*Hinweis: Dies lädt standardmäßig die `latest` Images aus der Registry herunter, es sei denn, Sie haben in der `docker-compose.registry.yml` explizit andere Versionstags (z.B. `:v1.5.0`) definiert.*
+*Hinweis: Dies setzt voraus, dass die Datei zuvor als `docker-compose.yml` gespeichert wurde. Wenn Sie den Originalnamen beibehalten, verwenden Sie `docker compose -f docker-compose.registry.yml up -d`.*
+
+*Images werden standardmäßig als `latest` gezogen, es sei denn, in der Compose-Datei sind explizit Versionstags (z.B. `:v1.6.3`) gesetzt.*
 
 Die Anwendung läuft nun auf **Port 80** der Zielmaschine.
 

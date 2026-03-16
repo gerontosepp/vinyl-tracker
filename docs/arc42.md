@@ -10,6 +10,7 @@ The **Vinyl Tracker** is a personal web application designed for vinyl enthusias
 - **Catalog Management**: Users can scan barcodes on vinyl records to automatically retrieve metadata (via the Discogs API) and add them to their personal collection.
 - **Listening History**: Users can log when they listen to a record, creating a history of their listening habits.
 - **Analytics**: Users can view statistics about their most played records and listening trends over time.
+- **Collection Insights**: Dashboard provides Discogs collection value estimation and genre distribution from live analytics endpoints.
 - **Multi-User**: Supports multiple users, each with their own collection and Discogs integration.
 - **Mobile Friendly**: Designed as a Progressive Web App (PWA) with fully responsive layouts, fluid scrolling, and safe area support for iOS. Features camera access for barcode scanning.
 - **QR Code Generation**: Ability to export the collection as a printable PDF with QR codes for physical tagging.
@@ -28,7 +29,7 @@ The **Vinyl Tracker** is a personal web application designed for vinyl enthusias
 ## 2. Architecture Constraints
 
 - **Technology Stack**:
-    - **Backend**: Java 21+ (Spring Boot 3.4+).
+    - **Backend**: Java 21+ (Spring Boot 4.0+).
     - **Frontend**: React (TypeScript, Vite).
     - **Database**: PostgreSQL 16.
     - **Containerization**: Docker & Docker Compose.
@@ -55,7 +56,7 @@ graph LR
 ### 3.2 Technical Context
 - **Protocol**: HTTP/HTTPS (REST).
 - **Format**: JSON, PDF (for exports).
-- **Security**: JWT (JSON Web Token) based Authentication via Authorization Headers (Bearer Token), BCrypt password hashing, AES encryption for API tokens.
+- **Security**: JWT-based authentication with backend-managed HttpOnly cookies as primary mechanism and Bearer header fallback for constrained environments; BCrypt password hashing and AES encryption for Discogs API tokens.
 
 ## 4. Solution Strategy
 
@@ -133,7 +134,7 @@ The system is deployed as a multi-container Docker application orchestrated by D
 ## 8. Cross-cutting Concepts
 
 ### 8.1 Security
-- **Authentication**: Stateless authentication using **JSON Web Tokens (JWT)**. The token (issued on Login/Register) is verified on every subsequent request via an `Authorization: Bearer` header.
+- **Authentication**: JWT-based authentication. Backend issues and verifies an HttpOnly auth cookie for normal request flows; frontend additionally supports `Authorization: Bearer` fallback when cookie propagation is not available.
 - **Data Protection**:
     - User passwords are hashed with **BCrypt**.
     - Sensitive external tokens (Discogs PAT) are encrypted using **AES-256** (via Spring Security Crypto) with a salt and key defined in environment variables.
@@ -143,7 +144,8 @@ The system is deployed as a multi-container Docker application orchestrated by D
 - Input validation using Jakarta Validation API (`@Valid`, `@NotNull`, etc.).
 
 ### 8.3 Error Handling
-- Global exception handling in Spring Boot (`@ControllerAdvice`) to return consistent JSON error responses.
+- Global exception handling in Spring Boot (`@ControllerAdvice`) returns RFC-7807 style `ProblemDetail` JSON payloads (including title, detail, status and timestamp) for API errors.
+- Endpoint-specific failure paths in analytics endpoints are aligned to the same ProblemDetail structure.
 
 ### 8.4 Observability & Logging
 - **Backend Logging**: A global `HandlerInterceptor` tracks HTTP request execution times, final status codes, and implicitly catches and logs thrown exceptions for all `/api/**` endpoints.

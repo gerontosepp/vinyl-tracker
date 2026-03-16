@@ -15,7 +15,7 @@ The project follows a modern containerized micro-architecture:
   - Secure Context support via local SSL.
 
 ### Backend
-- **Framework**: Spring Boot 3.5.10
+- **Framework**: Spring Boot 4.0.3
 - **Language**: Java 21
 - **Database Access**: Spring Data JPA with Hibernate.
 - **API**: RESTful endpoints with **JWT (JSON Web Token)** authentication.
@@ -35,6 +35,7 @@ The project follows a modern containerized micro-architecture:
 - **Multi-User Support**: Individual user accounts with personal Discogs collection integration.
 - **Listening History**: Log when you listen to a record.
 - **Analytics**: View most played records and listening trends.
+- **Live Collection Insights**: Dashboard charts for Discogs collection value and genre breakdown via `/api/analytics/collection/value` and `/api/analytics/collection/genres`.
 - **QR Code Generation**: Generate a PDF with QR codes for your entire collection, sorted by artist.
 - **Quick Logging**: Scan generated QR codes to instantly log a listen without searching.
 - **Collection Management**: Search, filter (e.g., "Played Only"), and sort your vinyl catalog. Force a manual sync with Discogs at any time.
@@ -86,7 +87,9 @@ The application requires environment variables for configuration (database crede
     - `IMAGE_PROXY_ALLOWED_HOSTS` (Comma-separated allowlist for `/api/proxy/image`, e.g. `i.discogs.com,s.discogs.com,api.discogs.com`).
     - `AUTH_COOKIE_NAME`, `AUTH_COOKIE_MAX_AGE_SECONDS`, `AUTH_COOKIE_SECURE`, `AUTH_COOKIE_SAME_SITE` (controls the backend HttpOnly session cookie used for authentication).
 
-   Authentication hardening note: The frontend no longer stores JWT in `localStorage`. Login issues a backend-managed HttpOnly cookie and authenticated API requests rely on that cookie.
+    Authentication note: The frontend uses backend-managed HttpOnly cookies by default and supports a Bearer token fallback for environments where cookie propagation is constrained.
+   
+    API error note: Backend validation and runtime failures are returned as structured `ProblemDetail` JSON payloads.
 
 ### 3. Start the Application
 
@@ -205,7 +208,7 @@ The project includes a GitHub Actions workflow (`.github/workflows/ci.yml`) that
 - Builds and tests the Frontend (Node 20/Vite).
 - Enforces >80% test coverage for both.
 - Runs the backend online dependency vulnerability audit through the `security-online` Maven profile.
-- Runs on every push to `main` and PRs.
+- Runs on push and pull requests for `main`, `master`, and `develop`, plus release tags `v*.*.*`.
 
 Required GitHub Actions secrets for the backend security audit:
 - `OSSINDEX_USERNAME`

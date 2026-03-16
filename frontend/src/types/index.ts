@@ -29,6 +29,12 @@ export interface SyncResult {
   removed: number;
 }
 
+export interface ResetResult {
+  success: boolean;
+  message: string;
+  deletedCount: number;
+}
+
 export interface AnalyticsTopRecord {
   recordTitle: string; // Keeping for backward compatibility if needed, though title is better
   title: string;

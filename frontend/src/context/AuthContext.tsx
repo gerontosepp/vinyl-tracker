@@ -6,6 +6,7 @@ import {
   logoutUser,
   registerUser,
   updateDiscogsSettings,
+  resetAllListens as resetAllListensApi,
 } from '../services/api';
 import { getErrorMessage } from '../utils/error';
 
@@ -19,6 +20,7 @@ interface AuthContextType {
   isSyncing: boolean;
   syncMessage: string;
   performSync: (username: string) => Promise<void>;
+  resetAllListens: (username: string) => Promise<number>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -58,6 +60,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await syncPromise;
     } finally {
       syncInFlightRef.current = null;
+    }
+  };
+
+  const resetAllListens = async (username: string): Promise<number> => {
+    setIsSyncing(true);
+    setSyncMessage('');
+    try {
+      const result = await resetAllListensApi(username);
+      const deletedCount = result.deletedCount || 0;
+      setSyncMessage(`Successfully deleted ${deletedCount} listening events`);
+      return deletedCount;
+    } catch (error: unknown) {
+      console.error('Reset listens failed:', getErrorMessage(error, 'Unknown reset error'));
+      setSyncMessage('Failed to reset listening history.');
+      throw error;
+    } finally {
+      setIsSyncing(false);
+      setTimeout(() => setSyncMessage(''), 5000); // Clear toast after 5s
     }
   };
 
@@ -140,6 +160,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isSyncing,
         syncMessage,
         performSync,
+        resetAllListens,
       }}
     >
       {children}

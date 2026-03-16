@@ -110,4 +110,35 @@ public class ScanControllerTest {
 
         verifyNoInteractions(scanService);
     }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    public void resetAllListens_Success() throws Exception {
+        when(scanService.resetAllListens("testuser")).thenReturn(5L);
+
+        Principal mockPrincipal = () -> "testuser";
+
+        mockMvc.perform(delete("/api/scan/all")
+                .principal(mockPrincipal)
+                .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.message").value("All listens have been reset"))
+                .andExpect(jsonPath("$.deletedCount").value(5));
+
+        verify(scanService).resetAllListens("testuser");
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    public void resetAllListens_Failure() throws Exception {
+        doThrow(new RuntimeException("User not found")).when(scanService).resetAllListens("testuser");
+
+        Principal mockPrincipal = () -> "testuser";
+
+        mockMvc.perform(delete("/api/scan/all")
+                .principal(mockPrincipal)
+                .with(csrf()))
+                .andExpect(status().isBadRequest());
+    }
 }

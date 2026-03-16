@@ -16,13 +16,14 @@ const MOCK_LISTENING_DATA = [
 ];
 
 const Settings: React.FC = () => {
-  const { user, updateDiscogs, isLoading, isSyncing, performSync, logout } = useAuth();
+  const { user, updateDiscogs, isLoading, isSyncing, performSync, resetAllListens, syncMessage, logout } = useAuth();
   const { theme, setTheme } = useTheme();
   const [discogsUsername, setDiscogsUsername] = useState(user?.discogsUsername || '');
   const [token, setToken] = useState('');
   const [password, setPassword] = useState('');
   const [msg, setMsg] = useState('');
   const [error, setError] = useState('');
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   const navigate = useNavigate();
 
@@ -48,6 +49,17 @@ const Settings: React.FC = () => {
     } catch (err) {
       console.error(err);
       setError('Failed to update settings. Check your password.');
+    }
+  };
+
+  const handleResetListens = async () => {
+    setShowResetConfirm(false);
+    try {
+      if (user) {
+        await resetAllListens(user.username);
+      }
+    } catch (err) {
+      console.error('Reset failed:', err);
     }
   };
 
@@ -250,15 +262,32 @@ const Settings: React.FC = () => {
                 Sync your collection manually or export your data.
               </p>
 
+              {syncMessage && (
+                <div className={`p-3 mb-4 rounded-xl text-sm font-bold border ${
+                  syncMessage.includes('Failed') 
+                    ? 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800/50'
+                    : 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/50'
+                }`}>
+                  {syncMessage}
+                </div>
+              )}
+
               <div className="flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={() => {
                     if (user) performSync(user.username);
                   }}
                   disabled={isSyncing}
-                  className="flex-1 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50 font-bold px-4 py-3 rounded-xl hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors flex items-center justify-center gap-2"
+                  className="flex-1 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50 font-bold px-4 py-3 rounded-xl hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   Force Sync Collection
+                </button>
+                <button 
+                  onClick={() => setShowResetConfirm(true)}
+                  disabled={isSyncing}
+                  className="flex-1 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800/50 font-bold px-4 py-3 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  Reset All Listens
                 </button>
                 <button className="flex-1 bg-slate-100 dark:bg-slate-900/50 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 font-bold px-4 py-3 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors flex items-center justify-center gap-2">
                   Export Data (CSV)
@@ -268,6 +297,35 @@ const Settings: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Confirm Dialog for Reset Listens */}
+      {showResetConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-600 p-8 max-w-md">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-2">
+              Reset All Listening Events?
+            </h3>
+            <p className="text-slate-600 dark:text-slate-400 text-sm mb-6">
+              This will permanently delete all your listening history. This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowResetConfirm(false)}
+                className="flex-1 bg-slate-100 dark:bg-slate-900/50 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 font-bold px-4 py-2.5 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleResetListens}
+                disabled={isSyncing}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2.5 rounded-xl transition-colors disabled:opacity-50"
+              >
+                {isSyncing ? 'Resetting...' : 'Delete All'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 };

@@ -90,4 +90,13 @@ public class ScanService {
 
         listenEventRepository.delete(event);
     }
+
+    @Transactional
+    public long resetAllListens(String username) {
+        AppUser user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+
+        long deletedCount = listenEventRepository.deleteAllByUser(user);
+        return deletedCount;
+    }
 }

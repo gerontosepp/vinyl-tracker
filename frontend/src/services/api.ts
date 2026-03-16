@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { ScanResult, ListenEvent, User, AnalyticsTopRecord } from '../types';
+import type { ScanResult, ListenEvent, User, AnalyticsTopRecord, ResetResult } from '../types';
 
 const API_Base = '/api';
 const AUTH_TOKEN_KEY = 'vinyl_auth_token';
@@ -82,6 +82,11 @@ export const scanBarcode = async (barcode: string, _username: string): Promise<S
 
 export const deleteScan = async (id: number, _username: string): Promise<void> => {
   await api.delete(`/scan/${id}`);
+};
+
+export const resetAllListens = async (_username: string): Promise<ResetResult> => {
+  const response = await api.delete<ResetResult>(`/scan/all`);
+  return response.data;
 };
 
 export const getRecentListens = async (

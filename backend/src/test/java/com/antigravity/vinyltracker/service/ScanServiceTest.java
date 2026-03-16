@@ -190,4 +190,26 @@ class ScanServiceTest {
         assertEquals("Unauthorized to delete this scan", exception.getMessage());
         verify(listenEventRepository, never()).delete(any(ListenEvent.class));
     }
+
+    @Test
+    void resetAllListens_ShouldDeleteAllListens_ForCurrentUser() {
+        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(user));
+        when(listenEventRepository.deleteAllByUser(user)).thenReturn(5L);
+
+        long result = scanService.resetAllListens("testuser");
+
+        assertEquals(5L, result);
+        verify(listenEventRepository).deleteAllByUser(user);
+    }
+
+    @Test
+    void resetAllListens_ShouldThrow_WhenUserDoesNotExist() {
+        when(userRepository.findByUsername("missing-user")).thenReturn(Optional.empty());
+
+        RuntimeException exception = assertThrows(RuntimeException.class,
+                () -> scanService.resetAllListens("missing-user"));
+
+        assertEquals("User not found: missing-user", exception.getMessage());
+        verify(listenEventRepository, never()).deleteAllByUser(any(AppUser.class));
+    }
 }

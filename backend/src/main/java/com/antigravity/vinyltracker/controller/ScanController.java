@@ -39,4 +39,14 @@ public class ScanController {
             return ResponseEntity.badRequest().build();
         }
     }
+
+    @DeleteMapping("/all")
+    public ResponseEntity<ScanDto.ResetResult> resetAllListens(Principal principal) {
+        try {
+            long deletedCount = scanService.resetAllListens(principal.getName());
+            return ResponseEntity.ok(new ScanDto.ResetResult(true, "All listens have been reset", deletedCount));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
 }

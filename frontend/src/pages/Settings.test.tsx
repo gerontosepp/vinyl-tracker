@@ -50,6 +50,7 @@ vi.spyOn(useAuthHook, 'useAuth').mockReturnValue({
   isSyncing: false,
   syncMessage: '',
   performSync: vi.fn() as any, // Cast to any to avoid type complaints about missing promise return
+  resetAllListens: vi.fn() as any,
 });
 
 vi.spyOn(useThemeHook, 'useTheme').mockReturnValue({
@@ -147,6 +148,7 @@ describe('Settings Component', () => {
       isSyncing: false,
       syncMessage: '',
       performSync: mockPerformSync,
+      resetAllListens: vi.fn() as any,
     });
 
     renderComponent();
@@ -155,5 +157,57 @@ describe('Settings Component', () => {
     fireEvent.click(syncBtn);
 
     expect(mockPerformSync).toHaveBeenCalledWith('testuser');
+  });
+
+  it('shows reset confirmation dialog when reset button is clicked', () => {
+    renderComponent();
+
+    const resetBtn = screen.getByRole('button', { name: /Reset All Listens/i });
+    fireEvent.click(resetBtn);
+
+    expect(screen.getByText('Reset All Listening Events?')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Delete All/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Cancel/i })).toBeInTheDocument();
+  });
+
+  it('closes confirmation dialog when cancel is clicked', () => {
+    renderComponent();
+
+    const resetBtn = screen.getByRole('button', { name: /Reset All Listens/i });
+    fireEvent.click(resetBtn);
+
+    const cancelBtn = screen.getByRole('button', { name: /Cancel/i });
+    fireEvent.click(cancelBtn);
+
+    expect(screen.queryByText('Reset All Listening Events?')).not.toBeInTheDocument();
+  });
+
+  it('calls resetAllListens when delete all button is clicked', async () => {
+    const mockResetAllListens = vi.fn().mockResolvedValue(5);
+    vi.mocked(useAuthHook.useAuth).mockReturnValue({
+      user: mockUser,
+      login: vi.fn(),
+      register: vi.fn(),
+      updateDiscogs: mockUpdateDiscogs,
+      logout: vi.fn(),
+      isLoading: false,
+      isSyncing: false,
+      syncMessage: '',
+      performSync: vi.fn() as any,
+      resetAllListens: mockResetAllListens,
+    });
+
+    renderComponent();
+
+    const resetBtn = screen.getByRole('button', { name: /Reset All Listens/i });
+    fireEvent.click(resetBtn);
+
+    const deleteBtn = screen.getByRole('button', { name: /Delete All/i });
+    fireEvent.click(deleteBtn);
+
+    await waitFor(() => {
+      expect(mockResetAllListens).toHaveBeenCalledWith('testuser');
+      expect(screen.queryByText('Reset All Listening Events?')).not.toBeInTheDocument();
+    });
   });
 });

@@ -3,6 +3,8 @@ package com.antigravity.vinyltracker.model;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.util.List;
+import java.util.ArrayList;
 
 @Entity
 @Table(name = "record_cache") // 'record' is sometimes a reserved word or confusing in Java 14+
@@ -22,6 +24,11 @@ public class Record {
     @Column(name = "release_year")
     private String year;
     private String thumbUrl;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "record_genres", joinColumns = @JoinColumn(name = "record_id"))
+    @Column(name = "genre")
+    private List<String> genres = new ArrayList<>();
 
     public Record(Long discogsId, String title, String artist, String year, String thumbUrl) {
         this.discogsId = discogsId;

@@ -105,6 +105,25 @@ public class DiscogsDto {
         private String coverImage;
         private List<Artist> artists;
         private List<Label> labels;
+        private List<String> genres;
+        private List<String> styles;
+    }
+
+    @Data
+    @lombok.AllArgsConstructor
+    @lombok.NoArgsConstructor
+    public static class ValueResponse {
+        private ValueData minimum;
+        private ValueData median;
+        private ValueData maximum;
+    }
+
+    @Data
+    @lombok.AllArgsConstructor
+    @lombok.NoArgsConstructor
+    public static class ValueData {
+        private String currency;
+        private Double value;
     }
 
     @Data

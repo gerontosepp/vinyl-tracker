@@ -8,6 +8,8 @@ import org.springframework.http.HttpHeaders;
 import java.util.List;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -103,6 +105,21 @@ public class DiscogsService {
             // log.debug("Release {} not in collection: {}", releaseId, e.getMessage());
             return false;
         }
+    }
+
+    public DiscogsDto.ValueResponse getCollectionValue(AppUser user) {
+        log.info("Fetching collection value for user: {}", user.getUsername());
+        String decryptedToken = tokenService.decrypt(user.getDiscogsToken());
+        if (decryptedToken == null) {
+            throw new RuntimeException("Could not decrypt Discogs token for user " + user.getUsername());
+        }
+
+        return restClient.get()
+                .uri("/users/{username}/collection/value", user.getDiscogsUsername())
+                .header(HttpHeaders.USER_AGENT, "VinylTrackerApp/1.0")
+                .header(HttpHeaders.AUTHORIZATION, "Discogs token=" + decryptedToken)
+                .retrieve()
+                .body(DiscogsDto.ValueResponse.class);
     }
 
     public DiscogsDto.CollectionResponse getCollection(AppUser user, int page, int perPage, String sort,
@@ -205,6 +222,10 @@ public class DiscogsService {
         basicInfo.setTitle(item.getRecord().getTitle());
         basicInfo.setThumbUrl(item.getRecord().getThumbUrl());
         basicInfo.setCoverImage(item.getRecord().getThumbUrl());
+        basicInfo.setGenres(item.getRecord().getGenres() == null
+            ? List.of()
+            : new ArrayList<>(item.getRecord().getGenres()));
+        basicInfo.setStyles(List.of());
 
         DiscogsDto.Artist artist = new DiscogsDto.Artist();
         artist.setName(item.getRecord().getArtist());
@@ -275,9 +296,16 @@ public class DiscogsService {
                                 newRecord.setArtist(artist);
                                 newRecord.setYear(String.valueOf(release.getBasicInformation().getYear()));
                                 newRecord.setThumbUrl(release.getBasicInformation().getThumbUrl());
+                                newRecord.setGenres(extractDiscogsTags(release.getBasicInformation()));
 
                                 return recordRepository.save(newRecord);
                             });
+
+                    List<String> remoteTags = extractDiscogsTags(release.getBasicInformation());
+                    if (!remoteTags.isEmpty() && (record.getGenres() == null || record.getGenres().isEmpty())) {
+                        record.setGenres(new ArrayList<>(remoteTags));
+                        recordRepository.save(record);
+                    }
 
                     // Check if CollectionItem linkage exists for user, create if not
                     java.util.Optional<com.antigravity.vinyltracker.model.CollectionItem> existingItem = collectionItemRepository
@@ -314,5 +342,25 @@ public class DiscogsService {
                 remoteInstanceIds.size(), addedCount, removedCount);
 
         return new com.antigravity.vinyltracker.model.dto.SyncResultDto(addedCount, removedCount);
+    }
+
+    private List<String> extractDiscogsTags(DiscogsDto.BasicInformation basicInformation) {
+        if (basicInformation == null) {
+            return List.of();
+        }
+
+        Set<String> tags = new LinkedHashSet<>();
+        if (basicInformation.getGenres() != null) {
+            basicInformation.getGenres().stream()
+                    .filter(tag -> tag != null && !tag.isBlank())
+                    .forEach(tags::add);
+        }
+        if (basicInformation.getStyles() != null) {
+            basicInformation.getStyles().stream()
+                    .filter(tag -> tag != null && !tag.isBlank())
+                    .forEach(tags::add);
+        }
+
+        return new ArrayList<>(tags);
     }
 }

@@ -294,4 +294,55 @@ class DiscogsServiceTest {
                 assertEquals(100L, result.getReleases().get(1).getId());
                 assertEquals(2L, result.getReleases().get(1).getListenCount());
         }
+
+        @Test
+        void getCollectionValue_ShouldReturnValueResponse() throws Exception {
+                DiscogsDto.ValueResponse mockResponse = new DiscogsDto.ValueResponse();
+                mockResponse.setMinimum(new DiscogsDto.ValueData("USD", 150.00));
+                mockResponse.setMedian(new DiscogsDto.ValueData("USD", 300.00));
+                mockResponse.setMaximum(new DiscogsDto.ValueData("USD", 5000.00));
+
+                server.expect(requestTo("https://api.discogs.com/users/testdiscogs/collection/value"))
+                                .andRespond(withSuccess(objectMapper.writeValueAsString(mockResponse),
+                                                MediaType.APPLICATION_JSON));
+
+                DiscogsDto.ValueResponse result = discogsService.getCollectionValue(user);
+
+                assertNotNull(result);
+                assertEquals("USD", result.getMedian().getCurrency());
+                assertEquals(300.00, result.getMedian().getValue());
+        }
+
+        @Test
+        void getCollection_ShouldMapGenresFromRecord() {
+                com.antigravity.vinyltracker.model.Record mockRecord = new com.antigravity.vinyltracker.model.Record();
+                mockRecord.setDiscogsId(100L);
+                mockRecord.setTitle("Genre Test");
+                mockRecord.setArtist("Genre Artist");
+                mockRecord.setGenres(List.of("Rock", "Post Punk"));
+
+                com.antigravity.vinyltracker.model.CollectionItem item = new com.antigravity.vinyltracker.model.CollectionItem(
+                                user, mockRecord, 10L);
+
+                org.springframework.data.domain.Page<com.antigravity.vinyltracker.model.CollectionItem> mockPage = new org.springframework.data.domain.PageImpl<>(
+                                List.of(item));
+
+                org.mockito.Mockito.when(collectionItemRepository.findAllByUser(
+                                org.mockito.ArgumentMatchers.eq(user),
+                                org.mockito.ArgumentMatchers.any(org.springframework.data.domain.Pageable.class)))
+                                .thenReturn(mockPage);
+
+                org.mockito.Mockito.when(listenEventRepository.countByRecordAndUser(
+                                org.mockito.ArgumentMatchers.eq(mockRecord),
+                                org.mockito.ArgumentMatchers.eq(user))).thenReturn(1L);
+
+                DiscogsDto.CollectionResponse result = discogsService.getCollection(user, 1, 50, "artist", "asc",
+                                null, null);
+
+                assertNotNull(result);
+                assertEquals(1, result.getReleases().size());
+                assertNotNull(result.getReleases().get(0).getBasicInformation().getGenres());
+                assertEquals(2, result.getReleases().get(0).getBasicInformation().getGenres().size());
+                assertTrue(result.getReleases().get(0).getBasicInformation().getGenres().contains("Rock"));
+        }
 }

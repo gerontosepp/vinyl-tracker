@@ -39,6 +39,7 @@ The project follows a modern containerized micro-architecture:
 - **QR Code Generation**: Generate a PDF with QR codes for your entire collection, sorted by artist.
 - **Quick Logging**: Scan generated QR codes to instantly log a listen without searching.
 - **Collection Management**: Search, filter (e.g., "Played Only"), and sort your vinyl catalog. Force a manual sync with Discogs at any time.
+- **Data Management**: Reset your entire listening history with a single click from Settings (with confirmation dialog to prevent accidental deletions).
 - **Modern UI**: Fully responsive, mobile-first design with dark mode, glassmorphism, and smooth micro-animations.
 - **Observability**: Built-in comprehensive API request and error logging tracking latency across the frontend and backend Docker containers.
 
@@ -122,6 +123,11 @@ The application requires environment variables for configuration (database crede
    - Your token is securely encrypted using your login password.
 
 ## Development & Testing
+
+### Data Management
+1. **Force Sync Collection**: Manually sync your Discogs collection with the application. Located in **Settings** under "Data Management".
+2. **Reset All Listens**: Permanently delete your entire listening history. Located in **Settings** under "Data Management". A confirmation dialog prevents accidental deletions.
+    - **Warning**: This action cannot be undone and will delete all listening event records.
 
 ### Frontend
 Located in `/frontend`. Recommended to use `--legacy-peer-deps` when installing.

@@ -9,6 +9,7 @@ The **Vinyl Tracker** is a personal web application designed for vinyl enthusias
 ### 1.1 Requirements Overview
 - **Catalog Management**: Users can scan barcodes on vinyl records to automatically retrieve metadata (via the Discogs API) and add them to their personal collection.
 - **Listening History**: Users can log when they listen to a record, creating a history of their listening habits.
+- **Listening History Maintenance**: Users can explicitly delete individual listen events or reset their complete listening history from the Settings area.
 - **Analytics**: Users can view statistics about their most played records and listening trends over time.
 - **Collection Insights**: Dashboard provides Discogs collection value estimation and genre distribution from live analytics endpoints.
 - **Multi-User**: Supports multiple users, each with their own collection and Discogs integration.
@@ -82,9 +83,10 @@ The system consists of three main containers:
 The Backend follows a layered architecture:
 
 - **Controller Layer**: Handles HTTP requests (`ScanController`, `AppUserController`, `AnalyticsController`, `CollectionController`).
-- **Service Layer**: Business logic and orchestration (`ScanService`, `DiscogsService`, `TokenEncryptionService`, `QrCodeService`, `PdfService`).
-- **Repository Layer**: Data access interface (`RecordRepository`, `ListenEventRepository`, `AppUserRepository`).
+- **Service Layer**: Business logic and orchestration (`ScanService`, `DiscogsService`, `TokenEncryptionService`, `QrCodeService`, `PdfService`). `ScanService` is responsible for both creating listen events and bulk-deleting all listen events for the authenticated user.
+- **Repository Layer**: Data access interface (`RecordRepository`, `ListenEventRepository`, `AppUserRepository`). `ListenEventRepository` provides user-scoped queries for recent history, analytics aggregation, and bulk deletion.
 - **Model Layer**: Domain entities (`AppUser`, `Record`, `ListenEvent`).
+- **DTO Layer**: Request/response payloads are modeled with explicit DTO classes instead of generic maps. Example: scan responses use `ScanDto.Result`, and bulk history reset uses `ScanDto.ResetResult`.
 
 ## 6. Runtime View
 
@@ -117,6 +119,17 @@ The Backend follows a layered architecture:
 7.  **Backend** returns the PDF binary.
 8.  **Frontend** triggers a file download.
 
+### 6.4 Scenario: Resetting All Listening Events
+1.  **User** opens the Settings page.
+2.  **User** clicks "Reset All Listens" in the Data Management section.
+3.  **Frontend** presents a confirmation dialog because the action is destructive and irreversible.
+4.  **Frontend** sends `DELETE /api/scan/all` for the authenticated user after confirmation.
+5.  **Backend** resolves the authenticated user from the security context.
+6.  **ScanService** loads the user entity and delegates the deletion to `ListenEventRepository`.
+7.  **ListenEventRepository** deletes all `ListenEvent` rows belonging to that user in a single bulk operation.
+8.  **Backend** returns a typed JSON response containing success state, message, and deleted event count.
+9.  **Frontend** displays the result as a success or failure toast message.
+
 ## 7. Deployment View
 
 The system is deployed as a multi-container Docker application orchestrated by Docker Compose.
@@ -142,10 +155,12 @@ The system is deployed as a multi-container Docker application orchestrated by D
 
 ### 8.2 Validation
 - Input validation using Jakarta Validation API (`@Valid`, `@NotNull`, etc.).
+- Destructive user actions in the UI require an explicit confirmation step before the backend request is issued.
 
 ### 8.3 Error Handling
 - Global exception handling in Spring Boot (`@ControllerAdvice`) returns RFC-7807 style `ProblemDetail` JSON payloads (including title, detail, status and timestamp) for API errors.
 - Endpoint-specific failure paths in analytics endpoints are aligned to the same ProblemDetail structure.
+- Lightweight success responses for scan-related endpoints are returned as typed DTOs instead of ad-hoc maps, improving schema clarity across backend and frontend.
 
 ### 8.4 Observability & Logging
 - **Backend Logging**: A global `HandlerInterceptor` tracks HTTP request execution times, final status codes, and implicitly catches and logs thrown exceptions for all `/api/**` endpoints.

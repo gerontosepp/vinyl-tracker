@@ -115,6 +115,26 @@ export const getTopRecords = async (
   return response.data;
 };
 
+export const getCollectionValue = async (
+  options?: RequestOptions
+): Promise<import('../types').CollectionValueResponse> => {
+  const url = `/analytics/collection/value?t=${Date.now()}`;
+  const response = options?.signal
+    ? await api.get<import('../types').CollectionValueResponse>(url, { signal: options.signal })
+    : await api.get<import('../types').CollectionValueResponse>(url);
+  return response.data;
+};
+
+export const getGenreBreakdown = async (
+  options?: RequestOptions
+): Promise<import('../types').GenreBreakdownItem[]> => {
+  const url = `/analytics/collection/genres?t=${Date.now()}`;
+  const response = options?.signal
+    ? await api.get<import('../types').GenreBreakdownItem[]>(url, { signal: options.signal })
+    : await api.get<import('../types').GenreBreakdownItem[]>(url);
+  return response.data;
+};
+
 export const loginUser = async (username: string, password: string): Promise<User> => {
   const response = await api.post('/users/login', { username, password });
   storeAuthToken(response.data?.token);

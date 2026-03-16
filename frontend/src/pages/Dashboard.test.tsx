@@ -58,6 +58,19 @@ describe('Dashboard Component', () => {
         timestamp: new Date().toISOString(),
       },
     ]);
+    vi.spyOn(api, 'getCollection').mockResolvedValue({
+      releases: [],
+      pagination: { items: 0, page: 1, pages: 1, per_page: 50, urls: {} },
+    });
+    vi.spyOn(api, 'getCollectionValue').mockResolvedValue({
+      minimum: { currency: 'USD', value: 1000 },
+      median: { currency: 'USD', value: 1500 },
+      maximum: { currency: 'USD', value: 2000 },
+    });
+    vi.spyOn(api, 'getGenreBreakdown').mockResolvedValue([
+      { name: 'Rock', value: 10 },
+      { name: 'Jazz', value: 5 },
+    ]);
   });
 
   it('renders dashboard with user info and data', async () => {
@@ -67,9 +80,9 @@ describe('Dashboard Component', () => {
       </BrowserRouter>
     );
 
-    expect(screen.getByText(/Vinyl/i)).toBeInTheDocument();
-    expect(screen.getByText(/Tracker/i)).toBeInTheDocument();
-    expect(screen.getByText(/testuser/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Vinyl/i)[0]).toBeInTheDocument();
+    expect(screen.getAllByText(/Tracker/i)[0]).toBeInTheDocument();
+    expect(screen.getAllByText(/testuser/i)[0]).toBeInTheDocument();
 
     // Check for SCAN RECORD button (updated to match new Sidebar/BottomNav)
     expect(screen.getAllByRole('button', { name: /scan/i })[0]).toBeInTheDocument();

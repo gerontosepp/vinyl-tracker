@@ -49,6 +49,8 @@ export interface DiscogsBasicInfo {
   thumb: string;
   cover_image: string;
   artists: DiscogsArtist[];
+  genres?: string[];
+  styles?: string[];
 }
 
 export interface CollectionRelease {
@@ -84,4 +86,20 @@ export interface QrCodeItem {
 
 export interface QrCodeRequest {
   items: QrCodeItem[];
+}
+
+export interface CollectionValueData {
+  currency: string;
+  value: number;
+}
+
+export interface CollectionValueResponse {
+  minimum: CollectionValueData;
+  median: CollectionValueData;
+  maximum: CollectionValueData;
+}
+
+export interface GenreBreakdownItem {
+  name: string;
+  value: number;
 }

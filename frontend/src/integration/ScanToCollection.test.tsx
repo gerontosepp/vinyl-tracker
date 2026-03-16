@@ -15,6 +15,10 @@ vi.mock('../services/api', () => ({
   getTopRecords: vi.fn(),
   scanBarcode: vi.fn(),
   getProxiedImageUrl: vi.fn((url) => `/proxy?url=${url}`),
+  getCollection: vi.fn().mockResolvedValue({
+    releases: [],
+    pagination: { items: 0, page: 1, pages: 1, per_page: 50, urls: {} },
+  }),
 }));
 
 // Mock html5-qrcode (Same mock as in BarcodeScanner.test.tsx)
@@ -30,22 +34,7 @@ vi.mock('html5-qrcode', () => ({
   }),
 }));
 
-// Mock Recharts to avoid rendering issues in test environment
-vi.mock('recharts', () => {
-  const OriginalModule = vi.importActual('recharts');
-  return {
-    ...OriginalModule,
-    ResponsiveContainer: ({ children }: any) => (
-      <div style={{ width: 800, height: 800 }}>{children}</div>
-    ),
-    BarChart: () => <div>BarChart</div>,
-    Bar: () => <div>Bar</div>,
-    XAxis: () => <div>XAxis</div>,
-    YAxis: () => <div>YAxis</div>,
-    Tooltip: () => <div>Tooltip</div>,
-    Cell: () => <div>Cell</div>,
-  };
-});
+// Removed local recharts mock
 
 describe('Integration: Scan to Collection Flow', () => {
   const mockUser = { username: 'integration-user' };

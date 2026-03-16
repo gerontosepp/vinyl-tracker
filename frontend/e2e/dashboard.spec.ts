@@ -42,6 +42,30 @@ test.describe('Dashboard', () => {
       });
     });
 
+    await page.route('**/api/analytics/collection/value*', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          minimum: { currency: 'USD', value: 1000 },
+          median: { currency: 'USD', value: 1500 },
+          maximum: { currency: 'USD', value: 2000 },
+        }),
+      });
+    });
+
+    await page.route('**/api/analytics/collection/genres*', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          { name: 'Rock', value: 10 },
+          { name: 'Jazz', value: 5 },
+          { name: 'Pop', value: 3 },
+        ]),
+      });
+    });
+
     // Login for each test
     await page.goto('/login');
     await page.getByPlaceholder('Enter your username').fill('testuser');
@@ -53,6 +77,8 @@ test.describe('Dashboard', () => {
   test('should display dashboard sections', async ({ page }) => {
     await expect(page.getByRole('heading', { name: 'Top Records', exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Recent Listens', exact: true })).toBeVisible();
+    await expect(page.getByText('Collection Value', { exact: false })).toBeVisible();
+    await expect(page.getByText('Genre Breakdown', { exact: true })).toBeVisible();
     await expect(page.getByText('Test Artist').first()).toBeVisible();
     await expect(page.getByText('5 plays')).toBeVisible();
   });

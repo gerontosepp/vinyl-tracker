@@ -106,8 +106,8 @@ describe('Collection Component', () => {
     expect(document.querySelector('.animate-pulse')).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(screen.getByText('Album One')).toBeInTheDocument();
-      expect(screen.getByText('Album Two')).toBeInTheDocument();
+      expect(screen.getAllByText('Album One')[0]).toBeInTheDocument();
+      expect(screen.getAllByText('Album Two')[0]).toBeInTheDocument();
     });
 
     expect(mockGetCollection).toHaveBeenCalledWith(
@@ -170,11 +170,11 @@ describe('Collection Component', () => {
     renderCollection();
 
     await waitFor(() => {
-      expect(screen.getByText('Album One')).toBeInTheDocument();
+      expect(screen.getAllByText('Album One')[0]).toBeInTheDocument();
     });
 
     // Click first item to select
-    const item1 = screen.getByText('Album One').closest('div.group');
+    const item1 = screen.getAllByText('Album One')[0].closest('.group');
     fireEvent.click(item1!);
 
     // Check if QR Selected button updates
@@ -196,7 +196,7 @@ describe('Collection Component', () => {
     });
 
     renderCollection();
-    await waitFor(() => expect(screen.getByText('Album One')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getAllByText('Album One')[0]).toBeInTheDocument());
 
     const selectPageBtn = screen.getByText('Select Page');
 
@@ -221,10 +221,10 @@ describe('Collection Component', () => {
     mockDownloadQrCodesSelected.mockResolvedValue(new Blob(['pdf'], { type: 'application/pdf' }));
 
     renderCollection();
-    await waitFor(() => expect(screen.getByText('Album One')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getAllByText('Album One')[0]).toBeInTheDocument());
 
     // Select one item
-    const item1 = screen.getByText('Album One').closest('div.group');
+    const item1 = screen.getAllByText('Album One')[0].closest('.group');
     fireEvent.click(item1!);
 
     const downloadBtn = screen.getByText(/QR Selected/);
@@ -265,7 +265,7 @@ describe('Collection Component', () => {
     });
 
     renderCollection();
-    await waitFor(() => expect(screen.getByText('Album One')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getAllByText('Album One')[0]).toBeInTheDocument());
 
     const nextBtn = screen.getByText('>');
     fireEvent.click(nextBtn);
@@ -291,7 +291,7 @@ describe('Collection Component', () => {
     });
 
     renderCollection();
-    await waitFor(() => expect(screen.getByText('Album One')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getAllByText('Album One')[0]).toBeInTheDocument());
 
     // Change sort to listens
     const sortSelect = screen.getAllByRole('combobox')[0];

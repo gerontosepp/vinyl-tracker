@@ -1,4 +1,25 @@
 import '@testing-library/jest-dom';
+import type { ReactNode } from 'react';
+import { vi } from 'vitest';
+
+vi.mock('recharts', async () => {
+  const OriginalModule = await vi.importActual<typeof import('recharts')>('recharts');
+  return {
+    ...OriginalModule,
+    ResponsiveContainer: ({ children }: { children: ReactNode }) => children,
+    BarChart: () => null,
+    Bar: () => null,
+    XAxis: () => null,
+    YAxis: () => null,
+    Tooltip: () => null,
+    Cell: () => null,
+    AreaChart: () => null,
+    Area: () => null,
+    PieChart: () => null,
+    Pie: () => null,
+    CartesianGrid: () => null,
+  };
+});
 
 Object.defineProperty(window, 'isSecureContext', {
   value: true,

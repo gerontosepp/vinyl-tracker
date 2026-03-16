@@ -1,13 +1,38 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../context/useAuth';
-import { getRecentListens, getTopRecords, deleteScan } from '../services/api';
-import type { ListenEvent, AnalyticsTopRecord } from '../types';
+import {
+  getRecentListens,
+  getTopRecords,
+  deleteScan,
+  getCollectionValue,
+  getGenreBreakdown,
+} from '../services/api';
+import type {
+  ListenEvent,
+  AnalyticsTopRecord,
+  CollectionValueResponse,
+  GenreBreakdownItem,
+} from '../types';
 import BarcodeScanner from '../components/BarcodeScanner';
 import Layout from '../components/Layout/Layout';
 import TopRecords from '../components/Dashboard/TopRecords';
 import RecentListens from '../components/Dashboard/RecentListens';
 import { useLocation } from 'react-router-dom';
 import { getErrorMessage } from '../utils/error';
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from 'recharts';
+
+const GENRE_COLORS = ['#3b82f6', '#f43f5e', '#10b981', '#8b5cf6', '#f59e0b', '#64748b'];
 
 const isCanceledRequest = (error: unknown): boolean => {
   return (
@@ -23,6 +48,12 @@ const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const [recentListens, setRecentListens] = useState<ListenEvent[]>([]);
   const [topRecords, setTopRecords] = useState<AnalyticsTopRecord[]>([]);
+  const [collectionValue, setCollectionValue] = useState<CollectionValueResponse | null>(null);
+  const [genreData, setGenreData] = useState<GenreBreakdownItem[]>([]);
+  const [isCollectionValueLoading, setIsCollectionValueLoading] = useState(true);
+  const [isGenreLoading, setIsGenreLoading] = useState(true);
+  const [collectionValueError, setCollectionValueError] = useState('');
+  const [genreError, setGenreError] = useState('');
   const location = useLocation();
   const [showScanner, setShowScanner] = useState<boolean>(() => {
     return !!(location.state && (location.state as { scan?: boolean }).scan);
@@ -72,24 +103,58 @@ const Dashboard: React.FC = () => {
 
     const loadData = async () => {
       if (!user) return;
-      try {
-        const recents = await getRecentListens(user.username, startDate, endDate, {
-          signal: controller.signal,
-        });
-        setRecentListens(recents);
+      setIsCollectionValueLoading(true);
+      setIsGenreLoading(true);
+      setCollectionValueError('');
+      setGenreError('');
 
-        const tops = await getTopRecords(user.username, startDate, endDate, {
-          signal: controller.signal,
-        });
+      // Recent listens and top records are coupled and should fail together.
+      try {
+        const [recents, tops] = await Promise.all([
+          getRecentListens(user.username, startDate, endDate, {
+            signal: controller.signal,
+          }),
+          getTopRecords(user.username, startDate, endDate, {
+            signal: controller.signal,
+          }),
+        ]);
+        setRecentListens(recents);
         setTopRecords(tops);
       } catch (error: unknown) {
-        if (isCanceledRequest(error)) {
-          return;
+        if (!isCanceledRequest(error)) {
+          console.error(
+            'Failed to load dashboard lists:',
+            getErrorMessage(error, 'Unknown dashboard error')
+          );
         }
-        console.error(
-          'Failed to load dashboard data:',
-          getErrorMessage(error, 'Unknown dashboard error')
-        );
+      }
+
+      try {
+        const val = await getCollectionValue({ signal: controller.signal });
+        setCollectionValue(val);
+      } catch (error: unknown) {
+        if (!isCanceledRequest(error)) {
+          setCollectionValue(null);
+          setCollectionValueError('Collection value currently unavailable.');
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsCollectionValueLoading(false);
+        }
+      }
+
+      try {
+        const genres = await getGenreBreakdown({ signal: controller.signal });
+        setGenreData(genres);
+      } catch (error: unknown) {
+        if (!isCanceledRequest(error)) {
+          setGenreData([]);
+          setGenreError('Genre breakdown currently unavailable.');
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsGenreLoading(false);
+        }
       }
     };
 
@@ -105,7 +170,7 @@ const Dashboard: React.FC = () => {
   return (
     <Layout onScanClick={() => setShowScanner(true)}>
       {showScanner ? (
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-700/50 p-6 sm:p-8 animate-fade-in h-full transition-colors">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-600 p-6 sm:p-8 animate-fade-in h-full transition-colors">
           <button
             onClick={() => setShowScanner(false)}
             className="mb-6 text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-1.5 transition-colors"
@@ -128,7 +193,7 @@ const Dashboard: React.FC = () => {
                 Here's what you've been listening to recently.
               </p>
             </div>
-            <div className="flex gap-2 items-center bg-white dark:bg-slate-800 p-1.5 rounded-xl shadow-sm border border-slate-200/50 dark:border-slate-700/50 w-full md:w-auto max-w-full overflow-x-auto transition-colors">
+            <div className="flex gap-2 items-center bg-white dark:bg-slate-800 p-1.5 rounded-xl shadow-sm border border-slate-200/50 dark:border-slate-600 w-full md:w-auto max-w-full overflow-x-auto transition-colors">
               <button
                 onClick={() => {
                   setStartDate('');
@@ -172,6 +237,196 @@ const Dashboard: React.FC = () => {
                 className="bg-transparent border-slate-200 dark:border-slate-700 rounded-lg text-xs py-1.5 px-2 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-slate-900 dark:text-slate-100 outline-none font-medium"
                 title="End Date"
               />
+            </div>
+          </div>
+
+          {/* Desktop Charts Area - Hidden on very small screens, fits mockup */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            {/* Collection Value Chart */}
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-600 p-5 shadow-sm lg:col-span-2">
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                    Collection Value{' '}
+                    <span className="text-xs text-slate-400 normal-case ml-2">
+                      (Discogs Estimate)
+                    </span>
+                  </h3>
+                  {isCollectionValueLoading ? (
+                    <div className="h-9 bg-slate-200 dark:bg-slate-700 rounded w-48 animate-pulse mt-1"></div>
+                  ) : collectionValue ? (
+                    <div className="text-3xl font-black text-slate-900 dark:text-slate-100 flex items-baseline gap-3">
+                      {collectionValue.median ? (
+                        <>
+                          {collectionValue.median.currency === 'EUR' ? '€' : '$'}
+                          {collectionValue.median.value.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </>
+                      ) : (
+                        'N/A'
+                      )}
+
+                      {collectionValue.minimum && collectionValue.maximum && (
+                        <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                          Min: {collectionValue.minimum.value.toLocaleString()} / Max:{' '}
+                          {collectionValue.maximum.value.toLocaleString()}
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-3xl font-black text-slate-900 dark:text-slate-100">
+                      £0.00
+                    </div>
+                  )}
+                  {!isCollectionValueLoading && collectionValueError && (
+                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 font-medium">
+                      {collectionValueError}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="h-48 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={
+                      collectionValue && collectionValue.minimum && collectionValue.maximum
+                        ? [
+                            { name: 'Min', value: collectionValue.minimum.value },
+                            { name: 'Median', value: collectionValue.median.value },
+                            { name: 'Max', value: collectionValue.maximum.value },
+                          ]
+                        : []
+                    }
+                    margin={{ top: 5, right: 0, left: 0, bottom: 0 }}
+                  >
+                    <defs>
+                      <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4} />
+                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      vertical={false}
+                      stroke="#334155"
+                      opacity={0.2}
+                    />
+                    <XAxis
+                      dataKey="name"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 12, fill: '#64748b' }}
+                      dy={10}
+                    />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 12, fill: '#64748b' }}
+                      tickFormatter={(val) => (val >= 1000 ? `${(val / 1000).toFixed(1)}k` : val)}
+                      dx={-10}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#1e293b',
+                        borderColor: '#334155',
+                        borderRadius: '8px',
+                        color: '#f8fafc',
+                      }}
+                      itemStyle={{ color: '#818cf8', fontWeight: 'bold' }}
+                      formatter={(value: number | string) => [
+                        `${collectionValue?.median?.currency || '$'} ${Number(value).toLocaleString(
+                          undefined,
+                          {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          }
+                        )}`,
+                        'Estimated Value',
+                      ]}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="value"
+                      stroke="#6366f1"
+                      strokeWidth={3}
+                      fillOpacity={1}
+                      fill="url(#colorValue)"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Genre Breakdown Chart */}
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-600 p-5 shadow-sm flex flex-col">
+              <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+                Genre Breakdown
+              </h3>
+              <div className="flex-1 flex items-center justify-center relative">
+                {isGenreLoading ? (
+                  <div className="w-40 h-40 rounded-full border-4 border-slate-200 dark:border-slate-700 animate-pulse"></div>
+                ) : (
+                  <ResponsiveContainer width="100%" height={180}>
+                    <PieChart>
+                      <Pie
+                        data={genreData}
+                        innerRadius={50}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="value"
+                        stroke="none"
+                      >
+                        {genreData.map((_entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={GENRE_COLORS[index % GENRE_COLORS.length]}
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: '#1e293b',
+                          borderColor: '#334155',
+                          borderRadius: '8px',
+                          color: '#f8fafc',
+                          border: 'none',
+                        }}
+                        itemStyle={{ fontWeight: 'bold' }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                )}
+                {/* Center text for Donut */}
+                {!isGenreLoading && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <span className="text-xl font-black text-slate-900 dark:text-slate-100">
+                      {genreData.reduce((acc, curr) => acc + curr.value, 0)}
+                    </span>
+                    <span className="text-[10px] font-bold text-slate-500 uppercase">Records</span>
+                  </div>
+                )}
+              </div>
+              {!isGenreLoading && genreError && (
+                <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 text-center font-medium">
+                  {genreError}
+                </p>
+              )}
+              <div className="flex flex-wrap gap-2 mt-4 justify-center">
+                {genreData.map((entry, index) => (
+                  <div
+                    key={entry.name}
+                    className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-300"
+                  >
+                    <span
+                      className="w-2.5 h-2.5 rounded-full"
+                      style={{ backgroundColor: GENRE_COLORS[index % GENRE_COLORS.length] }}
+                    ></span>
+                    {entry.name}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 

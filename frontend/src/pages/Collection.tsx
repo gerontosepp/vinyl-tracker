@@ -229,9 +229,9 @@ const Collection: React.FC = () => {
 
   return (
     <Layout onScanClick={handleScan}>
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm flex flex-col h-[calc(100vh-6rem)] md:h-[calc(100vh-5rem)] transition-colors border border-slate-200/50 dark:border-slate-700/50">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm flex flex-col h-[calc(100vh-6rem)] md:h-[calc(100vh-5rem)] transition-colors border border-slate-200/50 dark:border-slate-600">
         {/* Header / Actions */}
-        <div className="p-5 md:p-6 border-b border-slate-100 dark:border-slate-700/50 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="p-5 md:p-6 border-b border-slate-100 dark:border-slate-600 flex flex-col md:flex-row justify-between items-center gap-4">
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
             My Collection
           </h1>
@@ -261,7 +261,7 @@ const Collection: React.FC = () => {
         </div>
 
         {/* Controls & Pagination Top (Sticky with Glassmorphism) */}
-        <div className="sticky top-0 z-20 p-4 md:px-6 bg-slate-50/70 dark:bg-slate-900/60 backdrop-blur-xl flex flex-col xl:flex-row justify-between items-stretch xl:items-center gap-4 border-b border-slate-200/50 dark:border-slate-700/50 text-sm transition-colors shadow-sm">
+        <div className="sticky top-0 z-20 p-4 md:px-6 bg-slate-50/70 dark:bg-slate-900/60 backdrop-blur-xl flex flex-col xl:flex-row justify-between items-stretch xl:items-center gap-4 border-b border-slate-200/50 dark:border-slate-600 text-sm transition-colors shadow-sm">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full xl:w-auto">
             {/* Search Bar - Full width on very small screens */}
             <div className="relative group w-full sm:w-64 order-1 sm:order-none shrink-0">
@@ -277,7 +277,7 @@ const Collection: React.FC = () => {
                   setSearch(e.target.value);
                   setPage(1);
                 }}
-                className="pl-9 pr-8 py-1.5 border border-slate-200 dark:border-slate-700/60 rounded-xl bg-white/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all duration-300 backdrop-blur-sm"
+                className="pl-9 pr-8 py-1.5 border border-slate-200 dark:border-slate-600 rounded-xl bg-white/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all duration-300 backdrop-blur-sm"
               />
               {search && (
                 <button
@@ -338,7 +338,7 @@ const Collection: React.FC = () => {
                     setSort(e.target.value);
                     setPage(1);
                   }}
-                  className="border border-slate-200 dark:border-slate-700/60 rounded-xl py-1.5 px-2.5 bg-white/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100 shadow-sm font-medium focus:ring-2 focus:ring-indigo-500/50 outline-none backdrop-blur-sm cursor-pointer hover:bg-white dark:hover:bg-slate-800 transition-all duration-200"
+                  className="border border-slate-200 dark:border-slate-600 rounded-xl py-1.5 px-2.5 bg-white/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100 shadow-sm font-medium focus:ring-2 focus:ring-indigo-500/50 outline-none backdrop-blur-sm cursor-pointer hover:bg-white dark:hover:bg-slate-800 transition-all duration-200"
                 >
                   <option value="artist">Band Name</option>
                   <option value="listens">Listens</option>
@@ -354,7 +354,7 @@ const Collection: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center justify-between xl:justify-end gap-4 w-full xl:w-auto shrink-0 order-3 border-t xl:border-t-0 pt-3 xl:pt-0 border-slate-200 dark:border-slate-700/60 mt-1 xl:mt-0">
+          <div className="flex items-center justify-between xl:justify-end gap-4 w-full xl:w-auto shrink-0 order-3 border-t xl:border-t-0 pt-3 xl:pt-0 border-slate-200 dark:border-slate-600 mt-1 xl:mt-0">
             {!loading && loadStatus && (
               <div
                 className={`hidden 2xl:inline-flex items-center gap-2 text-xs font-medium max-w-[18rem] truncate ${
@@ -383,7 +383,7 @@ const Collection: React.FC = () => {
                 setPerPage(Number(e.target.value));
                 setPage(1);
               }}
-              className="border border-slate-200 dark:border-slate-700/60 rounded-xl py-1.5 px-3 bg-white/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100 shadow-sm font-medium focus:ring-2 focus:ring-indigo-500/50 outline-none backdrop-blur-sm cursor-pointer hover:bg-white dark:hover:bg-slate-800 transition-all duration-200 hidden sm:block"
+              className="border border-slate-200 dark:border-slate-600 rounded-xl py-1.5 px-3 bg-white/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100 shadow-sm font-medium focus:ring-2 focus:ring-indigo-500/50 outline-none backdrop-blur-sm cursor-pointer hover:bg-white dark:hover:bg-slate-800 transition-all duration-200 hidden sm:block"
             >
               <option value={20}>20 / page</option>
               <option value={30}>30 / page</option>
@@ -414,13 +414,13 @@ const Collection: React.FC = () => {
         </div>
 
         {/* List Content */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50/30 dark:bg-slate-900/20">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50/30 dark:bg-slate-900/20 relative">
           {loading ? (
             <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-5 md:gap-8">
               {[...Array(perPage || 20)].map((_, i) => (
                 <div
                   key={i}
-                  className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-2xl p-4 flex flex-col gap-3 shadow-sm animate-pulse"
+                  className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-2xl p-4 flex flex-col gap-3 shadow-sm animate-pulse"
                 >
                   {/* Skeleton Cover */}
                   <div className="w-full aspect-square bg-slate-200 dark:bg-slate-700/50 rounded-xl"></div>
@@ -429,89 +429,179 @@ const Collection: React.FC = () => {
                   <div className="flex-1 flex flex-col pt-1 gap-2">
                     <div className="h-4 bg-slate-200 dark:bg-slate-700/50 rounded-md w-3/4"></div>
                     <div className="h-3 bg-slate-200 dark:bg-slate-700/50 rounded-md w-1/2"></div>
-
-                    <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700/50">
-                      <div className="h-3 bg-slate-200 dark:bg-slate-700/50 rounded-md w-2/5"></div>
-                    </div>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-5 md:gap-8">
-              {releases.map((release, index) => {
-                const isSelected = selectedItems.has(release.id);
-                const artist = release.basic_information.artists?.[0]?.name || 'Unknown';
+            <>
+              {/* --- DESKTOP DATA GRID --- */}
+              <div className="hidden md:block bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-600 shadow-sm overflow-hidden">
+                <table className="w-full text-left border-collapse">
+                  <thead className="bg-slate-50/80 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-600 text-xs uppercase text-slate-500 dark:text-slate-400 font-semibold sticky top-0 z-10 backdrop-blur-md">
+                    <tr>
+                      <th className="px-4 py-4 w-12 text-center">
+                        <button
+                          onClick={toggleSelectAllPage}
+                          className="hover:text-indigo-500 transition-colors"
+                        >
+                          {isAllPageSelected ? (
+                            <CheckSquare size={16} className="text-indigo-500" />
+                          ) : (
+                            <Square size={16} />
+                          )}
+                        </button>
+                      </th>
+                      <th className="px-4 py-4 w-16">Cover</th>
+                      <th className="px-4 py-4">Band Name</th>
+                      <th className="px-4 py-4">Album Title</th>
+                      <th className="px-4 py-4 cursor-pointer hover:text-slate-700 dark:hover:text-slate-200 transition-colors">
+                        Year
+                      </th>
+                      <th className="px-4 py-4 cursor-pointer hover:text-slate-700 dark:hover:text-slate-200 transition-colors">
+                        Plays
+                      </th>
+                      <th className="px-4 py-4text-right">Link</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
+                    {releases.map((release) => {
+                      const isSelected = selectedItems.has(release.id);
+                      const artist = release.basic_information.artists?.[0]?.name || 'Unknown';
+                      return (
+                        <tr
+                          key={release.id}
+                          onClick={() => toggleSelection(release)}
+                          className={`group transition-all duration-200 cursor-pointer ${isSelected ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-700/30'}`}
+                        >
+                          <td className="px-4 py-3 text-center">
+                            {isSelected ? (
+                              <CheckSquare
+                                className="text-indigo-500 dark:text-indigo-400 mx-auto"
+                                size={18}
+                              />
+                            ) : (
+                              <Square
+                                className="text-slate-300 dark:text-slate-600 group-hover:text-slate-400 mx-auto transition-colors"
+                                size={18}
+                              />
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="w-10 h-10 rounded-md bg-slate-100 dark:bg-slate-700 overflow-hidden shadow-button">
+                              {release.basic_information.thumb ? (
+                                <img
+                                  src={getProxiedImageUrl(release.basic_information.thumb)}
+                                  alt=""
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-xs opacity-50">
+                                  💿
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 font-semibold text-slate-900 dark:text-slate-100">
+                            {artist}
+                          </td>
+                          <td
+                            className="px-4 py-3 text-slate-600 dark:text-slate-300 truncate max-w-[200px]"
+                            title={release.basic_information.title}
+                          >
+                            {release.basic_information.title}
+                          </td>
+                          <td className="px-4 py-3 text-slate-500 dark:text-slate-400 text-sm">
+                            {release.basic_information.year || '—'}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="inline-flex items-center justify-center px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 shadow-sm border border-slate-200 dark:border-slate-700">
+                              {release.listen_count || 0}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <a
+                              href={`https://www.discogs.com/release/${release.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-all inline-flex"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <ExternalLink size={16} />
+                            </a>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
 
-                return (
-                  <div
-                    key={release.id}
-                    className={`relative group bg-white dark:bg-slate-800 border rounded-2xl p-4 flex flex-col gap-3 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer animate-slide-up ${isSelected ? 'border-indigo-500 ring-2 ring-indigo-500/50 bg-indigo-50/50 dark:bg-indigo-900/20' : 'border-slate-200 dark:border-slate-700/60 shadow-sm'}`}
-                    style={{ animationDelay: `${(index % 12) * 50}ms`, opacity: 0 }}
-                    onClick={() => toggleSelection(release)}
-                  >
-                    {/* Listen Count Badge (Top-Right) */}
-                    <div className="absolute top-3 right-3 z-10 bg-slate-900/80 dark:bg-black/60 text-white text-xs px-2.5 py-1 rounded-full backdrop-blur-md shadow-sm border border-white/10 font-medium">
-                      {release.listen_count || 0} plays
+              {/* --- MOBILE CARDS (Hidden on >=md) --- */}
+              <div className="grid md:hidden grid-cols-2 gap-4 pb-4">
+                {releases.map((release, index) => {
+                  const isSelected = selectedItems.has(release.id);
+                  const artist = release.basic_information.artists?.[0]?.name || 'Unknown';
+
+                  return (
+                    <div
+                      key={release.id}
+                      className={`relative group bg-white dark:bg-slate-800 border rounded-2xl p-3 flex flex-col gap-2 transition-all duration-300 shadow-sm cursor-pointer animate-slide-up ${isSelected ? 'border-indigo-500 ring-2 ring-indigo-500/50 bg-indigo-50/50 dark:bg-indigo-900/20' : 'border-slate-200 dark:border-slate-600'}`}
+                      style={{ animationDelay: `${(index % 12) * 50}ms`, opacity: 0 }}
+                      onClick={() => toggleSelection(release)}
+                    >
+                      {/* Listen Count Badge (Top-Right) */}
+                      <div className="absolute top-2 right-2 z-10 bg-slate-900/80 dark:bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-full backdrop-blur-md font-bold shadow-sm">
+                        {release.listen_count || 0} plays
+                      </div>
+
+                      {/* Selection Checkbox Overlay */}
+                      <div className="absolute top-2 left-2 z-10 transition-transform hover:scale-105">
+                        {isSelected ? (
+                          <CheckSquare
+                            className="text-indigo-500 dark:text-indigo-400 fill-white dark:fill-slate-900 drop-shadow-md"
+                            size={20}
+                          />
+                        ) : (
+                          <Square
+                            className="text-white drop-shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                            size={20}
+                          />
+                        )}
+                      </div>
+
+                      {/* Cover */}
+                      <div className="w-full aspect-square bg-slate-100 dark:bg-slate-700/50 rounded-xl overflow-hidden relative shadow-inner">
+                        {release.basic_information.thumb ? (
+                          <img
+                            src={getProxiedImageUrl(release.basic_information.thumb)}
+                            alt="cover"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 text-xs font-medium gap-1">
+                            <span className="text-3xl opacity-50 grayscale">💿</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Info */}
+                      <div className="flex-1 min-w-0 flex flex-col pt-1">
+                        <h3
+                          className="font-bold text-slate-900 dark:text-slate-100 truncate text-sm leading-tight mb-0.5"
+                          title={release.basic_information.title}
+                        >
+                          {release.basic_information.title}
+                        </h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate font-medium">
+                          {artist} • {release.basic_information.year || '—'}
+                        </p>
+                      </div>
                     </div>
-
-                    {/* Selection Checkbox Overlay (Bottom-Right of Image) */}
-                    <div className="absolute top-3 left-3 z-10 transition-transform hover:scale-105">
-                      {isSelected ? (
-                        <CheckSquare
-                          className="text-indigo-500 dark:text-indigo-400 fill-white dark:fill-slate-900 drop-shadow-md"
-                          size={24}
-                        />
-                      ) : (
-                        <Square
-                          className="text-white drop-shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
-                          size={24}
-                        />
-                      )}
-                    </div>
-
-                    {/* Cover */}
-                    <div className="w-full aspect-square bg-slate-100 dark:bg-slate-700/50 rounded-xl overflow-hidden relative shadow-inner">
-                      {release.basic_information.thumb ? (
-                        <img
-                          src={getProxiedImageUrl(release.basic_information.thumb)}
-                          alt="cover"
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 text-sm font-medium gap-2">
-                          <span className="text-4xl opacity-50 grayscale">💿</span>
-                          No Cover
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Info */}
-                    <div className="flex-1 min-w-0 flex flex-col pt-1">
-                      <h3
-                        className="font-bold text-slate-900 dark:text-slate-100 truncate text-base leading-tight mb-1"
-                        title={release.basic_information.title}
-                      >
-                        {release.basic_information.title}
-                      </h3>
-                      <p className="text-sm text-slate-500 dark:text-slate-400 truncate font-medium">
-                        {artist}
-                      </p>
-
-                      <a
-                        href={`https://www.discogs.com/release/${release.id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700/50 text-xs font-semibold text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300 flex items-center gap-1.5 w-full z-20 transition-colors"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        View on Discogs <ExternalLink size={14} />
-                      </a>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            </>
           )}
 
           {!loading && releases.length === 0 && (

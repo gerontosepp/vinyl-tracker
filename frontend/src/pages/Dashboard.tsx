@@ -465,7 +465,7 @@ const Dashboard: React.FC = () => {
                         if (!ts) return 'Unbekannter Zeitpunkt';
                         return new Date(ts).toLocaleString();
                       }}
-                      formatter={(value: number | string, name: string, item) => [
+                      formatter={(value: any, name: any, item: any) => [
                         `${item?.payload?.currency || collectionValue?.median?.currency || '$'} ${Number(
                           value
                         ).toLocaleString(undefined, {

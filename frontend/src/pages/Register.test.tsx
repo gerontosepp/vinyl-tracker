@@ -17,6 +17,7 @@ vi.spyOn(useAuthHook, 'useAuth').mockReturnValue({
   isSyncing: false,
   syncMessage: '',
   performSync: vi.fn(),
+  resetAllListens: vi.fn(),
 });
 
 const renderComponent = () => {

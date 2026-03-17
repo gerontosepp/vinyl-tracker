@@ -81,6 +81,7 @@ describe('Collection Component', () => {
           isSyncing: false,
           syncMessage: '',
           performSync: vi.fn(),
+          resetAllListens: vi.fn(),
         }}
       >
         <BrowserRouter>

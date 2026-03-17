@@ -40,6 +40,7 @@ describe('Dashboard Component', () => {
       isSyncing: false,
       syncMessage: '',
       performSync: vi.fn(),
+      resetAllListens: vi.fn(),
     });
     // Default API responses
     vi.spyOn(api, 'getTopRecords').mockResolvedValue([

@@ -9,6 +9,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import Settings from './pages/Settings';
 import Dashboard from './pages/Dashboard';
 import Collection from './pages/Collection';
+import Statistics from './pages/Statistics';
 
 import './index.css';
 
@@ -41,6 +42,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Collection />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/statistics"
+              element={
+                <ProtectedRoute>
+                  <Statistics />
                 </ProtectedRoute>
               }
             />

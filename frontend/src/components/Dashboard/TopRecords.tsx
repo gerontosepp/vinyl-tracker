@@ -5,9 +5,10 @@ import type { AnalyticsTopRecord } from '../../types';
 interface TopRecordsProps {
   data: AnalyticsTopRecord[];
   className?: string;
+  headerActions?: React.ReactNode;
 }
 
-const TopRecords: React.FC<TopRecordsProps> = ({ data, className = '' }) => {
+const TopRecords: React.FC<TopRecordsProps> = ({ data, className = '', headerActions }) => {
   const maxCount = useMemo(() => Math.max(...data.map((r) => r.count), 0), [data]);
 
   return (
@@ -15,9 +16,12 @@ const TopRecords: React.FC<TopRecordsProps> = ({ data, className = '' }) => {
       className={`bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-600 flex flex-col overflow-hidden transition-all duration-300 hover:shadow-md hover:border-slate-300/50 dark:hover:border-slate-600/50 ${className}`}
     >
       <div className="p-6 pb-4 border-b border-slate-100 dark:border-slate-600 bg-white dark:bg-slate-800 z-10 transition-colors">
-        <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-          Top Records
-        </h2>
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+            Top Records
+          </h2>
+          {headerActions && <div className="w-full lg:w-auto">{headerActions}</div>}
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-6 pt-4 space-y-6">

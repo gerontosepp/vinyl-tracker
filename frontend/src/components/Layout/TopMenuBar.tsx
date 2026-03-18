@@ -57,7 +57,7 @@ const TopMenuBar: React.FC = () => {
             {user.username}
           </span>
           <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider">
-            v1.6.3
+            v{__APP_VERSION__}
           </span>
         </div>
 

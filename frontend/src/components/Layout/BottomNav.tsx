@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Disc, User, ScanLine } from 'lucide-react';
+import { Home, Disc, User, ScanLine, BarChart2 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 interface BottomNavProps {
@@ -38,6 +38,13 @@ const BottomNav: React.FC<BottomNavProps> = ({ onScanClick }) => {
         path="/collection"
         icon={Disc}
         isActive={isActive('/collection')}
+        navigate={navigate}
+      />
+      
+      <NavItem
+        path="/statistics"
+        icon={BarChart2}
+        isActive={isActive('/statistics')}
         navigate={navigate}
       />
 

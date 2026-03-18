@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Disc, User, Settings, ScanLine } from 'lucide-react';
+import { Home, Disc, User, Settings, ScanLine, BarChart2 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 interface SidebarProps {
@@ -49,6 +49,13 @@ const Sidebar: React.FC<SidebarProps> = ({ onScanClick }) => {
           icon={Disc}
           label="Collection"
           isActive={isActive('/collection')}
+          navigate={navigate}
+        />
+        <NavItem
+          path="/statistics"
+          icon={BarChart2}
+          label="Stats"
+          isActive={isActive('/statistics')}
           navigate={navigate}
         />
         <NavItem

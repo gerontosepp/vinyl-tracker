@@ -3,17 +3,6 @@ import { useAuth } from '../context/useAuth';
 import { useTheme } from '../context/useTheme';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout/Layout';
-import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis } from 'recharts';
-
-const MOCK_LISTENING_DATA = [
-  { day: 'Mon', hrs: 2 },
-  { day: 'Tue', hrs: 4 },
-  { day: 'Wed', hrs: 3 },
-  { day: 'Thu', hrs: 6 },
-  { day: 'Fri', hrs: 5 },
-  { day: 'Sat', hrs: 8 },
-  { day: 'Sun', hrs: 7 },
-];
 
 const Settings: React.FC = () => {
   const { user, updateDiscogs, isLoading, isSyncing, performSync, resetAllListens, syncMessage, logout } = useAuth();
@@ -97,57 +86,6 @@ const Settings: React.FC = () => {
                 >
                   Log Out
                 </button>
-              </div>
-            </div>
-
-            {/* Listening Habits Card */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-600 p-6 transition-colors">
-              <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-                Listening Habits
-              </h3>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mb-6 font-medium">
-                Weekly Listening (hrs)
-              </p>
-
-              <div className="h-32 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart
-                    data={MOCK_LISTENING_DATA}
-                    margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
-                  >
-                    <defs>
-                      <linearGradient id="colorListening" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.4} />
-                        <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <XAxis
-                      dataKey="day"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fontSize: 10, fill: '#64748b' }}
-                      dy={10}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: '#1e293b',
-                        borderColor: '#334155',
-                        borderRadius: '8px',
-                        color: '#f8fafc',
-                        border: 'none',
-                      }}
-                      itemStyle={{ color: '#fbbf24', fontWeight: 'bold' }}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="hrs"
-                      stroke="#f59e0b"
-                      strokeWidth={2}
-                      fillOpacity={1}
-                      fill="url(#colorListening)"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
               </div>
             </div>
           </div>

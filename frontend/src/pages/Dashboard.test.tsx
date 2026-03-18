@@ -63,15 +63,6 @@ describe('Dashboard Component', () => {
       releases: [],
       pagination: { items: 0, page: 1, pages: 1, per_page: 50, urls: {} },
     });
-    vi.spyOn(api, 'getCollectionValue').mockResolvedValue({
-      minimum: { currency: 'USD', value: 1000 },
-      median: { currency: 'USD', value: 1500 },
-      maximum: { currency: 'USD', value: 2000 },
-    });
-    vi.spyOn(api, 'getGenreBreakdown').mockResolvedValue([
-      { name: 'Rock', value: 10 },
-      { name: 'Jazz', value: 5 },
-    ]);
   });
 
   it('renders dashboard with user info and data', async () => {

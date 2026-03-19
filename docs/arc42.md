@@ -159,6 +159,10 @@ The system is deployed as a multi-container Docker application orchestrated by D
 
 ### 8.3 Error Handling
 - Global exception handling in Spring Boot (`@ControllerAdvice`) returns RFC-7807 style `ProblemDetail` JSON payloads (including title, detail, status and timestamp) for API errors.
+- **Specific Integration Exceptions**: Replaced generic `RuntimeException` throws in the `DiscogsService` with a tailored hierarchy:
+    - `DiscogsTokenException` (HTTP 422) for encryption and token-level issues.
+    - `DiscogsApiException` (HTTP 502) for external API communication failures.
+    - `CollectionSyncException` (HTTP 500) for batch synchronization errors.
 - Endpoint-specific failure paths in analytics endpoints are aligned to the same ProblemDetail structure.
 - Lightweight success responses for scan-related endpoints are returned as typed DTOs instead of ad-hoc maps, improving schema clarity across backend and frontend.
 

@@ -2,6 +2,7 @@ package com.antigravity.vinyltracker.service;
 
 import com.antigravity.vinyltracker.model.AppUser;
 import com.antigravity.vinyltracker.model.discogs.DiscogsDto;
+import com.antigravity.vinyltracker.exception.DiscogsTokenException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.http.HttpHeaders;
@@ -38,7 +39,7 @@ public class DiscogsService {
         log.info("Fetching release details for ID: {}", releaseId);
         String decryptedToken = tokenService.decrypt(user.getDiscogsToken());
         if (decryptedToken == null) {
-            throw new RuntimeException("Could not decrypt Discogs token for user " + user.getUsername());
+            throw new DiscogsTokenException("Could not decrypt Discogs token for user " + user.getUsername());
         }
 
         return restClient.get()
@@ -53,7 +54,7 @@ public class DiscogsService {
         log.info("Searching Discogs for barcode: {}", barcode);
         String decryptedToken = tokenService.decrypt(user.getDiscogsToken());
         if (decryptedToken == null) {
-            throw new RuntimeException("Could not decrypt Discogs token for user " + user.getUsername());
+            throw new DiscogsTokenException("Could not decrypt Discogs token for user " + user.getUsername());
         }
 
         // 1. Search Global DB
@@ -111,7 +112,7 @@ public class DiscogsService {
         log.info("Fetching collection value for user: {}", user.getUsername());
         String decryptedToken = tokenService.decrypt(user.getDiscogsToken());
         if (decryptedToken == null) {
-            throw new RuntimeException("Could not decrypt Discogs token for user " + user.getUsername());
+            throw new DiscogsTokenException("Could not decrypt Discogs token for user " + user.getUsername());
         }
 
         return restClient.get()
@@ -254,7 +255,7 @@ public class DiscogsService {
         log.info("Starting Discogs DB sync for user: {}", user.getUsername());
         String decryptedToken = tokenService.decrypt(user.getDiscogsToken());
         if (decryptedToken == null) {
-            throw new RuntimeException("Could not decrypt Discogs token for user " + user.getUsername());
+            throw new DiscogsTokenException("Could not decrypt Discogs token for user " + user.getUsername());
         }
 
         int page = 1;

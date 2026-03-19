@@ -47,6 +47,33 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(problemDetail);
     }
 
+    @ExceptionHandler(DiscogsTokenException.class)
+    public ResponseEntity<ProblemDetail> handleDiscogsToken(DiscogsTokenException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatus(422);
+        problemDetail.setTitle("Discogs token error");
+        problemDetail.setDetail(ex.getMessage() != null ? ex.getMessage() : "Invalid or missing Discogs token.");
+        problemDetail.setProperty("timestamp", Instant.now().toString());
+        return ResponseEntity.status(422).body(problemDetail);
+    }
+
+    @ExceptionHandler(DiscogsApiException.class)
+    public ResponseEntity<ProblemDetail> handleDiscogsApi(DiscogsApiException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.BAD_GATEWAY);
+        problemDetail.setTitle("Discogs API error");
+        problemDetail.setDetail(ex.getMessage() != null ? ex.getMessage() : "Error communicating with Discogs API.");
+        problemDetail.setProperty("timestamp", Instant.now().toString());
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(problemDetail);
+    }
+
+    @ExceptionHandler(CollectionSyncException.class)
+    public ResponseEntity<ProblemDetail> handleCollectionSync(CollectionSyncException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+        problemDetail.setTitle("Collection sync error");
+        problemDetail.setDetail(ex.getMessage() != null ? ex.getMessage() : "Error syncing collection.");
+        problemDetail.setProperty("timestamp", Instant.now().toString());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problemDetail);
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ProblemDetail> handleRuntime(RuntimeException ex) {
         ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.INTERNAL_SERVER_ERROR);

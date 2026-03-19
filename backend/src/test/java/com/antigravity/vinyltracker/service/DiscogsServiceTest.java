@@ -1,5 +1,6 @@
 package com.antigravity.vinyltracker.service;
 
+import com.antigravity.vinyltracker.exception.DiscogsTokenException;
 import com.antigravity.vinyltracker.model.AppUser;
 import com.antigravity.vinyltracker.model.discogs.DiscogsDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -182,7 +183,7 @@ class DiscogsServiceTest {
                                 .thenReturn(null);
 
                 // Act & Assert
-                assertThrows(RuntimeException.class, () -> discogsService.getRelease(1L, user));
+                assertThrows(DiscogsTokenException.class, () -> discogsService.getRelease(1L, user));
         }
 
         @Test
@@ -192,7 +193,7 @@ class DiscogsServiceTest {
                                 .thenReturn(null);
 
                 // Act & Assert
-                assertThrows(RuntimeException.class, () -> discogsService.searchCollectionByBarcode("123", user));
+                assertThrows(DiscogsTokenException.class, () -> discogsService.searchCollectionByBarcode("123", user));
         }
 
         @Test

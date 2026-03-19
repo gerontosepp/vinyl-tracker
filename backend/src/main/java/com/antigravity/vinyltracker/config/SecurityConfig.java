@@ -31,7 +31,7 @@ public class SecurityConfig {
                     .requestMatchers("/api/users/login", "/api/users/register", "/api/users/reset-password", "/api/users/logout",
                                 "/api/proxy/**")
                         .permitAll()
-                        .requestMatchers("/actuator/**").permitAll()
+                        .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();

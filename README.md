@@ -19,7 +19,7 @@ The project follows a modern containerized micro-architecture:
 ### Backend
 - **Framework**: Spring Boot 4.0.3
 - **Language**: Java 21
-- **Database Access**: Spring Data JPA with Hibernate.
+- **Database Access**: Spring Data JPA with Hibernate and **Flyway** for schema migrations.
 - **API**: RESTful endpoints with **JWT (JSON Web Token)** authentication.
 - **Integration**: Discogs API for record metadata.
 
@@ -109,6 +109,9 @@ The application requires environment variables for configuration (database crede
    *Optimized build, no hot-reloading, runs on port 80.*
 
    👉 **[See Detailed Deployment Guide](docs/DEPLOYMENT.md)** for server setup and HTTPS requirements.
+
+   > [!IMPORTANT]
+   > For the **first deployment** against an existing database, ensure `SPRING_FLYWAY_BASELINE_ON_MIGRATE=true` is set (this is already the default in `docker-compose.prod.yml`) to correctly baseline your schema.
 
 2. **Access the App**:
    - **Frontend**: [https://localhost:5173](https://localhost:5173) (or `https://<YOUR_IP>:5173`)

@@ -33,6 +33,7 @@ The **Vinyl Tracker** is a personal web application designed for vinyl enthusias
     - **Backend**: Java 21+ (Spring Boot 4.0+).
     - **Frontend**: React (TypeScript, Vite).
     - **Database**: PostgreSQL 16.
+    - **Migrations**: Flyway.
     - **Containerization**: Docker & Docker Compose.
 - **License**: MIT License (Open Source).
 - **Deployment**: Self-hosted via Docker Compose.
@@ -76,7 +77,7 @@ The system consists of three main containers:
 | :--- | :--- | :--- |
 | **Frontend** | Single Page Application handling UI, routing, and device integration (Camera). | React, Vite, Tailwind CSS, html5-qrcode |
 | **Backend** | Core business logic, API endpoints, schedulers, and database interactions. | Java 21, Spring Boot, Spring Data JPA, Lombok |
-| **Database** | Persistent storage for users, records, and listening events. | PostgreSQL 16 |
+| **Database** | Persistent storage for users, records, and listening events. | PostgreSQL 16, Flyway |
 
 ### 5.2 Level 2: Backend Internals
 
@@ -185,6 +186,7 @@ The system is deployed as a multi-container Docker application orchestrated by D
 | **React/Vite** | Modern, fast tooling compared to Create-React-App. React ecosystem is robust for PWA features. | Accepted |
 | **Tailwind CSS** | Utility-first CSS allows for rapid UI development and consistent design tokens without managing complex stylesheets. | Accepted |
 | **PostgreSQL** | Industry standard, robust relational database. Suitable for structured data like catalog entries. | Accepted |
+| **Flyway Migrations** | Replaced Hibernate `ddl-auto: update` with Flyway for reliable, versioned schema migrations in production. | Accepted |
 
 ## 10. Quality Requirements
 

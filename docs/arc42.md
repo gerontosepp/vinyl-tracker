@@ -141,8 +141,8 @@ The system is deployed as a multi-container Docker application orchestrated by D
 - **Configuration**: Environment variables via `.env` file.
 
 **Docker Compose Structure**:
-- `postgres`: Database service.
-- `backend`: Java application, depends on `postgres`. Exposed on port 8080.
+- `postgres`: Database service containing the `vinyl_tracker` data. Includes a robust `pg_isready` healthcheck.
+- `backend`: Java application, strictly depends on `postgres` being in a `service_healthy` state to prevent startup failures. Exposed on port 8080.
 - `frontend`: Nginx (Production) or Vite Dev Server (Development). Exposed on port 3000/5173.
 
 ## 8. Cross-cutting Concepts
@@ -194,7 +194,7 @@ The system is deployed as a multi-container Docker application orchestrated by D
 - **Dependency Hygiene**: Backend dependencies are checked in CI against Sonatype OSS Index; findings are reported to an audit artifact (`ossindex-audit.json`) with the current configuration set to non-blocking (`fail=false`).
 - **Test Execution Split**: Unit tests run via Surefire during `test`, while integration tests run via Failsafe during `verify`. This improves local feedback speed while keeping full validation in CI.
 - **Responsiveness**: The UI must adapt to mobile screens (< 768px) for usable barcode scanning on phones.
-- **Performance**: API responses should be < 200ms (excluding external Discogs calls).
+- **Performance**: API responses should be < 200ms (excluding external Discogs calls). Heavily accessed database relationships (e.g. `user_id` on collections, `discogs_id` on records) are backed by explicit B-tree indexes applied via Flyway to prevent query degradation as dataset sizes grow.
 
 ## 11. Risks and Technical Debt
 

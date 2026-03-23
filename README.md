@@ -100,7 +100,7 @@ The application requires environment variables for configuration (database crede
    ```bash
    docker compose up --build -d
    ```
-   *Features hot-reloading for frontend.*
+   *Features hot-reloading for frontend. The backend will automatically wait for the `postgres` healthcheck to pass before starting.*
 
 2. **Start Production Environment**:
    ```bash

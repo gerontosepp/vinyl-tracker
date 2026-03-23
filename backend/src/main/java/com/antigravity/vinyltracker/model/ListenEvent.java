@@ -7,7 +7,9 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "listen_event")
+@Table(name = "listen_event", indexes = {
+        @Index(name = "idx_listen_event_user", columnList = "user_id")
+})
 @Data
 @NoArgsConstructor
 public class ListenEvent {

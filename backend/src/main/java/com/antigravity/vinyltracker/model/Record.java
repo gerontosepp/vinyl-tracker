@@ -7,7 +7,9 @@ import java.util.List;
 import java.util.ArrayList;
 
 @Entity
-@Table(name = "record_cache") // 'record' is sometimes a reserved word or confusing in Java 14+
+@Table(name = "record_cache", indexes = {
+        @Index(name = "idx_record_cache_discogs", columnList = "discogs_id")
+}) // 'record' is sometimes a reserved word or confusing in Java 14+
 @Data
 @NoArgsConstructor
 public class Record {

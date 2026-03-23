@@ -24,4 +24,4 @@ playwright-report/
 curl_output_*
 
 frontend/dev-dist/
-
+build_log.txt

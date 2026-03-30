@@ -30,7 +30,7 @@ The **Vinyl Tracker** is a personal web application designed for vinyl enthusias
 ## 2. Architecture Constraints
 
 - **Technology Stack**:
-    - **Backend**: Java 21+ (Spring Boot 4.0+).
+    - **Backend**: Java 25+ (Spring Boot 4.0+).
     - **Frontend**: React (TypeScript, Vite).
     - **Database**: PostgreSQL 16.
     - **Migrations**: Flyway.
@@ -76,7 +76,7 @@ The system consists of three main containers:
 | Building Block | Description | Technology |
 | :--- | :--- | :--- |
 | **Frontend** | Single Page Application handling UI, routing, and device integration (Camera). | React, Vite, Tailwind CSS, html5-qrcode |
-| **Backend** | Core business logic, API endpoints, schedulers, and database interactions. | Java 21, Spring Boot, Spring Data JPA, Lombok |
+| **Backend** | Core business logic, API endpoints, schedulers, and database interactions. | Java 25, Spring Boot, Spring Data JPA, Lombok |
 | **Database** | Persistent storage for users, records, and listening events. | PostgreSQL 16, Flyway |
 
 ### 5.2 Level 2: Backend Internals
@@ -182,7 +182,7 @@ The system is deployed as a multi-container Docker application orchestrated by D
 
 | Decision | Reasoning | Status |
 | :--- | :--- | :--- |
-| **Java 21 over 25** | Originally targeted Java 25, but downgraded to Java 21 (LTS) due to tool incompatibility (e.g., Lombok issues with bleeding-edge JDKs). | Accepted |
+| **Java 25 Migration** | Upgraded to Java 25 (LTS) along with Lombok 1.18.44. The previous downgrade to Java 21 LTS is no longer necessary as tools have caught up with the newer LTS release. | Accepted |
 | **React/Vite** | Modern, fast tooling compared to Create-React-App. React ecosystem is robust for PWA features. | Accepted |
 | **Tailwind CSS** | Utility-first CSS allows for rapid UI development and consistent design tokens without managing complex stylesheets. | Accepted |
 | **PostgreSQL** | Industry standard, robust relational database. Suitable for structured data like catalog entries. | Accepted |

@@ -18,7 +18,7 @@ The project follows a modern containerized micro-architecture:
 
 ### Backend
 - **Framework**: Spring Boot 4.0.3
-- **Language**: Java 21
+- **Language**: Java 25
 - **Database Access**: Spring Data JPA with Hibernate and **Flyway** for schema migrations.
 - **API**: RESTful endpoints with **JWT (JSON Web Token)** authentication.
 - **Integration**: Discogs API for record metadata.
@@ -215,7 +215,7 @@ Create `~/.m2/settings.xml` with an `ossindex` server entry so Maven can use the
 
 ### CI/CD
 The project includes a GitHub Actions workflow (`.github/workflows/ci.yml`) that automatically:
-- Builds and tests the Backend (Java 21/Maven).
+- Builds and tests the Backend (Java 25/Maven).
 - Builds and tests the Frontend (Node 20/Vite).
 - Enforces >80% test coverage for both.
 - Runs the backend online dependency vulnerability audit through the `security-online` Maven profile.

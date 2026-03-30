@@ -7,7 +7,7 @@ import com.antigravity.vinyltracker.repository.AppUserRepository;
 import com.antigravity.vinyltracker.repository.ListenEventRepository;
 import com.antigravity.vinyltracker.repository.RecordRepository;
 import com.antigravity.vinyltracker.security.JwtService;
-import com.antigravity.vinyltracker.service.DiscogsService;
+import com.antigravity.vinyltracker.service.DiscogsApiClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -24,6 +24,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 
 import com.antigravity.vinyltracker.AbstractIntegrationTest;
@@ -47,7 +48,7 @@ class ScanControllerIntegrationTest extends AbstractIntegrationTest {
 
     // We can't use @MockBean so we rely on the Primary bean defined below
     @Autowired
-    private DiscogsService discogsService;
+    private DiscogsApiClient discogsApiClient;
 
     @Autowired
     private JwtService jwtService;
@@ -56,8 +57,8 @@ class ScanControllerIntegrationTest extends AbstractIntegrationTest {
     static class TestConfig {
         @Bean
         @Primary
-        public DiscogsService discogsServiceMock() {
-            return Mockito.mock(DiscogsService.class);
+        public DiscogsApiClient discogsApiClientMock() {
+            return Mockito.mock(DiscogsApiClient.class);
         }
     }
 
@@ -97,7 +98,16 @@ class ScanControllerIntegrationTest extends AbstractIntegrationTest {
         mockRelease.setYear(2025);
         mockRelease.setThumbUrl("http://img.com/1.jpg");
 
-        given(discogsService.searchCollectionByBarcode(anyString(), any(AppUser.class)))
+        DiscogsDto.SearchResult mockSearchResult = new DiscogsDto.SearchResult();
+        mockSearchResult.setId(releaseId);
+        DiscogsDto.SearchResponse mockSearchResponse = new DiscogsDto.SearchResponse();
+        mockSearchResponse.setResults(List.of(mockSearchResult));
+
+        given(discogsApiClient.searchDatabaseByBarcode(anyString(), any(AppUser.class)))
+                .willReturn(mockSearchResponse);
+        given(discogsApiClient.isReleaseInCollection(eq(releaseId), any(AppUser.class)))
+                .willReturn(true);
+        given(discogsApiClient.getRelease(eq(releaseId), any(AppUser.class)))
                 .willReturn(mockRelease);
 
         ScanDto.Request request = new ScanDto.Request();

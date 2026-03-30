@@ -27,7 +27,7 @@ import static org.mockito.Mockito.*;
 class ScanServiceTest {
 
     @Mock
-    private DiscogsService discogsService;
+    private DiscogsApiClient discogsApiClient;
 
     @Mock
     private RecordRepository recordRepository;
@@ -69,7 +69,14 @@ class ScanServiceTest {
         mockRelease.setYear(2022);
         mockRelease.setThumbUrl("http://thumb.url");
 
-        when(discogsService.searchCollectionByBarcode(barcode, user)).thenReturn(mockRelease);
+        DiscogsDto.SearchResult mockSearchResult = new DiscogsDto.SearchResult();
+        mockSearchResult.setId(releaseId);
+        DiscogsDto.SearchResponse mockSearchResponse = new DiscogsDto.SearchResponse();
+        mockSearchResponse.setResults(java.util.List.of(mockSearchResult));
+
+        when(discogsApiClient.searchDatabaseByBarcode(barcode, user)).thenReturn(mockSearchResponse);
+        when(discogsApiClient.isReleaseInCollection(releaseId, user)).thenReturn(true);
+        when(discogsApiClient.getRelease(releaseId, user)).thenReturn(mockRelease);
 
         // Mock Record Repository to return existing or save new
         when(recordRepository.findByDiscogsId(releaseId)).thenReturn(Optional.empty());
@@ -91,7 +98,7 @@ class ScanServiceTest {
         String username = "testuser";
 
         when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
-        when(discogsService.searchCollectionByBarcode(barcode, user)).thenReturn(null);
+        when(discogsApiClient.searchDatabaseByBarcode(barcode, user)).thenReturn(null);
 
         ScanDto.Result result = scanService.processScan(barcode, username);
 
@@ -113,7 +120,7 @@ class ScanServiceTest {
         mockRelease.setTitle("Custom Code Release");
         mockRelease.setYear(2020);
 
-        when(discogsService.getRelease(releaseId, user)).thenReturn(mockRelease);
+        when(discogsApiClient.getRelease(releaseId, user)).thenReturn(mockRelease);
         when(recordRepository.findByDiscogsId(releaseId)).thenReturn(Optional.empty());
         when(recordRepository.save(any(Record.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -133,7 +140,7 @@ class ScanServiceTest {
 
         assertFalse(result.isSuccess());
         assertEquals("Invalid custom barcode format", result.getMessage());
-        verifyNoInteractions(discogsService);
+        verifyNoInteractions(discogsApiClient);
         verify(recordRepository, never()).save(any(Record.class));
         verify(listenEventRepository, never()).save(any(ListenEvent.class));
     }
@@ -146,7 +153,7 @@ class ScanServiceTest {
                 () -> scanService.processScan("123456789", "missing-user"));
 
         assertEquals("User not found: missing-user", exception.getMessage());
-        verifyNoInteractions(discogsService, recordRepository, listenEventRepository);
+        verifyNoInteractions(discogsApiClient, recordRepository, listenEventRepository);
     }
 
     @Test

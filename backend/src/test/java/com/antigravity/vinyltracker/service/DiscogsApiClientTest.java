@@ -1,0 +1,144 @@
+package com.antigravity.vinyltracker.service;
+
+import com.antigravity.vinyltracker.exception.DiscogsTokenException;
+import com.antigravity.vinyltracker.model.AppUser;
+import com.antigravity.vinyltracker.model.discogs.DiscogsDto;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.web.client.RestClient;
+
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
+
+class DiscogsApiClientTest {
+
+    private DiscogsApiClient discogsApiClient;
+    private MockRestServiceServer server;
+    private ObjectMapper objectMapper = new ObjectMapper();
+    private AppUser user;
+    private TokenEncryptionService tokenService;
+
+    @BeforeEach
+    void setUp() {
+        RestClient.Builder builder = RestClient.builder();
+        server = MockRestServiceServer.bindTo(builder).build();
+        tokenService = org.mockito.Mockito.mock(TokenEncryptionService.class);
+        org.mockito.Mockito.when(tokenService.decrypt(org.mockito.ArgumentMatchers.anyString()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        discogsApiClient = new DiscogsApiClient(builder, tokenService);
+
+        user = new AppUser();
+        user.setUsername("testuser");
+        user.setDiscogsUsername("testdiscogs");
+        user.setDiscogsToken("testtoken");
+    }
+
+    @Test
+    void getRelease_ShouldReturnRelease() throws Exception {
+        Long releaseId = 12345L;
+        DiscogsDto.Release mockRelease = new DiscogsDto.Release();
+        mockRelease.setId(releaseId);
+        mockRelease.setTitle("Test Release");
+        mockRelease.setYear(2023);
+
+        server.expect(requestTo("https://api.discogs.com/releases/" + releaseId))
+                .andRespond(withSuccess(objectMapper.writeValueAsString(mockRelease), MediaType.APPLICATION_JSON));
+
+        DiscogsDto.Release result = discogsApiClient.getRelease(releaseId, user);
+
+        assertNotNull(result);
+        assertEquals(releaseId, result.getId());
+        assertEquals("Test Release", result.getTitle());
+    }
+
+    @Test
+    void searchDatabaseByBarcode_ShouldReturnSearchResponse() throws Exception {
+        String barcode = "123456789";
+        Long releaseId = 12345L;
+
+        DiscogsDto.SearchResult searchResult = new DiscogsDto.SearchResult();
+        searchResult.setId(releaseId);
+        DiscogsDto.SearchResponse searchResponse = new DiscogsDto.SearchResponse();
+        searchResponse.setResults(List.of(searchResult));
+
+        server.expect(requestTo("https://api.discogs.com/database/search?barcode=" + barcode + "&type=release"))
+                .andRespond(withSuccess(objectMapper.writeValueAsString(searchResponse), MediaType.APPLICATION_JSON));
+
+        DiscogsDto.SearchResponse result = discogsApiClient.searchDatabaseByBarcode(barcode, user);
+
+        assertNotNull(result);
+        assertFalse(result.getResults().isEmpty());
+        assertEquals(releaseId, result.getResults().get(0).getId());
+    }
+
+    @Test
+    void isReleaseInCollection_ShouldReturnTrue_WhenInCollection() {
+        Long releaseId = 100L;
+        server.expect(requestTo("https://api.discogs.com/users/" + user.getDiscogsUsername() + "/collection/releases/" + releaseId))
+                .andRespond(withSuccess());
+
+        boolean result = discogsApiClient.isReleaseInCollection(releaseId, user);
+        assertTrue(result);
+    }
+
+    @Test
+    void isReleaseInCollection_ShouldReturnFalse_WhenNotInCollection() {
+        Long releaseId = 100L;
+        server.expect(requestTo("https://api.discogs.com/users/" + user.getDiscogsUsername() + "/collection/releases/" + releaseId))
+                .andRespond(withStatus(HttpStatus.NOT_FOUND));
+
+        boolean result = discogsApiClient.isReleaseInCollection(releaseId, user);
+        assertFalse(result);
+    }
+
+    @Test
+    void getCollectionValue_ShouldReturnValueResponse() throws Exception {
+        DiscogsDto.ValueResponse mockResponse = new DiscogsDto.ValueResponse();
+        mockResponse.setMedian(new DiscogsDto.ValueData("USD", 300.00));
+
+        server.expect(requestTo("https://api.discogs.com/users/testdiscogs/collection/value"))
+                .andRespond(withSuccess(objectMapper.writeValueAsString(mockResponse), MediaType.APPLICATION_JSON));
+
+        DiscogsDto.ValueResponse result = discogsApiClient.getCollectionValue(user);
+
+        assertNotNull(result);
+        assertEquals("USD", result.getMedian().getCurrency());
+        assertEquals(300.00, result.getMedian().getValue());
+    }
+
+    @Test
+    void getCollectionReleases_ShouldReturnCollectionResponse() throws Exception {
+        DiscogsDto.CollectionResponse mockResponse = new DiscogsDto.CollectionResponse();
+        DiscogsDto.Pagination pagination = new DiscogsDto.Pagination();
+        pagination.setPage(1);
+        mockResponse.setPagination(pagination);
+
+        server.expect(requestTo("https://api.discogs.com/users/testdiscogs/collection/folders/0/releases?page=1&per_page=50&sort=artist&sort_order=asc"))
+                .andRespond(withSuccess(objectMapper.writeValueAsString(mockResponse), MediaType.APPLICATION_JSON));
+
+        DiscogsDto.CollectionResponse result = discogsApiClient.getCollectionReleases(user, 1, 50);
+
+        assertNotNull(result);
+        assertEquals(1, result.getPagination().getPage());
+    }
+
+    @Test
+    void apiMethods_ShouldThrowException_WhenTokenInvalid() {
+        org.mockito.Mockito.when(tokenService.decrypt(org.mockito.ArgumentMatchers.anyString())).thenReturn(null);
+
+        assertThrows(DiscogsTokenException.class, () -> discogsApiClient.getRelease(1L, user));
+        assertThrows(DiscogsTokenException.class, () -> discogsApiClient.searchDatabaseByBarcode("123", user));
+        assertFalse(discogsApiClient.isReleaseInCollection(1L, user));
+        assertThrows(DiscogsTokenException.class, () -> discogsApiClient.getCollectionValue(user));
+        assertThrows(DiscogsTokenException.class, () -> discogsApiClient.getCollectionReleases(user, 1, 50));
+    }
+}

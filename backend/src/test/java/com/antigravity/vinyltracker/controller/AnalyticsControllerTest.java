@@ -9,7 +9,7 @@ import com.antigravity.vinyltracker.model.dto.TopRecordDto;
 import com.antigravity.vinyltracker.repository.AppUserRepository;
 import com.antigravity.vinyltracker.repository.CollectionItemRepository;
 import com.antigravity.vinyltracker.service.AnalyticsService;
-import com.antigravity.vinyltracker.service.DiscogsService;
+import com.antigravity.vinyltracker.service.DiscogsApiClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,7 +43,7 @@ class AnalyticsControllerTest {
     private AnalyticsService analyticsService;
 
     @Mock
-    private DiscogsService discogsService;
+    private DiscogsApiClient discogsApiClient;
 
     @Mock
     private CollectionItemRepository collectionItemRepository;
@@ -121,7 +121,7 @@ class AnalyticsControllerTest {
         DiscogsDto.ValueResponse valueResponse = new DiscogsDto.ValueResponse(min, median, max);
 
         given(userRepository.findByUsername("testuser")).willReturn(Optional.of(user));
-        given(discogsService.getCollectionValue(user)).willReturn(valueResponse);
+        given(discogsApiClient.getCollectionValue(user)).willReturn(valueResponse);
 
         Principal mockPrincipal = () -> "testuser";
 

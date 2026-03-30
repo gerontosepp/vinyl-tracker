@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 import com.antigravity.vinyltracker.model.AppUser;
 import com.antigravity.vinyltracker.model.discogs.DiscogsDto;
 import com.antigravity.vinyltracker.repository.CollectionItemRepository;
-import com.antigravity.vinyltracker.service.DiscogsService;
+import com.antigravity.vinyltracker.service.DiscogsApiClient;
 import com.antigravity.vinyltracker.repository.AppUserRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -25,13 +25,13 @@ import org.springframework.http.ResponseEntity;
 public class AnalyticsController {
 
     private final AnalyticsService analyticsService;
-    private final DiscogsService discogsService;
+    private final DiscogsApiClient discogsApiClient;
     private final CollectionItemRepository collectionItemRepository;
     private final AppUserRepository userRepository;
 
-    public AnalyticsController(AnalyticsService analyticsService, DiscogsService discogsService, CollectionItemRepository collectionItemRepository, AppUserRepository userRepository) {
+    public AnalyticsController(AnalyticsService analyticsService, DiscogsApiClient discogsApiClient, CollectionItemRepository collectionItemRepository, AppUserRepository userRepository) {
         this.analyticsService = analyticsService;
-        this.discogsService = discogsService;
+        this.discogsApiClient = discogsApiClient;
         this.collectionItemRepository = collectionItemRepository;
         this.userRepository = userRepository;
     }
@@ -63,7 +63,7 @@ public class AnalyticsController {
         }
 
         try {
-            DiscogsDto.ValueResponse valueResponse = discogsService.getCollectionValue(user);
+            DiscogsDto.ValueResponse valueResponse = discogsApiClient.getCollectionValue(user);
             return ResponseEntity.ok(valueResponse);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(problem(

@@ -84,7 +84,7 @@ The system consists of three main containers:
 The Backend follows a layered architecture:
 
 - **Controller Layer**: Handles HTTP requests (`ScanController`, `AppUserController`, `AnalyticsController`, `CollectionController`).
-- **Service Layer**: Business logic and orchestration (`ScanService`, `DiscogsService`, `TokenEncryptionService`, `QrCodeService`, `PdfService`). `ScanService` is responsible for both creating listen events and bulk-deleting all listen events for the authenticated user.
+- **Service Layer**: Business logic and orchestration (`ScanService`, `DiscogsApiClient`, `CollectionQueryService`, `CollectionSyncService`, `TokenEncryptionService`, `QrCodeService`, `PdfService`). `ScanService` is responsible for both creating listen events and bulk-deleting all listen events for the authenticated user.
 - **Repository Layer**: Data access interface (`RecordRepository`, `ListenEventRepository`, `AppUserRepository`). `ListenEventRepository` provides user-scoped queries for recent history, analytics aggregation, and bulk deletion.
 - **Model Layer**: Domain entities (`AppUser`, `Record`, `ListenEvent`).
 - **DTO Layer**: Request/response payloads are modeled with explicit DTO classes instead of generic maps. Example: scan responses use `ScanDto.Result`, and bulk history reset uses `ScanDto.ResetResult`.

@@ -17,14 +17,16 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class CollectionServiceTest {
 
     @Mock
-    private DiscogsService discogsService;
+    private CollectionQueryService collectionQueryService;
+
+    @Mock
+    private CollectionSyncService collectionSyncService;
 
     @Mock
     private PdfService pdfService;
@@ -46,7 +48,7 @@ public class CollectionServiceTest {
     void getCollection_Success() {
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
         DiscogsDto.CollectionResponse mockResponse = new DiscogsDto.CollectionResponse();
-        when(discogsService.getCollection(testUser, 1, 50, "artist", "asc", 0, null)).thenReturn(mockResponse);
+        when(collectionQueryService.getCollection(testUser, 1, 50, "artist", "asc", 0, null)).thenReturn(mockResponse);
 
         DiscogsDto.CollectionResponse result = collectionService.getCollection("testuser", 1, 50, "artist", "asc", 0,
                 null);
@@ -57,7 +59,7 @@ public class CollectionServiceTest {
     void forceSync_Success() {
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
         SyncResultDto mockResult = new SyncResultDto(5, 2);
-        when(discogsService.syncCollection(testUser)).thenReturn(mockResult);
+        when(collectionSyncService.syncCollection(testUser)).thenReturn(mockResult);
 
         SyncResultDto result = collectionService.forceSync("testuser");
         assertEquals(5, result.getAdded());
@@ -93,7 +95,7 @@ public class CollectionServiceTest {
         b1.setArtists(List.of(new DiscogsDto.Artist("B Artist")));
         r1.setBasicInformation(b1);
 
-        when(discogsService.getAllCollection(testUser)).thenReturn(List.of(r1));
+        when(collectionQueryService.getAllCollection(testUser)).thenReturn(List.of(r1));
 
         byte[] pdfOutput = new byte[] { 4, 5, 6 };
         when(pdfService.generateQrCodePdf(any())).thenReturn(pdfOutput);

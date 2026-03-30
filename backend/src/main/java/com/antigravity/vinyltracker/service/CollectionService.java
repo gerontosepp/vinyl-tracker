@@ -10,12 +10,17 @@ import java.util.List;
 
 @Service
 public class CollectionService {
-    private final DiscogsService discogsService;
+    private final CollectionQueryService collectionQueryService;
+    private final CollectionSyncService collectionSyncService;
     private final PdfService pdfService;
     private final AppUserRepository userRepository;
 
-    public CollectionService(DiscogsService discogsService, PdfService pdfService, AppUserRepository userRepository) {
-        this.discogsService = discogsService;
+    public CollectionService(CollectionQueryService collectionQueryService,
+                             CollectionSyncService collectionSyncService,
+                             PdfService pdfService,
+                             AppUserRepository userRepository) {
+        this.collectionQueryService = collectionQueryService;
+        this.collectionSyncService = collectionSyncService;
         this.pdfService = pdfService;
         this.userRepository = userRepository;
     }
@@ -24,13 +29,13 @@ public class CollectionService {
             String sort_order, Integer min_plays, String search) {
         AppUser user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
-        return discogsService.getCollection(user, page, per_page, sort, sort_order, min_plays, search);
+        return collectionQueryService.getCollection(user, page, per_page, sort, sort_order, min_plays, search);
     }
 
     public com.antigravity.vinyltracker.model.dto.SyncResultDto forceSync(String username) {
         AppUser user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
-        return discogsService.syncCollection(user);
+        return collectionSyncService.syncCollection(user);
     }
 
     public byte[] generateSelectedQrCodesPdf(DiscogsDto.QrCodeRequest request) throws IOException {
@@ -41,7 +46,7 @@ public class CollectionService {
         AppUser user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
 
-        List<DiscogsDto.CollectionRelease> releases = discogsService.getAllCollection(user);
+        List<DiscogsDto.CollectionRelease> releases = collectionQueryService.getAllCollection(user);
         List<DiscogsDto.QrCodeItem> items = releases.stream().map(this::mapToQrItem).sorted((a, b) -> {
             String artist1 = a.getArtist() != null ? a.getArtist() : "";
             String artist2 = b.getArtist() != null ? b.getArtist() : "";

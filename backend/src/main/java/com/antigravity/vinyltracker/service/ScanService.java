@@ -14,14 +14,14 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class ScanService {
 
-    private final DiscogsService discogsService;
+    private final DiscogsApiClient discogsApiClient;
     private final RecordRepository recordRepository;
     private final ListenEventRepository listenEventRepository;
     private final AppUserRepository userRepository;
 
-    public ScanService(DiscogsService discogsService, RecordRepository recordRepository,
+    public ScanService(DiscogsApiClient discogsApiClient, RecordRepository recordRepository,
             ListenEventRepository listenEventRepository, AppUserRepository userRepository) {
-        this.discogsService = discogsService;
+        this.discogsApiClient = discogsApiClient;
         this.recordRepository = recordRepository;
         this.listenEventRepository = listenEventRepository;
         this.userRepository = userRepository;
@@ -39,13 +39,21 @@ public class ScanService {
             String idStr = barcode.replace("discogs-id:", "");
             try {
                 Long releaseId = Long.parseLong(idStr);
-                discogsRelease = discogsService.getRelease(releaseId, user);
+                discogsRelease = discogsApiClient.getRelease(releaseId, user);
             } catch (NumberFormatException e) {
                 return new ScanDto.Result(false, "Invalid custom barcode format", null);
             }
         } else {
-            // Standard Barcode -> Search Collection
-            discogsRelease = discogsService.searchCollectionByBarcode(barcode, user);
+            // Standard Barcode -> Search Global DB and filter by Collection Ownership
+            DiscogsDto.SearchResponse searchResponse = discogsApiClient.searchDatabaseByBarcode(barcode, user);
+            if (searchResponse != null && searchResponse.getResults() != null) {
+                for (DiscogsDto.SearchResult result : searchResponse.getResults()) {
+                    if (discogsApiClient.isReleaseInCollection(result.getId(), user)) {
+                        discogsRelease = discogsApiClient.getRelease(result.getId(), user);
+                        break;
+                    }
+                }
+            }
         }
 
         if (discogsRelease == null) {

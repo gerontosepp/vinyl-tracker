@@ -12,13 +12,10 @@ import java.io.IOException;
 
 @RestController
 @RequestMapping("/api/collection")
+@lombok.RequiredArgsConstructor
 public class CollectionController {
 
     private final CollectionService collectionService;
-
-    public CollectionController(CollectionService collectionService) {
-        this.collectionService = collectionService;
-    }
 
     @GetMapping
     public ResponseEntity<DiscogsDto.CollectionResponse> getCollection(

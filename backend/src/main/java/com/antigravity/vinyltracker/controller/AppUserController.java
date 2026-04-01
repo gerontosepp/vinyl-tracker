@@ -14,15 +14,11 @@ import java.security.Principal;
 
 @RestController
 @RequestMapping("/api/users")
+@lombok.RequiredArgsConstructor
 public class AppUserController {
 
     private final AppUserService appUserService;
     private final AuthCookieService authCookieService;
-
-    public AppUserController(AppUserService appUserService, AuthCookieService authCookieService) {
-        this.appUserService = appUserService;
-        this.authCookieService = authCookieService;
-    }
 
     @PostMapping("/register")
         public ResponseEntity<UserResponseDto> register(@Valid @RequestBody RegisterRequestDto payload) {

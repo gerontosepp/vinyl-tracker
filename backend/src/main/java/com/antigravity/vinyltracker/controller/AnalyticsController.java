@@ -22,19 +22,13 @@ import org.springframework.http.ResponseEntity;
 
 @RestController
 @RequestMapping("/api/analytics")
+@lombok.RequiredArgsConstructor
 public class AnalyticsController {
 
     private final AnalyticsService analyticsService;
     private final DiscogsApiClient discogsApiClient;
     private final CollectionItemRepository collectionItemRepository;
     private final AppUserRepository userRepository;
-
-    public AnalyticsController(AnalyticsService analyticsService, DiscogsApiClient discogsApiClient, CollectionItemRepository collectionItemRepository, AppUserRepository userRepository) {
-        this.analyticsService = analyticsService;
-        this.discogsApiClient = discogsApiClient;
-        this.collectionItemRepository = collectionItemRepository;
-        this.userRepository = userRepository;
-    }
 
     @GetMapping("/recent")
     public List<ListenEvent> getRecentListens(

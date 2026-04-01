@@ -11,15 +11,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/proxy")
+@lombok.RequiredArgsConstructor
 public class ImageProxyController {
 
     private final ImageProxyService imageProxyService;
     private final ImageProxyUrlValidator imageProxyUrlValidator;
-
-    public ImageProxyController(ImageProxyService imageProxyService, ImageProxyUrlValidator imageProxyUrlValidator) {
-        this.imageProxyService = imageProxyService;
-        this.imageProxyUrlValidator = imageProxyUrlValidator;
-    }
 
     @GetMapping("/image")
     public ResponseEntity<byte[]> proxyImage(@RequestParam("url") String url) {

@@ -8,13 +8,10 @@ import java.security.Principal;
 
 @RestController
 @RequestMapping("/api/scan")
+@lombok.RequiredArgsConstructor
 public class ScanController {
 
     private final ScanService scanService;
-
-    public ScanController(ScanService scanService) {
-        this.scanService = scanService;
-    }
 
     @PostMapping
     public ResponseEntity<ScanDto.Result> scanBarcode(

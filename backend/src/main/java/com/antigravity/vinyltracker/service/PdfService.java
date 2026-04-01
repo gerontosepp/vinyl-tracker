@@ -11,14 +11,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class PdfService {
 
     private final QrCodeService qrCodeService;
-
-    public PdfService(QrCodeService qrCodeService) {
-        this.qrCodeService = qrCodeService;
-    }
 
     public byte[] generateQrCodePdf(List<DiscogsDto.QrCodeItem> items) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();

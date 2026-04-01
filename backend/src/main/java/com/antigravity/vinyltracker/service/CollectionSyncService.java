@@ -14,21 +14,16 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
 @lombok.extern.slf4j.Slf4j
+@RequiredArgsConstructor
 public class CollectionSyncService {
 
     private final DiscogsApiClient discogsApiClient;
     private final RecordRepository recordRepository;
     private final CollectionItemRepository collectionItemRepository;
-
-    public CollectionSyncService(DiscogsApiClient discogsApiClient,
-                                 RecordRepository recordRepository,
-                                 CollectionItemRepository collectionItemRepository) {
-        this.discogsApiClient = discogsApiClient;
-        this.recordRepository = recordRepository;
-        this.collectionItemRepository = collectionItemRepository;
-    }
 
     @Transactional
     public SyncResultDto syncCollection(AppUser user) {

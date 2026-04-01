@@ -14,21 +14,16 @@ import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class AppUserService {
 
     private final AppUserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final TokenEncryptionService tokenService;
     private final JwtService jwtService;
-
-    public AppUserService(AppUserRepository userRepository, PasswordEncoder passwordEncoder,
-            TokenEncryptionService tokenService, JwtService jwtService) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.tokenService = tokenService;
-        this.jwtService = jwtService;
-    }
 
     public Optional<UserResponseDto> register(RegisterRequestDto payload) {
         String username = payload.getUsername();

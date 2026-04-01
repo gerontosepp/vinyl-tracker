@@ -13,18 +13,15 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
 @lombok.extern.slf4j.Slf4j
+@RequiredArgsConstructor
 public class CollectionQueryService {
 
     private final ListenEventRepository listenEventRepository;
     private final CollectionItemRepository collectionItemRepository;
-
-    public CollectionQueryService(ListenEventRepository listenEventRepository,
-                                  CollectionItemRepository collectionItemRepository) {
-        this.listenEventRepository = listenEventRepository;
-        this.collectionItemRepository = collectionItemRepository;
-    }
 
     public DiscogsDto.CollectionResponse getCollection(AppUser user, int page, int perPage, String sort,
                                                        String sortOrder, Integer minPlays, String search) {

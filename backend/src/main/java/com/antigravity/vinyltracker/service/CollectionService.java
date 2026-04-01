@@ -8,22 +8,15 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.util.List;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class CollectionService {
     private final CollectionQueryService collectionQueryService;
     private final CollectionSyncService collectionSyncService;
     private final PdfService pdfService;
     private final AppUserRepository userRepository;
-
-    public CollectionService(CollectionQueryService collectionQueryService,
-                             CollectionSyncService collectionSyncService,
-                             PdfService pdfService,
-                             AppUserRepository userRepository) {
-        this.collectionQueryService = collectionQueryService;
-        this.collectionSyncService = collectionSyncService;
-        this.pdfService = pdfService;
-        this.userRepository = userRepository;
-    }
 
     public DiscogsDto.CollectionResponse getCollection(String username, int page, int per_page, String sort,
             String sort_order, Integer min_plays, String search) {

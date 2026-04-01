@@ -12,16 +12,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class AnalyticsService {
 
     private final ListenEventRepository listenEventRepository;
     private final AppUserRepository userRepository;
-
-    public AnalyticsService(ListenEventRepository listenEventRepository, AppUserRepository userRepository) {
-        this.listenEventRepository = listenEventRepository;
-        this.userRepository = userRepository;
-    }
 
     public List<ListenEvent> getRecentListens(String username, LocalDate from, LocalDate to) {
         AppUser user = userRepository.findByUsername(username)

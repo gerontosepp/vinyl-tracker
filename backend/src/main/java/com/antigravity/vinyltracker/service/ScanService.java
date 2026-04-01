@@ -11,21 +11,16 @@ import com.antigravity.vinyltracker.repository.RecordRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class ScanService {
 
     private final DiscogsApiClient discogsApiClient;
     private final RecordRepository recordRepository;
     private final ListenEventRepository listenEventRepository;
     private final AppUserRepository userRepository;
-
-    public ScanService(DiscogsApiClient discogsApiClient, RecordRepository recordRepository,
-            ListenEventRepository listenEventRepository, AppUserRepository userRepository) {
-        this.discogsApiClient = discogsApiClient;
-        this.recordRepository = recordRepository;
-        this.listenEventRepository = listenEventRepository;
-        this.userRepository = userRepository;
-    }
 
     @Transactional
     public ScanDto.Result processScan(String barcode, String username) {

@@ -43,6 +43,8 @@ The project follows a modern containerized micro-architecture:
 - **Collection Management**: Search, filter (e.g., "Played Only"), and sort your vinyl catalog. Force a manual sync with Discogs at any time.
 - **Data Management**: Reset your entire listening history with a single click from Settings (with confirmation dialog to prevent accidental deletions).
 - **Modern UI**: Fully responsive, mobile-first design with dark mode, glassmorphism, and smooth micro-animations.
+- **Resilient API**: Robust Discogs integration with **Resilience4j** rate-limiting (60 req/min) and automatic retries with exponential backoff.
+- **Performance Caching**: Optimized release metadata retrieval using **Caffeine** local caching.
 - **Observability**: Built-in comprehensive API request and error logging tracking latency across the frontend and backend Docker containers.
 
 ## Deployment & Running

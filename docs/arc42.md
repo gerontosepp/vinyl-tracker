@@ -33,6 +33,7 @@ The **Vinyl Tracker** is a personal web application designed for vinyl enthusias
     - **Backend**: Java 25+ (Spring Boot 4.0+).
     - **Frontend**: React (TypeScript, Vite).
     - **Database**: PostgreSQL 16.
+    - **Caching & Resilience**: Caffeine, Resilience4j.
     - **Migrations**: Flyway.
     - **Containerization**: Docker & Docker Compose.
 - **License**: MIT License (Open Source).
@@ -65,6 +66,8 @@ graph LR
 - **Micro-Architecture**: Separation of Frontend (SPA) and Backend (REST API) to allow independent scaling and technology evolution.
 - **Container-First**: The entire application is packaged as Docker containers to ensure consistent environments from development to production.
 - **External Integration**: Rely on Discogs for rich metadata instead of building a proprietary database.
+- **Resilience Strategy**: Use Resilience4j to strictly adhere to Discogs API rate limits (60 requests per minute) and handle transient network issues via smart retries.
+- **Caching Strategy**: Implement Caffeine-based local caching for frequently accessed, static metadata (e.g., release details) to reduce external API dependency and improve latency.
 - **Testing**: rigorous automated testing (Unit & Integration) enforced by CI pipelines.
 
 ## 5. Building Block View

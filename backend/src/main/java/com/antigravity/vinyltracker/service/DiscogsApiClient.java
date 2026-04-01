@@ -6,6 +6,13 @@ import com.antigravity.vinyltracker.model.discogs.DiscogsDto;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import org.springframework.cache.annotation.Cacheable;
+import io.github.resilience4j.ratelimiter.RateLimiter;
+import io.github.resilience4j.ratelimiter.RateLimiterRegistry;
+import io.github.resilience4j.retry.Retry;
+import io.github.resilience4j.retry.RetryRegistry;
+
+import java.util.function.Supplier;
 
 @Service
 @lombok.extern.slf4j.Slf4j
@@ -13,11 +20,23 @@ public class DiscogsApiClient {
 
     private final RestClient restClient;
     private final TokenEncryptionService tokenService;
+    private final RateLimiter discogsRateLimiter;
+    private final Retry discogsRetry;
     private static final String BASE_URL = "https://api.discogs.com";
 
-    public DiscogsApiClient(RestClient.Builder restClientBuilder, TokenEncryptionService tokenService) {
+    public DiscogsApiClient(RestClient.Builder restClientBuilder, 
+                            TokenEncryptionService tokenService,
+                            RateLimiterRegistry rateLimiterRegistry,
+                            RetryRegistry retryRegistry) {
         this.restClient = restClientBuilder.baseUrl(BASE_URL).build();
         this.tokenService = tokenService;
+        this.discogsRateLimiter = rateLimiterRegistry.rateLimiter("discogs");
+        this.discogsRetry = retryRegistry.retry("discogs");
+    }
+
+    private <T> T executeWithRateLimit(Supplier<T> supplier) {
+        return RateLimiter.decorateSupplier(discogsRateLimiter,
+                Retry.decorateSupplier(discogsRetry, supplier)).get();
     }
 
     private String getDecryptedToken(AppUser user) {
@@ -28,19 +47,20 @@ public class DiscogsApiClient {
         return token;
     }
 
+    @Cacheable(value = "discogsReleases", key = "#releaseId")
     public DiscogsDto.Release getRelease(Long releaseId, AppUser user) {
         log.info("Fetching release details for ID: {}", releaseId);
-        return restClient.get()
+        return executeWithRateLimit(() -> restClient.get()
                 .uri("/releases/{id}", releaseId)
                 .header(HttpHeaders.USER_AGENT, "VinylTrackerApp/1.0")
                 .header(HttpHeaders.AUTHORIZATION, "Discogs token=" + getDecryptedToken(user))
                 .retrieve()
-                .body(DiscogsDto.Release.class);
+                .body(DiscogsDto.Release.class));
     }
 
     public DiscogsDto.SearchResponse searchDatabaseByBarcode(String barcode, AppUser user) {
         log.info("Searching Discogs Database for barcode: {}", barcode);
-        return restClient.get()
+        return executeWithRateLimit(() -> restClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/database/search")
                         .queryParam("barcode", barcode)
@@ -49,7 +69,7 @@ public class DiscogsApiClient {
                 .header(HttpHeaders.USER_AGENT, "VinylTrackerApp/1.0")
                 .header(HttpHeaders.AUTHORIZATION, "Discogs token=" + getDecryptedToken(user))
                 .retrieve()
-                .body(DiscogsDto.SearchResponse.class);
+                .body(DiscogsDto.SearchResponse.class));
     }
 
     public boolean isReleaseInCollection(Long releaseId, AppUser user) {
@@ -57,12 +77,12 @@ public class DiscogsApiClient {
         if (token == null) return false;
 
         try {
-            restClient.get()
+            executeWithRateLimit(() -> restClient.get()
                     .uri("/users/{username}/collection/releases/{releaseId}", user.getDiscogsUsername(), releaseId)
                     .header(HttpHeaders.USER_AGENT, "VinylTrackerApp/1.0")
                     .header(HttpHeaders.AUTHORIZATION, "Discogs token=" + token)
                     .retrieve()
-                    .toBodilessEntity();
+                    .toBodilessEntity());
             return true;
         } catch (Exception e) {
             return false;
@@ -71,22 +91,22 @@ public class DiscogsApiClient {
 
     public DiscogsDto.ValueResponse getCollectionValue(AppUser user) {
         log.info("Fetching collection value for user: {}", user.getUsername());
-        return restClient.get()
+        return executeWithRateLimit(() -> restClient.get()
                 .uri("/users/{username}/collection/value", user.getDiscogsUsername())
                 .header(HttpHeaders.USER_AGENT, "VinylTrackerApp/1.0")
                 .header(HttpHeaders.AUTHORIZATION, "Discogs token=" + getDecryptedToken(user))
                 .retrieve()
-                .body(DiscogsDto.ValueResponse.class);
+                .body(DiscogsDto.ValueResponse.class));
     }
 
     public DiscogsDto.CollectionResponse getCollectionReleases(AppUser user, int page, int perPage) {
         log.info("Fetching Discogs page {} for user {}", page, user.getUsername());
-        return restClient.get()
+        return executeWithRateLimit(() -> restClient.get()
                 .uri("/users/{username}/collection/folders/0/releases?page={page}&per_page={perPage}&sort={sort}&sort_order={sortOrder}",
                         user.getDiscogsUsername(), page, perPage, "artist", "asc")
                 .header(HttpHeaders.USER_AGENT, "VinylTrackerApp/1.0")
                 .header(HttpHeaders.AUTHORIZATION, "Discogs token=" + getDecryptedToken(user))
                 .retrieve()
-                .body(DiscogsDto.CollectionResponse.class);
+                .body(DiscogsDto.CollectionResponse.class));
     }
 }

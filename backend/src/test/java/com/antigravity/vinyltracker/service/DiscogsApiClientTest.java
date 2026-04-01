@@ -11,6 +11,9 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 
+import io.github.resilience4j.ratelimiter.RateLimiterRegistry;
+import io.github.resilience4j.retry.RetryRegistry;
+import io.github.resilience4j.retry.RetryConfig;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -34,8 +37,10 @@ class DiscogsApiClientTest {
         org.mockito.Mockito.when(tokenService.decrypt(org.mockito.ArgumentMatchers.anyString()))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        discogsApiClient = new DiscogsApiClient(builder, tokenService);
-
+        RateLimiterRegistry rateLimiterRegistry = RateLimiterRegistry.ofDefaults();
+        RetryConfig retryConfig = RetryConfig.custom().maxAttempts(1).build();
+        RetryRegistry retryRegistry = RetryRegistry.of(retryConfig);
+        discogsApiClient = new DiscogsApiClient(builder, tokenService, rateLimiterRegistry, retryRegistry);
         user = new AppUser();
         user.setUsername("testuser");
         user.setDiscogsUsername("testdiscogs");

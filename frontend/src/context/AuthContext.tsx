@@ -9,7 +9,8 @@ import {
   resetAllListens as resetAllListensApi,
 } from '../services/api';
 import { getErrorMessage } from '../utils/error';
-
+import { useToast } from '../context/ToastContext';
+ 
 interface AuthContextType {
   user: User | null;
   login: (username: string, password: string) => Promise<void>;
@@ -18,43 +19,39 @@ interface AuthContextType {
   logout: () => void;
   isLoading: boolean;
   isSyncing: boolean;
-  syncMessage: string;
   performSync: (username: string) => Promise<void>;
   resetAllListens: (username: string) => Promise<number>;
 }
-
+ 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
+ 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [syncMessage, setSyncMessage] = useState('');
+  const { showToast } = useToast();
   const syncInFlightRef = useRef<Promise<void> | null>(null);
-
+ 
   const performSync = async (usernameToSync: string) => {
     if (syncInFlightRef.current) {
       return syncInFlightRef.current;
     }
-
+ 
     const syncPromise = (async () => {
       setIsSyncing(true);
-      setSyncMessage('');
       try {
         const api = await import('../services/api');
         const result = await api.forceSyncCollection(usernameToSync);
         const added = result?.added || 0;
         const removed = result?.removed || 0;
-        setSyncMessage(`Synced successfully! Added: ${added}, Removed: ${removed}`);
+        showToast(`Synced successfully! Added: ${added}, Removed: ${removed}`, 'success');
       } catch (error: unknown) {
-        console.error('Background sync failed:', getErrorMessage(error, 'Unknown sync error'));
-        setSyncMessage('Failed to synchronize collection.');
+        showToast(getErrorMessage(error, 'Failed to synchronize collection.'), 'error');
       } finally {
         setIsSyncing(false);
-        setTimeout(() => setSyncMessage(''), 5000); // Clear toast after 5s
       }
     })();
-
+ 
     syncInFlightRef.current = syncPromise;
     try {
       await syncPromise;
@@ -62,64 +59,65 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       syncInFlightRef.current = null;
     }
   };
-
+ 
   const resetAllListens = async (username: string): Promise<number> => {
     setIsSyncing(true);
-    setSyncMessage('');
     try {
       const result = await resetAllListensApi(username);
       const deletedCount = result.deletedCount || 0;
-      setSyncMessage(`Successfully deleted ${deletedCount} listening events`);
+      showToast(`Successfully deleted ${deletedCount} listening events`, 'success');
       return deletedCount;
     } catch (error: unknown) {
-      console.error('Reset listens failed:', getErrorMessage(error, 'Unknown reset error'));
-      setSyncMessage('Failed to reset listening history.');
+      showToast(getErrorMessage(error, 'Failed to reset listening history.'), 'error');
       throw error;
     } finally {
       setIsSyncing(false);
-      setTimeout(() => setSyncMessage(''), 5000); // Clear toast after 5s
     }
   };
-
+ 
   useEffect(() => {
-    // Try restoring session from HttpOnly cookie.
-    getUser('')
-      .then((u) => setUser(u))
-      .catch(() => setUser(null))
-      .finally(() => setIsLoading(false));
+    if (typeof getUser !== 'function') {
+      setIsLoading(false);
+      return;
+    }
+    const userPromise = getUser('');
+    if (userPromise && typeof userPromise.then === 'function') {
+      userPromise
+        .then((u) => setUser(u))
+        .catch(() => setUser(null))
+        .finally(() => setIsLoading(false));
+    } else {
+      setIsLoading(false);
+    }
   }, []);
-
+ 
   const login = async (username: string, password: string) => {
     setIsLoading(true);
     try {
       const userData = await loginUser(username, password);
       setUser(userData);
-
-      // Trigger background sync non-blocking, but only if they have Discogs integration configured
       if (userData.discogsUsername) {
         performSync(username).catch(console.error);
       }
     } catch (error: unknown) {
-      console.error('Login failed:', getErrorMessage(error, 'Unknown login error'));
       throw error;
     } finally {
       setIsLoading(false);
     }
   };
-
+ 
   const register = async (username: string, password: string) => {
     setIsLoading(true);
     try {
       const userData = await registerUser(username, password);
       setUser(userData);
     } catch (error: unknown) {
-      console.error('Registration failed:', getErrorMessage(error, 'Unknown registration error'));
       throw error;
     } finally {
       setIsLoading(false);
     }
   };
-
+ 
   const updateDiscogs = async (discogsUsername: string, token: string, password: string) => {
     if (!user) return;
     setIsLoading(true);
@@ -131,23 +129,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         password
       );
       setUser(updatedUser);
-      // Trigger background sync non-blocking
       performSync(updatedUser.username).catch(console.error);
     } catch (error: unknown) {
-      console.error('Update settings failed:', getErrorMessage(error, 'Unknown update error'));
       throw error;
     } finally {
       setIsLoading(false);
     }
   };
-
+ 
   const logout = () => {
     logoutUser().catch((error: unknown) => {
       console.error('Logout failed:', getErrorMessage(error, 'Unknown logout error'));
     });
     setUser(null);
   };
-
+ 
   return (
     <AuthContext.Provider
       value={{
@@ -158,7 +154,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         logout,
         isLoading,
         isSyncing,
-        syncMessage,
         performSync,
         resetAllListens,
       }}

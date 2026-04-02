@@ -2,7 +2,9 @@ import React, { useEffect, useState, useCallback } from 'react';
 import Layout from '../components/Layout/Layout';
 import StatisticWidget from '../components/Dashboard/StatisticWidget';
 import { useAuth } from '../context/useAuth';
+import { useToast } from '../context/ToastContext';
 import { getCollectionValue, getGenreBreakdown } from '../services/api';
+import { getErrorMessage } from '../utils/error';
 import type { CollectionValueResponse, GenreBreakdownItem } from '../types';
 import {
   AreaChart,
@@ -16,7 +18,7 @@ import {
   Pie,
   Cell,
 } from 'recharts';
-
+ 
 const GENRE_COLORS = ['#3b82f6', '#f43f5e', '#10b981', '#8b5cf6', '#f59e0b', '#64748b'];
 const VALUE_HISTORY_STORAGE_PREFIX = 'dashboard_collection_value_history_v1';
 const MAX_VALUE_HISTORY_POINTS = 60;
@@ -29,7 +31,7 @@ const MOCK_LISTENING_DATA = [
   { day: 'Sat', hrs: 8 },
   { day: 'Sun', hrs: 7 },
 ];
-
+ 
 type CollectionValueTrendPoint = {
   timestamp: string;
   label: string;
@@ -38,7 +40,7 @@ type CollectionValueTrendPoint = {
   maximum: number;
   currency: string;
 };
-
+ 
 const isCanceledRequest = (error: unknown): boolean => {
   return (
     (error instanceof DOMException && error.name === 'AbortError') ||
@@ -48,9 +50,10 @@ const isCanceledRequest = (error: unknown): boolean => {
       (error as { code?: string }).code === 'ERR_CANCELED')
   );
 };
-
+ 
 const Statistics: React.FC = () => {
   const { user } = useAuth();
+  const { showToast } = useToast();
   
   const [collectionValue, setCollectionValue] = useState<CollectionValueResponse | null>(null);
   const [genreData, setGenreData] = useState<GenreBreakdownItem[]>([]);
@@ -59,23 +62,23 @@ const Statistics: React.FC = () => {
   const [collectionValueError, setCollectionValueError] = useState('');
   const [genreError, setGenreError] = useState('');
   const [collectionValueHistory, setCollectionValueHistory] = useState<CollectionValueTrendPoint[]>([]);
-
+ 
   const getValueHistoryStorageKey = (username: string) => {
     return `${VALUE_HISTORY_STORAGE_PREFIX}_${username}`;
   };
-
+ 
   const formatTrendLabel = (date: Date) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
-
+ 
   const appendCollectionValueHistory = useCallback(
     (value: CollectionValueResponse) => {
       if (!user) return;
-
+ 
       const minValue = value.minimum?.value;
       const medianValue = value.median?.value;
       const maxValue = value.maximum?.value;
-
+ 
       if (
         typeof minValue !== 'number' ||
         typeof medianValue !== 'number' ||
@@ -83,8 +86,8 @@ const Statistics: React.FC = () => {
       ) {
         return;
       }
-
-      const now = new Date();
+ 
+      const now = new Date(); // Local time
       const nextPoint: CollectionValueTrendPoint = {
         timestamp: now.toISOString(),
         label: formatTrendLabel(now),
@@ -94,7 +97,7 @@ const Statistics: React.FC = () => {
         currency:
           value.median?.currency || value.minimum?.currency || value.maximum?.currency || '$',
       };
-
+ 
       setCollectionValueHistory((previous) => {
         const last = previous[previous.length - 1];
         const isDuplicateLastPoint =
@@ -102,43 +105,43 @@ const Statistics: React.FC = () => {
           last.minimum === nextPoint.minimum &&
           last.median === nextPoint.median &&
           last.maximum === nextPoint.maximum;
-
+ 
         const updated = isDuplicateLastPoint
           ? previous
           : [...previous, nextPoint].slice(-MAX_VALUE_HISTORY_POINTS);
-
+ 
         if (typeof window !== 'undefined') {
           window.localStorage.setItem(
             getValueHistoryStorageKey(user.username),
             JSON.stringify(updated)
           );
         }
-
+ 
         return updated;
       });
     },
     [user]
   );
-
+ 
   useEffect(() => {
     if (!user || typeof window === 'undefined') {
       setCollectionValueHistory([]);
       return;
     }
-
+ 
     try {
       const raw = window.localStorage.getItem(getValueHistoryStorageKey(user.username));
       if (!raw) {
         setCollectionValueHistory([]);
         return;
       }
-
+ 
       const parsed = JSON.parse(raw) as CollectionValueTrendPoint[];
       if (!Array.isArray(parsed)) {
         setCollectionValueHistory([]);
         return;
       }
-
+ 
       setCollectionValueHistory(
         parsed
           .filter(
@@ -154,39 +157,43 @@ const Statistics: React.FC = () => {
       setCollectionValueHistory([]);
     }
   }, [user]);
-
+ 
   useEffect(() => {
     const controller = new AbortController();
-
+ 
     const loadData = async () => {
       if (!user) return;
       setIsCollectionValueLoading(true);
       setIsGenreLoading(true);
       setCollectionValueError('');
       setGenreError('');
-
+ 
       try {
         const val = await getCollectionValue({ signal: controller.signal });
         setCollectionValue(val);
         appendCollectionValueHistory(val);
       } catch (error: unknown) {
         if (!isCanceledRequest(error)) {
+          const message = getErrorMessage(error, 'Collection value currently unavailable.');
           setCollectionValue(null);
-          setCollectionValueError('Collection value currently unavailable.');
+          setCollectionValueError(message);
+          showToast(message, 'error');
         }
       } finally {
         if (!controller.signal.aborted) {
           setIsCollectionValueLoading(false);
         }
       }
-
+ 
       try {
         const genres = await getGenreBreakdown({ signal: controller.signal });
         setGenreData(genres);
       } catch (error: unknown) {
         if (!isCanceledRequest(error)) {
+          const message = getErrorMessage(error, 'Genre breakdown currently unavailable.');
           setGenreData([]);
-          setGenreError('Genre breakdown currently unavailable.');
+          setGenreError(message);
+          showToast(message, 'error');
         }
       } finally {
         if (!controller.signal.aborted) {
@@ -194,16 +201,16 @@ const Statistics: React.FC = () => {
         }
       }
     };
-
+ 
     if (user) {
       loadData();
     }
-
+ 
     return () => {
       controller.abort();
     };
-  }, [user, appendCollectionValueHistory]);
-
+  }, [user, appendCollectionValueHistory, showToast]);
+ 
   return (
     <Layout>
       <div className="flex flex-col space-y-6 md:h-[calc(100vh-5rem)]">
@@ -217,7 +224,7 @@ const Statistics: React.FC = () => {
             </p>
           </div>
         </div>
-
+ 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-6">
           
           <StatisticWidget 
@@ -242,7 +249,7 @@ const Statistics: React.FC = () => {
                     ) : (
                       'N/A'
                     )}
-
+ 
                     {collectionValue.minimum && collectionValue.maximum && (
                       <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
                         Min: {collectionValue.minimum.value.toLocaleString()} / Max:{' '}
@@ -320,6 +327,8 @@ const Statistics: React.FC = () => {
                       borderColor: '#334155',
                       borderRadius: '8px',
                       color: '#f8fafc',
+                      outline: 'none',
+                      border: 'none',
                     }}
                     itemStyle={{ color: '#cbd5e1', fontWeight: 'bold' }}
                     labelFormatter={(_, payload) => {
@@ -365,7 +374,7 @@ const Statistics: React.FC = () => {
               </ResponsiveContainer>
             </div>
           </StatisticWidget>
-
+ 
           <StatisticWidget 
             title="Genre Breakdown" 
             loading={isGenreLoading}
@@ -397,6 +406,7 @@ const Statistics: React.FC = () => {
                       borderRadius: '8px',
                       color: '#f8fafc',
                       border: 'none',
+                      outline: 'none',
                     }}
                     itemStyle={{ fontWeight: 'bold' }}
                   />
@@ -425,7 +435,7 @@ const Statistics: React.FC = () => {
               ))}
             </div>
           </StatisticWidget>
-
+ 
           <StatisticWidget title="Listening Habits" subtitle="Weekly Listening (hrs)" className="lg:col-span-3">
             <div className="h-40 w-full">
               <ResponsiveContainer width="100%" height="100%">
@@ -450,6 +460,7 @@ const Statistics: React.FC = () => {
                       borderRadius: '8px',
                       color: '#f8fafc',
                       border: 'none',
+                      outline: 'none',
                     }}
                     itemStyle={{ color: '#fbbf24', fontWeight: 'bold' }}
                   />
@@ -465,12 +476,11 @@ const Statistics: React.FC = () => {
               </ResponsiveContainer>
             </div>
           </StatisticWidget>
-
+ 
         </div>
       </div>
     </Layout>
   );
 };
-
+ 
 export default Statistics;
-

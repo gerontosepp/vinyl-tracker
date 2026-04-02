@@ -8,7 +8,8 @@ import TopRecords from '../components/Dashboard/TopRecords';
 import RecentListens from '../components/Dashboard/RecentListens';
 import { useLocation } from 'react-router-dom';
 import { getErrorMessage } from '../utils/error';
-
+import { useToast } from '../context/ToastContext';
+ 
 const isCanceledRequest = (error: unknown): boolean => {
   return (
     (error instanceof DOMException && error.name === 'AbortError') ||
@@ -18,17 +19,18 @@ const isCanceledRequest = (error: unknown): boolean => {
       (error as { code?: string }).code === 'ERR_CANCELED')
   );
 };
-
+ 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
+  const { showToast } = useToast();
   const [recentListens, setRecentListens] = useState<ListenEvent[]>([]);
   const [topRecords, setTopRecords] = useState<AnalyticsTopRecord[]>([]);
-
+ 
   const location = useLocation();
   const [showScanner, setShowScanner] = useState<boolean>(() => {
     return !!(location.state && (location.state as { scan?: boolean }).scan);
   });
-
+ 
   // Helper to get local date string YYYY-MM-DD
   const getTodayString = () => {
     const d = new Date();
@@ -37,19 +39,17 @@ const Dashboard: React.FC = () => {
     const day = String(d.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   };
-
+ 
   // Date filter state - default to today (local time)
   const [startDate, setStartDate] = useState<string>(getTodayString());
   const [endDate, setEndDate] = useState<string>(getTodayString());
-
+ 
   useEffect(() => {
     if (location.state && (location.state as { scan?: boolean }).scan) {
-      // Clear state so refresh doesn't re-open, but tricky with React Router
-      // Better: window.history.replaceState({}, document.title)
       window.history.replaceState({}, document.title);
     }
   }, [location]);
-
+ 
   const handleDelete = useCallback(
     async (id: number) => {
       if (!user || !window.confirm('Delete this scan?')) return;
@@ -59,21 +59,21 @@ const Dashboard: React.FC = () => {
         // Refresh top records as well
         const tops = await getTopRecords(user.username, startDate, endDate);
         setTopRecords(tops);
+        showToast('Scan deleted successfully', 'success');
       } catch (error: unknown) {
         const message = getErrorMessage(error, 'Failed to delete scan');
-        console.error('Failed to delete scan:', message);
-        alert(message);
+        showToast(message, 'error');
       }
     },
-    [user, startDate, endDate]
+    [user, startDate, endDate, showToast]
   );
-
+ 
   useEffect(() => {
     const controller = new AbortController();
-
+ 
     const loadData = async () => {
       if (!user) return;
-
+ 
       try {
         const [recents, tops] = await Promise.all([
           getRecentListens(user.username, startDate, endDate, {
@@ -87,23 +87,20 @@ const Dashboard: React.FC = () => {
         setTopRecords(tops);
       } catch (error: unknown) {
         if (!isCanceledRequest(error)) {
-          console.error(
-            'Failed to load dashboard lists:',
-            getErrorMessage(error, 'Unknown dashboard error')
-          );
+          showToast(getErrorMessage(error, 'Failed to load dashboard data'), 'error');
         }
       }
     };
-
+ 
     if (user) {
       loadData();
     }
-
+ 
     return () => {
       controller.abort();
     };
-  }, [user, showScanner, startDate, endDate]);
-
+  }, [user, showScanner, startDate, endDate, showToast]);
+ 
   const dateFilterControls = (
     <div className="flex gap-2 items-center bg-white dark:bg-slate-800 p-1.5 rounded-xl shadow-sm border border-slate-200/50 dark:border-slate-600 w-full md:w-auto max-w-full overflow-x-auto transition-colors">
       <button
@@ -151,7 +148,7 @@ const Dashboard: React.FC = () => {
       />
     </div>
   );
-
+ 
   return (
     <Layout onScanClick={() => setShowScanner(true)}>
       {showScanner ? (
@@ -173,7 +170,7 @@ const Dashboard: React.FC = () => {
             className="flex-none md:flex-1 min-h-0"
             headerActions={dateFilterControls}
           />
-
+ 
           <RecentListens
             listens={recentListens}
             onDelete={handleDelete}
@@ -184,5 +181,5 @@ const Dashboard: React.FC = () => {
     </Layout>
   );
 };
-
+ 
 export default Dashboard;

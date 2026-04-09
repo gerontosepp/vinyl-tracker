@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 
 const Register: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -28,25 +28,39 @@ const Register: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
-      <div className="bg-white p-6 rounded shadow-md w-full max-w-sm">
-        <div className="flex items-center justify-center gap-2 mb-4">
-          <h1 className="text-2xl font-bold text-center">Vinyl Tracker</h1>
-          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-            v{__APP_VERSION__}
-          </span>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 p-4 transition-colors">
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md w-full max-w-sm transition-colors">
+        <div className="flex flex-col items-center justify-center gap-3 mb-6">
+          <img
+            src="/logo.png"
+            alt="Vinyl Tracker Logo"
+            className="w-20 h-20 rounded-full shadow-lg"
+          />
+          <div className="flex items-center justify-center gap-2">
+            <h1 className="text-2xl font-bold text-center text-gray-900 dark:text-gray-100">
+              Vinyl Tracker
+            </h1>
+            <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">
+              v{__APP_VERSION__}
+            </span>
+          </div>
         </div>
-        <h2 className="text-xl font-semibold mb-4 text-center text-gray-700">Register</h2>
+        <h2 className="text-xl font-semibold mb-4 text-center text-gray-700 dark:text-gray-300">
+          Register
+        </h2>
 
         {error && (
-          <div className="bg-red-100 text-red-700 p-2 mb-4 rounded text-sm text-center">
+          <div className="bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 p-2 mb-4 rounded text-sm text-center">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+            <label
+              htmlFor="username"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+            >
               Username
             </label>
             <input
@@ -54,12 +68,15 @@ const Register: React.FC = () => {
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="mt-1 block w-full border border-gray-300 rounded p-2"
+              className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               required
             />
           </div>
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+            >
               Password
             </label>
             <input
@@ -67,12 +84,15 @@ const Register: React.FC = () => {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full border border-gray-300 rounded p-2"
+              className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               required
             />
           </div>
           <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+            <label
+              htmlFor="confirmPassword"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+            >
               Confirm Password
             </label>
             <input
@@ -80,7 +100,7 @@ const Register: React.FC = () => {
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="mt-1 block w-full border border-gray-300 rounded p-2"
+              className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               required
             />
           </div>
@@ -92,9 +112,9 @@ const Register: React.FC = () => {
             {isLoading ? 'Registering...' : 'Register'}
           </button>
         </form>
-        <div className="mt-4 text-center text-sm">
+        <div className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
           Already have an account?{' '}
-          <Link to="/login" className="text-blue-600 hover:underline">
+          <Link to="/login" className="text-blue-600 dark:text-blue-400 hover:underline">
             Login here
           </Link>
         </div>

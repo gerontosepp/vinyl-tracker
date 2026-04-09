@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
-import { useAuth } from '../context/AuthContext';
-import { scanBarcode } from '../services/api';
+import { useAuth } from '../context/useAuth';
+import { scanBarcode, getProxiedImageUrl } from '../services/api';
 import type { ScanResult } from '../types';
 
 const BarcodeScanner: React.FC = () => {
@@ -82,9 +82,17 @@ const BarcodeScanner: React.FC = () => {
               try {
                 const apiResult = await scanBarcode(result, user.username);
                 setScanResult(apiResult);
-              } catch (e: any) {
-                const msg = e.response?.data?.message || 'Network error or backend failure';
-                setScanResult({ success: false, message: msg });
+              } catch (error: unknown) {
+                const msg =
+                  typeof error === 'object' &&
+                  error !== null &&
+                  'response' in error &&
+                  typeof (error as { response?: { data?: { message?: string } } }).response?.data
+                    ?.message === 'string'
+                    ? (error as { response?: { data?: { message?: string } } }).response?.data
+                        ?.message
+                    : 'Network error or backend failure';
+                setScanResult({ success: false, message: msg || 'Scan failed' });
               }
             }
           },
@@ -117,26 +125,35 @@ const BarcodeScanner: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col items-center p-4">
-      <h2 className="text-xl font-bold mb-4">Scan Vinyl Barcode</h2>
+    <div className="flex flex-col items-center p-4 h-full">
+      <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">
+        Scan Vinyl Barcode
+      </h2>
 
-      {isScanning && <div id="reader" className="w-full max-w-md"></div>}
+      {isScanning && (
+        <div
+          id="reader"
+          className="w-full max-w-md bg-white dark:bg-gray-800 rounded-xl overflow-hidden [&_*]:dark:text-gray-200"
+        ></div>
+      )}
 
       {scanResult && (
         <div
-          className={`mt-4 p-4 rounded ${scanResult.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
+          className={`mt-4 p-4 rounded-xl shadow-sm w-full max-w-md border ${scanResult.success ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300 border-green-200 dark:border-green-900/50' : 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300 border-red-200 dark:border-red-900/50'}`}
         >
           <h3 className="font-bold">{scanResult.success ? 'Success!' : 'Error'}</h3>
           <p>{scanResult.message}</p>
           {scanResult.record && (
-            <div className="mt-2 text-center">
+            <div className="mt-4 text-center">
               <img
-                src={scanResult.record.thumbUrl}
+                src={getProxiedImageUrl(scanResult.record.thumbUrl)}
                 alt="Cover"
-                className="w-32 h-32 mx-auto rounded shadow"
+                className="w-32 h-32 mx-auto rounded-lg shadow-md object-cover"
               />
-              <p className="font-semibold mt-2">{scanResult.record.title}</p>
-              <p className="text-sm">{scanResult.record.artist}</p>
+              <p className="font-semibold text-gray-900 dark:text-gray-100 mt-3">
+                {scanResult.record.title}
+              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{scanResult.record.artist}</p>
             </div>
           )}
           <button

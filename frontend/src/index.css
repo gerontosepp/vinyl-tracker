@@ -1,12 +1,128 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
 
-/* Custom styles below */
-body {
-  background-color: #f3f4f6;
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
-  padding-left: env(safe-area-inset-left);
-  padding-right: env(safe-area-inset-right);
+@theme {
+  --color-brand-500: var(--color-sky-500);
+  --color-brand-600: var(--color-sky-600);
+
+  --font-sans:
+    'Outfit', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    'Segoe UI Symbol', 'Noto Color Emoji';
+
+  /* Overwrite gray with slate */
+  --color-gray-50: var(--color-slate-50);
+  --color-gray-100: var(--color-slate-100);
+  --color-gray-200: var(--color-slate-200);
+  --color-gray-300: var(--color-slate-300);
+  --color-gray-400: var(--color-slate-400);
+  --color-gray-500: var(--color-slate-500);
+  --color-gray-600: var(--color-slate-600);
+  --color-gray-700: var(--color-slate-700);
+  --color-gray-800: var(--color-slate-800);
+  --color-gray-900: var(--color-slate-900);
+  --color-gray-950: var(--color-slate-950);
+
+  /* Replace indigo with sky to match the new cyan-blue logo */
+  --color-indigo-50: var(--color-sky-50);
+  --color-indigo-100: var(--color-sky-100);
+  --color-indigo-200: var(--color-sky-200);
+  --color-indigo-300: var(--color-sky-300);
+  --color-indigo-400: var(--color-sky-400);
+  --color-indigo-500: var(--color-sky-500);
+  --color-indigo-600: var(--color-sky-600);
+  --color-indigo-700: var(--color-sky-700);
+  --color-indigo-800: var(--color-sky-800);
+  --color-indigo-900: var(--color-sky-900);
+  --color-indigo-950: var(--color-sky-950);
+}
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  body {
+    background-color: var(--color-slate-50);
+    color: var(--color-slate-900);
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  .dark body {
+    background-color: var(--color-slate-900);
+    color: var(--color-slate-50);
+  }
+}
+
+/* Custom Utilities */
+@layer utilities {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-in-out forwards;
+  }
+
+  .stagger-1 {
+    animation-delay: 50ms;
+  }
+
+  .stagger-2 {
+    animation-delay: 100ms;
+  }
+
+  .stagger-3 {
+    animation-delay: 150ms;
+  }
+
+  .stagger-4 {
+    animation-delay: 200ms;
+  }
+
+  .stagger-5 {
+    animation-delay: 250ms;
+  }
+ 
+  .animate-slide-in-right {
+    animation: slideInRight 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+}
+ 
+@keyframes slideInRight {
+  0% {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+ 
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+ 
+@keyframes slideUp {
+
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
 }

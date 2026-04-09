@@ -23,10 +23,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("null")
 class ScanServiceTest {
 
     @Mock
-    private DiscogsService discogsService;
+    private DiscogsApiClient discogsApiClient;
 
     @Mock
     private RecordRepository recordRepository;
@@ -68,7 +69,14 @@ class ScanServiceTest {
         mockRelease.setYear(2022);
         mockRelease.setThumbUrl("http://thumb.url");
 
-        when(discogsService.searchCollectionByBarcode(barcode, user)).thenReturn(mockRelease);
+        DiscogsDto.SearchResult mockSearchResult = new DiscogsDto.SearchResult();
+        mockSearchResult.setId(releaseId);
+        DiscogsDto.SearchResponse mockSearchResponse = new DiscogsDto.SearchResponse();
+        mockSearchResponse.setResults(java.util.List.of(mockSearchResult));
+
+        when(discogsApiClient.searchDatabaseByBarcode(barcode, user)).thenReturn(mockSearchResponse);
+        when(discogsApiClient.isReleaseInCollection(releaseId, user)).thenReturn(true);
+        when(discogsApiClient.getRelease(releaseId, user)).thenReturn(mockRelease);
 
         // Mock Record Repository to return existing or save new
         when(recordRepository.findByDiscogsId(releaseId)).thenReturn(Optional.empty());
@@ -90,7 +98,7 @@ class ScanServiceTest {
         String username = "testuser";
 
         when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
-        when(discogsService.searchCollectionByBarcode(barcode, user)).thenReturn(null);
+        when(discogsApiClient.searchDatabaseByBarcode(barcode, user)).thenReturn(null);
 
         ScanDto.Result result = scanService.processScan(barcode, username);
 
@@ -112,7 +120,7 @@ class ScanServiceTest {
         mockRelease.setTitle("Custom Code Release");
         mockRelease.setYear(2020);
 
-        when(discogsService.getRelease(releaseId, user)).thenReturn(mockRelease);
+        when(discogsApiClient.getRelease(releaseId, user)).thenReturn(mockRelease);
         when(recordRepository.findByDiscogsId(releaseId)).thenReturn(Optional.empty());
         when(recordRepository.save(any(Record.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -120,5 +128,95 @@ class ScanServiceTest {
 
         assertTrue(result.isSuccess());
         assertEquals("Now playing: Custom Code Release", result.getMessage());
+    }
+
+    @Test
+    void processScan_ShouldReturnFailure_WhenCustomCodeIsInvalid() {
+        String username = "testuser";
+
+        when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
+
+        ScanDto.Result result = scanService.processScan("discogs-id:not-a-number", username);
+
+        assertFalse(result.isSuccess());
+        assertEquals("Invalid custom barcode format", result.getMessage());
+        verifyNoInteractions(discogsApiClient);
+        verify(recordRepository, never()).save(any(Record.class));
+        verify(listenEventRepository, never()).save(any(ListenEvent.class));
+    }
+
+    @Test
+    void processScan_ShouldThrow_WhenUserDoesNotExist() {
+        when(userRepository.findByUsername("missing-user")).thenReturn(Optional.empty());
+
+        RuntimeException exception = assertThrows(RuntimeException.class,
+                () -> scanService.processScan("123456789", "missing-user"));
+
+        assertEquals("User not found: missing-user", exception.getMessage());
+        verifyNoInteractions(discogsApiClient, recordRepository, listenEventRepository);
+    }
+
+    @Test
+    void deleteScan_ShouldDeleteEvent_WhenOwnedByCurrentUser() {
+        ListenEvent event = new ListenEvent();
+        event.setId(10L);
+        event.setUser(user);
+
+        when(listenEventRepository.findById(10L)).thenReturn(Optional.of(event));
+
+        scanService.deleteScan(10L, "testuser");
+
+        verify(listenEventRepository).delete(event);
+    }
+
+    @Test
+    void deleteScan_ShouldThrow_WhenScanDoesNotExist() {
+        when(listenEventRepository.findById(77L)).thenReturn(Optional.empty());
+
+        RuntimeException exception = assertThrows(RuntimeException.class,
+                () -> scanService.deleteScan(77L, "testuser"));
+
+        assertEquals("Scan not found", exception.getMessage());
+        verify(listenEventRepository, never()).delete(any(ListenEvent.class));
+    }
+
+    @Test
+    void deleteScan_ShouldThrow_WhenScanBelongsToAnotherUser() {
+        AppUser otherUser = new AppUser();
+        otherUser.setUsername("someone-else");
+
+        ListenEvent event = new ListenEvent();
+        event.setId(11L);
+        event.setUser(otherUser);
+
+        when(listenEventRepository.findById(11L)).thenReturn(Optional.of(event));
+
+        RuntimeException exception = assertThrows(RuntimeException.class,
+                () -> scanService.deleteScan(11L, "testuser"));
+
+        assertEquals("Unauthorized to delete this scan", exception.getMessage());
+        verify(listenEventRepository, never()).delete(any(ListenEvent.class));
+    }
+
+    @Test
+    void resetAllListens_ShouldDeleteAllListens_ForCurrentUser() {
+        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(user));
+        when(listenEventRepository.deleteAllByUser(user)).thenReturn(5L);
+
+        long result = scanService.resetAllListens("testuser");
+
+        assertEquals(5L, result);
+        verify(listenEventRepository).deleteAllByUser(user);
+    }
+
+    @Test
+    void resetAllListens_ShouldThrow_WhenUserDoesNotExist() {
+        when(userRepository.findByUsername("missing-user")).thenReturn(Optional.empty());
+
+        RuntimeException exception = assertThrows(RuntimeException.class,
+                () -> scanService.resetAllListens("missing-user"));
+
+        assertEquals("User not found: missing-user", exception.getMessage());
+        verify(listenEventRepository, never()).deleteAllByUser(any(AppUser.class));
     }
 }

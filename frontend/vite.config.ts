@@ -1,6 +1,7 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import fs from 'fs';
 
@@ -8,6 +9,7 @@ import fs from 'fs';
 export default defineConfig({
   plugins: [
     react(),
+    tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['vite.svg'],
@@ -60,9 +62,9 @@ export default defineConfig({
     https:
       fs.existsSync('./certs/key.pem') && fs.existsSync('./certs/cert.pem')
         ? {
-          key: fs.readFileSync('./certs/key.pem'),
-          cert: fs.readFileSync('./certs/cert.pem'),
-        }
+            key: fs.readFileSync('./certs/key.pem'),
+            cert: fs.readFileSync('./certs/cert.pem'),
+          }
         : undefined,
     proxy: {
       '/api': {
@@ -70,20 +72,26 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
         configure: (proxy) => {
+          const requestStartTimes = new WeakMap<object, number>();
+
           proxy.on('error', (err, req) => {
             console.error(`[API Error] ${req.method} ${req.url} - Error: ${err.message}`);
           });
           proxy.on('proxyReq', (_proxyReq, req) => {
-            (req as any).startTime = Date.now();
+            requestStartTimes.set(req, Date.now());
           });
           proxy.on('proxyRes', (proxyRes, req) => {
-            const start = (req as any).startTime;
+            const start = requestStartTimes.get(req);
             const duration = start ? Date.now() - start : 0;
             const status = proxyRes.statusCode;
             if (status && status >= 400) {
-              console.error(`[API Error] ${req.method} ${req.url} - Status: ${status} - Time: ${duration}ms - Error: HTTP Error ${status}`);
+              console.error(
+                `[API Error] ${req.method} ${req.url} - Status: ${status} - Time: ${duration}ms - Error: HTTP Error ${status}`
+              );
             } else {
-              console.info(`[API Info] ${req.method} ${req.url} - Status: ${status} - Time: ${duration}ms`);
+              console.info(
+                `[API Info] ${req.method} ${req.url} - Status: ${status} - Time: ${duration}ms`
+              );
             }
           });
         },

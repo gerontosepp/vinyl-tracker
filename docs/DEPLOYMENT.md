@@ -13,13 +13,21 @@ Die Zielmaschine benötigt:
 Die Zielmaschine benötigt Zugriff auf die Docker Images. Sie haben zwei Möglichkeiten:
 
 ### Option A: Automatisiert via CI/CD (Empfohlen)
-Dieses Projekt ist mit GitHub Actions so konfiguriert, dass es automatisch Images baut und in die **GitHub Container Registry (GHCR)** pusht.
+Dieses Projekt ist mit GitHub Actions so konfiguriert, dass es automatisch Images baut und in die **GitHub Container Registry (GHCR)** pusht, sobald ein neues Release erstellt wird.
 
-1.  Pushen Sie Ihre Änderungen in den `main` Branch.
-2.  Warten Sie, bis die "CI Pipeline" erfolgreich abgeschlossen ist.
-3.  Die Images sind dann verfügbar unter:
-    - `ghcr.io/<ihr-benutzername>/vinyl-tracker-backend:latest`
-    - `ghcr.io/<ihr-benutzername>/vinyl-tracker-frontend:latest`
+Voraussetzung für den Backend-Build in CI ist zusätzlich ein Online-Dependency-Scan via Sonatype OSS Index. Dafür müssen im GitHub-Repository diese **Actions Secrets** gesetzt sein:
+- `OSSINDEX_USERNAME`
+- `OSSINDEX_TOKEN`
+
+Zusätzlich wird der Backend-Job mit `mvn clean verify -Psecurity-online` ausgeführt. Dabei laufen Unit-Tests (Surefire) und Integrationstests (Failsafe). In CI wird für den Integrations-Shutdown explizit ein robuster Timeout gesetzt:
+- `-Dtest.integration.forkedProcessExitTimeoutInSeconds=120`
+
+1.  Mergen Sie Ihre fertigen Features aus `develop` in den `main` Branch.
+2.  Erstellen Sie auf GitHub ein **neues Release** (z.B. `v1.5.0`), das auf den `main` Branch zeigt.
+3.  Warten Sie, bis die "CI Pipeline" für dieses Tag erfolgreich abgeschlossen ist.
+4.  Die Images sind dann mit dem entsprechenden Versions-Tag sowie als `latest` verfügbar unter:
+    - `ghcr.io/<ihr-benutzername>/vinyl-tracker-backend:latest` (oder `:v1.5.0`)
+    - `ghcr.io/<ihr-benutzername>/vinyl-tracker-frontend:latest` (oder `:v1.5.0`)
 
 ### Option B: Manueller Build
 Wenn Sie die Images manuell von Ihrem Entwicklungsrechner pushen möchten:
@@ -53,13 +61,18 @@ wget https://raw.githubusercontent.com/gerontosepp-dev/AntiGrafity/develop/.env.
 **Wichtiger Schritt**: Konfigurieren Sie die Umgebungsvariablen.
 
 1.  Kopieren Sie die `.env.example` (oder erstellen Sie eine neue `.env` Datei).
-2.  Setzen Sie sichere Passwörter für `POSTGRES_PASSWORD` und die Verschlüsselungs-Keys.
-3.  **Registry Prefix konfigurieren**:
+2.  Setzen Sie ein sicheres Passwort für `POSTGRES_PASSWORD` und `VINYL_ENCRYPTION_PASSWORD`.
+3.  **Wichtig für den Salt & JWT:** 
+    - Der `VINYL_ENCRYPTION_SALT` **MUSS** ein gültiger Hexadezimal-String sein (z.B. 16 Zeichen).
+    - Der `JWT_SECRET` **MUSS** ein sicheres, langes Passwort (mindestens 32 Zeichen) zur Session-Sicherung sein.
+4.  **Registry Prefix konfigurieren**:
     - **Für CI/CD (Option A)**:
       ```bash
       # Beachten Sie den abschließenden Schrägstrich (Slash)!
       REGISTRY_PREFIX=ghcr.io/<ihr-github-benutzername>/
       ```
+        - **CI-Secrets prüfen**:
+            Stellen Sie sicher, dass `OSSINDEX_USERNAME` und `OSSINDEX_TOKEN` im GitHub-Repository unter Settings -> Secrets and variables -> Actions hinterlegt sind, damit der Backend-Job erfolgreich durchläuft.
     - **Für manuelles Pushen (Option B)**:
       ```bash
       REGISTRY_PREFIX=meinbenutzer/
@@ -70,9 +83,11 @@ wget https://raw.githubusercontent.com/gerontosepp-dev/AntiGrafity/develop/.env.
 Starten Sie die Anwendung mit der Registry-Konfiguration:
 
 ```bash
-docker compose -f docker-compose.registry.yml up -d
+docker compose up -d
 ```
-*Hinweis: Dies lädt die neuesten Images aus der Registry herunter, die Sie in Ihrer `.env` definiert haben.*
+*Hinweis: Dies setzt voraus, dass die Datei zuvor als `docker-compose.yml` gespeichert wurde. Wenn Sie den Originalnamen beibehalten, verwenden Sie `docker compose -f docker-compose.registry.yml up -d`.*
+
+*Images werden standardmäßig als `latest` gezogen, es sei denn, in der Compose-Datei sind explizit Versionstags (z.B. `:v1.6.3`) gesetzt.*
 
 Die Anwendung läuft nun auf **Port 80** der Zielmaschine.
 

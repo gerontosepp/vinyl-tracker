@@ -1,10 +1,30 @@
 import axios from 'axios';
-import type { ScanResult, ListenEvent, User, AnalyticsTopRecord } from '../types';
+import type { ScanResult, ListenEvent, User, AnalyticsTopRecord, ResetResult } from '../types';
 
 const API_Base = '/api';
+const AUTH_TOKEN_KEY = 'vinyl_auth_token';
+
+interface RequestOptions {
+  signal?: AbortSignal;
+}
+
+const readAuthToken = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  return window.localStorage.getItem(AUTH_TOKEN_KEY);
+};
+
+const storeAuthToken = (token?: string | null): void => {
+  if (typeof window === 'undefined') return;
+  if (token && token.trim().length > 0) {
+    window.localStorage.setItem(AUTH_TOKEN_KEY, token);
+  } else {
+    window.localStorage.removeItem(AUTH_TOKEN_KEY);
+  }
+};
 
 export const api = axios.create({
   baseURL: API_Base,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -12,8 +32,12 @@ export const api = axios.create({
 
 // Intercept requests to store start time
 api.interceptors.request.use(
-  (config) => {
-    (config as any).metadata = { startTime: Date.now() };
+  (config: import('axios').InternalAxiosRequestConfig & { metadata?: { startTime: number } }) => {
+    config.metadata = { startTime: Date.now() };
+    const token = readAuthToken();
+    if (token && !config.headers.Authorization) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => {
@@ -24,7 +48,9 @@ api.interceptors.request.use(
 // Intercept responses to log duration and status
 api.interceptors.response.use(
   (response) => {
-    const config = response.config as any;
+    const config = response.config as import('axios').InternalAxiosRequestConfig & {
+      metadata?: { startTime: number };
+    };
     const duration = config.metadata ? Date.now() - config.metadata.startTime : 0;
 
     // Only log Info in development if preferred, or log everywhere:
@@ -34,8 +60,10 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    const config = error.config as any;
-    const duration = config?.metadata ? Date.now() - config?.metadata?.startTime : 0;
+    const config = error.config as
+      | (import('axios').InternalAxiosRequestConfig & { metadata?: { startTime: number } })
+      | undefined;
+    const duration = config?.metadata ? Date.now() - config.metadata.startTime : 0;
     const status = error.response ? error.response.status : 'Network/Unknown Error';
     const method = config?.method?.toUpperCase() || 'UNKNOWN';
     const url = config?.url || 'UNKNOWN URL';
@@ -47,46 +75,80 @@ api.interceptors.response.use(
   }
 );
 
-export const scanBarcode = async (barcode: string, username: string): Promise<ScanResult> => {
-  const response = await api.post<ScanResult>(`/scan?username=${username}`, { barcode });
+export const scanBarcode = async (barcode: string, _username: string): Promise<ScanResult> => {
+  const response = await api.post<ScanResult>(`/scan`, { barcode });
   return response.data;
 };
 
-export const deleteScan = async (id: number, username: string): Promise<void> => {
-  await api.delete(`/scan/${id}?username=${username}`);
+export const deleteScan = async (id: number, _username: string): Promise<void> => {
+  await api.delete(`/scan/${id}`);
+};
+
+export const resetAllListens = async (_username: string): Promise<ResetResult> => {
+  const response = await api.delete<ResetResult>(`/scan/all`);
+  return response.data;
 };
 
 export const getRecentListens = async (
-  username: string,
+  _username: string,
   startDate?: string,
-  endDate?: string
+  endDate?: string,
+  options?: RequestOptions
 ): Promise<ListenEvent[]> => {
-  let url = `/analytics/recent?username=${username}`;
+  // Add a dummy query param to easily append the others
+  let url = `/analytics/recent?t=${Date.now()}`;
   if (startDate) url += `&from=${startDate}`;
   if (endDate) url += `&to=${endDate}`;
-  const response = await api.get<ListenEvent[]>(url);
+  const response = options?.signal
+    ? await api.get<ListenEvent[]>(url, { signal: options.signal })
+    : await api.get<ListenEvent[]>(url);
   return response.data;
 };
 
 export const getTopRecords = async (
-  username: string,
+  _username: string,
   startDate?: string,
-  endDate?: string
+  endDate?: string,
+  options?: RequestOptions
 ): Promise<AnalyticsTopRecord[]> => {
-  let url = `/analytics/top?username=${username}`;
+  let url = `/analytics/top?t=${Date.now()}`;
   if (startDate) url += `&from=${startDate}`;
   if (endDate) url += `&to=${endDate}`;
-  const response = await api.get<AnalyticsTopRecord[]>(url);
+  const response = options?.signal
+    ? await api.get<AnalyticsTopRecord[]>(url, { signal: options.signal })
+    : await api.get<AnalyticsTopRecord[]>(url);
+  return response.data;
+};
+
+export const getCollectionValue = async (
+  options?: RequestOptions
+): Promise<import('../types').CollectionValueResponse> => {
+  const url = `/analytics/collection/value?t=${Date.now()}`;
+  const response = options?.signal
+    ? await api.get<import('../types').CollectionValueResponse>(url, { signal: options.signal })
+    : await api.get<import('../types').CollectionValueResponse>(url);
+  return response.data;
+};
+
+export const getGenreBreakdown = async (
+  options?: RequestOptions
+): Promise<import('../types').GenreBreakdownItem[]> => {
+  const url = `/analytics/collection/genres?t=${Date.now()}`;
+  const response = options?.signal
+    ? await api.get<import('../types').GenreBreakdownItem[]>(url, { signal: options.signal })
+    : await api.get<import('../types').GenreBreakdownItem[]>(url);
   return response.data;
 };
 
 export const loginUser = async (username: string, password: string): Promise<User> => {
   const response = await api.post('/users/login', { username, password });
+  storeAuthToken(response.data?.token);
   return response.data;
 };
 
 export const registerUser = async (username: string, password: string): Promise<User> => {
   const response = await api.post('/users/register', { username, password });
+  storeAuthToken(response.data?.token);
   return response.data;
 };
 
@@ -96,41 +158,61 @@ export const resetPassword = async (
   discogsToken: string
 ): Promise<User> => {
   const response = await api.post('/users/reset-password', { username, newPassword, discogsToken });
+  storeAuthToken(response.data?.token);
   return response.data;
 };
 
+export const logoutUser = async (): Promise<void> => {
+  await api.post('/users/logout');
+  storeAuthToken(null);
+};
+
 export const updateDiscogsSettings = async (
-  username: string,
+  _username: string,
   token: string,
   discogsUsername: string,
   password: string
 ): Promise<User> => {
-  const response = await api.put(`/users/${username}/discogs`, {
-    token,
+  const response = await api.put(`/users/me/discogs`, {
+    token, // discogs token
     discogsUsername,
-    password,
+    password, // not verified on backend anymore but kept for payload
   });
   return response.data;
 };
 
 export const getCollection = async (
-  username: string,
+  _username: string,
   page: number = 1,
   perPage: number = 50,
   minPlays: number = 0,
   sort: string = 'artist',
-  sortOrder: string = 'asc'
+  sortOrder: string = 'asc',
+  search?: string,
+  options?: RequestOptions
 ): Promise<import('../types').CollectionResponse> => {
-  let url = `/collection?username=${username}&page=${page}&per_page=${perPage}&sort=${sort}&sort_order=${sortOrder}`;
+  let url = `/collection?page=${page}&per_page=${perPage}&sort=${sort}&sort_order=${sortOrder}`;
   if (minPlays > 0) {
     url += `&min_plays=${minPlays}`;
   }
-  const response = await api.get<import('../types').CollectionResponse>(url);
+  if (search) {
+    url += `&search=${encodeURIComponent(search)}`;
+  }
+  const response = options?.signal
+    ? await api.get<import('../types').CollectionResponse>(url, { signal: options.signal })
+    : await api.get<import('../types').CollectionResponse>(url);
   return response.data;
 };
 
-export const downloadQrCodes = async (username: string): Promise<Blob> => {
-  const response = await api.get(`/collection/qr-codes/all?username=${username}`, {
+export const forceSyncCollection = async (
+  _username: string
+): Promise<import('../types').SyncResult> => {
+  const response = await api.post<import('../types').SyncResult>(`/collection/sync`);
+  return response.data;
+};
+
+export const downloadQrCodes = async (_username: string): Promise<Blob> => {
+  const response = await api.get(`/collection/qr-codes/all`, {
     responseType: 'blob',
   });
   return response.data;
@@ -147,8 +229,16 @@ export const downloadQrCodesSelected = async (
   return response.data;
 };
 
-// Deprecated or repurposed helpers if needed
-export const getUser = async (username: string): Promise<User> => {
-  const response = await api.get<User>(`/users/${username}`);
+export const getUser = async (_username: string): Promise<User> => {
+  const response = await api.get<User>(`/users/me`);
+  storeAuthToken(response.data?.token);
   return response.data;
+};
+
+// Helper for proxying image requests to avoid CORS
+export const getProxiedImageUrl = (originalUrl: string): string => {
+  if (!originalUrl || !originalUrl.includes('i.discogs.com')) {
+    return originalUrl;
+  }
+  return `${API_Base}/proxy/image?url=${encodeURIComponent(originalUrl)}`;
 };

@@ -1,28 +1,24 @@
 package com.antigravity.vinyltracker.controller;
 
-import com.antigravity.vinyltracker.model.AppUser;
 import com.antigravity.vinyltracker.model.discogs.DiscogsDto;
-import com.antigravity.vinyltracker.repository.AppUserRepository;
-import com.antigravity.vinyltracker.service.DiscogsService;
-import com.antigravity.vinyltracker.service.PdfService;
+import com.antigravity.vinyltracker.service.CollectionService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import java.security.Principal;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -33,25 +29,19 @@ class CollectionControllerTest {
         @Autowired
         private MockMvc mockMvc;
 
-        @Autowired
-        private ObjectMapper objectMapper;
+        private final ObjectMapper objectMapper = new ObjectMapper();
 
-        @MockBean
-        private DiscogsService discogsService;
+        @MockitoBean
+        private CollectionService collectionService;
 
-        @MockBean
-        private PdfService pdfService;
+        @MockitoBean
+        private com.antigravity.vinyltracker.security.JwtService jwtService;
 
-        @MockBean
-        private AppUserRepository userRepository;
-
-        private AppUser user;
+        @MockitoBean
+        private com.antigravity.vinyltracker.security.AuthCookieService authCookieService;
 
         @BeforeEach
         void setUp() {
-                user = new AppUser();
-                user.setUsername("testuser");
-                user.setId(1L);
         }
 
         @Test
@@ -62,12 +52,14 @@ class CollectionControllerTest {
                 release.setId(100L);
                 mockResponse.setReleases(List.of(release));
 
-                when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(user));
-                when(discogsService.getCollection(eq(user), anyInt(), anyInt(), anyString(), anyString(), any()))
+                when(collectionService.getCollection(eq("testuser"), anyInt(), anyInt(), anyString(), anyString(),
+                                any(), any()))
                                 .thenReturn(mockResponse);
 
+                Principal mockPrincipal = () -> "testuser";
+
                 mockMvc.perform(get("/api/collection")
-                                .param("username", "testuser")
+                                .principal(mockPrincipal)
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.releases[0].id").value(100));
@@ -76,17 +68,15 @@ class CollectionControllerTest {
         @Test
         @WithMockUser
         void getCollection_ShouldThrowException_WhenUserNotFound() throws Exception {
-                when(userRepository.findByUsername("unknown")).thenReturn(Optional.empty());
+                when(collectionService.getCollection(anyString(), anyInt(), anyInt(), anyString(), anyString(), any(),
+                                any()))
+                                .thenThrow(new RuntimeException("User not found"));
 
-                // Expect 500 or 404 depending on error handling. Default is 500 for
-                // RuntimeException.
                 try {
                         mockMvc.perform(get("/api/collection")
-                                        .param("username", "unknown")
                                         .contentType(MediaType.APPLICATION_JSON))
                                         .andExpect(status().isInternalServerError());
                 } catch (Exception e) {
-                        // MockMvc might throw check
                 }
         }
 
@@ -97,7 +87,7 @@ class CollectionControllerTest {
                 request.setItems(List.of(new DiscogsDto.QrCodeItem(1L, "Title", "Artist")));
 
                 byte[] pdfBytes = "pdf-content".getBytes();
-                when(pdfService.generateQrCodePdf(any())).thenReturn(pdfBytes);
+                when(collectionService.generateSelectedQrCodesPdf(any())).thenReturn(pdfBytes);
 
                 mockMvc.perform(post("/api/collection/qr-codes/selected")
                                 .content(objectMapper.writeValueAsString(request))
@@ -115,35 +105,25 @@ class CollectionControllerTest {
                 DiscogsDto.QrCodeRequest request = new DiscogsDto.QrCodeRequest();
                 request.setItems(List.of(new DiscogsDto.QrCodeItem(1L, "Title", "Artist")));
 
-                when(pdfService.generateQrCodePdf(any())).thenThrow(new IOException("PDF Error"));
+                when(collectionService.generateSelectedQrCodesPdf(any())).thenThrow(new IOException("PDF Error"));
 
-                // Expect RuntimeException wrapped
-                org.junit.jupiter.api.Assertions.assertThrows(Exception.class, () -> {
-                        mockMvc.perform(post("/api/collection/qr-codes/selected")
-                                        .content(objectMapper.writeValueAsString(request))
-                                        .contentType(MediaType.APPLICATION_JSON)
-                                        .with(csrf()));
-                });
+                mockMvc.perform(post("/api/collection/qr-codes/selected")
+                                .content(objectMapper.writeValueAsString(request))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .with(csrf()))
+                                .andExpect(status().isInternalServerError())
+                                .andExpect(content().contentType("application/problem+json"));
         }
 
         @Test
         @WithMockUser(username = "testuser")
         void generateAllQrCodes_ShouldReturnPdf() throws Exception {
-                DiscogsDto.CollectionRelease release = new DiscogsDto.CollectionRelease();
-                release.setId(1L);
-                DiscogsDto.BasicInformation info = new DiscogsDto.BasicInformation();
-                info.setTitle("Title");
-                DiscogsDto.Artist artist = new DiscogsDto.Artist();
-                artist.setName("Artist");
-                info.setArtists(List.of(artist));
-                release.setBasicInformation(info);
+                when(collectionService.generateAllQrCodesPdf(eq("testuser"))).thenReturn("pdf-content".getBytes());
 
-                when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(user));
-                when(discogsService.getAllCollection(user)).thenReturn(List.of(release));
-                when(pdfService.generateQrCodePdf(any())).thenReturn("pdf-content".getBytes());
+                Principal mockPrincipal = () -> "testuser";
 
                 mockMvc.perform(get("/api/collection/qr-codes/all")
-                                .param("username", "testuser"))
+                                .principal(mockPrincipal))
                                 .andExpect(status().isOk())
                                 .andExpect(content().contentType(MediaType.APPLICATION_PDF));
         }
@@ -151,27 +131,26 @@ class CollectionControllerTest {
         @Test
         @WithMockUser
         void generateAllQrCodes_ShouldThrowException_WhenUserNotFound() throws Exception {
-                when(userRepository.findByUsername("unknown")).thenReturn(Optional.empty());
+                when(collectionService.generateAllQrCodesPdf(anyString()))
+                                .thenThrow(new RuntimeException("User not found"));
 
                 try {
-                        mockMvc.perform(get("/api/collection/qr-codes/all")
-                                        .param("username", "unknown"))
+                        mockMvc.perform(get("/api/collection/qr-codes/all"))
                                         .andExpect(status().isInternalServerError());
                 } catch (Exception e) {
-                        // check
                 }
         }
 
         @Test
         @WithMockUser(username = "testuser")
         void generateAllQrCodes_ShouldThrowException_WhenPdfServiceFails() throws Exception {
-                when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(user));
-                when(discogsService.getAllCollection(user)).thenReturn(Collections.emptyList());
-                when(pdfService.generateQrCodePdf(any())).thenThrow(new IOException("PDF Error"));
+                when(collectionService.generateAllQrCodesPdf(eq("testuser"))).thenThrow(new IOException("PDF Error"));
 
-                org.junit.jupiter.api.Assertions.assertThrows(Exception.class, () -> {
-                        mockMvc.perform(get("/api/collection/qr-codes/all")
-                                        .param("username", "testuser"));
-                });
+                Principal mockPrincipal = () -> "testuser";
+
+                mockMvc.perform(get("/api/collection/qr-codes/all")
+                                .principal(mockPrincipal))
+                                .andExpect(status().isInternalServerError())
+                                .andExpect(content().contentType("application/problem+json"));
         }
 }

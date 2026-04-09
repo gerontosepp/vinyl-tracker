@@ -26,4 +26,12 @@ public class ScanDto {
         private String artist;
         private String thumbUrl;
     }
+
+    @Data
+    @AllArgsConstructor
+    public static class ResetResult {
+        private boolean success;
+        private String message;
+        private long deletedCount;
+    }
 }

@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Login from './Login';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 
 // Mock dependencies
 vi.mock('../services/api', () => ({
@@ -17,7 +17,7 @@ vi.mock('react-router-dom', () => ({
   ),
 }));
 
-vi.mock('../context/AuthContext', () => ({
+vi.mock('../context/useAuth', () => ({
   useAuth: vi.fn(),
 }));
 

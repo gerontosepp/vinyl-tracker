@@ -4,8 +4,8 @@ import com.antigravity.vinyltracker.model.dto.ScanDto;
 import com.antigravity.vinyltracker.service.ScanService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
@@ -15,17 +15,27 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import java.security.Principal;
+import com.antigravity.vinyltracker.security.JwtService;
+
 @WebMvcTest(ScanController.class)
+@SuppressWarnings("null")
 public class ScanControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
+    @MockitoBean
     private ScanService scanService;
 
+    @MockitoBean
+    private JwtService jwtService;
+
+    @MockitoBean
+    private com.antigravity.vinyltracker.security.AuthCookieService authCookieService;
+
     @Test
-    @WithMockUser
+    @WithMockUser(username = "testuser")
     public void scanBarcode_Success() throws Exception {
         ScanDto.Request request = new ScanDto.Request();
         request.setBarcode("123456");
@@ -33,8 +43,10 @@ public class ScanControllerTest {
         ScanDto.Result result = new ScanDto.Result(true, "Found", null);
         when(scanService.processScan("123456", "testuser")).thenReturn(result);
 
+        Principal mockPrincipal = () -> "testuser";
+
         mockMvc.perform(post("/api/scan")
-                .param("username", "testuser")
+                .principal(mockPrincipal)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"barcode\":\"123456\"}")
                 .with(csrf()))
@@ -43,12 +55,32 @@ public class ScanControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(username = "testuser")
+    public void scanBarcode_ShouldReturnBadRequest_WhenBusinessValidationFails() throws Exception {
+        ScanDto.Result result = new ScanDto.Result(false, "Release not found in collection or invalid barcode.", null);
+        when(scanService.processScan("999999", "testuser")).thenReturn(result);
+
+        Principal mockPrincipal = () -> "testuser";
+
+        mockMvc.perform(post("/api/scan")
+                .principal(mockPrincipal)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"barcode\":\"999999\"}")
+                .with(csrf()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.message").value("Release not found in collection or invalid barcode."));
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
     public void deleteScan_Success() throws Exception {
         doNothing().when(scanService).deleteScan(1L, "testuser");
 
+        Principal mockPrincipal = () -> "testuser";
+
         mockMvc.perform(delete("/api/scan/1")
-                .param("username", "testuser")
+                .principal(mockPrincipal)
                 .with(csrf()))
                 .andExpect(status().isNoContent());
 
@@ -56,12 +88,56 @@ public class ScanControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(username = "testuser")
     public void deleteScan_Failure() throws Exception {
         doThrow(new RuntimeException("Error")).when(scanService).deleteScan(1L, "testuser");
 
+        Principal mockPrincipal = () -> "testuser";
+
         mockMvc.perform(delete("/api/scan/1")
-                .param("username", "testuser")
+                .principal(mockPrincipal)
+                .with(csrf()))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void scanBarcode_ShouldRequireAuthentication() throws Exception {
+        mockMvc.perform(post("/api/scan")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"barcode\":\"123456\"}")
+                .with(csrf()))
+                .andExpect(status().isUnauthorized());
+
+        verifyNoInteractions(scanService);
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    public void resetAllListens_Success() throws Exception {
+        when(scanService.resetAllListens("testuser")).thenReturn(5L);
+
+        Principal mockPrincipal = () -> "testuser";
+
+        mockMvc.perform(delete("/api/scan/all")
+                .principal(mockPrincipal)
+                .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.message").value("All listens have been reset"))
+                .andExpect(jsonPath("$.deletedCount").value(5));
+
+        verify(scanService).resetAllListens("testuser");
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    public void resetAllListens_Failure() throws Exception {
+        doThrow(new RuntimeException("User not found")).when(scanService).resetAllListens("testuser");
+
+        Principal mockPrincipal = () -> "testuser";
+
+        mockMvc.perform(delete("/api/scan/all")
+                .principal(mockPrincipal)
                 .with(csrf()))
                 .andExpect(status().isBadRequest());
     }

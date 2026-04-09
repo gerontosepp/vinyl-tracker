@@ -8,7 +8,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data_prod:/var/lib/postgresql/data
     healthcheck:
@@ -27,7 +27,9 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       VINYL_ENCRYPTION_PASSWORD: ${VINYL_ENCRYPTION_PASSWORD}
       VINYL_ENCRYPTION_SALT: ${VINYL_ENCRYPTION_SALT}
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      JWT_SECRET: ${JWT_SECRET}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      SPRING_FLYWAY_BASELINE_ON_MIGRATE: "true"
     ports:
       - "8080:8080"
     depends_on:

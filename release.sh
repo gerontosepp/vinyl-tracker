@@ -35,7 +35,5 @@ echo "Committing changes..."
 git add frontend/package.json frontend/package-lock.json backend/pom.xml README.md
 git commit -m "chore(release): bump version to $NEW_VERSION"
 
-echo "Creating Git Tag v$NEW_VERSION..."
-git tag -a "v$NEW_VERSION" -m "Release v$NEW_VERSION"
-
-echo "Done! Run 'git push && git push --tags' to publish."
+echo "Done! Run 'git push' to push the bump to develop."
+echo "Then, merge to main and create a real GitHub Release to trigger the docker image build."

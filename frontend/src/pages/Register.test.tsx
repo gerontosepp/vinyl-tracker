@@ -2,18 +2,22 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { vi, describe, it, expect } from 'vitest';
 import Register from './Register';
-import * as AuthContext from '../context/AuthContext';
+import * as useAuthHook from '../context/useAuth';
 
 // Mock AuthContext
 const mockRegister = vi.fn();
 
-vi.spyOn(AuthContext, 'useAuth').mockReturnValue({
+vi.spyOn(useAuthHook, 'useAuth').mockReturnValue({
   user: null,
   login: vi.fn(),
   register: mockRegister,
   updateDiscogs: vi.fn(),
   logout: vi.fn(),
   isLoading: false,
+  isSyncing: false,
+  syncMessage: '',
+  performSync: vi.fn(),
+  resetAllListens: vi.fn(),
 });
 
 const renderComponent = () => {

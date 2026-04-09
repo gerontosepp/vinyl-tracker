@@ -3,6 +3,7 @@
 node_modules/
 dist/
 coverage/
+.dev-dist/
 .idea/
 .vscode/
 *.log
@@ -12,7 +13,7 @@ test-results/
 playwright-report/
 
 # Java
-target/
+**/target/
 .classpath
 .project
 .settings/
@@ -21,3 +22,6 @@ target/
 # Secrets
 .secrets.local
 curl_output_*
+
+frontend/dev-dist/
+build_log.txt

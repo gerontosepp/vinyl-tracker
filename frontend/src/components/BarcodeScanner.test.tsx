@@ -2,14 +2,15 @@ import { render, screen, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import BarcodeScanner from './BarcodeScanner';
 import { scanBarcode } from '../services/api';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 
 // Mock dependencies
 vi.mock('../services/api', () => ({
   scanBarcode: vi.fn(),
+  getProxiedImageUrl: vi.fn((url) => `/proxy?url=${url}`),
 }));
 
-vi.mock('../context/AuthContext', () => ({
+vi.mock('../context/useAuth', () => ({
   useAuth: vi.fn(),
 }));
 

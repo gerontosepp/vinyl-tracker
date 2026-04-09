@@ -1,10 +1,38 @@
 import React from 'react';
-import { Home, Disc, User, Settings, ScanLine } from 'lucide-react';
+import { Home, Disc, User, Settings, ScanLine, BarChart2 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 interface SidebarProps {
   onScanClick?: () => void;
 }
+
+const NavItem = ({
+  path,
+  icon: Icon,
+  label,
+  isActive,
+  navigate,
+}: {
+  path: string;
+  icon: React.ElementType;
+  label: string;
+  isActive: boolean;
+  navigate: ReturnType<typeof useNavigate>;
+}) => (
+  <button
+    onClick={() => navigate(path)}
+    className={`flex flex-col items-center justify-center py-4 px-2 w-[calc(100%-1rem)] rounded-2xl mx-2 transition-all duration-200 ${
+      isActive
+        ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/20 shadow-sm'
+        : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100/50 dark:hover:bg-slate-800/50'
+    }`}
+  >
+    <Icon size={26} strokeWidth={isActive ? 2.5 : 2} className={isActive ? 'drop-shadow-sm' : ''} />
+    <span className={`mt-1.5 text-xs tracking-wide ${isActive ? 'font-bold' : 'font-medium'}`}>
+      {label}
+    </span>
+  </button>
+);
 
 const Sidebar: React.FC<SidebarProps> = ({ onScanClick }) => {
   const navigate = useNavigate();
@@ -12,46 +40,47 @@ const Sidebar: React.FC<SidebarProps> = ({ onScanClick }) => {
 
   const isActive = (path: string) => location.pathname === path;
 
-  const NavItem = ({ path, icon: Icon, label }: { path: string; icon: any; label: string }) => (
-    <button
-      onClick={() => navigate(path)}
-      className={`flex flex-col items-center justify-center p-4 w-full transition-colors ${
-        isActive(path) ? 'text-black' : 'text-gray-400 hover:text-gray-600'
-      }`}
-    >
-      <Icon size={28} strokeWidth={isActive(path) ? 2.5 : 2} />
-      <span className={`mt-1 text-sm ${isActive(path) ? 'font-semibold' : ''}`}>{label}</span>
-    </button>
-  );
-
   return (
-    <aside className="hidden md:flex flex-col w-24 h-screen bg-gray-50 fixed left-0 top-0 border-r border-gray-200 z-20 items-center py-8">
-      <h1 className="text-xl font-bold mb-12 text-center leading-tight">
-        Vinyl
-        <br />
-        Tracker
-      </h1>
-
+    <aside className="hidden md:flex flex-col w-24 h-[calc(100vh-4rem)] bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl fixed left-0 top-16 border-r border-slate-200/50 dark:border-slate-700 z-20 items-center py-6 transition-colors shadow-[4px_0_24px_-12px_rgba(0,0,0,0.05)]">
       <nav className="flex-1 flex flex-col gap-4 w-full">
-        <NavItem path="/" icon={Home} label="Home" />
-        <NavItem path="/collection" icon={Disc} label="Collection" />
-        <NavItem path="/profile" icon={User} label="Profile" />
+        <NavItem path="/" icon={Home} label="Home" isActive={isActive('/')} navigate={navigate} />
+        <NavItem
+          path="/collection"
+          icon={Disc}
+          label="Collection"
+          isActive={isActive('/collection')}
+          navigate={navigate}
+        />
+        <NavItem
+          path="/statistics"
+          icon={BarChart2}
+          label="Stats"
+          isActive={isActive('/statistics')}
+          navigate={navigate}
+        />
+        <NavItem
+          path="/profile"
+          icon={User}
+          label="Profile"
+          isActive={isActive('/profile')}
+          navigate={navigate}
+        />
 
-        <div className="px-4 mt-4">
+        <div className="px-3 mt-4 w-full">
           <button
             onClick={onScanClick}
-            className="flex flex-col items-center justify-center p-3 w-full bg-blue-500 text-white rounded-xl shadow-lg hover:bg-blue-600 transition-colors"
+            className="flex flex-col items-center justify-center py-3.5 w-full bg-indigo-500 text-white rounded-2xl shadow-[0_8px_16px_-6px_rgba(79,70,229,0.5)] hover:bg-indigo-600 hover:-translate-y-1 transition-all duration-300 group"
             aria-label="Scan Record"
           >
-            <ScanLine size={24} />
-            <span className="mt-1 text-xs font-semibold">Scan</span>
+            <ScanLine size={24} className="group-hover:scale-110 transition-transform" />
+            <span className="mt-1.5 text-xs font-bold tracking-wide">Scan</span>
           </button>
         </div>
       </nav>
 
       <button
         onClick={() => navigate('/settings')}
-        className="p-4 text-gray-400 hover:text-gray-600"
+        className="p-4 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors rounded-xl hover:bg-slate-100/50 dark:hover:bg-slate-800/50 mb-2"
       >
         <Settings size={24} />
       </button>

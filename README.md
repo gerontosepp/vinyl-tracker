@@ -1,6 +1,8 @@
-# Vinyl Tracker v1.3.1
+# Vinyl Tracker v1.7.0
 
 A personal vinyl record tracking application that allows users to scan barcodes, identify records via Discogs, and log listening sessions.
+
+Release history: [Release-Info](docs/Release-Info.md)
 
 ## Architecture
 
@@ -15,10 +17,10 @@ The project follows a modern containerized micro-architecture:
   - Secure Context support via local SSL.
 
 ### Backend
-- **Framework**: Spring Boot 3.5.10
-- **Language**: Java 21
-- **Database Access**: Spring Data JPA with Hibernate.
-- **API**: RESTful endpoints for scanning, user management, and analytics.
+- **Framework**: Spring Boot 4.0.3
+- **Language**: Java 25
+- **Database Access**: Spring Data JPA with Hibernate and **Flyway** for schema migrations.
+- **API**: RESTful endpoints with **JWT (JSON Web Token)** authentication.
 - **Integration**: Discogs API for record metadata.
 
 ### Database
@@ -35,8 +37,14 @@ The project follows a modern containerized micro-architecture:
 - **Multi-User Support**: Individual user accounts with personal Discogs collection integration.
 - **Listening History**: Log when you listen to a record.
 - **Analytics**: View most played records and listening trends.
+- **Live Collection Insights**: Dashboard charts for Discogs collection value and genre breakdown via `/api/analytics/collection/value` and `/api/analytics/collection/genres`.
 - **QR Code Generation**: Generate a PDF with QR codes for your entire collection, sorted by artist.
 - **Quick Logging**: Scan generated QR codes to instantly log a listen without searching.
+- **Collection Management**: Search, filter (e.g., "Played Only"), and sort your vinyl catalog. Force a manual sync with Discogs at any time.
+- **Data Management**: Reset your entire listening history with a single click from Settings (with confirmation dialog to prevent accidental deletions).
+- **Modern UI**: Fully responsive, mobile-first design with dark mode, glassmorphism, and smooth micro-animations.
+- **Resilient API**: Robust Discogs integration with **Resilience4j** rate-limiting (60 req/min) and automatic retries with exponential backoff.
+- **Performance Caching**: Optimized release metadata retrieval using **Caffeine** local caching.
 - **Observability**: Built-in comprehensive API request and error logging tracking latency across the frontend and backend Docker containers.
 
 ## Deployment & Running
@@ -76,7 +84,17 @@ The application requires environment variables for configuration (database crede
     ```
 
 2.  **Configure Secrets**:
-    Open `.env` and set your own secure values for `VINYL_ENCRYPTION_PASSWORD` and `VINYL_ENCRYPTION_SALT`.
+    Open `.env` and set your own secure values:
+    - `VINYL_ENCRYPTION_PASSWORD` and `VINYL_ENCRYPTION_SALT` (for Discogs token encryption).
+    - `JWT_SECRET` (Required. Must be a strong key with at least 32 characters for securing user login sessions. Backend startup fails fast if missing/too short).
+    - `CORS_ALLOWED_ORIGINS` (Comma-separated allowlist, e.g. `https://localhost:5173,https://127.0.0.1:5173`).
+    - `CORS_ALLOW_CREDENTIALS` (`false` by default; set `true` only if cookie-based auth is required).
+    - `IMAGE_PROXY_ALLOWED_HOSTS` (Comma-separated allowlist for `/api/proxy/image`, e.g. `i.discogs.com,s.discogs.com,api.discogs.com`).
+    - `AUTH_COOKIE_NAME`, `AUTH_COOKIE_MAX_AGE_SECONDS`, `AUTH_COOKIE_SECURE`, `AUTH_COOKIE_SAME_SITE` (controls the backend HttpOnly session cookie used for authentication).
+
+    Authentication note: The frontend uses backend-managed HttpOnly cookies by default and supports a Bearer token fallback for environments where cookie propagation is constrained.
+   
+    API error note: Backend validation and runtime failures are returned as structured `ProblemDetail` JSON payloads.
 
 ### 3. Start the Application
 
@@ -84,7 +102,7 @@ The application requires environment variables for configuration (database crede
    ```bash
    docker compose up --build -d
    ```
-   *Features hot-reloading for frontend.*
+   *Features hot-reloading for frontend. The backend will automatically wait for the `postgres` healthcheck to pass before starting.*
 
 2. **Start Production Environment**:
    ```bash
@@ -93,6 +111,9 @@ The application requires environment variables for configuration (database crede
    *Optimized build, no hot-reloading, runs on port 80.*
 
    👉 **[See Detailed Deployment Guide](docs/DEPLOYMENT.md)** for server setup and HTTPS requirements.
+
+   > [!IMPORTANT]
+   > For the **first deployment** against an existing database, ensure `SPRING_FLYWAY_BASELINE_ON_MIGRATE=true` is set (this is already the default in `docker-compose.prod.yml`) to correctly baseline your schema.
 
 2. **Access the App**:
    - **Frontend**: [https://localhost:5173](https://localhost:5173) (or `https://<YOUR_IP>:5173`)
@@ -109,6 +130,11 @@ The application requires environment variables for configuration (database crede
    - Your token is securely encrypted using your login password.
 
 ## Development & Testing
+
+### Data Management
+1. **Force Sync Collection**: Manually sync your Discogs collection with the application. Located in **Settings** under "Data Management".
+2. **Reset All Listens**: Permanently delete your entire listening history. Located in **Settings** under "Data Management". A confirmation dialog prevents accidental deletions.
+    - **Warning**: This action cannot be undone and will delete all listening event records.
 
 ### Frontend
 Located in `/frontend`. Recommended to use `--legacy-peer-deps` when installing.
@@ -133,22 +159,73 @@ npm test
 | `npm run test:e2e` | Runs end-to-end tests (Playwright) - requires local env running |
 | `npm run prepare` | Sets up Husky git hooks |
 
+Current high-risk regression coverage focuses on authentication, dashboard scanner access, and manual Discogs sync flows in Playwright plus backend negative-path tests for scan validation and ownership checks.
+
+Architecture hardening (v1.6.x): User endpoints now use validated request DTOs (no loose map payloads), frontend error handling relies on typed unknown-to-message extraction, and dashboard/list views include memoization in critical render paths.
+
 ### Backend
 Located in `/backend`.
 
-**Run Tests:**
+**Run Unit Tests (fast local feedback):**
+```bash
+cd backend
+mvn test
+```
+
+**Run Full Validation (unit + integration + coverage checks):**
 ```bash
 cd backend
 mvn verify
 ```
-*Note: `mvn verify` runs unit/integration tests and enforcing >80% code coverage via JaCoCo.*
+*Note: `mvn test` executes unit tests via Surefire. `mvn verify` additionally executes integration tests via Failsafe and enforces >80% code coverage via JaCoCo.*
+
+**Test JVM Fork Shutdown Timeouts:**
+- Unit tests (Surefire): `test.unit.forkedProcessExitTimeoutInSeconds` (default `30`)
+- Integration tests (Failsafe): `test.integration.forkedProcessExitTimeoutInSeconds` (default `120`)
+
+You can override them at runtime, for example:
+```bash
+mvn verify -Dtest.integration.forkedProcessExitTimeoutInSeconds=120
+```
+
+**Run Online Dependency Vulnerability Scan:**
+```bash
+cd backend
+export OSSINDEX_USERNAME=<your-ossindex-username>
+export OSSINDEX_TOKEN=<your-ossindex-token>
+mvn -Psecurity-online verify
+```
+*The `security-online` Maven profile queries Sonatype OSS Index and writes a report to `backend/target/ossindex-audit.json`. The current configuration is non-blocking (`fail=false`), so findings are reported but do not fail the build.*
+
+**Local Maven Authentication Setup:**
+Create `~/.m2/settings.xml` with an `ossindex` server entry so Maven can use the credentials from your shell environment:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"
+                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                    xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0 https://maven.apache.org/xsd/settings-1.2.0.xsd">
+    <servers>
+        <server>
+            <id>ossindex</id>
+            <username>${env.OSSINDEX_USERNAME}</username>
+            <password>${env.OSSINDEX_TOKEN}</password>
+        </server>
+    </servers>
+</settings>
+```
 
 ### CI/CD
 The project includes a GitHub Actions workflow (`.github/workflows/ci.yml`) that automatically:
-- Builds and tests the Backend (Java 21/Maven).
+- Builds and tests the Backend (Java 25/Maven).
 - Builds and tests the Frontend (Node 20/Vite).
 - Enforces >80% test coverage for both.
-- Runs on every push to `main` and PRs.
+- Runs the backend online dependency vulnerability audit through the `security-online` Maven profile.
+- Runs on push and pull requests for `main`, `master`, and `develop`, plus release tags `v*.*.*`.
+
+Required GitHub Actions secrets for the backend security audit:
+- `OSSINDEX_USERNAME`
+- `OSSINDEX_TOKEN`
 
 ## License
 

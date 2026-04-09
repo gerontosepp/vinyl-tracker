@@ -7,7 +7,7 @@ import eslintPluginPrettier from 'eslint-plugin-prettier/recommended';
 import eslintConfigPrettier from 'eslint-config-prettier';
 
 export default tseslint.config(
-  { ignores: ['dist', 'dev-dist', 'e2e'] },
+  { ignores: ['dist', 'dev-dist', 'e2e', 'coverage', 'playwright-report', 'test-results'] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ['**/*.{ts,tsx}'],
@@ -31,6 +31,12 @@ export default tseslint.config(
     files: ['**/*.test.ts', '**/*.test.tsx'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
+  {
+    files: ['src/context/**/*.tsx'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
     },
   },
   eslintPluginPrettier,

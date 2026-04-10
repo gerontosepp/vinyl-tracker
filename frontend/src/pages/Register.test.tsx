@@ -15,7 +15,6 @@ vi.spyOn(useAuthHook, 'useAuth').mockReturnValue({
   logout: vi.fn(),
   isLoading: false,
   isSyncing: false,
-  syncMessage: '',
   performSync: vi.fn(),
   resetAllListens: vi.fn(),
 });

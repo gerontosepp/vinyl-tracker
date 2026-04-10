@@ -25,3 +25,7 @@ curl_output_*
 
 frontend/dev-dist/
 build_log.txt
+
+# Certificates
+certs/
+frontend/certs/

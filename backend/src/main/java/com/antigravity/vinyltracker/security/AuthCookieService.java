@@ -7,24 +7,22 @@ import org.springframework.stereotype.Component;
 import java.util.Objects;
 
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
 @Component
-@RequiredArgsConstructor
 public class AuthCookieService {
 
     @Getter
     @Value("${auth.cookie.name:vinyl_token}")
-    private final String cookieName;
+    private String cookieName;
 
     @Value("${auth.cookie.max-age-seconds:86400}")
-    private final long maxAgeSeconds;
+    private long maxAgeSeconds;
 
     @Value("${auth.cookie.secure:true}")
-    private final boolean secure;
+    private boolean secure;
 
     @Value("${auth.cookie.same-site:Lax}")
-    private final String sameSite;
+    private String sameSite;
 
     public ResponseCookie createAuthCookie(String token) {
         return ResponseCookie.from(Objects.requireNonNull(cookieName), Objects.requireNonNull(token))

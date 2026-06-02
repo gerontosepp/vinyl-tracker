@@ -23,11 +23,11 @@ Zusätzlich wird der Backend-Job mit `mvn clean verify -Psecurity-online` ausgef
 - `-Dtest.integration.forkedProcessExitTimeoutInSeconds=120`
 
 1.  Mergen Sie Ihre fertigen Features aus `develop` in den `main` Branch.
-2.  Erstellen Sie auf GitHub ein **neues Release** (z.B. `v1.5.0`), das auf den `main` Branch zeigt.
+2.  Erstellen Sie auf GitHub ein **neues Release** (z.B. `v1.7.0`), das auf den `main` Branch zeigt.
 3.  Warten Sie, bis die "CI Pipeline" für dieses Tag erfolgreich abgeschlossen ist.
 4.  Die Images sind dann mit dem entsprechenden Versions-Tag sowie als `latest` verfügbar unter:
-    - `ghcr.io/<ihr-benutzername>/vinyl-tracker-backend:latest` (oder `:v1.5.0`)
-    - `ghcr.io/<ihr-benutzername>/vinyl-tracker-frontend:latest` (oder `:v1.5.0`)
+    - `ghcr.io/<ihr-benutzername>/vinyl-tracker-backend:latest` (oder `:v1.7.0`)
+    - `ghcr.io/<ihr-benutzername>/vinyl-tracker-frontend:latest` (oder `:v1.7.0`)
 
 ### Option B: Manueller Build
 Wenn Sie die Images manuell von Ihrem Entwicklungsrechner pushen möchten:
@@ -77,6 +77,8 @@ wget https://raw.githubusercontent.com/gerontosepp/vinyl-tracker/develop/.env.ex
       ```bash
       REGISTRY_PREFIX=meinbenutzer/
       ```
+5.  **Datenbank-Migrationen & Flyway Baselining**:
+    Wenn Sie die Anwendung gegen eine bereits existierende Datenbank deployen, stellen Sie sicher, dass `SPRING_FLYWAY_BASELINE_ON_MIGRATE=true` in Ihrer `.env` oder der Compose-Datei gesetzt ist (standardmäßig in `docker-compose.registry.yml` und `docker-compose.prod.yml` aktiviert), um die Datenbank korrekt zu initialisieren.
 
 ## 4. Anwendung starten
 
@@ -87,7 +89,7 @@ docker compose up -d
 ```
 *Hinweis: Dies setzt voraus, dass die Datei zuvor als `docker-compose.yml` gespeichert wurde. Wenn Sie den Originalnamen beibehalten, verwenden Sie `docker compose -f docker-compose.registry.yml up -d`.*
 
-*Images werden standardmäßig als `latest` gezogen, es sei denn, in der Compose-Datei sind explizit Versionstags (z.B. `:v1.6.3`) gesetzt.*
+*Images werden standardmäßig als `latest` gezogen, es sei denn, in der Compose-Datei sind explizit Versionstags (z.B. `:v1.7.0`) gesetzt.*
 
 Die Anwendung läuft nun auf **Port 80** der Zielmaschine.
 

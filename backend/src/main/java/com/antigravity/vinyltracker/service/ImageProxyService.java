@@ -23,7 +23,7 @@ public class ImageProxyService {
     public Optional<ResponseEntity<byte[]>> proxyImage(String url) {
         try {
             HttpHeaders requestHeaders = new HttpHeaders();
-            requestHeaders.set("User-Agent", "VinylTracker/1.0 +https://github.com/gerontosepp-dev/AntiGrafity");
+            requestHeaders.set("User-Agent", "VinylTracker/1.0 +https://github.com/gerontosepp/vinyl-tracker");
             HttpEntity<String> entity = new HttpEntity<>(requestHeaders);
 
             ResponseEntity<byte[]> response = restTemplate.exchange(url, HttpMethod.GET, entity, byte[].class);

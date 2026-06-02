@@ -4,40 +4,41 @@ import { useTheme } from '../context/useTheme';
 import { useToast } from '../context/ToastContext';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout/Layout';
- 
+
 const Settings: React.FC = () => {
-  const { user, updateDiscogs, isLoading, isSyncing, performSync, resetAllListens, logout } = useAuth();
+  const { user, updateDiscogs, isLoading, isSyncing, performSync, resetAllListens, logout } =
+    useAuth();
   const { theme, setTheme } = useTheme();
   const { showToast } = useToast();
   const [discogsUsername, setDiscogsUsername] = useState(user?.discogsUsername || '');
   const [token, setToken] = useState('');
   const [password, setPassword] = useState('');
   const [showResetConfirm, setShowResetConfirm] = useState(false);
- 
+
   const navigate = useNavigate();
- 
+
   const handleScan = () => {
     navigate('/', { state: { scan: true } });
   };
- 
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
- 
+
     if (!password) {
       showToast('Current password is required to encrypt your token.', 'error');
       return;
     }
- 
+
     try {
       await updateDiscogs(discogsUsername, token, password);
       showToast('Settings updated successfully!', 'success');
       setToken('');
       setPassword('');
-    } catch (err) {
+    } catch {
       showToast('Failed to update settings. Check your password.', 'error');
     }
   };
- 
+
   const handleResetListens = async () => {
     setShowResetConfirm(false);
     try {
@@ -45,18 +46,18 @@ const Settings: React.FC = () => {
         await resetAllListens(user.username);
         // Toast is handled in AuthContext
       }
-    } catch (err) {
+    } catch {
       // Toast is handled in AuthContext
     }
   };
- 
+
   return (
     <Layout onScanClick={handleScan}>
       <div className="max-w-6xl mx-auto space-y-6">
         <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight mb-2 px-2">
           Profile & Settings
         </h1>
- 
+
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* LEFT COLUMN - USER PROFILE */}
           <div className="col-span-1 lg:col-span-5 space-y-6">
@@ -76,7 +77,7 @@ const Settings: React.FC = () => {
               <p className="text-slate-500 dark:text-slate-400 font-medium text-sm mt-1">
                 {user?.username}@vinyltracker.app
               </p>
- 
+
               <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-600">
                 <button
                   onClick={logout}
@@ -87,7 +88,7 @@ const Settings: React.FC = () => {
               </div>
             </div>
           </div>
- 
+
           {/* RIGHT COLUMN - SYSTEM SETTINGS */}
           <div className="col-span-1 lg:col-span-7 space-y-6">
             {/* Appearance Settings */}
@@ -115,7 +116,7 @@ const Settings: React.FC = () => {
                 </select>
               </div>
             </div>
- 
+
             {/* Discogs Integration Details */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-600 p-6 transition-colors">
               <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-2">
@@ -124,7 +125,7 @@ const Settings: React.FC = () => {
               <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 font-medium">
                 Manage your Discogs API connectivity for scanning and syncing your collection.
               </p>
- 
+
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -151,7 +152,7 @@ const Settings: React.FC = () => {
                     />
                   </div>
                 </div>
- 
+
                 <div className="mt-4">
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
                     Current Password
@@ -165,7 +166,7 @@ const Settings: React.FC = () => {
                     className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-2.5 text-slate-900 dark:text-slate-100 font-medium focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all focus:border-amber-400"
                   />
                 </div>
- 
+
                 <div className="flex justify-end mt-4 pt-4 border-t border-slate-100 dark:border-slate-600">
                   <button
                     type="submit"
@@ -177,7 +178,7 @@ const Settings: React.FC = () => {
                 </div>
               </form>
             </div>
- 
+
             {/* Data Management */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-600 p-6 transition-colors">
               <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-2">
@@ -186,7 +187,7 @@ const Settings: React.FC = () => {
               <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 font-medium">
                 Sync your collection manually or export your data.
               </p>
- 
+
               <div className="flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={() => {
@@ -197,7 +198,7 @@ const Settings: React.FC = () => {
                 >
                   Force Sync Collection
                 </button>
-                <button 
+                <button
                   onClick={() => setShowResetConfirm(true)}
                   disabled={isSyncing}
                   className="flex-1 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800/50 font-bold px-4 py-3 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
@@ -212,7 +213,7 @@ const Settings: React.FC = () => {
           </div>
         </div>
       </div>
- 
+
       {/* Confirm Dialog for Reset Listens */}
       {showResetConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -244,5 +245,5 @@ const Settings: React.FC = () => {
     </Layout>
   );
 };
- 
+
 export default Settings;

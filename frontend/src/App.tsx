@@ -11,16 +11,16 @@ import Settings from './pages/Settings';
 import Dashboard from './pages/Dashboard';
 import Collection from './pages/Collection';
 import Statistics from './pages/Statistics';
- 
+
 import './index.css';
- 
+
 const ProtectedRoute = ({ children }: { children: React.JSX.Element }) => {
   const { user, isLoading } = useAuth();
   if (isLoading) return <div>Loading...</div>;
   if (!user) return <Navigate to="/login" replace />;
   return children;
 };
- 
+
 function App() {
   return (
     <ThemeProvider>
@@ -78,5 +78,5 @@ function App() {
     </ThemeProvider>
   );
 }
- 
+
 export default App;

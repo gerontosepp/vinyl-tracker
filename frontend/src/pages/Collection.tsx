@@ -21,7 +21,7 @@ import {
   X,
 } from 'lucide-react';
 import { getErrorMessage } from '../utils/error';
- 
+
 const isCanceledRequest = (error: unknown): boolean => {
   return (
     (error instanceof DOMException && error.name === 'AbortError') ||
@@ -31,28 +31,28 @@ const isCanceledRequest = (error: unknown): boolean => {
       (error as { code?: string }).code === 'ERR_CANCELED')
   );
 };
- 
+
 const Collection: React.FC = () => {
   const { user } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
- 
+
   // Pagination State
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(50);
   const [totalPages, setTotalPages] = useState(1);
   const [releases, setReleases] = useState<CollectionRelease[]>([]);
- 
+
   // Loading State
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [loadStatus, setLoadStatus] = useState('');
- 
+
   // Persistent Selection State: Store map of ID -> QrCodeItem to keep track of details
   const [selectedItems, setSelectedItems] = useState<Map<number, QrCodeItem>>(new Map());
- 
+
   // Debounce search input
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -63,22 +63,22 @@ const Collection: React.FC = () => {
     }, 400);
     return () => clearTimeout(handler);
   }, [search, debouncedSearch]);
- 
+
   const handleScan = () => {
     navigate('/', { state: { scan: true } });
   };
- 
+
   // Filter State
   const [showPlayedOnly, setShowPlayedOnly] = useState(false);
- 
+
   // Sort State
   const [sort, setSort] = useState('artist');
   const [sortOrder, setSortOrder] = useState('asc');
- 
+
   // Fetch Data
   useEffect(() => {
     const controller = new AbortController();
- 
+
     const fetchData = async () => {
       if (!user) return;
       setLoading(true);
@@ -123,12 +123,12 @@ const Collection: React.FC = () => {
       }
     };
     fetchData();
- 
+
     return () => {
       controller.abort();
     };
   }, [user, page, perPage, showPlayedOnly, sort, sortOrder, debouncedSearch, showToast]);
- 
+
   // Selection Logic
   const toggleSelection = (release: CollectionRelease) => {
     const id = release.id;
@@ -150,10 +150,10 @@ const Collection: React.FC = () => {
       return newMap;
     });
   };
- 
+
   const toggleSelectAllPage = () => {
     const allSelected = releases.every((r) => selectedItems.has(r.id));
- 
+
     setSelectedItems((prev) => {
       const newMap = new Map(prev);
       if (allSelected) {
@@ -174,14 +174,14 @@ const Collection: React.FC = () => {
       return newMap;
     });
   };
- 
+
   // Derived Selection State for UI
   const isAllPageSelected = useMemo(
     () => releases.length > 0 && releases.every((r) => selectedItems.has(r.id)),
     [releases, selectedItems]
   );
   const selectedCount = useMemo(() => selectedItems.size, [selectedItems]);
- 
+
   // QR Code Generation
   const handleDownloadSelected = async () => {
     if (selectedCount === 0) return;
@@ -198,7 +198,7 @@ const Collection: React.FC = () => {
       setGenerating(false);
     }
   };
- 
+
   const handleDownloadAll = async () => {
     if (!user) return;
     if (!window.confirm('Generate QR codes for your ENTIRE collection? This may take a while.'))
@@ -215,7 +215,7 @@ const Collection: React.FC = () => {
       setGenerating(false);
     }
   };
- 
+
   const downloadBlob = (blob: Blob, filename: string) => {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -226,7 +226,7 @@ const Collection: React.FC = () => {
     window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
   };
- 
+
   return (
     <Layout onScanClick={handleScan}>
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm flex flex-col h-[calc(100vh-6rem)] md:h-[calc(100vh-5rem)] transition-colors border border-slate-200/50 dark:border-slate-600">
@@ -235,7 +235,7 @@ const Collection: React.FC = () => {
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
             My Collection
           </h1>
- 
+
           <div className="flex gap-3 w-full md:w-auto">
             <button
               onClick={handleDownloadSelected}
@@ -259,7 +259,7 @@ const Collection: React.FC = () => {
             </button>
           </div>
         </div>
- 
+
         {/* Controls & Pagination Top (Sticky with Glassmorphism) */}
         <div className="sticky top-0 z-20 p-4 md:px-6 bg-slate-50/70 dark:bg-slate-900/60 backdrop-blur-xl flex flex-col xl:flex-row justify-between items-stretch xl:items-center gap-4 border-b border-slate-200/50 dark:border-slate-600 text-sm transition-colors shadow-sm">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full xl:w-auto">
@@ -291,7 +291,7 @@ const Collection: React.FC = () => {
                 </button>
               )}
             </div>
- 
+
             {/* Filter Buttons & Sort - Scroll horizontally on small screens */}
             <div className="flex items-center gap-3 order-2 sm:order-none overflow-x-auto pb-1 sm:pb-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden w-full sm:w-auto">
               <button
@@ -305,7 +305,7 @@ const Collection: React.FC = () => {
                 )}
                 <span className="whitespace-nowrap">Select Page</span>
               </button>
- 
+
               <button
                 onClick={() => {
                   setShowPlayedOnly(!showPlayedOnly);
@@ -324,9 +324,9 @@ const Collection: React.FC = () => {
                   </span>
                 )}
               </button>
- 
+
               <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 shrink-0 mr-1 ml-1" />
- 
+
               {/* Sort Controls */}
               <div className="flex items-center gap-1.5 shrink-0">
                 <span className="text-slate-500 dark:text-slate-400 font-medium hidden sm:inline">
@@ -353,7 +353,7 @@ const Collection: React.FC = () => {
               </div>
             </div>
           </div>
- 
+
           <div className="flex items-center justify-between xl:justify-end gap-4 w-full xl:w-auto shrink-0 order-3 border-t xl:border-t-0 pt-3 xl:pt-0 border-slate-200 dark:border-slate-600 mt-1 xl:mt-0">
             {!loading && loadStatus && (
               <div
@@ -376,7 +376,7 @@ const Collection: React.FC = () => {
                 <span className="truncate">Discogs: {loadStatus}</span>
               </div>
             )}
- 
+
             <select
               value={perPage}
               onChange={(e) => {
@@ -412,7 +412,7 @@ const Collection: React.FC = () => {
             </div>
           </div>
         </div>
- 
+
         {/* List Content */}
         <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50/30 dark:bg-slate-900/20 relative">
           {loading ? (
@@ -533,13 +533,13 @@ const Collection: React.FC = () => {
                   </tbody>
                 </table>
               </div>
- 
+
               {/* --- MOBILE CARDS (Hidden on >=md) --- */}
               <div className="grid md:hidden grid-cols-2 gap-4 pb-4">
                 {releases.map((release, index) => {
                   const isSelected = selectedItems.has(release.id);
                   const artist = release.basic_information.artists?.[0]?.name || 'Unknown';
- 
+
                   return (
                     <div
                       key={release.id}
@@ -550,7 +550,7 @@ const Collection: React.FC = () => {
                       <div className="absolute top-2 right-2 z-10 bg-slate-900/80 dark:bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-full backdrop-blur-md font-bold shadow-sm">
                         {release.listen_count || 0} plays
                       </div>
- 
+
                       <div className="absolute top-2 left-2 z-10 transition-transform hover:scale-105">
                         {isSelected ? (
                           <CheckSquare
@@ -564,7 +564,7 @@ const Collection: React.FC = () => {
                           />
                         )}
                       </div>
- 
+
                       <div className="w-full aspect-square bg-slate-100 dark:bg-slate-700/50 rounded-xl overflow-hidden relative shadow-inner">
                         {release.basic_information.thumb ? (
                           <img
@@ -578,7 +578,7 @@ const Collection: React.FC = () => {
                           </div>
                         )}
                       </div>
- 
+
                       <div className="flex-1 min-w-0 flex flex-col pt-1">
                         <h3
                           className="font-bold text-slate-900 dark:text-slate-100 truncate text-sm leading-tight mb-0.5"
@@ -596,7 +596,7 @@ const Collection: React.FC = () => {
               </div>
             </>
           )}
- 
+
           {!loading && releases.length === 0 && (
             <div className="flex flex-col items-center justify-center py-20 px-4 text-center mt-8 max-w-md mx-auto animate-fade-in">
               <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6 text-slate-400 dark:text-slate-500 shadow-inner">
@@ -624,5 +624,5 @@ const Collection: React.FC = () => {
     </Layout>
   );
 };
- 
+
 export default Collection;

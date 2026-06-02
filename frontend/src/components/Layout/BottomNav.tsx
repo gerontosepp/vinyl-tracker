@@ -40,7 +40,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ onScanClick }) => {
         isActive={isActive('/collection')}
         navigate={navigate}
       />
-      
+
       <NavItem
         path="/statistics"
         icon={BarChart2}

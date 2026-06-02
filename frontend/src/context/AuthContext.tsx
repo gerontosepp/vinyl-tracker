@@ -10,7 +10,7 @@ import {
 } from '../services/api';
 import { getErrorMessage } from '../utils/error';
 import { useToast } from '../context/ToastContext';
- 
+
 interface AuthContextType {
   user: User | null;
   login: (username: string, password: string) => Promise<void>;
@@ -22,21 +22,21 @@ interface AuthContextType {
   performSync: (username: string) => Promise<void>;
   resetAllListens: (username: string) => Promise<number>;
 }
- 
+
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
- 
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const { showToast } = useToast();
   const syncInFlightRef = useRef<Promise<void> | null>(null);
- 
+
   const performSync = async (usernameToSync: string) => {
     if (syncInFlightRef.current) {
       return syncInFlightRef.current;
     }
- 
+
     const syncPromise = (async () => {
       setIsSyncing(true);
       try {
@@ -51,7 +51,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setIsSyncing(false);
       }
     })();
- 
+
     syncInFlightRef.current = syncPromise;
     try {
       await syncPromise;
@@ -59,7 +59,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       syncInFlightRef.current = null;
     }
   };
- 
+
   const resetAllListens = async (username: string): Promise<number> => {
     setIsSyncing(true);
     try {
@@ -74,7 +74,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsSyncing(false);
     }
   };
- 
+
   useEffect(() => {
     if (typeof getUser !== 'function') {
       setIsLoading(false);
@@ -90,7 +90,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(false);
     }
   }, []);
- 
+
   const login = async (username: string, password: string) => {
     setIsLoading(true);
     try {
@@ -99,25 +99,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (userData.discogsUsername) {
         performSync(username).catch(console.error);
       }
-    } catch (error: unknown) {
-      throw error;
     } finally {
       setIsLoading(false);
     }
   };
- 
+
   const register = async (username: string, password: string) => {
     setIsLoading(true);
     try {
       const userData = await registerUser(username, password);
       setUser(userData);
-    } catch (error: unknown) {
-      throw error;
     } finally {
       setIsLoading(false);
     }
   };
- 
+
   const updateDiscogs = async (discogsUsername: string, token: string, password: string) => {
     if (!user) return;
     setIsLoading(true);
@@ -130,20 +126,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       );
       setUser(updatedUser);
       performSync(updatedUser.username).catch(console.error);
-    } catch (error: unknown) {
-      throw error;
     } finally {
       setIsLoading(false);
     }
   };
- 
+
   const logout = () => {
     logoutUser().catch((error: unknown) => {
       console.error('Logout failed:', getErrorMessage(error, 'Unknown logout error'));
     });
     setUser(null);
   };
- 
+
   return (
     <AuthContext.Provider
       value={{

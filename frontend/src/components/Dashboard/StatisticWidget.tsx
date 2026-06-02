@@ -24,9 +24,7 @@ const StatisticWidget: React.FC<StatisticWidgetProps> = ({
       <div className="mb-4">
         <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
           {title}
-          {subtitle && (
-            <span className="text-xs text-slate-400 normal-case ml-2">{subtitle}</span>
-          )}
+          {subtitle && <span className="text-xs text-slate-400 normal-case ml-2">{subtitle}</span>}
         </h3>
         {error && !loading && (
           <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 font-medium">{error}</p>

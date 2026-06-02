@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom';
 import type { ReactNode } from 'react';
 import { vi } from 'vitest';
- 
+
 vi.mock('recharts', async () => {
   const OriginalModule = await vi.importActual<typeof import('recharts')>('recharts');
   return {
@@ -20,7 +20,7 @@ vi.mock('recharts', async () => {
     CartesianGrid: () => null,
   };
 });
- 
+
 // Global mocks for JSDOM
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
@@ -35,19 +35,19 @@ Object.defineProperty(window, 'matchMedia', {
     dispatchEvent: vi.fn(),
   })),
 });
- 
+
 class ResizeObserver {
   observe() {}
   unobserve() {}
   disconnect() {}
 }
 window.ResizeObserver = ResizeObserver;
- 
+
 Object.defineProperty(window, 'isSecureContext', {
   value: true,
   writable: true,
 });
- 
+
 const localStorageMock = (function () {
   let store: Record<string, string> = {};
   return {
@@ -65,7 +65,7 @@ const localStorageMock = (function () {
     },
   };
 })();
- 
+
 Object.defineProperty(window, 'localStorage', {
   value: localStorageMock,
 });

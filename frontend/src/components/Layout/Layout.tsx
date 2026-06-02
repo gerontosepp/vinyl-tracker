@@ -36,9 +36,7 @@ const Layout: React.FC<LayoutProps> = ({ children, onScanClick }) => {
 
       {/* Sync Global Toast Notification */}
       {isSyncing && (
-        <div
-          className="fixed bottom-[100px] md:bottom-8 right-4 md:right-8 left-4 md:left-auto p-4 rounded-xl shadow-lg border flex items-center space-x-3 z-50 text-sm font-medium transition-all duration-300 transform translate-y-0 opacity-100 max-w-full md:max-w-md bg-white/90 dark:bg-slate-800/90 backdrop-blur text-slate-800 dark:text-slate-200 border-slate-100 dark:border-slate-700"
-        >
+        <div className="fixed bottom-[100px] md:bottom-8 right-4 md:right-8 left-4 md:left-auto p-4 rounded-xl shadow-lg border flex items-center space-x-3 z-50 text-sm font-medium transition-all duration-300 transform translate-y-0 opacity-100 max-w-full md:max-w-md bg-white/90 dark:bg-slate-800/90 backdrop-blur text-slate-800 dark:text-slate-200 border-slate-100 dark:border-slate-700">
           <div className="w-5 h-5 rounded-full border-2 border-indigo-600 border-t-transparent animate-spin"></div>
           <span>Syncing Discogs Collection...</span>
         </div>

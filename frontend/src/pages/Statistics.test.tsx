@@ -44,8 +44,8 @@ describe('Statistics Component', () => {
     expect(await screen.findByText(/Collection Statistics/i)).toBeInTheDocument();
 
     // Find text with longer timeout
-    await screen.findByText(/1,000/, {}, { timeout: 4000 });
-    await screen.findByText(/2,000/, {}, { timeout: 4000 });
+    await screen.findByText(/1[.,]000/, {}, { timeout: 4000 });
+    await screen.findByText(/2[.,]000/, {}, { timeout: 4000 });
     await screen.findByText(/Rock/, {}, { timeout: 4000 });
     await screen.findByText(/Jazz/, {}, { timeout: 4000 });
   });

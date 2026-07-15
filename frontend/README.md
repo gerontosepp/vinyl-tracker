@@ -1,67 +1,59 @@
-# Frontend (Vinyl Tracker)
+# Frontend
 
-React + TypeScript + Vite frontend for Vinyl Tracker.
+This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.27.
 
-## Voraussetzungen
+## Development server
 
-- Node.js 20+
-- npm 10+
-
-## Setup
+To start a local development server, run:
 
 ```bash
-cd frontend
-npm install
+ng serve
 ```
 
-Optional fuer lokale HTTPS-Entwicklung mit Kamerazugriff:
+Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+
+## Code scaffolding
+
+Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
 
 ```bash
-mkdir -p certs
-# Zertifikate wie im Root-README beschrieben erzeugen
+ng generate component component-name
 ```
 
-## Wichtige Skripte
+For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
 
 ```bash
-# Dev server
-npm run dev
-
-# Production build
-npm run build
-
-# Preview build
-npm run preview
-
-# Linting
-npm run lint
-
-# Formatierung
-npm run format
-
-# Unit/Integration tests
-npm run test -- --run
-
-# E2E tests
-npm run test:e2e
+ng generate --help
 ```
 
-## Architektur-Hinweise
+## Building
 
-- Routing und Route-Guards sind in `src/App.tsx` definiert.
-- Globale Auth-Logik liegt im Context (`src/context/AuthContext.tsx`).
-- API-Zugriffe laufen zentral ueber `src/services/api.ts`.
-- Dashboard-Charts beziehen Live-Daten aus:
-  - `GET /api/analytics/collection/value`
-  - `GET /api/analytics/collection/genres`
+To build the project run:
 
-## Tests
+```bash
+ng build
+```
 
-- Test-Framework: Vitest + React Testing Library
-- E2E: Playwright
-- Coverage-Schwellen sind in `vite.config.ts` hinterlegt (linienbasiert >= 80%).
+This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
 
-## Hinweise zu Auth
+## Running unit tests
 
-- Primar nutzt das Frontend HttpOnly-Cookie-basierte Authentifizierung (`withCredentials: true`).
-- Fuer Umgebungen mit eingeschraenkter Cookie-Propagation ist ein Bearer-Token-Fallback aktiviert.
+To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+
+```bash
+ng test
+```
+
+## Running end-to-end tests
+
+For end-to-end (e2e) testing, run:
+
+```bash
+ng e2e
+```
+
+Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+
+## Additional Resources
+
+For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.

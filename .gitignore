@@ -29,3 +29,6 @@ build_log.txt
 # Certificates
 certs/
 frontend/certs/
+
+# React Backup
+frontend_react/

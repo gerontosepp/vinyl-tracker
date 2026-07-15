@@ -31,7 +31,7 @@ The **Vinyl Tracker** is a personal web application designed for vinyl enthusias
 
 - **Technology Stack**:
     - **Backend**: Java 25+ (Spring Boot 4.0+).
-    - **Frontend**: React (TypeScript, Vite).
+    - **Frontend**: Angular 19 (TypeScript).
     - **Database**: PostgreSQL 16.
     - **Caching & Resilience**: Caffeine, Resilience4j.
     - **Migrations**: Flyway.
@@ -78,7 +78,7 @@ The system consists of three main containers:
 
 | Building Block | Description | Technology |
 | :--- | :--- | :--- |
-| **Frontend** | Single Page Application handling UI, routing, and device integration (Camera). | React, Vite, Tailwind CSS, html5-qrcode |
+| **Frontend** | Single Page Application handling UI, routing, and device integration (Camera). | Angular 19, Tailwind CSS, html5-qrcode |
 | **Backend** | Core business logic, API endpoints, schedulers, and database interactions. | Java 25, Spring Boot, Spring Data JPA, Lombok |
 | **Database** | Persistent storage for users, records, and listening events. | PostgreSQL 16, Flyway |
 
@@ -186,14 +186,14 @@ The system is deployed as a multi-container Docker application orchestrated by D
 | Decision | Reasoning | Status |
 | :--- | :--- | :--- |
 | **Java 25 Migration** | Upgraded to Java 25 (LTS) along with Lombok 1.18.44. The previous downgrade to Java 21 LTS is no longer necessary as tools have caught up with the newer LTS release. | Accepted |
-| **React/Vite** | Modern, fast tooling compared to Create-React-App. React ecosystem is robust for PWA features. | Accepted |
+| **Angular 19** | Modern, robust framework with signals for reactive state management, service worker support, and standalone components. | Accepted |
 | **Tailwind CSS** | Utility-first CSS allows for rapid UI development and consistent design tokens without managing complex stylesheets. | Accepted |
 | **PostgreSQL** | Industry standard, robust relational database. Suitable for structured data like catalog entries. | Accepted |
 | **Flyway Migrations** | Replaced Hibernate `ddl-auto: update` with Flyway for reliable, versioned schema migrations in production. | Accepted |
 
 ## 10. Quality Requirements
 
-- **Test Coverage**: Strict requirement of >80% line coverage for both Backend (JaCoCo) and Frontend (Vitest). Enforced by CI/CD.
+- **Test Coverage**: Strict requirement of >80% line coverage for both Backend (JaCoCo) and Frontend (Karma/Jasmine). Enforced by CI/CD.
 - **Dependency Hygiene**: Backend dependencies are checked in CI against Sonatype OSS Index; findings are reported to an audit artifact (`ossindex-audit.json`) with the current configuration set to non-blocking (`fail=false`).
 - **Test Execution Split**: Unit tests run via Surefire during `test`, while integration tests run via Failsafe during `verify`. This improves local feedback speed while keeping full validation in CI.
 - **Responsiveness**: The UI must adapt to mobile screens (< 768px) for usable barcode scanning on phones.

@@ -102,8 +102,8 @@ jobs:
       run: npm ci --legacy-peer-deps
 
     - name: Run Tests
-      # --coverage flag triggers coverage collection. Vitest config has thresholds set to failure if < 80% lines
-      run: npm run test -- --coverage
+      # Runs Angular Karma unit tests in headless mode with code coverage
+      run: npm run test -- --watch=false --code-coverage --browsers=ChromeHeadless
 
     # We build the Docker image which includes the build step, so explicit 'npm run build' is redundant for the artifact if we just want the image.
     # But sticking to the pattern:

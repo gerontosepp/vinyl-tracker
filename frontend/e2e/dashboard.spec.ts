@@ -2,6 +2,8 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Dashboard', () => {
   test.beforeEach(async ({ page }) => {
+    page.on('console', msg => console.log('BROWSER LOG:', msg.text(), msg.type()));
+    page.on('requestfailed', request => console.log('REQUEST FAILED:', request.url(), request.failure()?.errorText));
     // Mock login and data
     await page.route('**/api/users/login', async (route) => {
       await route.fulfill({

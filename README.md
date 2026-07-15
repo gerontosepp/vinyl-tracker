@@ -1,4 +1,4 @@
-# Vinyl Tracker v1.7.1
+# Vinyl Tracker v2.0.0
 
 A personal vinyl record tracking application that allows users to scan barcodes, identify records via Discogs, and log listening sessions.
 
@@ -9,7 +9,7 @@ Release history: [Release-Info](docs/Release-Info.md)
 The project follows a modern containerized micro-architecture:
 
 ### Frontend
-- **Framework**: React (built with Vite)
+- **Framework**: Angular 19
 - **Language**: TypeScript
 - **Features**: 
   - Progressive Web App (PWA) capabilities for mobile usage.
@@ -137,7 +137,7 @@ The application requires environment variables for configuration (database crede
     - **Warning**: This action cannot be undone and will delete all listening event records.
 
 ### Frontend
-Located in `/frontend`. Recommended to use `--legacy-peer-deps` when installing.
+Located in `/frontend`.
 
 **Run Tests:**
 ```bash
@@ -145,23 +145,19 @@ cd frontend
 npm install
 npm test
 ```
-*Note: Tests enforce >80% code coverage.*
+*Note: Tests enforce >80% code coverage for core services, utilities, and components.*
 
 **Available NPM Scripts:**
 | Script | Description |
 | :--- | :--- |
-| `npm run dev` | Starts the development server with hot-reloading |
+| `npm run dev` | Starts the Angular development server on port 5173 with proxy configuration |
 | `npm run build` | Builds the application for production |
-| `npm run preview` | Previews the production build locally |
-| `npm run lint` | Runs ESLint to check for code quality issues |
-| `npm run format` | Runs Prettier to format the codebase |
-| `npm run test` | Runs unit and integration tests (Vitest) |
+| `npm run test` | Runs unit tests (Karma/Jasmine) in headless mode |
 | `npm run test:e2e` | Runs end-to-end tests (Playwright) - requires local env running |
-| `npm run prepare` | Sets up Husky git hooks |
 
 Current high-risk regression coverage focuses on authentication, dashboard scanner access, and manual Discogs sync flows in Playwright plus backend negative-path tests for scan validation and ownership checks.
 
-Architecture hardening (v1.6.x): User endpoints now use validated request DTOs (no loose map payloads), frontend error handling relies on typed unknown-to-message extraction, and dashboard/list views include memoization in critical render paths.
+Architecture hardening: User endpoints use validated request DTOs, frontend error handling extracts typed unknown messages, and core features use modern Angular signals for reactive state management.
 
 ### Backend
 Located in `/backend`.

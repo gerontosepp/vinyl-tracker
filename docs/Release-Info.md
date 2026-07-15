@@ -2,6 +2,13 @@
 
 Kurze Uebersicht der Aenderungen je Version (abgeleitet aus Git-Tags und Commit-Historie).
 
+## v2.0.0 (2026-07-15)
+- Migration: Frontend komplett von React/Vite auf Angular 19 migriert.
+- Testing: Umfassende Jasmine/Karma-Unittests fuer core Services, shared Layout-Komponenten und Utility-Funktionen eingefuehrt.
+- Code-Coverage: Abdeckungsbericht fuer Angular-Frontend auf >90% angehoben (Uebererfuellung des >80% Projektziels).
+- Dokumentation: README.md und arc42.md vollständig an die neue Angular-Struktur angepasst.
+- Docker-DevEx: Healthcheck fuer Postgres hinzugefuegt und Maven Layer-Caching optimiert.
+
 ## v1.7.0 (2026-03-17)
 - Neue Funktion: "Reset All Listens" im Frontend inkl. bestaetigendem Dialog.
 - Statistik erweitert: Verlauf/History fuer Collection-Value.

@@ -27,9 +27,10 @@ public class Record {
     private String year;
     private String thumbUrl;
 
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "record_genres", joinColumns = @JoinColumn(name = "record_id"))
     @Column(name = "genre")
+    @org.hibernate.annotations.BatchSize(size = 50)
     private List<String> genres = new ArrayList<>();
 
     public Record(Long discogsId, String title, String artist, String year, String thumbUrl) {

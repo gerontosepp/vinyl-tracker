@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 @Service
 @lombok.extern.slf4j.Slf4j
 @RequiredArgsConstructor
+@org.springframework.transaction.annotation.Transactional(readOnly = true)
 public class CollectionQueryService {
 
     private final ListenEventRepository listenEventRepository;

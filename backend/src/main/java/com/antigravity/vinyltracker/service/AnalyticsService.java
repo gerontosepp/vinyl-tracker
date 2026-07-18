@@ -85,6 +85,7 @@ public class AnalyticsService {
         return discogsApiClient.getCollectionValue(user);
     }
  
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public List<Map<String, Object>> getGenreBreakdown(String username) {
         AppUser user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));

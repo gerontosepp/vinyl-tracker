@@ -512,7 +512,6 @@ export class CollectionComponent implements OnInit, OnDestroy {
 
     this.sub = this.apiService
       .getCollection(
-        user.username,
         this.page(),
         this.perPage(),
         minPlays,
@@ -664,7 +663,7 @@ export class CollectionComponent implements OnInit, OnDestroy {
 
     this.generating.set(true);
     try {
-      const blob = await firstValueFrom(this.apiService.downloadQrCodes(user.username));
+      const blob = await firstValueFrom(this.apiService.downloadQrCodes());
       this.downloadBlob(blob, 'collection_qr_codes.pdf');
       this.toastService.showToast('QR codes generated successfully', 'success');
     } catch (err) {

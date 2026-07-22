@@ -90,16 +90,16 @@ export class TopMenuBarComponent {
     effect(() => {
       const user = this.authService.user();
       if (user?.username) {
-        this.fetchTotalRecords(user.username);
+        this.fetchTotalRecords();
       } else {
         this.totalRecords.set(null);
       }
     });
   }
 
-  private async fetchTotalRecords(username: string): Promise<void> {
+  private async fetchTotalRecords(): Promise<void> {
     try {
-      const res = await firstValueFrom(this.apiService.getCollection(username, 1, 1));
+      const res = await firstValueFrom(this.apiService.getCollection(1, 1));
       this.totalRecords.set(res.pagination ? res.pagination.items : res.releases.length);
     } catch (err) {
       console.error('Failed to fetch total records for top bar', err);

@@ -216,8 +216,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.loadingStats.set(true);
 
     this.sub = forkJoin({
-      recents: this.apiService.getRecentListens(user.username, this.startDate(), this.endDate()),
-      tops: this.apiService.getTopRecords(user.username, this.startDate(), this.endDate()),
+      recents: this.apiService.getRecentListens(this.startDate(), this.endDate()),
+      tops: this.apiService.getTopRecords(this.startDate(), this.endDate()),
       value: this.apiService.getCollectionValue(),
       genres: this.apiService.getGenreBreakdown(),
     }).subscribe({
@@ -263,12 +263,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (!user || !window.confirm('Delete this scan?')) return;
 
     try {
-      await firstValueFrom(this.apiService.deleteScan(id, user.username));
+      await firstValueFrom(this.apiService.deleteScan(id));
       this.recentListens.update((prev) => prev.filter((item) => item.id !== id));
 
       // Refresh top records
       const tops = await firstValueFrom(
-        this.apiService.getTopRecords(user.username, this.startDate(), this.endDate())
+        this.apiService.getTopRecords(this.startDate(), this.endDate())
       );
       this.topRecords.set(tops);
 

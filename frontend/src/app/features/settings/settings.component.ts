@@ -251,21 +251,15 @@ export class SettingsComponent {
   }
 
   forceSync(): void {
-    const user = this.authService.user();
-    if (user) {
-      this.authService.performSync(user.username);
-    }
+    this.authService.performSync();
   }
 
   async handleResetListens(): Promise<void> {
     this.showResetConfirm.set(false);
-    const user = this.authService.user();
-    if (user) {
-      try {
-        await this.authService.resetAllListens(user.username);
-      } catch (err) {
-        // Handled in AuthService
-      }
+    try {
+      await this.authService.resetAllListens();
+    } catch (err) {
+      // Handled in AuthService
     }
   }
 

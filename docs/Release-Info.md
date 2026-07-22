@@ -2,6 +2,10 @@
 
 Kurze Uebersicht der Aenderungen je Version (abgeleitet aus Git-Tags und Commit-Historie).
 
+## Unreleased
+- API-Dokumentation: OpenAPI/Swagger UI (springdoc) integriert (`/swagger-ui.html`, `/v3/api-docs`); in Produktion via `SPRINGDOC_*_ENABLED=false` deaktiviert.
+- Performance: `Record.genres` `@ElementCollection` auf `LAZY` mit Hibernate `@BatchSize(50)` umgestellt, um N+1-Genre-Abfragen zu vermeiden.
+
 ## v2.0.0 (2026-07-15)
 - Migration: Frontend komplett von React/Vite auf Angular 19 migriert.
 - Testing: Umfassende Jasmine/Karma-Unittests fuer core Services, shared Layout-Komponenten und Utility-Funktionen eingefuehrt.

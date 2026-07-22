@@ -112,7 +112,7 @@ export class BarcodeScannerComponent implements AfterViewInit, OnDestroy {
           if (user) {
             try {
               const apiResult = await firstValueFrom(
-                this.apiService.scanBarcode(result, user.username)
+                this.apiService.scanBarcode(result)
               );
               this.scanResult.set(apiResult);
             } catch (error) {

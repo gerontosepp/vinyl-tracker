@@ -35,6 +35,7 @@ The **Vinyl Tracker** is a personal web application designed for vinyl enthusias
     - **Database**: PostgreSQL 16.
     - **Caching & Resilience**: Caffeine, Resilience4j.
     - **Migrations**: Flyway.
+    - **API Documentation**: springdoc-openapi (Swagger UI).
     - **Containerization**: Docker & Docker Compose.
 - **License**: MIT License (Open Source).
 - **Deployment**: Self-hosted via Docker Compose.
@@ -146,7 +147,7 @@ The system is deployed as a multi-container Docker application orchestrated by D
 **Docker Compose Structure**:
 - `postgres`: Database service containing the `vinyl_tracker` data. Includes a robust `pg_isready` healthcheck.
 - `backend`: Java application, strictly depends on `postgres` being in a `service_healthy` state to prevent startup failures. Exposed on port 8080.
-- `frontend`: Nginx (Production) or Vite Dev Server (Development). Exposed on port 3000/5173.
+- `frontend`: Nginx (Production, port 80) or Angular dev-server (Development, port 5173). Serves the built Angular PWA.
 
 ## 8. Cross-cutting Concepts
 
@@ -173,10 +174,14 @@ The system is deployed as a multi-container Docker application orchestrated by D
 ### 8.4 Observability & Logging
 - **Backend Logging**: A global `HandlerInterceptor` tracks HTTP request execution times, final status codes, and implicitly catches and logs thrown exceptions for all `/api/**` endpoints.
 - **Frontend Logging**: 
-    - **Browser Environment**: Axios HTTP interceptors log request latencies and response statuses transparently into the browser console.
-    - **Container Proxy**: The frontend Docker container (Nginx structure and Vite dev-server) intercepts proxy API traffic and logs metrics matching the backend console format for centralized Docker monitoring.
+    - **Browser Environment**: An Angular `HttpInterceptorFn` (`authInterceptor`) logs request latencies and response statuses transparently into the browser console.
+    - **Container Proxy**: The frontend Docker container (Nginx in production, Angular dev-server in development) intercepts proxy API traffic and logs metrics matching the backend console format for centralized Docker monitoring.
 
-### 8.5 Delivery Workflow
+### 8.5 API Documentation
+- The backend exposes an OpenAPI 3 specification and interactive Swagger UI via `springdoc-openapi` (`/v3/api-docs` and `/swagger-ui.html`).
+- These endpoints are permitted without authentication in `SecurityConfig`, but are **disabled in production** through the `SPRINGDOC_API_DOCS_ENABLED=false` and `SPRINGDOC_SWAGGER_UI_ENABLED=false` environment variables set in `docker-compose.prod.yml`, so the schema is not exposed on public deployments.
+
+### 8.6 Delivery Workflow
 - **Branch Strategy**: The project uses a simplified flow with two main branches: `develop` (for new features) and `main` (for stable releases). Development happens in temporary feature branches that are merged into `develop`.
 - **Versioning**: Before merging into `main`, version bumps across the frontend, backend, and documentation are automated via the `./release.sh` script on the `develop` branch.
 - **Continuous Deployment (CD)**: Releases are managed via GitHub Releases. Creating a new GitHub Release (e.g. `v1.5.0`) pointing to `main` issues a Git Tag. The GitHub Actions CI pipeline listens to tags matching `v*.*.*`, runs backend tests and the `security-online` dependency audit, builds the frontend and backend Docker Images, tags them appropriately (`latest` and `v1.5.0`), and pushes them to the GitHub Container Registry (GHCR).
@@ -197,7 +202,7 @@ The system is deployed as a multi-container Docker application orchestrated by D
 - **Dependency Hygiene**: Backend dependencies are checked in CI against Sonatype OSS Index; findings are reported to an audit artifact (`ossindex-audit.json`) with the current configuration set to non-blocking (`fail=false`).
 - **Test Execution Split**: Unit tests run via Surefire during `test`, while integration tests run via Failsafe during `verify`. This improves local feedback speed while keeping full validation in CI.
 - **Responsiveness**: The UI must adapt to mobile screens (< 768px) for usable barcode scanning on phones.
-- **Performance**: API responses should be < 200ms (excluding external Discogs calls). Heavily accessed database relationships (e.g. `user_id` on collections, `discogs_id` on records) are backed by explicit B-tree indexes applied via Flyway to prevent query degradation as dataset sizes grow.
+- **Performance**: API responses should be < 200ms (excluding external Discogs calls). Heavily accessed database relationships (e.g. `user_id` on collections, `discogs_id` on records) are backed by explicit B-tree indexes applied via Flyway to prevent query degradation as dataset sizes grow. The `Record.genres` `@ElementCollection` is fetched `LAZY` with a Hibernate `@BatchSize(50)` to avoid per-row genre queries (N+1) when listing collections and computing analytics.
 
 ## 11. Risks and Technical Debt
 

@@ -21,48 +21,44 @@ export class ApiService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = '/api';
 
-  scanBarcode(barcode: string, username: string): Observable<ScanResult> {
+  scanBarcode(barcode: string): Observable<ScanResult> {
     return this.http.post<ScanResult>(`${this.baseUrl}/scan`, { barcode });
   }
 
-  deleteScan(id: number, username: string): Observable<void> {
+  deleteScan(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/scan/${id}`);
   }
 
-  resetAllListens(username: string): Observable<ResetResult> {
+  resetAllListens(): Observable<ResetResult> {
     return this.http.delete<ResetResult>(`${this.baseUrl}/scan/all`);
   }
 
   getRecentListens(
-    username: string,
     startDate?: string,
     endDate?: string
   ): Observable<ListenEvent[]> {
-    let params = new HttpParams().set('t', Date.now().toString());
+    let params = new HttpParams();
     if (startDate) params = params.set('from', startDate);
     if (endDate) params = params.set('to', endDate);
     return this.http.get<ListenEvent[]>(`${this.baseUrl}/analytics/recent`, { params });
   }
 
   getTopRecords(
-    username: string,
     startDate?: string,
     endDate?: string
   ): Observable<AnalyticsTopRecord[]> {
-    let params = new HttpParams().set('t', Date.now().toString());
+    let params = new HttpParams();
     if (startDate) params = params.set('from', startDate);
     if (endDate) params = params.set('to', endDate);
     return this.http.get<AnalyticsTopRecord[]>(`${this.baseUrl}/analytics/top`, { params });
   }
 
   getCollectionValue(): Observable<CollectionValueResponse> {
-    const params = new HttpParams().set('t', Date.now().toString());
-    return this.http.get<CollectionValueResponse>(`${this.baseUrl}/analytics/collection/value`, { params });
+    return this.http.get<CollectionValueResponse>(`${this.baseUrl}/analytics/collection/value`);
   }
 
   getGenreBreakdown(): Observable<GenreBreakdownItem[]> {
-    const params = new HttpParams().set('t', Date.now().toString());
-    return this.http.get<GenreBreakdownItem[]>(`${this.baseUrl}/analytics/collection/genres`, { params });
+    return this.http.get<GenreBreakdownItem[]>(`${this.baseUrl}/analytics/collection/genres`);
   }
 
   loginUser(username: string, password: string): Observable<User> {
@@ -82,7 +78,6 @@ export class ApiService {
   }
 
   updateDiscogsSettings(
-    username: string,
     token: string,
     discogsUsername: string,
     password?: string
@@ -95,7 +90,6 @@ export class ApiService {
   }
 
   getCollection(
-    username: string,
     page: number = 1,
     perPage: number = 50,
     minPlays: number = 0,
@@ -117,11 +111,11 @@ export class ApiService {
     return this.http.get<CollectionResponse>(`${this.baseUrl}/collection`, { params });
   }
 
-  forceSyncCollection(username: string): Observable<SyncResult> {
+  forceSyncCollection(): Observable<SyncResult> {
     return this.http.post<SyncResult>(`${this.baseUrl}/collection/sync`, {});
   }
 
-  downloadQrCodes(username: string): Observable<Blob> {
+  downloadQrCodes(): Observable<Blob> {
     return this.http.get(`${this.baseUrl}/collection/qr-codes/all`, { responseType: 'blob' });
   }
 
@@ -129,7 +123,7 @@ export class ApiService {
     return this.http.post(`${this.baseUrl}/collection/qr-codes/selected`, { items }, { responseType: 'blob' });
   }
 
-  getUser(username: string): Observable<User> {
+  getUser(): Observable<User> {
     return this.http.get<User>(`${this.baseUrl}/users/me`);
   }
 

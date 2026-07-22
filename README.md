@@ -1,4 +1,4 @@
-# Vinyl Tracker v2.0.0
+# Vinyl Tracker v2.1.0
 
 A personal vinyl record tracking application that allows users to scan barcodes, identify records via Discogs, and log listening sessions.
 
@@ -118,6 +118,8 @@ The application requires environment variables for configuration (database crede
 2. **Access the App**:
    - **Frontend**: [https://localhost:5173](https://localhost:5173) (or `https://<YOUR_IP>:5173`)
    - **Backend API**: [http://localhost:8080](http://localhost:8080)
+   - **API Docs (Swagger UI)**: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html) (OpenAPI spec at `/v3/api-docs`).
+     > Interactive API docs are enabled in development only. They are disabled in production via `SPRINGDOC_API_DOCS_ENABLED=false` and `SPRINGDOC_SWAGGER_UI_ENABLED=false` (set in `docker-compose.prod.yml`).
 
 ## User Guide
 
@@ -214,7 +216,7 @@ Create `~/.m2/settings.xml` with an `ossindex` server entry so Maven can use the
 ### CI/CD
 The project includes a GitHub Actions workflow (`.github/workflows/ci.yml`) that automatically:
 - Builds and tests the Backend (Java 25/Maven).
-- Builds and tests the Frontend (Node 20/Vite).
+- Builds and tests the Frontend (Node 20/Angular, Karma headless).
 - Enforces >80% test coverage for both.
 - Runs the backend online dependency vulnerability audit through the `security-online` Maven profile.
 - Runs on push and pull requests for `main`, `master`, and `develop`, plus release tags `v*.*.*`.

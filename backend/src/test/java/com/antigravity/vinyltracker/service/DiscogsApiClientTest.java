@@ -146,4 +146,78 @@ class DiscogsApiClientTest {
         assertThrows(DiscogsTokenException.class, () -> discogsApiClient.getCollectionValue(user));
         assertThrows(DiscogsTokenException.class, () -> discogsApiClient.getCollectionReleases(user, 1, 50));
     }
+
+    @Test
+    void getRelease_ShouldRetryOn5xxServerError_AndSucceedOnRetry() throws Exception {
+        Long releaseId = 12345L;
+        DiscogsDto.Release mockRelease = new DiscogsDto.Release();
+        mockRelease.setId(releaseId);
+
+        // Configure a separate client with retry config matching production
+        RestClient.Builder testBuilder = RestClient.builder();
+        MockRestServiceServer testServer = MockRestServiceServer.bindTo(testBuilder).build();
+        RetryConfig config = RetryConfig.custom()
+                .maxAttempts(3)
+                .waitDuration(java.time.Duration.ofMillis(5))
+                .retryExceptions(
+                        org.springframework.web.client.HttpServerErrorException.class,
+                        org.springframework.web.client.HttpClientErrorException.TooManyRequests.class,
+                        org.springframework.web.client.ResourceAccessException.class,
+                        java.io.IOException.class
+                )
+                .build();
+        RetryRegistry retryRegistry = RetryRegistry.of(config);
+        DiscogsApiClient clientWithRetry = new DiscogsApiClient(
+                testBuilder, 
+                tokenService, 
+                RateLimiterRegistry.ofDefaults(), 
+                retryRegistry
+        );
+
+        // 1st call: Fail with 500, 2nd call: Succeed with 200
+        testServer.expect(requestTo("https://api.discogs.com/releases/" + releaseId))
+                .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR));
+        testServer.expect(requestTo("https://api.discogs.com/releases/" + releaseId))
+                .andRespond(withSuccess(objectMapper.writeValueAsString(mockRelease), MediaType.APPLICATION_JSON));
+
+        DiscogsDto.Release result = clientWithRetry.getRelease(releaseId, user);
+        assertNotNull(result);
+        assertEquals(releaseId, result.getId());
+        testServer.verify();
+    }
+
+    @Test
+    void getRelease_ShouldNotRetryOn404NotFoundError() throws Exception {
+        Long releaseId = 12345L;
+
+        // Configure a separate client with retry config matching production
+        RestClient.Builder testBuilder = RestClient.builder();
+        MockRestServiceServer testServer = MockRestServiceServer.bindTo(testBuilder).build();
+        RetryConfig config = RetryConfig.custom()
+                .maxAttempts(3)
+                .waitDuration(java.time.Duration.ofMillis(5))
+                .retryExceptions(
+                        org.springframework.web.client.HttpServerErrorException.class,
+                        org.springframework.web.client.HttpClientErrorException.TooManyRequests.class,
+                        org.springframework.web.client.ResourceAccessException.class,
+                        java.io.IOException.class
+                )
+                .build();
+        RetryRegistry retryRegistry = RetryRegistry.of(config);
+        DiscogsApiClient clientWithRetry = new DiscogsApiClient(
+                testBuilder, 
+                tokenService, 
+                RateLimiterRegistry.ofDefaults(), 
+                retryRegistry
+        );
+
+        // Expect exactly 1 request returning 404 (No retry should happen)
+        testServer.expect(requestTo("https://api.discogs.com/releases/" + releaseId))
+                .andRespond(withStatus(HttpStatus.NOT_FOUND));
+
+        assertThrows(org.springframework.web.client.HttpClientErrorException.NotFound.class, () -> {
+            clientWithRetry.getRelease(releaseId, user);
+        });
+        testServer.verify();
+    }
 }

@@ -18,29 +18,37 @@ public class AnalyticsController {
     private final AnalyticsService analyticsService;
  
     @GetMapping("/recent")
-    public List<ListenEvent> getRecentListens(
+    public ResponseEntity<List<ListenEvent>> getRecentListens(
             Principal principal,
             @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate from,
             @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate to) {
-        return analyticsService.getRecentListens(principal.getName(), from, to);
+        return ResponseEntity.ok()
+                .cacheControl(org.springframework.http.CacheControl.noCache().noStore().mustRevalidate())
+                .body(analyticsService.getRecentListens(principal.getName(), from, to));
     }
  
     @GetMapping("/top")
-    public List<TopRecordDto> getTopRecords(
+    public ResponseEntity<List<TopRecordDto>> getTopRecords(
             Principal principal,
             @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate from,
             @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate to) {
-        return analyticsService.getTopRecords(principal.getName(), from, to);
+        return ResponseEntity.ok()
+                .cacheControl(org.springframework.http.CacheControl.noCache().noStore().mustRevalidate())
+                .body(analyticsService.getTopRecords(principal.getName(), from, to));
     }
  
     @GetMapping("/collection/value")
     public ResponseEntity<DiscogsDto.ValueResponse> getCollectionValue(Principal principal) {
-        return ResponseEntity.ok(analyticsService.getCollectionValue(principal.getName()));
+        return ResponseEntity.ok()
+                .cacheControl(org.springframework.http.CacheControl.noCache().noStore().mustRevalidate())
+                .body(analyticsService.getCollectionValue(principal.getName()));
     }
  
     @GetMapping("/collection/genres")
     public ResponseEntity<List<Map<String, Object>>> getGenreBreakdown(Principal principal) {
-        return ResponseEntity.ok(analyticsService.getGenreBreakdown(principal.getName()));
+        return ResponseEntity.ok()
+                .cacheControl(org.springframework.http.CacheControl.noCache().noStore().mustRevalidate())
+                .body(analyticsService.getGenreBreakdown(principal.getName()));
     }
 }
 

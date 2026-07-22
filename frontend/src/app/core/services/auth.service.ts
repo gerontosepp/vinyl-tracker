@@ -32,7 +32,7 @@ export class AuthService {
       return;
     }
 
-    firstValueFrom(this.apiService.getUser(''))
+    firstValueFrom(this.apiService.getUser())
       .then((u) => {
         if (u?.token) {
           localStorage.setItem(AUTH_TOKEN_KEY, u.token);
@@ -57,7 +57,7 @@ export class AuthService {
       }
       this.user.set(userData);
       if (userData.discogsUsername) {
-        this.performSync(username).catch(console.error);
+        this.performSync().catch(console.error);
       }
     } finally {
       this.isLoading.set(false);
@@ -83,10 +83,10 @@ export class AuthService {
     this.isLoading.set(true);
     try {
       const updatedUser = await firstValueFrom(
-        this.apiService.updateDiscogsSettings(currentUser.username, token, discogsUsername, password)
+        this.apiService.updateDiscogsSettings(token, discogsUsername, password)
       );
       this.user.set(updatedUser);
-      this.performSync(updatedUser.username).catch(console.error);
+      this.performSync().catch(console.error);
     } finally {
       this.isLoading.set(false);
     }
@@ -103,7 +103,7 @@ export class AuthService {
     }
   }
 
-  async performSync(usernameToSync: string): Promise<void> {
+  async performSync(): Promise<void> {
     if (this.syncPromise) {
       return this.syncPromise;
     }
@@ -111,7 +111,7 @@ export class AuthService {
     this.syncPromise = (async () => {
       this.isSyncing.set(true);
       try {
-        const result = await firstValueFrom(this.apiService.forceSyncCollection(usernameToSync));
+        const result = await firstValueFrom(this.apiService.forceSyncCollection());
         const added = result?.added || 0;
         const removed = result?.removed || 0;
         this.toastService.showToast(
@@ -135,10 +135,10 @@ export class AuthService {
     }
   }
 
-  async resetAllListens(username: string): Promise<number> {
+  async resetAllListens(): Promise<number> {
     this.isSyncing.set(true);
     try {
-      const result = await firstValueFrom(this.apiService.resetAllListens(username));
+      const result = await firstValueFrom(this.apiService.resetAllListens());
       const deletedCount = result.deletedCount || 0;
       this.toastService.showToast(
         `Successfully deleted ${deletedCount} listening events`,

@@ -37,7 +37,7 @@ export class ApiService {
     startDate?: string,
     endDate?: string
   ): Observable<ListenEvent[]> {
-    let params = new HttpParams().set('t', Date.now().toString());
+    let params = new HttpParams();
     if (startDate) params = params.set('from', startDate);
     if (endDate) params = params.set('to', endDate);
     return this.http.get<ListenEvent[]>(`${this.baseUrl}/analytics/recent`, { params });
@@ -47,20 +47,18 @@ export class ApiService {
     startDate?: string,
     endDate?: string
   ): Observable<AnalyticsTopRecord[]> {
-    let params = new HttpParams().set('t', Date.now().toString());
+    let params = new HttpParams();
     if (startDate) params = params.set('from', startDate);
     if (endDate) params = params.set('to', endDate);
     return this.http.get<AnalyticsTopRecord[]>(`${this.baseUrl}/analytics/top`, { params });
   }
 
   getCollectionValue(): Observable<CollectionValueResponse> {
-    const params = new HttpParams().set('t', Date.now().toString());
-    return this.http.get<CollectionValueResponse>(`${this.baseUrl}/analytics/collection/value`, { params });
+    return this.http.get<CollectionValueResponse>(`${this.baseUrl}/analytics/collection/value`);
   }
 
   getGenreBreakdown(): Observable<GenreBreakdownItem[]> {
-    const params = new HttpParams().set('t', Date.now().toString());
-    return this.http.get<GenreBreakdownItem[]>(`${this.baseUrl}/analytics/collection/genres`, { params });
+    return this.http.get<GenreBreakdownItem[]>(`${this.baseUrl}/analytics/collection/genres`);
   }
 
   loginUser(username: string, password: string): Observable<User> {

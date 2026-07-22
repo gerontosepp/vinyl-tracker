@@ -31,6 +31,9 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       SPRING_JPA_HIBERNATE_DDL_AUTO: validate
       SPRING_FLYWAY_BASELINE_ON_MIGRATE: "true"
+      SPRINGDOC_API_DOCS_ENABLED: "false"
+      SPRINGDOC_SWAGGER_UI_ENABLED: "false"
+      SPRING_PROFILES_ACTIVE: prod
     ports:
       - "8080:8080"
     depends_on:

@@ -79,6 +79,12 @@ wget https://raw.githubusercontent.com/gerontosepp/vinyl-tracker/develop/.env.ex
       ```
 5.  **Datenbank-Migrationen & Flyway Baselining**:
     Wenn Sie die Anwendung gegen eine bereits existierende Datenbank deployen, stellen Sie sicher, dass `SPRING_FLYWAY_BASELINE_ON_MIGRATE=true` in Ihrer `.env` oder der Compose-Datei gesetzt ist (standardmäßig in `docker-compose.registry.yml` und `docker-compose.prod.yml` aktiviert), um die Datenbank korrekt zu initialisieren.
+6.  **OpenAPI / Swagger-Dokumentation**:
+    In Produktionsumgebungen ist die API-Dokumentation standardmäßig deaktiviert, um API-Details nicht ungeschützt offenzulegen. Gesteuert wird dies über die Umgebungsvariablen:
+    - `SPRINGDOC_API_DOCS_ENABLED=false`
+    - `SPRINGDOC_SWAGGER_UI_ENABLED=false`
+7.  **Strukturiertes JSON-Logging**:
+    Durch das Setzen von `SPRING_PROFILES_ACTIVE=prod` in der Docker Compose Konfiguration wird die Logausgabe des Backends auf JSON-Format umgestellt. Dies erleichtert das automatische Einlesen, Filtern und Durchsuchen der Logs durch Log-Aggregatoren (z.B. Loki, Logstash, Fluentd).
 
 ## 4. Anwendung starten
 

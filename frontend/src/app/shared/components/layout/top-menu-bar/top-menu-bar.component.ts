@@ -84,7 +84,7 @@ export class TopMenuBarComponent {
   private readonly router = inject(Router);
 
   readonly totalRecords = signal<number | null>(null);
-  readonly appVersion = '2.1.0';
+  readonly appVersion = '2.1.1';
 
   constructor() {
     effect(() => {

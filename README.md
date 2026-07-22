@@ -1,4 +1,4 @@
-# Vinyl Tracker v2.1.0
+# Vinyl Tracker v2.1.1
 
 A personal vinyl record tracking application that allows users to scan barcodes, identify records via Discogs, and log listening sessions.
 
@@ -214,12 +214,16 @@ Create `~/.m2/settings.xml` with an `ossindex` server entry so Maven can use the
 ```
 
 ### CI/CD
-The project includes a GitHub Actions workflow (`.github/workflows/ci.yml`) that automatically:
-- Builds and tests the Backend (Java 25/Maven).
-- Builds and tests the Frontend (Node 20/Angular, Karma headless).
-- Enforces >80% test coverage for both.
-- Runs the backend online dependency vulnerability audit through the `security-online` Maven profile.
-- Runs on push and pull requests for `main`, `master`, and `develop`, plus release tags `v*.*.*`.
+The project includes GitHub Actions workflows:
+- **CI Pipeline** (`.github/workflows/ci.yml`):
+  - Automatically builds and tests the Backend (Java 25/Maven).
+  - Builds and tests the Frontend (Node 20/Angular, Karma headless).
+  - Enforces >80% test coverage for both.
+  - Runs the backend online dependency vulnerability audit through the `security-online` Maven profile.
+  - Runs on push and pull requests for `main`, `master`, and `develop`, plus release tags `v*.*.*` (which triggers building and pushing Docker images to GHCR).
+- **Auto Release** (`.github/workflows/release.yml`):
+  - Automatically creates a GitHub Release (with tag `v<version>` from `frontend/package.json` and auto-generated release notes) when a Pull Request to `main` is successfully merged.
+  - Creating a release triggers the CI Pipeline's tag build, automatically publishing the new Docker images.
 
 Required GitHub Actions secrets for the backend security audit:
 - `OSSINDEX_USERNAME`

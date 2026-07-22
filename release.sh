@@ -19,6 +19,11 @@ echo "Updating Frontend to $NEW_VERSION..."
 sed -i '' "s/\"version\": \"$CURRENT_VERSION\"/\"version\": \"$NEW_VERSION\"/" frontend/package.json
 sed -i '' "s/\"version\": \"$CURRENT_VERSION\"/\"version\": \"$NEW_VERSION\"/" frontend/package-lock.json 2>/dev/null || true
 
+# Update versions in Angular component files
+sed -i '' "s/appVersion = '$CURRENT_VERSION'/appVersion = '$NEW_VERSION'/" frontend/src/app/shared/components/layout/top-menu-bar/top-menu-bar.component.ts
+sed -i '' "s/v$CURRENT_VERSION/v$NEW_VERSION/g" frontend/src/app/features/auth/login/login.component.ts
+sed -i '' "s/v$CURRENT_VERSION/v$NEW_VERSION/g" frontend/src/app/features/auth/register/register.component.ts
+
 echo "Updating Backend to $NEW_VERSION..."
 # Update pom.xml version
 cd backend
@@ -32,7 +37,10 @@ echo "Updating README.md to v$NEW_VERSION..."
 sed -i '' "1s/.*/# Vinyl Tracker v$NEW_VERSION/" README.md
 
 echo "Committing changes..."
-git add frontend/package.json frontend/package-lock.json backend/pom.xml README.md
+git add frontend/package.json frontend/package-lock.json backend/pom.xml README.md \
+    frontend/src/app/shared/components/layout/top-menu-bar/top-menu-bar.component.ts \
+    frontend/src/app/features/auth/login/login.component.ts \
+    frontend/src/app/features/auth/register/register.component.ts
 git commit -m "chore(release): bump version to $NEW_VERSION"
 
 echo "Done! Run 'git push' to push the bump to develop."

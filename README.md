@@ -17,7 +17,7 @@ The project follows a modern containerized micro-architecture:
   - Secure Context support via local SSL.
 
 ### Backend
-- **Framework**: Spring Boot 4.0.4
+- **Framework**: Spring Boot 4.1.0
 - **Language**: Java 25
 - **Database Access**: Spring Data JPA with Hibernate and **Flyway** for schema migrations.
 - **API**: RESTful endpoints with **JWT (JSON Web Token)** authentication.

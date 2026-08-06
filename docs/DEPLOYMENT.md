@@ -88,14 +88,25 @@ wget https://raw.githubusercontent.com/gerontosepp/vinyl-tracker/develop/.env.ex
 
 ## 4. Anwendung starten
 
-Starten Sie die Anwendung mit der Registry-Konfiguration:
+### Option A: Automatisiertes Deployment-Skript (Empfohlen für Proxmox / LXC / VMs)
+Nutzen Sie das bereitgestellte Skript `./deploy_proxmox.sh` für die automatische Erstellung sicherer `.env`-Geheimnisse, das Herunterladen der aktuellen Docker-Images und die Ausführung des Healthchecks:
 
 ```bash
-docker compose up -d
-```
-*Hinweis: Dies setzt voraus, dass die Datei zuvor als `docker-compose.yml` gespeichert wurde. Wenn Sie den Originalnamen beibehalten, verwenden Sie `docker compose -f docker-compose.registry.yml up -d`.*
+# Neuestes Release (latest) installieren/aktualisieren:
+./deploy_proxmox.sh
 
-*Images werden standardmäßig als `latest` gezogen, es sei denn, in der Compose-Datei sind explizit Versionstags (z.B. `:v1.7.0`) gesetzt.*
+# Ein spezifisches Release installieren:
+./deploy_proxmox.sh v2.1.1
+```
+
+### Option B: Manuelles Docker Compose
+Starten Sie die Anwendung manuell mit der Registry-Konfiguration:
+
+```bash
+docker compose -f docker-compose.registry.yml up -d
+```
+
+*Images werden standardmäßig als `latest` gezogen.*
 
 Die Anwendung läuft nun auf **Port 80** der Zielmaschine.
 

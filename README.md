@@ -1,4 +1,4 @@
-# Vinyl Tracker v2.1.1
+# Vinyl Tracker v2.1.2
 
 A personal vinyl record tracking application that allows users to scan barcodes, identify records via Discogs, and log listening sessions.
 
@@ -17,7 +17,7 @@ The project follows a modern containerized micro-architecture:
   - Secure Context support via local SSL.
 
 ### Backend
-- **Framework**: Spring Boot 4.0.3
+- **Framework**: Spring Boot 4.1.0
 - **Language**: Java 25
 - **Database Access**: Spring Data JPA with Hibernate and **Flyway** for schema migrations.
 - **API**: RESTful endpoints with **JWT (JSON Web Token)** authentication.
@@ -104,10 +104,15 @@ The application requires environment variables for configuration (database crede
    ```
    *Features hot-reloading for frontend. The backend will automatically wait for the `postgres` healthcheck to pass before starting.*
 
-2. **Start Production Environment**:
-   ```bash
-   docker compose -f docker-compose.prod.yml up --build -d
-   ```
+2. **Start Production Environment (or Proxmox / LXC)**:
+   - **Automated Proxmox Deployment Script**:
+     ```bash
+     ./deploy_proxmox.sh [v2.1.1]
+     ```
+   - **Manual Compose**:
+     ```bash
+     docker compose -f docker-compose.prod.yml up --build -d
+     ```
    *Optimized build, no hot-reloading, runs on port 80.*
 
    👉 **[See Detailed Deployment Guide](docs/DEPLOYMENT.md)** for server setup and HTTPS requirements.

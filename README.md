@@ -107,7 +107,7 @@ The application requires environment variables for configuration (database crede
 2. **Start Production Environment (or Proxmox / LXC)**:
    - **Automated Proxmox Deployment Script**:
      ```bash
-     ./deploy_proxmox.sh [v2.1.1]
+     ./deploy_proxmox.sh [v2.1.3]
      ```
    - **Manual Compose**:
      ```bash

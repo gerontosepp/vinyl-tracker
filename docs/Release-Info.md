@@ -4,6 +4,11 @@ Kurze Uebersicht der Aenderungen je Version (abgeleitet aus Git-Tags und Commit-
 
 ## Unreleased
 
+## v2.2.0 (2026-09-04)
+- Workspace Skills: Standardisierte AI-Agent-Skills unter `.agent/skills/` integriert (`release-management`, `dependency-updates`, `database-migrations`, `proxmox-deployment`).
+- Dependencies: Frontend (Angular 19.2.25/19.2.27, Lucide Angular 1.41.0, PostCSS 8.5.28, RxJS 7.8.2, TypeScript 5.7.3) und Backend (Lombok 1.18.46, Logstash-Logback-Encoder 9.0) aktualisiert.
+- Security & Fixes: Transitive Abhängigkeiten gehärtet und `release.sh` für plattformübergreifende Ausführung (Linux / macOS) optimiert.
+
 ## v2.1.3 (2026-09-04)
 - Dependencies: Frontend (Angular 19.2.25/19.2.27, Lucide Angular 1.41.0, PostCSS 8.5.28, RxJS 7.8.2, TypeScript 5.7.3) und Backend (Lombok 1.18.46 Compiler-Plugin Sync, Logstash Logback Encoder 9.0) aktualisiert.
 - Security: Transitive NPM-Abhängigkeiten aktualisiert und Sicherheitswarnungen reduziert.

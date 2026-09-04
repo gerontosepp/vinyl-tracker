@@ -96,7 +96,7 @@ Nutzen Sie das bereitgestellte Skript `./deploy_proxmox.sh` für die automatisch
 ./deploy_proxmox.sh
 
 # Ein spezifisches Release installieren:
-./deploy_proxmox.sh v2.1.3
+./deploy_proxmox.sh v2.2.0
 ```
 
 ### Option B: Manuelles Docker Compose

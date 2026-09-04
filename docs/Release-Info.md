@@ -4,6 +4,23 @@ Kurze Uebersicht der Aenderungen je Version (abgeleitet aus Git-Tags und Commit-
 
 ## Unreleased
 
+## v2.2.0 (2026-09-04)
+- Workspace Skills: Standardisierte AI-Agent-Skills unter `.agent/skills/` integriert (`release-management`, `dependency-updates`, `database-migrations`, `proxmox-deployment`).
+- Dependencies: Frontend (Angular 19.2.25/19.2.27, Lucide Angular 1.41.0, PostCSS 8.5.28, RxJS 7.8.2, TypeScript 5.7.3) und Backend (Lombok 1.18.46, Logstash-Logback-Encoder 9.0) aktualisiert.
+- Security & Fixes: Transitive Abhängigkeiten gehärtet und `release.sh` für plattformübergreifende Ausführung (Linux / macOS) optimiert.
+
+## v2.1.3 (2026-09-04)
+- Dependencies: Frontend (Angular 19.2.25/19.2.27, Lucide Angular 1.41.0, PostCSS 8.5.28, RxJS 7.8.2, TypeScript 5.7.3) und Backend (Lombok 1.18.46 Compiler-Plugin Sync, Logstash Logback Encoder 9.0) aktualisiert.
+- Security: Transitive NPM-Abhängigkeiten aktualisiert und Sicherheitswarnungen reduziert.
+- Release-Automatisierung: `release.sh` für Linux-Umgebungen (GNU `sed`) portabel gemacht (`sedi`-Funktion).
+- Build-Optimierung: Angular-CLI-Analytics in `angular.json` deaktiviert zur Vermeidung interaktiver Prompts bei Container- und CI-Builds.
+
+## v2.1.2 (2026-08-06)
+- Framework: Backend-Upgrade auf Spring Boot 4.1.0.
+- Deployment: Automatisiertes Deployment-Skript für Proxmox (`deploy_proxmox.sh`) und Dokumentation des Workflows hinzugefügt.
+- Dependencies: Frontend- und Backend-Projekt-Dependencies aktualisiert.
+- Resilienz: Resilience4j-Spring-Boot3-Abhängigkeit auf 2.2.0 für optimale Kompatibilität stabilisiert.
+
 ## v2.1.1 (2026-08-05)
 - API-Dokumentation: OpenAPI/Swagger UI (springdoc) integriert (`/swagger-ui.html`, `/v3/api-docs`); in Produktion via `SPRINGDOC_*_ENABLED=false` deaktiviert.
 - Performance: `Record.genres` `@ElementCollection` auf `LAZY` mit Hibernate `@BatchSize(50)` umgestellt, um N+1-Genre-Abfragen zu vermeiden.

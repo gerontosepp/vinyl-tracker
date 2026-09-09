@@ -5,6 +5,7 @@ import { StatisticWidgetComponent } from '../../shared/components/statistic-widg
 import { AuthService } from '../../core/services/auth.service';
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
+import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { CollectionValueResponse, GenreBreakdownItem } from '../../core/types';
 import { getErrorMessage } from '../../core/utils/error';
 import { Subscription, firstValueFrom } from 'rxjs';
@@ -21,7 +22,7 @@ type CollectionValueTrendPoint = {
 @Component({
   selector: 'app-statistics',
   standalone: true,
-  imports: [CommonModule, LayoutComponent, StatisticWidgetComponent],
+  imports: [CommonModule, LayoutComponent, StatisticWidgetComponent, TranslatePipe],
   template: `
     <app-layout>
       <div class="flex flex-col space-y-6 md:h-[calc(100vh-5rem)]">
@@ -30,10 +31,10 @@ type CollectionValueTrendPoint = {
         >
           <div>
             <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-              Collection Statistics
+              {{ 'stats.title' | translate }}
             </h1>
             <p class="text-slate-500 dark:text-slate-400 text-sm font-medium mt-1">
-              Detailed breakdown of your vinyl collection value and genres.
+              {{ 'stats.overview' | translate }}
             </p>
           </div>
         </div>
@@ -41,8 +42,8 @@ type CollectionValueTrendPoint = {
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-6">
           <!-- Widget 1: Collection Value -->
           <app-statistic-widget
-            title="Collection Value"
-            subtitle="(Discogs Estimate)"
+            [title]="'dashboard.collectionValue' | translate"
+            subtitle="(Discogs)"
             class="lg:col-span-2"
             [loading]="isCollectionValueLoading()"
             [error]="collectionValueError()"

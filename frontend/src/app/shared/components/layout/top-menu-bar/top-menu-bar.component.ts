@@ -2,13 +2,15 @@ import { Component, inject, signal, effect } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth.service';
 import { ApiService } from '../../../../core/services/api.service';
-import { LucideLogOut, LucideSettings } from '@lucide/angular';
+import { LanguageService } from '../../../../core/services/language.service';
+import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
+import { LucideLogOut, LucideSettings, LucideGlobe } from '@lucide/angular';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-top-menu-bar',
   standalone: true,
-  imports: [RouterLink, LucideLogOut, LucideSettings],
+  imports: [RouterLink, LucideLogOut, LucideSettings, LucideGlobe, TranslatePipe],
   template: `
     @if (authService.user(); as user) {
       <header
@@ -31,17 +33,27 @@ import { firstValueFrom } from 'rxjs';
           <span
             class="text-sm font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-4 py-1.5 rounded-full border border-slate-200 dark:border-slate-700"
           >
-            Total Records:
+            {{ 'nav.totalRecords' | translate }}
             @if (totalRecords() !== null) {
-              <strong class="text-indigo-600 dark:text-indigo-400">{{ totalRecords() }}</strong>
+              <strong class="text-indigo-600 dark:text-indigo-400 ml-1">{{ totalRecords() }}</strong>
             } @else {
-              <span class="w-6 h-4 inline-block bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></span>
+              <span class="w-6 h-4 inline-block bg-slate-200 dark:bg-slate-700 rounded animate-pulse ml-1"></span>
             }
           </span>
         </div>
 
-        <!-- Right - User Area -->
-        <div class="flex items-center gap-4">
+        <!-- Right - User Area & Quick Language Switcher -->
+        <div class="flex items-center gap-3">
+          <!-- Language Pill Switcher -->
+          <button
+            (click)="toggleLanguage()"
+            class="flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+            [title]="languageService.language() === 'de' ? 'Switch to English' : 'Auf Deutsch wechseln'"
+          >
+            <svg lucideGlobe [size]="14"></svg>
+            <span class="uppercase tracking-wider">{{ languageService.language() }}</span>
+          </button>
+
           <div class="flex flex-col items-end hidden md:flex">
             <span class="text-sm font-semibold text-slate-900 dark:text-white leading-none mb-1">
               {{ user.username }}
@@ -57,18 +69,18 @@ import { firstValueFrom } from 'rxjs';
             {{ user.username.charAt(0).toUpperCase() }}
           </div>
 
-          <div class="flex items-center gap-2 ml-2 pl-4 border-l border-slate-200 dark:border-slate-700">
+          <div class="flex items-center gap-2 ml-1 pl-3 border-l border-slate-200 dark:border-slate-700">
             <a
               routerLink="/settings"
               class="md:hidden text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
-              title="Settings"
+              [title]="'nav.settings' | translate"
             >
               <svg lucideSettings [size]="20"></svg>
             </a>
             <button
               (click)="logout()"
               class="text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors cursor-pointer"
-              title="Log Out"
+              [title]="'nav.logout' | translate"
             >
               <svg lucideLogOut [size]="20"></svg>
             </button>
@@ -80,6 +92,7 @@ import { firstValueFrom } from 'rxjs';
 })
 export class TopMenuBarComponent {
   readonly authService = inject(AuthService);
+  readonly languageService = inject(LanguageService);
   private readonly apiService = inject(ApiService);
   private readonly router = inject(Router);
 
@@ -97,6 +110,11 @@ export class TopMenuBarComponent {
     });
   }
 
+  toggleLanguage(): void {
+    const current = this.languageService.language();
+    this.languageService.setLanguage(current === 'de' ? 'en' : 'de');
+  }
+
   private async fetchTotalRecords(): Promise<void> {
     try {
       const res = await firstValueFrom(this.apiService.getCollection(1, 1));
@@ -112,3 +130,4 @@ export class TopMenuBarComponent {
     });
   }
 }
+

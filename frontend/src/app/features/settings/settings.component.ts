@@ -4,17 +4,19 @@ import { FormsModule } from '@angular/forms';
 import { LayoutComponent } from '../../shared/components/layout/layout.component';
 import { AuthService } from '../../core/services/auth.service';
 import { ThemeService, Theme } from '../../core/services/theme.service';
+import { LanguageService, Language } from '../../core/services/language.service';
 import { ToastService } from '../../core/services/toast.service';
+import { TranslatePipe } from '../../core/pipes/translate.pipe';
 
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [FormsModule, LayoutComponent],
+  imports: [FormsModule, LayoutComponent, TranslatePipe],
   template: `
     <app-layout>
       <div class="max-w-6xl mx-auto space-y-6">
         <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight mb-2 px-2">
-          Profile & Settings
+          {{ 'settings.title' | translate }}
         </h1>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -47,7 +49,7 @@ import { ToastService } from '../../core/services/toast.service';
                   (click)="logout()"
                   class="w-full py-2.5 px-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl font-bold hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors cursor-pointer"
                 >
-                  Sign Out
+                  {{ 'nav.logout' | translate }}
                 </button>
               </div>
             </div>
@@ -55,24 +57,51 @@ import { ToastService } from '../../core/services/toast.service';
 
           <!-- RIGHT COLUMN - SYSTEM SETTINGS -->
           <div class="col-span-1 lg:col-span-7 space-y-6">
-            <!-- Appearance -->
+            <!-- Appearance & Language -->
             <div
-              class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-600 p-6 transition-colors"
+              class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-600 p-6 transition-colors space-y-6"
             >
-              <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">Appearance</h3>
+              <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">
+                {{ 'settings.appearance' | translate }}
+              </h3>
+
+              <!-- Language Preference -->
               <div class="flex items-center justify-between">
                 <div>
-                  <h4 class="font-semibold text-slate-700 dark:text-slate-300">Theme Preference</h4>
-                  <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Active mode</p>
+                  <h4 class="font-semibold text-slate-700 dark:text-slate-300">
+                    {{ 'settings.language' | translate }}
+                  </h4>
+                  <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                    {{ 'settings.languageDesc' | translate }}
+                  </p>
+                </div>
+                <select
+                  [ngModel]="languageService.language()"
+                  (ngModelChange)="onLanguageChange($event)"
+                  class="border border-slate-200 dark:border-slate-600 rounded-xl py-2 px-4 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-slate-100 shadow-sm font-semibold focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all cursor-pointer"
+                >
+                  <option value="de">Deutsch 🇩🇪</option>
+                  <option value="en">English 🇬🇧</option>
+                </select>
+              </div>
+
+              <div class="border-t border-slate-100 dark:border-slate-700/50 pt-4 flex items-center justify-between">
+                <div>
+                  <h4 class="font-semibold text-slate-700 dark:text-slate-300">
+                    {{ 'settings.theme' | translate }}
+                  </h4>
+                  <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                    {{ 'settings.themeDesc' | translate }}
+                  </p>
                 </div>
                 <select
                   [ngModel]="themeService.theme()"
                   (ngModelChange)="onThemeChange($event)"
                   class="border border-slate-200 dark:border-slate-600 rounded-xl py-2 px-4 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-slate-100 shadow-sm font-semibold focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all cursor-pointer"
                 >
-                  <option value="light">Light</option>
-                  <option value="dark">Dark</option>
-                  <option value="system">System</option>
+                  <option value="light">{{ 'settings.themeLight' | translate }}</option>
+                  <option value="dark">{{ 'settings.themeDark' | translate }}</option>
+                  <option value="system">{{ 'settings.themeSystem' | translate }}</option>
                 </select>
               </div>
             </div>
@@ -82,10 +111,10 @@ import { ToastService } from '../../core/services/toast.service';
               class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-600 p-6 transition-colors"
             >
               <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100 mb-2">
-                Discogs Integration
+                {{ 'settings.discogsTitle' | translate }}
               </h3>
               <p class="text-sm text-slate-500 dark:text-slate-400 mb-6 font-medium">
-                Manage your Discogs API connectivity for scanning and syncing your collection.
+                {{ 'settings.discogsDesc' | translate }}
               </p>
 
               <form (ngSubmit)="handleSaveConnectivity()" #discogsForm="ngForm" class="space-y-4">
@@ -94,7 +123,7 @@ import { ToastService } from '../../core/services/toast.service';
                     <label
                       class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2"
                     >
-                      Username
+                      {{ 'settings.username' | translate }}
                     </label>
                     <input
                       type="text"
@@ -107,13 +136,13 @@ import { ToastService } from '../../core/services/toast.service';
                     <label
                       class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2"
                     >
-                      New Token
+                      {{ 'settings.newToken' | translate }}
                     </label>
                     <input
                       type="password"
                       name="token"
                       [(ngModel)]="token"
-                      placeholder="Enter only if changing"
+                      [placeholder]="'settings.tokenPlaceholder' | translate"
                       class="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-2.5 text-slate-900 dark:text-slate-100 font-medium focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all"
                     />
                   </div>
@@ -123,14 +152,14 @@ import { ToastService } from '../../core/services/toast.service';
                   <label
                     class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2"
                   >
-                    Current Password
+                    {{ 'settings.currentPassword' | translate }}
                   </label>
                   <input
                     type="password"
                     name="password"
                     [(ngModel)]="password"
                     required
-                    placeholder="Required to encrypt token"
+                    [placeholder]="'settings.passwordPlaceholder' | translate"
                     class="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-2.5 text-slate-900 dark:text-slate-100 font-medium focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all focus:border-amber-400"
                   />
                 </div>
@@ -143,7 +172,7 @@ import { ToastService } from '../../core/services/toast.service';
                     [disabled]="authService.isLoading() || !discogsForm.valid"
                     class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl font-bold transition-all shadow-sm hover:-translate-y-0.5 cursor-pointer disabled:opacity-50"
                   >
-                    {{ authService.isLoading() ? 'Saving...' : 'Save Connectivity' }}
+                    {{ (authService.isLoading() ? 'settings.saving' : 'settings.saveConnectivity') | translate }}
                   </button>
                 </div>
               </form>
@@ -154,10 +183,10 @@ import { ToastService } from '../../core/services/toast.service';
               class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-600 p-6 transition-colors"
             >
               <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100 mb-2">
-                Data Management
+                {{ 'settings.dataManagement' | translate }}
               </h3>
               <p class="text-sm text-slate-500 dark:text-slate-400 mb-6 font-medium">
-                Sync your collection manually or export your data.
+                {{ 'settings.dataDesc' | translate }}
               </p>
 
               <div class="flex flex-col sm:flex-row gap-3">
@@ -166,19 +195,19 @@ import { ToastService } from '../../core/services/toast.service';
                   [disabled]="authService.isSyncing()"
                   class="flex-1 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50 font-bold px-4 py-3 rounded-xl hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
                 >
-                  Force Sync Collection
+                  {{ 'settings.forceSync' | translate }}
                 </button>
                 <button
                   (click)="showResetConfirm.set(true)"
                   [disabled]="authService.isSyncing()"
                   class="flex-1 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800/50 font-bold px-4 py-3 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
                 >
-                  Reset All Listens
+                  {{ 'settings.resetListens' | translate }}
                 </button>
                 <button
                   class="flex-1 bg-slate-100 dark:bg-slate-900/50 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 font-bold px-4 py-3 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors flex items-center justify-center gap-2"
                 >
-                  Export Data (CSV)
+                  {{ 'settings.exportCsv' | translate }}
                 </button>
               </div>
             </div>
@@ -193,24 +222,24 @@ import { ToastService } from '../../core/services/toast.service';
             class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-600 p-8 max-w-md animate-fade-in"
           >
             <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100 mb-2">
-              Reset All Listening Events?
+              {{ 'settings.resetConfirmTitle' | translate }}
             </h3>
             <p class="text-slate-600 dark:text-slate-400 text-sm mb-6">
-              This will permanently delete all your listening history. This action cannot be undone.
+              {{ 'settings.resetConfirmText' | translate }}
             </p>
             <div class="flex gap-3">
               <button
                 (click)="showResetConfirm.set(false)"
                 class="flex-1 bg-slate-100 dark:bg-slate-900/50 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 font-bold px-4 py-2.5 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               >
-                Cancel
+                {{ 'settings.cancel' | translate }}
               </button>
               <button
                 (click)="handleResetListens()"
                 [disabled]="authService.isSyncing()"
                 class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2.5 rounded-xl transition-colors disabled:opacity-50 cursor-pointer"
               >
-                {{ authService.isSyncing() ? 'Resetting...' : 'Delete All' }}
+                {{ (authService.isSyncing() ? 'settings.deleting' : 'settings.delete') | translate }}
               </button>
             </div>
           </div>
@@ -222,6 +251,7 @@ import { ToastService } from '../../core/services/toast.service';
 export class SettingsComponent {
   readonly authService = inject(AuthService);
   readonly themeService = inject(ThemeService);
+  readonly languageService = inject(LanguageService);
   private readonly toastService = inject(ToastService);
   private readonly router = inject(Router);
 
@@ -232,6 +262,10 @@ export class SettingsComponent {
 
   onThemeChange(newTheme: Theme): void {
     this.themeService.setTheme(newTheme);
+  }
+
+  onLanguageChange(newLang: Language): void {
+    this.languageService.setLanguage(newLang);
   }
 
   async handleSaveConnectivity(): Promise<void> {
@@ -269,3 +303,4 @@ export class SettingsComponent {
     });
   }
 }
+

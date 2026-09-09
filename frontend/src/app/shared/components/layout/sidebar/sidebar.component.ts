@@ -1,5 +1,6 @@
 import { Component, output } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
 import {
   LucideHome,
   LucideDisc,
@@ -15,6 +16,7 @@ import {
   imports: [
     RouterLink,
     RouterLinkActive,
+    TranslatePipe,
     LucideHome,
     LucideDisc,
     LucideUser,
@@ -41,7 +43,7 @@ import {
           "
         >
           <svg lucideHome [size]="26" [strokeWidth]="rlaHome.isActive ? 2.5 : 2"></svg>
-          <span class="mt-1.5 text-xs tracking-wide">Home</span>
+          <span class="mt-1.5 text-xs tracking-wide">{{ 'nav.home' | translate }}</span>
         </a>
 
         <!-- Collection -->
@@ -57,7 +59,7 @@ import {
           "
         >
           <svg lucideDisc [size]="26" [strokeWidth]="rlaCol.isActive ? 2.5 : 2"></svg>
-          <span class="mt-1.5 text-xs tracking-wide">Collection</span>
+          <span class="mt-1.5 text-xs tracking-wide">{{ 'nav.collection' | translate }}</span>
         </a>
 
         <!-- Stats -->
@@ -73,7 +75,7 @@ import {
           "
         >
           <svg lucideBarChart2 [size]="26" [strokeWidth]="rlaStats.isActive ? 2.5 : 2"></svg>
-          <span class="mt-1.5 text-xs tracking-wide">Stats</span>
+          <span class="mt-1.5 text-xs tracking-wide">{{ 'nav.stats' | translate }}</span>
         </a>
 
         <!-- Profile -->
@@ -89,7 +91,7 @@ import {
           "
         >
           <svg lucideUser [size]="26" [strokeWidth]="rlaProfile.isActive ? 2.5 : 2"></svg>
-          <span class="mt-1.5 text-xs tracking-wide">Profile</span>
+          <span class="mt-1.5 text-xs tracking-wide">{{ 'nav.profile' | translate }}</span>
         </a>
 
         <!-- Scan Button -->
@@ -97,10 +99,10 @@ import {
           <button
             (click)="scanClick.emit()"
             class="flex flex-col items-center justify-center py-3.5 w-full bg-indigo-500 text-white rounded-2xl shadow-[0_8px_16px_-6px_rgba(79,70,229,0.5)] hover:bg-indigo-600 hover:-translate-y-1 transition-all duration-300 group cursor-pointer"
-            aria-label="Scan Record"
+            [attr.aria-label]="'nav.scan' | translate"
           >
             <svg lucideScanLine [size]="24" class="group-hover:scale-110 transition-transform"></svg>
-            <span class="mt-1.5 text-xs font-bold tracking-wide">Scan</span>
+            <span class="mt-1.5 text-xs font-bold tracking-wide">{{ 'nav.scan' | translate }}</span>
           </button>
         </div>
       </nav>
@@ -110,7 +112,7 @@ import {
         routerLink="/settings"
         routerLinkActive
         #rlaSettings="routerLinkActive"
-        aria-label="Settings"
+        [attr.aria-label]="'nav.settings' | translate"
         [class]="
           'p-4 transition-colors rounded-xl hover:bg-slate-100/50 dark:hover:bg-slate-800/50 mb-2 cursor-pointer ' +
           (rlaSettings.isActive
@@ -126,3 +128,4 @@ import {
 export class SidebarComponent {
   readonly scanClick = output<void>();
 }
+

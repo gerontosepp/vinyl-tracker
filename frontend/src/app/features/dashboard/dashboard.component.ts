@@ -10,6 +10,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
 import { ScannerService } from '../../core/services/scanner.service';
+import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { ListenEvent, AnalyticsTopRecord, CollectionValueResponse, GenreBreakdownItem } from '../../core/types';
 import { Subscription, firstValueFrom, forkJoin } from 'rxjs';
 
@@ -24,6 +25,7 @@ import { Subscription, firstValueFrom, forkJoin } from 'rxjs';
     RecentListensComponent,
     TopRecordsComponent,
     StatisticWidgetComponent,
+    TranslatePipe,
   ],
   template: `
     <app-layout>
@@ -35,7 +37,7 @@ import { Subscription, firstValueFrom, forkJoin } from 'rxjs';
             (click)="scannerService.closeScanner()"
             class="mb-6 text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer"
           >
-            &larr; Back to Dashboard
+            &larr; {{ 'nav.home' | translate }}
           </button>
           <div class="max-w-md mx-auto">
             <app-barcode-scanner />
@@ -102,8 +104,8 @@ import { Subscription, firstValueFrom, forkJoin } from 'rxjs';
           <div class="lg:col-span-1 flex flex-col space-y-6">
             <!-- Collection Value widget -->
             <app-statistic-widget
-              title="Collection Value"
-              subtitle="(Discogs Estimate)"
+              [title]="'dashboard.collectionValue' | translate"
+              subtitle="(Discogs)"
               [loading]="loadingStats()"
             >
               <div class="py-2">
@@ -130,7 +132,7 @@ import { Subscription, firstValueFrom, forkJoin } from 'rxjs';
 
             <!-- Genre Breakdown widget -->
             <app-statistic-widget
-              title="Genre Breakdown"
+              [title]="'dashboard.genreBreakdown' | translate"
               [loading]="loadingStats()"
             >
               <div class="flex items-center gap-6 py-2">

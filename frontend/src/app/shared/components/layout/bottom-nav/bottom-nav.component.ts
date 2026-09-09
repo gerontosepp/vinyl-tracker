@@ -1,5 +1,6 @@
 import { Component, output } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
 import {
   LucideHome,
   LucideDisc,
@@ -14,6 +15,7 @@ import {
   imports: [
     RouterLink,
     RouterLinkActive,
+    TranslatePipe,
     LucideHome,
     LucideDisc,
     LucideUser,
@@ -30,6 +32,7 @@ import {
         [routerLinkActiveOptions]="{ exact: true }"
         routerLinkActive
         #rlaHome="routerLinkActive"
+        [attr.aria-label]="'nav.home' | translate"
         [class]="
           'p-4 transition-all duration-200 ' +
           (rlaHome.isActive
@@ -45,6 +48,7 @@ import {
         routerLink="/collection"
         routerLinkActive
         #rlaCol="routerLinkActive"
+        [attr.aria-label]="'nav.collection' | translate"
         [class]="
           'p-4 transition-all duration-200 ' +
           (rlaCol.isActive
@@ -59,7 +63,7 @@ import {
       <div class="relative -top-6">
         <button
           (click)="scanClick.emit()"
-          aria-label="Scan Record"
+          [attr.aria-label]="'nav.scan' | translate"
           class="bg-indigo-500 hover:bg-indigo-600 text-white rounded-full p-4 shadow-[0_8px_16px_-6px_rgba(79,70,229,0.5)] flex items-center justify-center transition-transform hover:-translate-y-1 active:scale-95 w-16 h-16 border-4 border-slate-50 dark:border-slate-900 cursor-pointer"
         >
           <svg lucideScanLine [size]="30" strokeWidth="2.5"></svg>
@@ -71,6 +75,7 @@ import {
         routerLink="/statistics"
         routerLinkActive
         #rlaStats="routerLinkActive"
+        [attr.aria-label]="'nav.stats' | translate"
         [class]="
           'p-4 transition-all duration-200 ' +
           (rlaStats.isActive
@@ -86,6 +91,7 @@ import {
         routerLink="/profile"
         routerLinkActive
         #rlaProfile="routerLinkActive"
+        [attr.aria-label]="'nav.profile' | translate"
         [class]="
           'p-4 transition-all duration-200 ' +
           (rlaProfile.isActive
@@ -104,3 +110,4 @@ import {
 export class BottomNavComponent {
   readonly scanClick = output<void>();
 }
+

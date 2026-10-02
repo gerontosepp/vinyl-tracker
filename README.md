@@ -231,7 +231,8 @@ The project includes GitHub Actions workflows:
 - **CI Pipeline** (`.github/workflows/ci.yml`):
   - Automatically builds and tests the Backend (Java 25/Maven).
   - Builds and tests the Frontend (Node 20/Angular, Karma headless).
-  - Enforces >80% test coverage for both.
+  - Builds and tests the MCP Server (Rust/Cargo, `rmcp`).
+  - Enforces >80% test coverage for both Frontend and Backend.
   - Runs the backend online dependency vulnerability audit through the `security-online` Maven profile.
   - Runs on push and pull requests for `main`, `master`, and `develop`, plus release tags `v*.*.*` (which triggers building and pushing Docker images to GHCR).
 - **Auto Release** (`.github/workflows/release.yml`):

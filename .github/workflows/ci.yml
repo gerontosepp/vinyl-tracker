@@ -138,8 +138,20 @@ jobs:
         labels: ${{ steps.meta.outputs.labels }}
 
   mcp-build:
-    name: MCP Server (Rust) Build & Test
-    runs-on: ubuntu-latest
+    name: MCP Server (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: linux-x86_64
+            binary: vinyl-mcp-server
+          - os: macos-latest
+            target: macos-aarch64
+            binary: vinyl-mcp-server
     defaults:
       run:
         working-directory: ./mcp
@@ -167,6 +179,16 @@ jobs:
 
     - name: Build Release Binary
       run: cargo build --release
+
+    - name: Package & Upload to GitHub Release
+      if: startsWith(github.ref, 'refs/tags/v')
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        ARCHIVE_NAME="vinyl-mcp-server-${{ matrix.target }}.tar.gz"
+        tar -czf "../$ARCHIVE_NAME" -C target/release "${{ matrix.binary }}"
+        gh release upload "${{ github.ref_name }}" "../$ARCHIVE_NAME" --clobber
+
 
   cleanup-ghcr:
     needs: [backend-build, frontend-build, mcp-build]

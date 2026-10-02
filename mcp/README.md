@@ -34,7 +34,15 @@ Der Server implementiert **Option 1 (REST-Client)**: Er kommuniziert direkt übe
 
 ## 🛠️ Installation & Bauen
 
-### Voraussetzungen
+### Option A: Fertige Binärdatei herunterladen (Kein Rust erforderlich)
+Ab jedem Release stehen vorkompilierte Archive direkt unter **GitHub Releases** bereit:
+* **Linux (x86_64):** `vinyl-mcp-server-linux-x86_64.tar.gz` (ideal für Proxmox, Ubuntu, Debian)
+* **macOS (Apple Silicon):** `vinyl-mcp-server-macos-aarch64.tar.gz` (für M1/M2/M3/M4 Macs)
+
+Einfach entpacken und den Pfad in deiner `mcp_config.json` eintragen.
+
+### Option B: Aus dem Quellcode bauen
+#### Voraussetzungen
 - **Rust Toolchain:** Version 1.88+ (z. B. via `rustup` oder Homebrew `brew install rust`)
 - **Vinyl Tracker Backend:** Laufendes Spring Boot Backend (z. B. via Docker `docker compose up -d` oder lokal auf Port 8080)
 

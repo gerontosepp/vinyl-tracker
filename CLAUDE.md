@@ -10,12 +10,9 @@ Vinyl Tracker — a personal vinyl record tracking app. Users scan barcodes / QR
 
 - `backend/` — Spring Boot 4 / Java 25 REST API (the active backend).
 - `frontend/` — **Angular 19 PWA (the active frontend)** — this is what Docker Compose builds and deploys, dev and prod.
-- `frontend_react/` — a React/Vite/Vitest port. **Not wired into any Docker Compose file.** Do not assume changes here ship. Confirm with the user before working here.
 - `docs/` — `DEPLOYMENT.md`, `arc42.md` (architecture), `Release-Info.md`.
-- `.agent/rules/` — coding/quality/documentation conventions (see below).
+- `.agent/rules/` — coding/quality/documentation conventions.
 - `certs/` — local mkcert SSL certs (HTTPS required for webcam barcode scanning).
-
-> Note: `.agent/rules/coding_standards.md` describes a React + Vitest frontend. That reflects `frontend_react/`, **not** the deployed `frontend/` (Angular + Karma/Jasmine + Playwright). Apply the framework-agnostic rules (layering, dates, error handling) to whichever frontend you touch.
 
 ## Common commands
 

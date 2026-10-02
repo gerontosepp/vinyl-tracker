@@ -2,12 +2,13 @@ import { Component, input, output, inject } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ApiService } from '../../../../core/services/api.service';
 import { ListenEvent } from '../../../../core/types';
+import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
 import { LucideTrash2 } from '@lucide/angular';
 
 @Component({
   selector: 'app-recent-listens',
   standalone: true,
-  imports: [DatePipe, LucideTrash2],
+  imports: [DatePipe, TranslatePipe, LucideTrash2],
   template: `
     <div
       [class]="
@@ -19,7 +20,7 @@ import { LucideTrash2 } from '@lucide/angular';
         class="p-6 pb-4 border-b border-slate-100 dark:border-slate-600 bg-white dark:bg-slate-800 z-10 transition-colors"
       >
         <h2 class="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-          Recent Listens
+          {{ 'dashboard.recentListens' | translate }}
         </h2>
       </div>
 
@@ -37,7 +38,7 @@ import { LucideTrash2 } from '@lucide/angular';
               <div
                 class="absolute top-3 right-3 z-10 bg-slate-900/80 dark:bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-full backdrop-blur-md shadow-sm border border-white/10 font-bold opacity-0 group-hover:opacity-100 transition-opacity"
               >
-                Recent
+                {{ 'dashboard.scannedLabel' | translate }}
               </div>
 
               <!-- Cover Image -->
@@ -107,11 +108,8 @@ import { LucideTrash2 } from '@lucide/angular';
               </svg>
             </div>
             <h3 class="text-lg font-bold text-slate-700 dark:text-slate-300 mb-1">
-              No Recent Listens
+              {{ 'dashboard.noListens' | translate }}
             </h3>
-            <p class="text-sm text-slate-500 dark:text-slate-400 max-w-[250px]">
-              Scan a record to start building your history of recently played albums.
-            </p>
           </div>
         }
       </div>
@@ -125,3 +123,4 @@ export class RecentListensComponent {
   readonly className = input<string>('');
   readonly delete = output<number>();
 }
+

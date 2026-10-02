@@ -32,6 +32,7 @@ The **Vinyl Tracker** is a personal web application designed for vinyl enthusias
 - **Technology Stack**:
     - **Backend**: Java 25+ (Spring Boot 4.0+).
     - **Frontend**: Angular 19 (TypeScript).
+    - **MCP Server**: Rust (`rmcp` v3.5 SDK, stdio JSON-RPC).
     - **Database**: PostgreSQL 16.
     - **Caching & Resilience**: Caffeine, Resilience4j.
     - **Migrations**: Flyway.
@@ -46,13 +47,16 @@ The **Vinyl Tracker** is a personal web application designed for vinyl enthusias
 ### 3.1 Business Context
 The system acts as a personal catalog and usage tracker.
 - **User**: Interacts with the Frontend via Browser/Mobile.
+- **AI Assistant**: Interacts with the system via the native Rust Model Context Protocol (MCP) Server.
 - **Discogs API**: External system used to fetch metadata (Artist, Title, Year, Cover Art) based on barcodes or search queries.
 
 **Context Diagram**:
 ```mermaid
 graph LR
     User((Vinyl Collector)) -->|Uses| Frontend[Frontend SPA]
-    Frontend -->|API Calls| Backend[Backend API]
+    AIAssistant((AI Assistant)) -->|JSON-RPC stdio| MCPServer[Rust MCP Server]
+    MCPServer -->|REST API Calls| Backend[Backend API]
+    Frontend -->|REST API Calls| Backend
     Backend -->|Persists Data| DB[(PostgreSQL)]
     Backend -->|Fetches Metadata| Discogs[Discogs API]
 ```

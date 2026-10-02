@@ -1,10 +1,12 @@
 import { Component, input, inject, computed } from '@angular/core';
 import { ApiService } from '../../../../core/services/api.service';
 import { AnalyticsTopRecord } from '../../../../core/types';
+import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
 
 @Component({
   selector: 'app-top-records',
   standalone: true,
+  imports: [TranslatePipe],
   template: `
     <div
       [class]="
@@ -17,7 +19,7 @@ import { AnalyticsTopRecord } from '../../../../core/types';
       >
         <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <h2 class="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-            Top Records
+            {{ 'stats.topPlayed' | translate }}
           </h2>
           <div class="w-full lg:w-auto">
             <ng-content></ng-content>
@@ -106,11 +108,8 @@ import { AnalyticsTopRecord } from '../../../../core/types';
               </svg>
             </div>
             <h3 class="text-lg font-bold text-slate-700 dark:text-slate-300 mb-1">
-              No Top Records
+              {{ 'collection.noRecords' | translate }}
             </h3>
-            <p class="text-sm text-slate-500 dark:text-slate-400 max-w-[250px]">
-              Start listening to some music and your most played records will appear here over time.
-            </p>
           </div>
         }
       </div>
@@ -128,3 +127,4 @@ export class TopRecordsComponent {
     return counts.length > 0 ? Math.max(...counts, 0) : 0;
   });
 }
+

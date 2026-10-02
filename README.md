@@ -1,4 +1,4 @@
-# Vinyl Tracker v2.2.0
+# Vinyl Tracker v2.3.0
 
 A personal vinyl record tracking application that allows users to scan barcodes, identify records via Discogs, and log listening sessions.
 
@@ -27,11 +27,19 @@ The project follows a modern containerized micro-architecture:
 - **System**: PostgreSQL 16
 - **Persistence**: Data is persisted in a Docker volume (`postgres_data`).
 
+### MCP Server (AI Integration)
+- **Language**: Rust
+- **Framework**: `rmcp` (v3.5) official MCP SDK
+- **Communication**: REST client against the Spring Boot backend over stdio JSON-RPC.
+- **Location**: `mcp/` directory.
+
 ### Infrastructure
 - **Docker Compose**: Orchestrates the Frontend, Backend, and Database services.
 - **CI/CD**: GitHub Actions pipeline for automated building and testing.
 
 ## Features
+
+- **Model Context Protocol (MCP)**: Native Rust MCP server to query your vinyl collection, trigger Discogs syncs, log listen events, and inspect analytics from AI assistants (Antigravity IDE, Claude Desktop, Cursor).
 
 - **Barcode Scanning**: Scan vinyl barcodes to retrieve metadata from Discogs.
 - **Multi-User Support**: Individual user accounts with personal Discogs collection integration.
@@ -223,7 +231,8 @@ The project includes GitHub Actions workflows:
 - **CI Pipeline** (`.github/workflows/ci.yml`):
   - Automatically builds and tests the Backend (Java 25/Maven).
   - Builds and tests the Frontend (Node 20/Angular, Karma headless).
-  - Enforces >80% test coverage for both.
+  - Builds and tests the MCP Server (Rust/Cargo, `rmcp`).
+  - Enforces >80% test coverage for both Frontend and Backend.
   - Runs the backend online dependency vulnerability audit through the `security-online` Maven profile.
   - Runs on push and pull requests for `main`, `master`, and `develop`, plus release tags `v*.*.*` (which triggers building and pushing Docker images to GHCR).
 - **Auto Release** (`.github/workflows/release.yml`):
@@ -234,6 +243,36 @@ Required GitHub Actions secrets for the backend security audit:
 - `OSSINDEX_USERNAME`
 - `OSSINDEX_TOKEN`
 
+## Model Context Protocol (MCP) Server
+
+Vinyl Tracker provides a native Rust MCP Server located in `mcp/` to interact with your vinyl collection via LLMs and AI assistants:
+
+```bash
+# Build the binary
+cd mcp
+cargo build --release
+```
+
+Config snippet for Antigravity IDE / Claude Desktop (`mcp_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "vinyl-tracker": {
+      "command": "/Users/opolm/develop/AntiGrafity/mcp/target/release/vinyl-mcp-server",
+      "env": {
+        "VINYL_API_URL": "http://localhost:8080",
+        "VINYL_USERNAME": "your_user",
+        "VINYL_PASSWORD": "your_password"
+      }
+    }
+  }
+}
+```
+
+Detailed guide, tool descriptions, and options: [mcp/README.md](mcp/README.md).
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+

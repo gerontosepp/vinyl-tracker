@@ -137,8 +137,61 @@ jobs:
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
 
+  mcp-build:
+    name: MCP Server (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: linux-x86_64
+            binary: vinyl-mcp-server
+          - os: macos-latest
+            target: macos-aarch64
+            binary: vinyl-mcp-server
+    defaults:
+      run:
+        working-directory: ./mcp
+
+    steps:
+    - uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+
+    - name: Set up Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: clippy, rustfmt
+
+    - name: Rust Cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: "./mcp -> ./mcp/target"
+
+    - name: Run Cargo Check
+      run: cargo check
+
+    - name: Run Unit Tests
+      run: cargo test --verbose
+
+    - name: Build Release Binary
+      run: cargo build --release
+
+    - name: Package & Upload to GitHub Release
+      if: startsWith(github.ref, 'refs/tags/v')
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        ARCHIVE_NAME="vinyl-mcp-server-${{ matrix.target }}.tar.gz"
+        tar -czf "../$ARCHIVE_NAME" -C target/release "${{ matrix.binary }}"
+        gh release upload "${{ github.ref_name }}" "../$ARCHIVE_NAME" --clobber
+
+
   cleanup-ghcr:
-    needs: [backend-build, frontend-build]
+    needs: [backend-build, frontend-build, mcp-build]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:

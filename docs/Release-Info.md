@@ -14,6 +14,10 @@ Kurze Uebersicht der Aenderungen je Version (abgeleitet aus Git-Tags und Commit-
   - 100% bestandene Backend-Tests (119 Tests) mit hoher Testabdeckung.
 - **Rust MCP Server Erweiterung**:
   - Werkzeugsatz auf 14 native Tools erweitert mit vollständiger Typisierung, DTO-Mapping und Unittests.
+- **Dependencies**:
+  - Frontend: `@lucide/angular` (1.41.0 -> 1.51.0), `@playwright/test` (1.62.1 -> 1.63.0) sowie transitive npm-Abhängigkeiten im Lockfile aktualisiert.
+  - MCP Server (Rust): `tokio` (1.53.1 -> 1.53.2), `uuid` (1.26.1 -> 1.27.0), `cc` (1.5.1 -> 1.6.0), `libc` (0.2.189 -> 0.2.190) aktualisiert.
+  - Backend: Geprüft und auf aktuellem, kompatiblem Stand validiert.
 
 ## v2.3.0 (2026-10-02)
 - **Model Context Protocol (MCP) Server (Rust)**:

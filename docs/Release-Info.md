@@ -4,6 +4,19 @@ Kurze Uebersicht der Aenderungen je Version (abgeleitet aus Git-Tags und Commit-
 
 ## Unreleased
 
+## v2.3.0 (2026-10-02)
+- **Model Context Protocol (MCP) Server (Rust)**:
+  - Neuer, hochperformanter MCP-Server in Rust unter `mcp/` basierend auf dem offiziellen `rmcp` SDK (v3.5) und `tokio`.
+  - 10 MCP-Tools zur Steuerung über KI-Assistenten (Antigravity IDE, Claude Desktop, Cursor): Sammlung abfragen (`get_user_collection`), Discogs-Synchronisation (`sync_collection`), Barcode-/QR-Code-Scans protokollieren (`scan_barcode`), Hördurchgänge verwalten/löschen (`delete_scan`, `reset_all_listens`), Analytics & Top-Alben (`get_recent_listens`, `get_top_records`, `get_collection_value`, `get_genre_breakdown`) sowie Benutzerprofil (`get_current_user`).
+  - REST-Client-Architektur mit automatischem Backend-Login (`/api/users/login`), dynamischem Cookie-Lifecycle-Management (`vinyl_token`) und flexibler Casing-Unterstützung (Snake- & CamelCase).
+  - Umfassende Unit-Test-Suite für DTOs, Serialisierung und Router-Registrierung (`cargo test`).
+- **CI/CD & Multi-Plattform-Releases**:
+  - Neuer `mcp-build`-Job in der GitHub Actions CI-Pipeline (`.github/workflows/ci.yml`).
+  - Automatisierte Release-Verpackung: Vorkompilierte Binärdateien für Linux (`linux-x86_64`) und macOS (`macos-aarch64` Apple Silicon) werden bei jedem Release automatisch als Assets hochgeladen.
+- **Dokumentation**:
+  - Detaillierte Installations-, Konfigurations- und Nutzungsanleitung in `mcp/README.md`.
+  - Aktualisierung von `README.md` und der Architektur-Dokumentation `docs/arc42.md`.
+
 ## v2.2.0 (2026-09-04)
 - Workspace Skills: Standardisierte AI-Agent-Skills unter `.agent/skills/` integriert (`release-management`, `dependency-updates`, `database-migrations`, `proxmox-deployment`).
 - Dependencies: Frontend (Angular 19.2.25/19.2.27, Lucide Angular 1.41.0, PostCSS 8.5.28, RxJS 7.8.2, TypeScript 5.7.3) und Backend (Lombok 1.18.46, Logstash-Logback-Encoder 9.0) aktualisiert.

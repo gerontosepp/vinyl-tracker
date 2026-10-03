@@ -111,19 +111,19 @@ public class CollectionSyncService {
         return new SyncResultDto(addedCount, removedCount);
     }
 
-    private List<String> extractDiscogsTags(DiscogsDto.BasicInformation basicInformation) {
-        if (basicInformation == null) {
+    private List<String> extractDiscogsTags(DiscogsDto.Release release) {
+        if (release == null) {
             return List.of();
         }
 
         Set<String> tags = new LinkedHashSet<>();
-        if (basicInformation.getGenres() != null) {
-            basicInformation.getGenres().stream()
+        if (release.getGenres() != null) {
+            release.getGenres().stream()
                     .filter(tag -> tag != null && !tag.isBlank())
                     .forEach(tags::add);
         }
-        if (basicInformation.getStyles() != null) {
-            basicInformation.getStyles().stream()
+        if (release.getStyles() != null) {
+            release.getStyles().stream()
                     .filter(tag -> tag != null && !tag.isBlank())
                     .forEach(tags::add);
         }

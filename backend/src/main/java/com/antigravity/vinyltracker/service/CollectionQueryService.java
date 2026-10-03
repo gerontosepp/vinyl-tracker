@@ -158,7 +158,7 @@ public class CollectionQueryService {
         release.setInstanceId(item.getInstanceId());
         release.setListenCount(listenCount);
 
-        DiscogsDto.BasicInformation basicInfo = new DiscogsDto.BasicInformation();
+        DiscogsDto.Release basicInfo = new DiscogsDto.Release();
         basicInfo.setId(item.getRecord().getDiscogsId());
         basicInfo.setTitle(item.getRecord().getTitle());
         basicInfo.setThumbUrl(item.getRecord().getThumbUrl());

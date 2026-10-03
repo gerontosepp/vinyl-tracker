@@ -47,18 +47,18 @@ class CollectionSyncServiceTest {
         DiscogsDto.CollectionRelease release = new DiscogsDto.CollectionRelease();
         release.setId(12345L);
         release.setInstanceId(67890L);
-        DiscogsDto.BasicInformation basicInfo = new DiscogsDto.BasicInformation();
-        basicInfo.setId(12345L);
-        basicInfo.setTitle("Test Album");
-        basicInfo.setYear(null);
-        basicInfo.setThumbUrl("https://example.com/thumb.jpg");
-        basicInfo.setCoverImage("https://example.com/cover.jpg");
-        basicInfo.setGenres(List.of("Electronic"));
-        basicInfo.setStyles(List.of("House"));
+        DiscogsDto.Release releaseInfo = new DiscogsDto.Release();
+        releaseInfo.setId(12345L);
+        releaseInfo.setTitle("Test Album");
+        releaseInfo.setYear(null);
+        releaseInfo.setThumbUrl("https://example.com/thumb.jpg");
+        releaseInfo.setCoverImage("https://example.com/cover.jpg");
+        releaseInfo.setGenres(List.of("Electronic"));
+        releaseInfo.setStyles(List.of("House"));
         DiscogsDto.Artist artist = new DiscogsDto.Artist();
         artist.setName("Test Artist");
-        basicInfo.setArtists(List.of(artist));
-        release.setBasicInformation(basicInfo);
+        releaseInfo.setArtists(List.of(artist));
+        release.setBasicInformation(releaseInfo);
         mockResponse.setReleases(List.of(release));
 
         Mockito.when(discogsApiClient.getCollectionReleases(user, 1, 100))

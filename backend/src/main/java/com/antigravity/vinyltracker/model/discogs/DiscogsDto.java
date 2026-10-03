@@ -22,6 +22,8 @@ public class DiscogsDto {
         private Integer year;
         @JsonProperty("thumb")
         private String thumbUrl;
+        @JsonProperty("cover_image")
+        private String coverImage;
         private List<Track> tracklist;
         private List<Format> formats;
         private List<Label> labels;
@@ -136,25 +138,15 @@ public class DiscogsDto {
         private String dateAdded;
         private Integer rating;
         @JsonProperty("basic_information")
-        private BasicInformation basicInformation;
+        private Release basicInformation;
     }
 
+    @Deprecated
     @JsonIgnoreProperties(ignoreUnknown = true)
     @Data
-    @lombok.AllArgsConstructor
+    @lombok.EqualsAndHashCode(callSuper = true)
     @lombok.NoArgsConstructor
-    public static class BasicInformation {
-        private Long id;
-        private String title;
-        private Integer year;
-        @JsonProperty("thumb")
-        private String thumbUrl;
-        @JsonProperty("cover_image")
-        private String coverImage;
-        private List<Artist> artists;
-        private List<Label> labels;
-        private List<String> genres;
-        private List<String> styles;
+    public static class BasicInformation extends Release {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

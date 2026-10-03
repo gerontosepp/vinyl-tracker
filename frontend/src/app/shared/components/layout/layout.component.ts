@@ -54,7 +54,7 @@ import { ScannerService } from '../../../core/services/scanner.service';
   `,
 })
 export class LayoutComponent {
-  readonly fullWidth = input<boolean>(false);
+  readonly fullWidth = input<boolean>(true);
   readonly authService = inject(AuthService);
   private readonly scannerService = inject(ScannerService);
   private readonly router = inject(Router);

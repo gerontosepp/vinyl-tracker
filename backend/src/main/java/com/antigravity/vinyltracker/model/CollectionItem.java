@@ -35,9 +35,13 @@ public class CollectionItem {
     private LocalDateTime addedAt;
 
     public CollectionItem(AppUser user, Record record, Long instanceId) {
+        this(user, record, instanceId, LocalDateTime.now(java.time.ZoneOffset.UTC));
+    }
+
+    public CollectionItem(AppUser user, Record record, Long instanceId, LocalDateTime addedAt) {
         this.user = user;
         this.record = record;
         this.instanceId = instanceId;
-        this.addedAt = LocalDateTime.now();
+        this.addedAt = addedAt != null ? addedAt : LocalDateTime.now(java.time.ZoneOffset.UTC);
     }
 }

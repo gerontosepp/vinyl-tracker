@@ -8,6 +8,10 @@ import com.antigravity.vinyltracker.repository.RecordRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -78,14 +82,22 @@ public class CollectionSyncService {
                         recordRepository.save(record);
                     }
 
+                    LocalDateTime addedAt = parseDiscogsDate(release.getDateAdded());
+
                     // Check if CollectionItem linkage exists for user, create if not
                     java.util.Optional<com.antigravity.vinyltracker.model.CollectionItem> existingItem = collectionItemRepository
                             .findByUserAndInstanceId(user, release.getInstanceId());
                     if (existingItem.isEmpty()) {
                         com.antigravity.vinyltracker.model.CollectionItem item = new com.antigravity.vinyltracker.model.CollectionItem(
-                                user, record, release.getInstanceId());
+                                user, record, release.getInstanceId(), addedAt);
                         collectionItemRepository.save(item);
                         addedCount++;
+                    } else {
+                        com.antigravity.vinyltracker.model.CollectionItem item = existingItem.get();
+                        if (addedAt != null && !addedAt.equals(item.getAddedAt())) {
+                            item.setAddedAt(addedAt);
+                            collectionItemRepository.save(item);
+                        }
                     }
                 }
 
@@ -132,5 +144,21 @@ public class CollectionSyncService {
         }
 
         return new ArrayList<>(tags);
+    }
+
+    private LocalDateTime parseDiscogsDate(String dateStr) {
+        if (dateStr == null || dateStr.isBlank()) {
+            return LocalDateTime.now(ZoneOffset.UTC);
+        }
+        try {
+            return OffsetDateTime.parse(dateStr).atZoneSameInstant(ZoneOffset.UTC).toLocalDateTime();
+        } catch (DateTimeParseException e) {
+            try {
+                return java.time.Instant.parse(dateStr).atZone(ZoneOffset.UTC).toLocalDateTime();
+            } catch (Exception ex) {
+                log.warn("Could not parse Discogs date_added: {}", dateStr);
+                return LocalDateTime.now(ZoneOffset.UTC);
+            }
+        }
     }
 }

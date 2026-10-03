@@ -157,6 +157,9 @@ public class CollectionQueryService {
         release.setId(item.getRecord().getDiscogsId());
         release.setInstanceId(item.getInstanceId());
         release.setListenCount(listenCount);
+        if (item.getAddedAt() != null) {
+            release.setDateAdded(item.getAddedAt().toString());
+        }
 
         DiscogsDto.Release basicInfo = new DiscogsDto.Release();
         basicInfo.setId(item.getRecord().getDiscogsId());

@@ -266,6 +266,7 @@ import { Subscription, firstValueFrom } from 'rxjs';
                     <th class="px-4 py-4 w-16">Cover</th>
                     <th class="px-4 py-4">Band Name</th>
                     <th class="px-4 py-4">Album Title</th>
+                    <th class="px-4 py-4">Genre</th>
                     <th class="px-4 py-4">Year</th>
                     <th class="px-4 py-4">Plays</th>
                     <th class="px-4 py-4 text-right">Link</th>
@@ -317,13 +318,36 @@ import { Subscription, firstValueFrom } from 'rxjs';
                         </div>
                       </td>
                       <td class="px-4 py-3 font-semibold text-slate-900 dark:text-slate-100">
-                        {{ release.basic_information.artists?.[0]?.name || 'Unknown' }}
+                        {{ release.basic_information.artists.length > 0 ? release.basic_information.artists[0].name : 'Unknown' }}
                       </td>
                       <td
                         class="px-4 py-3 text-slate-600 dark:text-slate-300 truncate max-w-[200px]"
                         [title]="release.basic_information.title"
                       >
                         {{ release.basic_information.title }}
+                      </td>
+                      <td class="px-4 py-3">
+                        @if (release.basic_information.genres && release.basic_information.genres.length > 0) {
+                          <div class="flex flex-wrap gap-1 max-w-[200px]">
+                            @for (genre of release.basic_information.genres.slice(0, 2); track genre) {
+                              <span
+                                class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/50"
+                              >
+                                {{ genre }}
+                              </span>
+                            }
+                            @if (release.basic_information.genres.length > 2) {
+                              <span
+                                class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400"
+                                [title]="release.basic_information.genres.slice(2).join(', ')"
+                              >
+                                +{{ release.basic_information.genres.length - 2 }}
+                              </span>
+                            }
+                          </div>
+                        } @else {
+                          <span class="text-slate-400 dark:text-slate-500 text-sm">—</span>
+                        }
                       </td>
                       <td class="px-4 py-3 text-slate-500 dark:text-slate-400 text-sm">
                         {{ release.basic_information.year || '—' }}
@@ -414,9 +438,28 @@ import { Subscription, firstValueFrom } from 'rxjs';
                       {{ release.basic_information.title }}
                     </h3>
                     <p class="text-xs text-slate-500 dark:text-slate-400 truncate font-medium">
-                      {{ release.basic_information.artists?.[0]?.name || 'Unknown' }} •
+                      {{ release.basic_information.artists.length > 0 ? release.basic_information.artists[0].name : 'Unknown' }} •
                       {{ release.basic_information.year || '—' }}
                     </p>
+                    @if (release.basic_information.genres && release.basic_information.genres.length > 0) {
+                      <div class="flex flex-wrap gap-1 mt-1">
+                        @for (genre of release.basic_information.genres.slice(0, 2); track genre) {
+                          <span
+                            class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800/40 truncate max-w-full"
+                          >
+                            {{ genre }}
+                          </span>
+                        }
+                        @if (release.basic_information.genres.length > 2) {
+                          <span
+                            class="inline-flex items-center px-1 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400"
+                            [title]="release.basic_information.genres.slice(2).join(', ')"
+                          >
+                            +{{ release.basic_information.genres.length - 2 }}
+                          </span>
+                        }
+                      </div>
+                    }
                   </div>
                 </div>
               }

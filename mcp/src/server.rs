@@ -155,6 +155,64 @@ impl VinylMcpServer {
         serde_json::to_string_pretty(&user)
             .map_err(|e| format!("Failed to serialize user profile: {}", e))
     }
+    /// Pick a random record recommendation from the user's vinyl collection.
+    #[tool(
+        name = "get_random_record",
+        description = "Picks a random record recommendation from the user's vinyl collection. Optionally filter by genre or restrict to unplayed records."
+    )]
+    async fn get_random_record(
+        &self,
+        Parameters(args): Parameters<GetRandomRecordArgs>,
+    ) -> Result<String, String> {
+        let release = self.client.get_random_record(&args).await?;
+        match release {
+            Some(r) => serde_json::to_string_pretty(&r)
+                .map_err(|e| format!("Failed to serialize random record: {}", e)),
+            None => Ok("No record found matching the criteria.".to_string()),
+        }
+    }
+
+    /// Retrieve unplayed vinyl records ("shelf of shame") from the user's collection.
+    #[tool(
+        name = "get_unplayed_records",
+        description = "Retrieves unplayed records from the user's collection (the 'shelf of shame') with optional pagination."
+    )]
+    async fn get_unplayed_records(
+        &self,
+        Parameters(args): Parameters<GetUnplayedRecordsArgs>,
+    ) -> Result<String, String> {
+        let resp = self.client.get_unplayed_records(&args).await?;
+        serde_json::to_string_pretty(&resp)
+            .map_err(|e| format!("Failed to serialize unplayed records: {}", e))
+    }
+
+    /// Retrieve comprehensive album details including tracklist, formats, labels, and listen history.
+    #[tool(
+        name = "get_record_details",
+        description = "Fetches comprehensive details for a record by its database ID or Discogs release ID, including tracklist, release formats, labels, release notes, and personal listen history."
+    )]
+    async fn get_record_details(
+        &self,
+        Parameters(args): Parameters<GetRecordDetailsArgs>,
+    ) -> Result<String, String> {
+        let details = self.client.get_record_details(args.id).await?;
+        serde_json::to_string_pretty(&details)
+            .map_err(|e| format!("Failed to serialize record details: {}", e))
+    }
+
+    /// Search the global Discogs database for albums, artists, or releases.
+    #[tool(
+        name = "search_discogs",
+        description = "Searches the global Discogs database for vinyl records and releases by album title, artist, barcode, or catalog number."
+    )]
+    async fn search_discogs(
+        &self,
+        Parameters(args): Parameters<SearchDiscogsArgs>,
+    ) -> Result<String, String> {
+        let resp = self.client.search_discogs(&args).await?;
+        serde_json::to_string_pretty(&resp)
+            .map_err(|e| format!("Failed to serialize Discogs search results: {}", e))
+    }
 }
 
 #[tool_handler(router = self.tool_router)]
@@ -195,6 +253,18 @@ mod tests {
 
         let t10 = VinylMcpServer::get_current_user_tool_attr();
         assert_eq!(t10.name, "get_current_user");
+
+        let t11 = VinylMcpServer::get_random_record_tool_attr();
+        assert_eq!(t11.name, "get_random_record");
+
+        let t12 = VinylMcpServer::get_unplayed_records_tool_attr();
+        assert_eq!(t12.name, "get_unplayed_records");
+
+        let t13 = VinylMcpServer::get_record_details_tool_attr();
+        assert_eq!(t13.name, "get_record_details");
+
+        let t14 = VinylMcpServer::search_discogs_tool_attr();
+        assert_eq!(t14.name, "search_discogs");
     }
 }
 

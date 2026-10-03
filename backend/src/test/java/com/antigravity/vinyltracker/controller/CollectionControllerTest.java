@@ -153,4 +153,48 @@ class CollectionControllerTest {
                                 .andExpect(status().isInternalServerError())
                                 .andExpect(content().contentType("application/problem+json"));
         }
+
+        @Test
+        @WithMockUser(username = "testuser")
+        void getRandomRecord_ShouldReturnRecord() throws Exception {
+                DiscogsDto.CollectionRelease release = new DiscogsDto.CollectionRelease();
+                release.setId(123L);
+                when(collectionService.getRandomRecord("testuser", "Rock", false)).thenReturn(release);
+
+                mockMvc.perform(get("/api/collection/random")
+                                .principal(() -> "testuser")
+                                .param("genre", "Rock")
+                                .param("unplayed_only", "false"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.id").value(123));
+        }
+
+        @Test
+        @WithMockUser(username = "testuser")
+        void getRandomRecord_NotFound_ShouldReturn404() throws Exception {
+                when(collectionService.getRandomRecord("testuser", null, true)).thenReturn(null);
+
+                mockMvc.perform(get("/api/collection/random")
+                                .principal(() -> "testuser")
+                                .param("unplayed_only", "true"))
+                                .andExpect(status().isNotFound())
+                                .andExpect(content().contentType("application/problem+json"));
+        }
+
+        @Test
+        @WithMockUser(username = "testuser")
+        void getUnplayedCollection_ShouldReturnReleases() throws Exception {
+                DiscogsDto.CollectionResponse response = new DiscogsDto.CollectionResponse();
+                DiscogsDto.CollectionRelease release = new DiscogsDto.CollectionRelease();
+                release.setId(456L);
+                response.setReleases(List.of(release));
+                when(collectionService.getUnplayedCollection("testuser", 1, 50)).thenReturn(response);
+
+                mockMvc.perform(get("/api/collection/unplayed")
+                                .principal(() -> "testuser")
+                                .param("page", "1")
+                                .param("per_page", "50"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.releases[0].id").value(456));
+        }
 }

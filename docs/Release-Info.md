@@ -3,6 +3,34 @@
 Kurze Uebersicht der Aenderungen je Version (abgeleitet aus Git-Tags und Commit-Historie).
 
 ## Unreleased
+- **Neue Backend REST-APIs & MCP-Tools**:
+  - `GET /api/collection/random` & MCP-Tool `get_random_record`: Liefert zufällige Empfehlungen aus der Vinyl-Sammlung mit optionalem Genre-Filter und "Nur ungespielte Platten"-Modus.
+  - `GET /api/collection/unplayed` & MCP-Tool `get_unplayed_records`: Paginierte Liste ungespielter Alben der Sammlung ("Shelf of Shame").
+  - `GET /api/records/{id}` & MCP-Tool `get_record_details`: Umfassende Album-Details inklusive Tracklist, Release-Formate, Labels, Notizen und persönlicher Abspielhistorie.
+  - `GET /api/discogs/search` & MCP-Tool `search_discogs`: Globale Discogs-Datenbanksuche nach Alben, Künstlern und Releases.
+- **Backend-Architektur & Qualität**:
+  - `ResourceNotFoundException` mit standardisierten RFC 7807 `ProblemDetail`-Antworten (HTTP 404).
+  - `IllegalArgumentException`-Mapping auf HTTP 400 mit strukturierter Fehlerausgabe.
+  - 100% bestandene Backend-Tests (119 Tests) mit hoher Testabdeckung.
+- **Rust MCP Server Erweiterung**:
+  - Werkzeugsatz auf 14 native Tools erweitert mit vollständiger Typisierung, DTO-Mapping und Unittests.
+- **Dependencies**:
+  - Frontend: `@lucide/angular` (1.41.0 -> 1.51.0), `@playwright/test` (1.62.1 -> 1.63.0) sowie transitive npm-Abhängigkeiten im Lockfile aktualisiert.
+  - MCP Server (Rust): `tokio` (1.53.1 -> 1.53.2), `uuid` (1.26.1 -> 1.27.0), `cc` (1.5.1 -> 1.6.0), `libc` (0.2.189 -> 0.2.190) aktualisiert.
+  - Backend: Geprüft und auf aktuellem, kompatiblem Stand validiert.
+
+## v2.3.0 (2026-10-02)
+- **Model Context Protocol (MCP) Server (Rust)**:
+  - Neuer, hochperformanter MCP-Server in Rust unter `mcp/` basierend auf dem offiziellen `rmcp` SDK (v3.5) und `tokio`.
+  - 10 MCP-Tools zur Steuerung über KI-Assistenten (Antigravity IDE, Claude Desktop, Cursor): Sammlung abfragen (`get_user_collection`), Discogs-Synchronisation (`sync_collection`), Barcode-/QR-Code-Scans protokollieren (`scan_barcode`), Hördurchgänge verwalten/löschen (`delete_scan`, `reset_all_listens`), Analytics & Top-Alben (`get_recent_listens`, `get_top_records`, `get_collection_value`, `get_genre_breakdown`) sowie Benutzerprofil (`get_current_user`).
+  - REST-Client-Architektur mit automatischem Backend-Login (`/api/users/login`), dynamischem Cookie-Lifecycle-Management (`vinyl_token`) und flexibler Casing-Unterstützung (Snake- & CamelCase).
+  - Umfassende Unit-Test-Suite für DTOs, Serialisierung und Router-Registrierung (`cargo test`).
+- **CI/CD & Multi-Plattform-Releases**:
+  - Neuer `mcp-build`-Job in der GitHub Actions CI-Pipeline (`.github/workflows/ci.yml`).
+  - Automatisierte Release-Verpackung: Vorkompilierte Binärdateien für Linux (`linux-x86_64`) und macOS (`macos-aarch64` Apple Silicon) werden bei jedem Release automatisch als Assets hochgeladen.
+- **Dokumentation**:
+  - Detaillierte Installations-, Konfigurations- und Nutzungsanleitung in `mcp/README.md`.
+  - Aktualisierung von `README.md` und der Architektur-Dokumentation `docs/arc42.md`.
 
 ## v2.2.0 (2026-09-04)
 - Workspace Skills: Standardisierte AI-Agent-Skills unter `.agent/skills/` integriert (`release-management`, `dependency-updates`, `database-migrations`, `proxmox-deployment`).

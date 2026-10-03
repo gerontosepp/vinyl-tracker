@@ -22,6 +22,35 @@ public class DiscogsDto {
         private Integer year;
         @JsonProperty("thumb")
         private String thumbUrl;
+        private List<Track> tracklist;
+        private List<Format> formats;
+        private List<Label> labels;
+        private String notes;
+        private String country;
+        private String released;
+        private List<String> genres;
+        private List<String> styles;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @Data
+    @lombok.AllArgsConstructor
+    @lombok.NoArgsConstructor
+    public static class Track {
+        private String position;
+        private String title;
+        private String duration;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @Data
+    @lombok.AllArgsConstructor
+    @lombok.NoArgsConstructor
+    public static class Format {
+        private String name;
+        private String qty;
+        private List<String> descriptions;
+        private String text;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -37,6 +66,7 @@ public class DiscogsDto {
     @lombok.AllArgsConstructor
     @lombok.NoArgsConstructor
     public static class SearchResponse {
+        private Pagination pagination;
         private List<SearchResult> results;
     }
 
@@ -53,6 +83,10 @@ public class DiscogsDto {
         @JsonProperty("cover_image")
         private String coverImage;
         private List<String> barcode;
+        private List<String> genre;
+        private List<String> style;
+        private List<String> format;
+        private String country;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

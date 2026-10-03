@@ -21,9 +21,21 @@ public interface CollectionItemRepository extends JpaRepository<CollectionItem, 
 
         Optional<CollectionItem> findByUserAndInstanceId(AppUser user, Long instanceId);
 
+        Optional<CollectionItem> findByUserAndRecord(AppUser user, com.antigravity.vinyltracker.model.Record record);
+
+        Optional<CollectionItem> findByUserAndRecord_DiscogsId(AppUser user, Long discogsId);
+
         long countByUser(AppUser user);
 
         void deleteAllByUser(AppUser user);
+
+        @Query("SELECT ci FROM CollectionItem ci WHERE ci.user = :user AND NOT EXISTS (SELECT le FROM ListenEvent le WHERE le.record = ci.record AND le.user = ci.user)")
+        Page<CollectionItem> findUnplayedByUser(@Param("user") AppUser user, Pageable pageable);
+
+        @Query("SELECT ci FROM CollectionItem ci WHERE ci.user = :user " +
+                "AND (:unplayedOnly = false OR NOT EXISTS (SELECT le FROM ListenEvent le WHERE le.record = ci.record AND le.user = ci.user))")
+        List<CollectionItem> findCandidatesForRandom(@Param("user") AppUser user, @Param("unplayedOnly") boolean unplayedOnly);
+
 
         // Custom query to fetch collection items with their listen counts, sorted by
         // listen count

@@ -1,4 +1,4 @@
-# Vinyl Tracker v2.3.0
+# Vinyl Tracker v2.4.0
 
 A personal vinyl record tracking application that allows users to scan barcodes, identify records via Discogs, and log listening sessions.
 
@@ -39,8 +39,11 @@ The project follows a modern containerized micro-architecture:
 
 ## Features
 
-- **Model Context Protocol (MCP)**: Native Rust MCP server to query your vinyl collection, trigger Discogs syncs, log listen events, and inspect analytics from AI assistants (Antigravity IDE, Claude Desktop, Cursor).
-
+- **Model Context Protocol (MCP)**: Native Rust MCP server with 14 tools to query your vinyl collection, get random recommendations, view unplayed records, fetch album tracklists, search Discogs, log listen events, and inspect analytics from AI assistants (Antigravity IDE, Claude Desktop, Cursor).
+- **Random Record Recommendations**: Get random vinyl suggestions (`/api/collection/random`) with optional genre filter and "unplayed only" mode.
+- **Unplayed Records ("Shelf of Shame")**: Dedicated endpoint (`/api/collection/unplayed`) to quickly find and listen to albums you have never played.
+- **Detailed Album Metadata**: Complete record details (`/api/records/{id}`) including tracklist, formats, labels, release notes, and personal play counts.
+- **Global Discogs Search**: Direct database search (`/api/discogs/search`) for exploring albums, artists, and releases.
 - **Barcode Scanning**: Scan vinyl barcodes to retrieve metadata from Discogs.
 - **Multi-User Support**: Individual user accounts with personal Discogs collection integration.
 - **Listening History**: Log when you listen to a record.

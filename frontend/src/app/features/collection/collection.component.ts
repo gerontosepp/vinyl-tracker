@@ -40,7 +40,7 @@ import { Subscription, firstValueFrom } from 'rxjs';
   template: `
     <app-layout>
       <div
-        class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm flex flex-col h-[calc(100vh-6rem)] md:h-[calc(100vh-5rem)] transition-colors border border-slate-200/50 dark:border-slate-600"
+        class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm flex flex-col h-[calc(100vh-6rem)] md:h-[calc(100vh-5rem)] transition-colors border border-slate-200/50 dark:border-slate-600 overflow-hidden"
       >
         <!-- Header / Actions -->
         <div
@@ -77,149 +77,156 @@ import { Subscription, firstValueFrom } from 'rxjs';
 
         <!-- Controls & Pagination Top -->
         <div
-          class="sticky top-0 z-20 p-4 md:px-6 bg-slate-50/70 dark:bg-slate-900/60 backdrop-blur-xl flex flex-col xl:flex-row justify-between items-stretch xl:items-center gap-4 border-b border-slate-200/50 dark:border-slate-600 text-sm transition-colors shadow-sm"
+          class="sticky top-0 z-20 p-3.5 sm:p-4 md:px-6 bg-slate-50/80 dark:bg-slate-900/70 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-600 text-sm transition-colors shadow-sm flex flex-col gap-3"
         >
-          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full xl:w-auto">
-            <!-- Search Bar -->
-            <div class="relative group w-full sm:w-64 order-1 sm:order-none shrink-0">
-              <svg
-                lucideSearch
-                [size]="16"
-                class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 group-focus-within:text-indigo-500 transition-colors"
-              ></svg>
-              <input
-                type="text"
-                [placeholder]="'collection.searchPlaceholder' | translate"
-                [ngModel]="search()"
-                (ngModelChange)="onSearchChange($event)"
-                class="pl-9 pr-8 py-1.5 border border-slate-200 dark:border-slate-600 rounded-xl bg-white/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all duration-300 backdrop-blur-sm"
-              />
-              @if (search()) {
-                <button
-                  (click)="clearSearch()"
-                  class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-1 cursor-pointer"
-                >
-                  <svg lucideX [size]="14"></svg>
-                </button>
-              }
-            </div>
-
-            <!-- Filter Buttons & Sort -->
-            <div
-              class="flex items-center gap-3 order-2 sm:order-none overflow-x-auto pb-1 sm:pb-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden w-full sm:w-auto"
-            >
-              <button
-                (click)="toggleSelectAllPage()"
-                class="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium transition-colors shrink-0 cursor-pointer"
-              >
-                @if (isAllPageSelected()) {
-                  <svg lucideCheckSquare class="text-indigo-600 dark:text-indigo-400" [size]="18"></svg>
-                } @else {
-                  <svg lucideSquare [size]="18"></svg>
-                }
-                <span class="whitespace-nowrap">{{ 'collection.selectPage' | translate }}</span>
-              </button>
-
-              <button
-                (click)="toggleShowPlayedOnly()"
-                [class]="
-                  'flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all duration-200 shrink-0 cursor-pointer ' +
-                  (showPlayedOnly()
-                    ? 'bg-indigo-50 dark:bg-indigo-900/40 border-indigo-200 dark:border-indigo-800/50 text-indigo-800 dark:text-indigo-300'
-                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm')
-                "
-              >
-                <span class="font-semibold whitespace-nowrap">{{ 'collection.playedOnly' | translate }}</span>
-                @if (showPlayedOnly()) {
-                  <span
-                    class="text-[10px] font-bold bg-indigo-200 dark:bg-indigo-800 text-indigo-800 dark:text-indigo-200 px-1.5 py-0.5 rounded-full"
-                    >ON</span
+          <!-- Row 1: Search, Filter Toggles & Sort Controls -->
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <!-- Search & Filters -->
+            <div class="flex flex-wrap items-center gap-2.5 sm:gap-3 flex-1 min-w-0">
+              <!-- Search Bar -->
+              <div class="relative group w-full sm:w-60 md:w-64 shrink-0">
+                <svg
+                  lucideSearch
+                  [size]="16"
+                  class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 group-focus-within:text-indigo-500 transition-colors"
+                ></svg>
+                <input
+                  type="text"
+                  [placeholder]="'collection.searchPlaceholder' | translate"
+                  [ngModel]="search()"
+                  (ngModelChange)="onSearchChange($event)"
+                  class="pl-9 pr-8 py-1.5 border border-slate-200 dark:border-slate-600 rounded-xl bg-white/70 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all duration-300 backdrop-blur-sm"
+                />
+                @if (search()) {
+                  <button
+                    (click)="clearSearch()"
+                    class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-1 cursor-pointer"
                   >
+                    <svg lucideX [size]="14"></svg>
+                  </button>
                 }
-              </button>
+              </div>
 
-              <div class="h-6 w-px bg-slate-200 dark:bg-slate-700 shrink-0 mr-1 ml-1"></div>
-
-              <!-- Sort Controls -->
-              <div class="flex items-center gap-1.5 shrink-0">
-                <span class="text-slate-500 dark:text-slate-400 font-medium hidden sm:inline"
-                  >{{ 'collection.sortBy' | translate }}</span
-                >
-                <select
-                  [ngModel]="sort()"
-                  (ngModelChange)="onSortChange($event)"
-                  class="border border-slate-200 dark:border-slate-600 rounded-xl py-1.5 px-2.5 bg-white/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100 shadow-sm font-medium focus:ring-2 focus:ring-indigo-500/50 outline-none backdrop-blur-sm cursor-pointer hover:bg-white dark:hover:bg-slate-800 transition-all duration-200"
-                >
-                  <option value="artist">{{ 'collection.sortArtistYear' | translate }}</option>
-                  <option value="year">{{ 'collection.sortYearArtist' | translate }}</option>
-                  <option value="listens">{{ 'collection.sortListensArtistYear' | translate }}</option>
-                </select>
+              <!-- Filter Buttons -->
+              <div class="flex items-center gap-2 shrink-0">
                 <button
-                  (click)="toggleSortOrder()"
-                  class="p-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 shadow-sm transition-colors cursor-pointer"
-                  [title]="sortOrder() === 'asc' ? 'Ascending' : 'Descending'"
+                  (click)="toggleSelectAllPage()"
+                  class="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium transition-colors cursor-pointer px-2 py-1.5 rounded-lg hover:bg-white dark:hover:bg-slate-800"
                 >
-                  @if (sortOrder() === 'asc') {
-                    <svg lucideArrowUp [size]="16"></svg>
+                  @if (isAllPageSelected()) {
+                    <svg lucideCheckSquare class="text-indigo-600 dark:text-indigo-400" [size]="18"></svg>
                   } @else {
-                    <svg lucideArrowDown [size]="16"></svg>
+                    <svg lucideSquare [size]="18"></svg>
+                  }
+                  <span class="whitespace-nowrap">{{ 'collection.selectPage' | translate }}</span>
+                </button>
+
+                <button
+                  (click)="toggleShowPlayedOnly()"
+                  [class]="
+                    'flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all duration-200 cursor-pointer ' +
+                    (showPlayedOnly()
+                      ? 'bg-indigo-50 dark:bg-indigo-900/40 border-indigo-200 dark:border-indigo-800/50 text-indigo-800 dark:text-indigo-300'
+                      : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm')
+                  "
+                >
+                  <span class="font-semibold whitespace-nowrap">{{ 'collection.playedOnly' | translate }}</span>
+                  @if (showPlayedOnly()) {
+                    <span
+                      class="text-[10px] font-bold bg-indigo-200 dark:bg-indigo-800 text-indigo-800 dark:text-indigo-200 px-1.5 py-0.5 rounded-full"
+                      >ON</span
+                    >
                   }
                 </button>
               </div>
             </div>
+
+            <!-- Sort Controls -->
+            <div class="flex items-center gap-2 shrink-0 ml-auto">
+              <span class="text-slate-500 dark:text-slate-400 font-medium hidden sm:inline"
+                >{{ 'collection.sortBy' | translate }}</span
+              >
+              <select
+                [ngModel]="sort()"
+                (ngModelChange)="onSortChange($event)"
+                class="border border-slate-200 dark:border-slate-600 rounded-xl py-1.5 px-2.5 bg-white/70 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100 shadow-sm font-medium focus:ring-2 focus:ring-indigo-500/50 outline-none backdrop-blur-sm cursor-pointer hover:bg-white dark:hover:bg-slate-800 transition-all duration-200"
+              >
+                <option value="artist">{{ 'collection.sortArtistYear' | translate }}</option>
+                <option value="year">{{ 'collection.sortYearArtist' | translate }}</option>
+                <option value="listens">{{ 'collection.sortListensArtistYear' | translate }}</option>
+              </select>
+              <button
+                (click)="toggleSortOrder()"
+                class="p-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 shadow-sm transition-colors cursor-pointer shrink-0"
+                [title]="sortOrder() === 'asc' ? 'Aufsteigend' : 'Absteigend'"
+              >
+                @if (sortOrder() === 'asc') {
+                  <svg lucideArrowUp [size]="16"></svg>
+                } @else {
+                  <svg lucideArrowDown [size]="16"></svg>
+                }
+              </button>
+            </div>
           </div>
 
+          <!-- Row 2: Status & Pagination Controls -->
           <div
-            class="flex items-center justify-between xl:justify-end gap-4 w-full xl:w-auto shrink-0 order-3 border-t xl:border-t-0 pt-3 xl:pt-0 border-slate-200 dark:border-slate-600 mt-1 xl:mt-0"
+            class="flex items-center justify-between gap-3 pt-2 border-t border-slate-200/50 dark:border-slate-700/50 text-xs sm:text-sm"
           >
-            @if (!loading() && loadStatus()) {
-              <div
-                class="hidden 2xl:inline-flex items-center gap-2 text-xs font-medium max-w-[18rem] truncate text-slate-500 dark:text-slate-400"
-                role="status"
-                aria-live="polite"
-                [title]="'Discogs-Status: ' + loadStatus()"
-              >
-                <span
-                  [class]="
-                    'h-1.5 w-1.5 rounded-full shrink-0 ' +
-                    (loadStatus().includes('Error')
-                      ? 'bg-red-500 dark:bg-red-400'
-                      : 'bg-emerald-500 dark:bg-emerald-400')
-                  "
-                ></span>
-                <span class="truncate">Discogs: {{ loadStatus() }}</span>
-              </div>
-            }
+            <!-- Status Info -->
+            <div class="flex items-center gap-2 min-w-0">
+              @if (!loading() && loadStatus()) {
+                <div
+                  class="inline-flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400 truncate"
+                  role="status"
+                  aria-live="polite"
+                  [title]="'Discogs-Status: ' + loadStatus()"
+                >
+                  <span
+                    [class]="
+                      'h-2 w-2 rounded-full shrink-0 ' +
+                      (loadStatus().includes('Error')
+                        ? 'bg-red-500 dark:bg-red-400'
+                        : 'bg-emerald-500 dark:bg-emerald-400')
+                    "
+                  ></span>
+                  <span class="truncate">Discogs: {{ loadStatus() }}</span>
+                </div>
+              }
+            </div>
 
-            <select
-              [ngModel]="perPage()"
-              (ngModelChange)="onPerPageChange($event)"
-              class="border border-slate-200 dark:border-slate-600 rounded-xl py-1.5 px-3 bg-white/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100 shadow-sm font-medium focus:ring-2 focus:ring-indigo-500/50 outline-none backdrop-blur-sm cursor-pointer hover:bg-white dark:hover:bg-slate-800 transition-all duration-200 hidden sm:block"
-            >
-              <option [value]="20">{{ 'collection.perPage' | translate: { count: 20 } }}</option>
-              <option [value]="30">{{ 'collection.perPage' | translate: { count: 30 } }}</option>
-              <option [value]="40">{{ 'collection.perPage' | translate: { count: 40 } }}</option>
-              <option [value]="50">{{ 'collection.perPage' | translate: { count: 50 } }}</option>
-              <option [value]="100">{{ 'collection.maxPerPage' | translate }}</option>
-            </select>
-            <span class="text-slate-500 dark:text-slate-400 font-medium">
-              {{ 'collection.pageOf' | translate: { page: page(), total: totalPages() } }}
-            </span>
-            <div class="flex gap-1">
-              <button
-                [disabled]="page() <= 1"
-                (click)="prevPage()"
-                class="p-1 px-2.5 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-white dark:hover:bg-slate-700 bg-transparent text-slate-600 dark:text-slate-300 disabled:opacity-40 transition-colors shadow-sm cursor-pointer"
+            <!-- Pagination Elements -->
+            <div class="flex items-center gap-3 shrink-0 ml-auto">
+              <select
+                [ngModel]="perPage()"
+                (ngModelChange)="onPerPageChange($event)"
+                class="border border-slate-200 dark:border-slate-600 rounded-xl py-1 px-2.5 bg-white/70 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100 shadow-sm font-medium focus:ring-2 focus:ring-indigo-500/50 outline-none backdrop-blur-sm cursor-pointer hover:bg-white dark:hover:bg-slate-800 transition-all duration-200"
               >
-                &lt;
-              </button>
-              <button
-                [disabled]="page() >= totalPages()"
-                (click)="nextPage()"
-                class="p-1 px-2.5 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-white dark:hover:bg-slate-700 bg-transparent text-slate-600 dark:text-slate-300 disabled:opacity-40 transition-colors shadow-sm cursor-pointer"
-              >
-                &gt;
-              </button>
+                <option [value]="20">{{ 'collection.perPage' | translate: { count: 20 } }}</option>
+                <option [value]="30">{{ 'collection.perPage' | translate: { count: 30 } }}</option>
+                <option [value]="40">{{ 'collection.perPage' | translate: { count: 40 } }}</option>
+                <option [value]="50">{{ 'collection.perPage' | translate: { count: 50 } }}</option>
+                <option [value]="100">{{ 'collection.maxPerPage' | translate }}</option>
+              </select>
+              <span class="text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap">
+                {{ 'collection.pageOf' | translate: { page: page(), total: totalPages() } }}
+              </span>
+              <div class="flex gap-1 shrink-0">
+                <button
+                  [disabled]="page() <= 1"
+                  (click)="prevPage()"
+                  class="p-1 px-2.5 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-white dark:hover:bg-slate-700 bg-transparent text-slate-600 dark:text-slate-300 disabled:opacity-40 transition-colors shadow-sm cursor-pointer"
+                >
+                  &lt;
+                </button>
+                <button
+                  [disabled]="page() >= totalPages()"
+                  (click)="nextPage()"
+                  class="p-1 px-2.5 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-white dark:hover:bg-slate-700 bg-transparent text-slate-600 dark:text-slate-300 disabled:opacity-40 transition-colors shadow-sm cursor-pointer"
+                >
+                  &gt;
+                </button>
+              </div>
             </div>
           </div>
         </div>

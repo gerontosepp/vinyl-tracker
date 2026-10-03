@@ -63,7 +63,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
 
     // Collection
     'collection.title': 'Schallplattensammlung',
-    'collection.searchPlaceholder': 'Nach Titel, Künstler oder Genre suchen...',
+    'collection.searchPlaceholder': 'Sammlung durchsuchen...',
     'collection.sortBy': 'Sortieren nach:',
     'collection.sortTitle': 'Titel',
     'collection.sortArtist': 'Künstler',
@@ -172,7 +172,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
 
     // Collection
     'collection.title': 'Vinyl Collection',
-    'collection.searchPlaceholder': 'Search by title, artist, or genre...',
+    'collection.searchPlaceholder': 'Search collection...',
     'collection.sortBy': 'Sort by:',
     'collection.sortTitle': 'Title',
     'collection.sortArtist': 'Artist',

@@ -168,6 +168,65 @@ impl VinylApiClient {
             .map_err(|e| format!("Failed to parse collection JSON: {}", e))
     }
 
+    pub async fn get_random_record(&self, args: &GetRandomRecordArgs) -> Result<Option<CollectionRelease>, String> {
+        self.ensure_authenticated().await?;
+        let url = format!("{}/api/collection/random", self.base_url);
+        let headers = self.build_auth_headers().await;
+
+        let mut req = self.http_client.get(&url).headers(headers);
+        if let Some(g) = &args.genre {
+            req = req.query(&[("genre", g)]);
+        }
+        if let Some(u) = args.unplayed_only {
+            req = req.query(&[("unplayed_only", u.to_string())]);
+        }
+
+        let res = req
+            .send()
+            .await
+            .map_err(|e| format!("Request to /api/collection/random failed: {}", e))?;
+
+        if res.status().as_u16() == 404 {
+            return Ok(None);
+        }
+
+        if !res.status().is_success() {
+            return Err(format!("Backend error {}: {}", res.status(), res.text().await.unwrap_or_default()));
+        }
+
+        res.json::<CollectionRelease>()
+            .await
+            .map(Some)
+            .map_err(|e| format!("Failed to parse random record JSON: {}", e))
+    }
+
+    pub async fn get_unplayed_records(&self, args: &GetUnplayedRecordsArgs) -> Result<CollectionResponse, String> {
+        self.ensure_authenticated().await?;
+        let url = format!("{}/api/collection/unplayed", self.base_url);
+        let headers = self.build_auth_headers().await;
+
+        let mut req = self.http_client.get(&url).headers(headers);
+        if let Some(p) = args.page {
+            req = req.query(&[("page", p.to_string())]);
+        }
+        if let Some(pp) = args.per_page {
+            req = req.query(&[("per_page", pp.to_string())]);
+        }
+
+        let res = req
+            .send()
+            .await
+            .map_err(|e| format!("Request to /api/collection/unplayed failed: {}", e))?;
+
+        if !res.status().is_success() {
+            return Err(format!("Backend error {}: {}", res.status(), res.text().await.unwrap_or_default()));
+        }
+
+        res.json::<CollectionResponse>()
+            .await
+            .map_err(|e| format!("Failed to parse unplayed collection JSON: {}", e))
+    }
+
     pub async fn sync_collection(&self) -> Result<SyncResultDto, String> {
         self.ensure_authenticated().await?;
         let url = format!("{}/api/collection/sync", self.base_url);
@@ -398,4 +457,58 @@ impl VinylApiClient {
             .await
             .map_err(|e| format!("Failed to parse user JSON: {}", e))
     }
+
+    pub async fn get_record_details(&self, id: i64) -> Result<RecordDetailDto, String> {
+        self.ensure_authenticated().await?;
+        let url = format!("{}/api/records/{}", self.base_url, id);
+        let headers = self.build_auth_headers().await;
+
+        let res = self
+            .http_client
+            .get(&url)
+            .headers(headers)
+            .send()
+            .await
+            .map_err(|e| format!("Request to /api/records/{} failed: {}", id, e))?;
+
+        if !res.status().is_success() {
+            return Err(format!("Backend error {}: {}", res.status(), res.text().await.unwrap_or_default()));
+        }
+
+        res.json::<RecordDetailDto>()
+            .await
+            .map_err(|e| format!("Failed to parse record details JSON: {}", e))
+    }
+
+    pub async fn search_discogs(&self, args: &SearchDiscogsArgs) -> Result<DiscogsSearchResponse, String> {
+        self.ensure_authenticated().await?;
+        let url = format!("{}/api/discogs/search", self.base_url);
+        let headers = self.build_auth_headers().await;
+
+        let mut req = self.http_client.get(&url).headers(headers);
+        req = req.query(&[("query", &args.query)]);
+        if let Some(t) = &args.r#type {
+            req = req.query(&[("type", t)]);
+        }
+        if let Some(p) = args.page {
+            req = req.query(&[("page", p.to_string())]);
+        }
+        if let Some(pp) = args.per_page {
+            req = req.query(&[("per_page", pp.to_string())]);
+        }
+
+        let res = req
+            .send()
+            .await
+            .map_err(|e| format!("Request to /api/discogs/search failed: {}", e))?;
+
+        if !res.status().is_success() {
+            return Err(format!("Backend error {}: {}", res.status(), res.text().await.unwrap_or_default()));
+        }
+
+        res.json::<DiscogsSearchResponse>()
+            .await
+            .map_err(|e| format!("Failed to parse Discogs search JSON: {}", e))
+    }
 }
+

@@ -103,6 +103,46 @@ public class CollectionQueryService {
         return new DiscogsDto.CollectionResponse(releases, pagination);
     }
 
+    public DiscogsDto.CollectionRelease getRandomRecord(AppUser user, String genre, boolean unplayedOnly) {
+        log.info("Fetching random record for user: {}, genre: {}, unplayedOnly: {}", user.getUsername(), genre, unplayedOnly);
+        List<com.antigravity.vinyltracker.model.CollectionItem> candidates = collectionItemRepository.findCandidatesForRandom(user, unplayedOnly);
+
+        if (genre != null && !genre.isBlank()) {
+            String gLower = genre.trim().toLowerCase();
+            candidates = candidates.stream()
+                    .filter(ci -> ci.getRecord() != null && ci.getRecord().getGenres() != null &&
+                            ci.getRecord().getGenres().stream().anyMatch(g -> g.toLowerCase().contains(gLower)))
+                    .toList();
+        }
+
+        if (candidates.isEmpty()) {
+            return null;
+        }
+
+        int randomIndex = java.util.concurrent.ThreadLocalRandom.current().nextInt(candidates.size());
+        com.antigravity.vinyltracker.model.CollectionItem selected = candidates.get(randomIndex);
+        Long playCount = listenEventRepository.countByRecordAndUser(selected.getRecord(), user);
+        return mapToCollectionRelease(selected, playCount);
+    }
+
+    public DiscogsDto.CollectionResponse getUnplayedCollection(AppUser user, int page, int perPage) {
+        log.info("Fetching unplayed records for user: {}, page: {}, perPage: {}", user.getUsername(), page, perPage);
+        Pageable pageable = PageRequest.of(page - 1, perPage, Sort.by(Sort.Direction.DESC, "addedAt"));
+        Page<com.antigravity.vinyltracker.model.CollectionItem> pagedResult = collectionItemRepository.findUnplayedByUser(user, pageable);
+
+        List<DiscogsDto.CollectionRelease> releases = pagedResult.getContent().stream()
+                .map(item -> mapToCollectionRelease(item, 0L))
+                .toList();
+
+        DiscogsDto.Pagination pagination = new DiscogsDto.Pagination();
+        pagination.setItems((int) pagedResult.getTotalElements());
+        pagination.setPage(page);
+        pagination.setPerPage(perPage);
+        pagination.setPages(pagedResult.getTotalPages());
+
+        return new DiscogsDto.CollectionResponse(releases, pagination);
+    }
+
     public List<DiscogsDto.CollectionRelease> getAllCollection(AppUser user) {
         List<com.antigravity.vinyltracker.model.CollectionItem> items = collectionItemRepository.findAllByUser(user);
         return items.stream().map(item -> {

@@ -161,4 +161,62 @@ class CollectionQueryServiceTest {
         assertEquals(2, result.getReleases().get(0).getBasicInformation().getGenres().size());
         assertTrue(result.getReleases().get(0).getBasicInformation().getGenres().contains("Rock"));
     }
+
+    @Test
+    void getRandomRecord_WithGenreFilter() {
+        com.antigravity.vinyltracker.model.Record r1 = new com.antigravity.vinyltracker.model.Record();
+        r1.setDiscogsId(101L);
+        r1.setTitle("Jazz Album");
+        r1.setArtist("Miles Davis");
+        r1.setGenres(List.of("Jazz"));
+
+        com.antigravity.vinyltracker.model.Record r2 = new com.antigravity.vinyltracker.model.Record();
+        r2.setDiscogsId(102L);
+        r2.setTitle("Rock Album");
+        r2.setArtist("Led Zeppelin");
+        r2.setGenres(List.of("Rock"));
+
+        com.antigravity.vinyltracker.model.CollectionItem item1 = new com.antigravity.vinyltracker.model.CollectionItem(user, r1, 1L);
+        com.antigravity.vinyltracker.model.CollectionItem item2 = new com.antigravity.vinyltracker.model.CollectionItem(user, r2, 2L);
+
+        Mockito.when(collectionItemRepository.findCandidatesForRandom(user, false))
+                .thenReturn(List.of(item1, item2));
+        Mockito.when(listenEventRepository.countByRecordAndUser(r1, user)).thenReturn(3L);
+
+        DiscogsDto.CollectionRelease result = collectionQueryService.getRandomRecord(user, "jazz", false);
+
+        assertNotNull(result);
+        assertEquals(101L, result.getId());
+        assertEquals(3L, result.getListenCount());
+    }
+
+    @Test
+    void getRandomRecord_NoCandidates_ReturnsNull() {
+        Mockito.when(collectionItemRepository.findCandidatesForRandom(user, true))
+                .thenReturn(List.of());
+
+        DiscogsDto.CollectionRelease result = collectionQueryService.getRandomRecord(user, null, true);
+        assertNull(result);
+    }
+
+    @Test
+    void getUnplayedCollection_Success() {
+        com.antigravity.vinyltracker.model.Record r1 = new com.antigravity.vinyltracker.model.Record();
+        r1.setDiscogsId(201L);
+        r1.setTitle("Unplayed Vinyl");
+        r1.setArtist("Artist");
+        com.antigravity.vinyltracker.model.CollectionItem item = new com.antigravity.vinyltracker.model.CollectionItem(user, r1, 5L);
+
+        Page<com.antigravity.vinyltracker.model.CollectionItem> page = new PageImpl<>(List.of(item));
+        Mockito.when(collectionItemRepository.findUnplayedByUser(Mockito.eq(user), Mockito.any(Pageable.class)))
+                .thenReturn(page);
+
+        DiscogsDto.CollectionResponse response = collectionQueryService.getUnplayedCollection(user, 1, 10);
+
+        assertNotNull(response);
+        assertEquals(1, response.getReleases().size());
+        assertEquals(201L, response.getReleases().get(0).getId());
+        assertEquals(0L, response.getReleases().get(0).getListenCount());
+    }
 }
+

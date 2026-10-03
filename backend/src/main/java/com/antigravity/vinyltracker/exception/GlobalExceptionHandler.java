@@ -37,7 +37,8 @@ public class GlobalExceptionHandler {
             MissingServletRequestParameterException.class,
             MethodArgumentTypeMismatchException.class,
             HttpMessageNotReadableException.class,
-            BindException.class
+            BindException.class,
+            IllegalArgumentException.class
     })
     public ResponseEntity<ProblemDetail> handleBadRequest(Exception ex) {
         ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
@@ -45,6 +46,15 @@ public class GlobalExceptionHandler {
         problemDetail.setDetail(ex.getMessage() != null ? ex.getMessage() : "Request could not be parsed.");
         problemDetail.setProperty("timestamp", Instant.now().toString());
         return ResponseEntity.badRequest().body(problemDetail);
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ProblemDetail> handleNotFound(ResourceNotFoundException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
+        problemDetail.setTitle("Resource not found");
+        problemDetail.setDetail(ex.getMessage() != null ? ex.getMessage() : "The requested resource was not found.");
+        problemDetail.setProperty("timestamp", Instant.now().toString());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problemDetail);
     }
 
     @ExceptionHandler(DiscogsTokenException.class)

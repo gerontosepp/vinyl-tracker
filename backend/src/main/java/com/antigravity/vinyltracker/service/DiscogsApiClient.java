@@ -72,6 +72,25 @@ public class DiscogsApiClient {
                 .body(DiscogsDto.SearchResponse.class));
     }
 
+    public DiscogsDto.SearchResponse searchDatabase(String query, String type, int page, int perPage, AppUser user) {
+        log.info("Searching Discogs Database for query: {}, type: {}, page: {}, perPage: {}", query, type, page, perPage);
+        return executeWithRateLimit(() -> restClient.get()
+                .uri(uriBuilder -> {
+                    var builder = uriBuilder.path("/database/search")
+                            .queryParam("q", query)
+                            .queryParam("page", page)
+                            .queryParam("per_page", perPage);
+                    if (type != null && !type.isBlank()) {
+                        builder.queryParam("type", type);
+                    }
+                    return builder.build();
+                })
+                .header(HttpHeaders.USER_AGENT, "VinylTrackerApp/1.0")
+                .header(HttpHeaders.AUTHORIZATION, "Discogs token=" + getDecryptedToken(user))
+                .retrieve()
+                .body(DiscogsDto.SearchResponse.class));
+    }
+
     public boolean isReleaseInCollection(Long releaseId, AppUser user) {
         String token = tokenService.decrypt(user.getDiscogsToken());
         if (token == null) return false;

@@ -24,6 +24,10 @@ public interface ListenEventRepository extends JpaRepository<ListenEvent, Long> 
     Long countByRecordAndUser(com.antigravity.vinyltracker.model.Record record,
             com.antigravity.vinyltracker.model.AppUser user);
 
+    java.util.Optional<ListenEvent> findFirstByRecordAndUserOrderByTimestampDesc(
+            com.antigravity.vinyltracker.model.Record record,
+            com.antigravity.vinyltracker.model.AppUser user);
+
     @Modifying
     @Query("DELETE FROM ListenEvent le WHERE le.user = :user")
     long deleteAllByUser(@Param("user") AppUser user);

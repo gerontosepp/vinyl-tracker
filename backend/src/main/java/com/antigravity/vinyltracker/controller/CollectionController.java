@@ -32,6 +32,26 @@ public class CollectionController {
                         search));
     }
 
+    @GetMapping("/random")
+    public ResponseEntity<DiscogsDto.CollectionRelease> getRandomRecord(
+            Principal principal,
+            @RequestParam(required = false) String genre,
+            @RequestParam(value = "unplayed_only", defaultValue = "false") boolean unplayedOnly) {
+        DiscogsDto.CollectionRelease release = collectionService.getRandomRecord(principal.getName(), genre, unplayedOnly);
+        if (release == null) {
+            throw new com.antigravity.vinyltracker.exception.ResourceNotFoundException("No records found matching the specified criteria");
+        }
+        return ResponseEntity.ok(release);
+    }
+
+    @GetMapping("/unplayed")
+    public ResponseEntity<DiscogsDto.CollectionResponse> getUnplayedCollection(
+            Principal principal,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "50") int per_page) {
+        return ResponseEntity.ok(collectionService.getUnplayedCollection(principal.getName(), page, per_page));
+    }
+
     @PostMapping("/sync")
     public ResponseEntity<com.antigravity.vinyltracker.model.dto.SyncResultDto> forceSyncCollection(
             Principal principal) {

@@ -103,4 +103,25 @@ public class CollectionServiceTest {
         byte[] result = collectionService.generateAllQrCodesPdf("testuser");
         assertArrayEquals(pdfOutput, result);
     }
+
+    @Test
+    void getRandomRecord_Success() {
+        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+        DiscogsDto.CollectionRelease mockRelease = new DiscogsDto.CollectionRelease();
+        mockRelease.setId(42L);
+        when(collectionQueryService.getRandomRecord(testUser, "Jazz", true)).thenReturn(mockRelease);
+
+        DiscogsDto.CollectionRelease result = collectionService.getRandomRecord("testuser", "Jazz", true);
+        assertEquals(mockRelease, result);
+    }
+
+    @Test
+    void getUnplayedCollection_Success() {
+        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+        DiscogsDto.CollectionResponse mockResponse = new DiscogsDto.CollectionResponse();
+        when(collectionQueryService.getUnplayedCollection(testUser, 1, 20)).thenReturn(mockResponse);
+
+        DiscogsDto.CollectionResponse result = collectionService.getUnplayedCollection("testuser", 1, 20);
+        assertEquals(mockResponse, result);
+    }
 }

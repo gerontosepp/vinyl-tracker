@@ -29,6 +29,10 @@ Der Server implementiert **Option 1 (REST-Client)**: Er kommuniziert direkt übe
 | `get_collection_value` | Schätzwert der Sammlung von Discogs (min, med, max) | *keine* |
 | `get_genre_breakdown` | Verteilung der Genres in der Sammlung | *keine* |
 | `get_current_user` | Profilinformationen des eingeloggten Nutzers | *keine* |
+| `get_random_record` | Zufällige Plattenempfehlung mit Genre- und Ungespielt-Filter | `genre` (str, optional), `unplayed_only` (bool, default `false`) |
+| `get_unplayed_records` | Ungespielte Platten der Sammlung ("Shelf of Shame") | `page` (int), `per_page` (int) |
+| `get_record_details` | Vollständige Album-Details mit Tracklist, Formaten, Labels & Play-History | `id` (int, interne Record-ID oder Discogs-Release-ID) |
+| `search_discogs` | Globale Discogs-Datenbanksuche nach Alben/Künstlern | `query` (str), `type` (str, optional), `page` (int), `per_page` (int) |
 
 ---
 

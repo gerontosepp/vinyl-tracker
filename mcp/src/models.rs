@@ -45,6 +45,44 @@ pub struct AnalyticsDateRangeArgs {
     pub to: Option<String>,
 }
 
+/// Arguments for getting a random record recommendation from the user's collection.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, Default)]
+pub struct GetRandomRecordArgs {
+    /// Optional genre filter (e.g. "Rock", "Jazz", "Electronic")
+    pub genre: Option<String>,
+    /// Filter to only return unplayed records (default: false)
+    pub unplayed_only: Option<bool>,
+}
+
+/// Arguments for querying unplayed records from the user's collection ("shelf of shame").
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, Default)]
+pub struct GetUnplayedRecordsArgs {
+    /// Page number (default: 1)
+    pub page: Option<i32>,
+    /// Items per page (default: 50)
+    pub per_page: Option<i32>,
+}
+
+/// Arguments for fetching album details with tracklist, formats, labels, and listen history.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub struct GetRecordDetailsArgs {
+    /// The internal record ID or Discogs release ID
+    pub id: i64,
+}
+
+/// Arguments for searching the global Discogs database.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub struct SearchDiscogsArgs {
+    /// Search query (album title, artist name, barcode, etc.)
+    pub query: String,
+    /// Discogs entity type filter (default: "release", or "master", "artist")
+    pub r#type: Option<String>,
+    /// Page number (default: 1)
+    pub page: Option<i32>,
+    /// Items per page (default: 50)
+    pub per_page: Option<i32>,
+}
+
 // ============================================================================
 // Backend API DTOs
 // ============================================================================
@@ -178,6 +216,89 @@ pub struct LoginRequestDto {
     pub password: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RecordDetailDto {
+    pub id: Option<i64>,
+    #[serde(alias = "discogsId", alias = "discogs_id")]
+    pub discogs_id: i64,
+    pub title: Option<String>,
+    pub artist: Option<String>,
+    pub year: Option<String>,
+    #[serde(alias = "thumbUrl", alias = "thumb_url")]
+    pub thumb_url: Option<String>,
+    #[serde(default)]
+    pub genres: Vec<String>,
+    #[serde(alias = "inCollection", alias = "in_collection")]
+    pub in_collection: bool,
+    #[serde(alias = "instanceId", alias = "instance_id")]
+    pub instance_id: Option<i64>,
+    #[serde(alias = "listenCount", alias = "listen_count")]
+    pub listen_count: i64,
+    #[serde(alias = "lastListenedAt", alias = "last_listened_at")]
+    pub last_listened_at: Option<String>,
+    #[serde(default)]
+    pub tracklist: Vec<TrackDto>,
+    #[serde(default)]
+    pub formats: Vec<FormatDto>,
+    #[serde(default)]
+    pub labels: Vec<LabelDto>,
+    pub notes: Option<String>,
+    pub country: Option<String>,
+    pub released: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TrackDto {
+    pub position: Option<String>,
+    pub title: Option<String>,
+    pub duration: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FormatDto {
+    pub name: Option<String>,
+    pub qty: Option<String>,
+    #[serde(default)]
+    pub descriptions: Vec<String>,
+    pub text: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LabelDto {
+    pub name: Option<String>,
+    pub catno: Option<String>,
+    #[serde(alias = "entityTypeName", alias = "entity_type_name")]
+    pub entity_type_name: Option<String>,
+    pub id: Option<i64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DiscogsSearchResponse {
+    pub pagination: Option<Pagination>,
+    #[serde(default)]
+    pub results: Vec<DiscogsSearchResult>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DiscogsSearchResult {
+    pub id: i64,
+    pub title: Option<String>,
+    pub year: Option<String>,
+    #[serde(alias = "thumbUrl", alias = "thumb_url", alias = "thumb")]
+    pub thumb_url: Option<String>,
+    #[serde(alias = "coverImage", alias = "cover_image")]
+    pub cover_image: Option<String>,
+    #[serde(default)]
+    pub barcode: Vec<String>,
+    #[serde(default)]
+    pub genre: Vec<String>,
+    #[serde(default)]
+    pub style: Vec<String>,
+    #[serde(default)]
+    pub format: Vec<String>,
+    pub country: Option<String>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -302,6 +423,80 @@ mod tests {
         assert_eq!(user.id, Some(1));
         assert_eq!(user.username, "vinyl_fan");
         assert_eq!(user.discogs_username.as_deref(), Some("vinyl_fan_discogs"));
+    }
+
+    #[test]
+    fn test_record_detail_dto_deserialization() {
+        let json = r#"{
+            "id": 10,
+            "discogs_id": 9999,
+            "title": "A Night at the Opera",
+            "artist": "Queen",
+            "year": "1975",
+            "in_collection": true,
+            "instance_id": 5555,
+            "listen_count": 8,
+            "tracklist": [
+                {
+                    "position": "A1",
+                    "title": "Death on Two Legs",
+                    "duration": "3:43"
+                }
+            ],
+            "formats": [
+                {
+                    "name": "Vinyl",
+                    "qty": "1",
+                    "descriptions": ["LP", "Album"]
+                }
+            ],
+            "labels": [
+                {
+                    "name": "EMI",
+                    "catno": "EMTC 103"
+                }
+            ]
+        }"#;
+
+        let detail: RecordDetailDto = serde_json::from_str(json).expect("deserialize record detail");
+        assert_eq!(detail.id, Some(10));
+        assert_eq!(detail.discogs_id, 9999);
+        assert_eq!(detail.title.as_deref(), Some("A Night at the Opera"));
+        assert!(detail.in_collection);
+        assert_eq!(detail.listen_count, 8);
+        assert_eq!(detail.tracklist.len(), 1);
+        assert_eq!(detail.tracklist[0].title.as_deref(), Some("Death on Two Legs"));
+        assert_eq!(detail.formats.len(), 1);
+        assert_eq!(detail.formats[0].name.as_deref(), Some("Vinyl"));
+        assert_eq!(detail.labels.len(), 1);
+        assert_eq!(detail.labels[0].name.as_deref(), Some("EMI"));
+    }
+
+    #[test]
+    fn test_discogs_search_response_deserialization() {
+        let json = r#"{
+            "pagination": {
+                "page": 1,
+                "pages": 5,
+                "per_page": 20,
+                "items": 100
+            },
+            "results": [
+                {
+                    "id": 123456,
+                    "title": "Bohemian Rhapsody",
+                    "year": "1975",
+                    "genre": ["Rock"],
+                    "format": ["Vinyl", "7\""]
+                }
+            ]
+        }"#;
+
+        let search: DiscogsSearchResponse = serde_json::from_str(json).expect("deserialize search response");
+        assert_eq!(search.results.len(), 1);
+        assert_eq!(search.results[0].id, 123456);
+        assert_eq!(search.results[0].title.as_deref(), Some("Bohemian Rhapsody"));
+        assert_eq!(search.results[0].genre, vec!["Rock"]);
     }
 }
 

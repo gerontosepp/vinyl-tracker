@@ -3,6 +3,17 @@
 Kurze Uebersicht der Aenderungen je Version (abgeleitet aus Git-Tags und Commit-Historie).
 
 ## Unreleased
+- **Neue Backend REST-APIs & MCP-Tools**:
+  - `GET /api/collection/random` & MCP-Tool `get_random_record`: Liefert zufällige Empfehlungen aus der Vinyl-Sammlung mit optionalem Genre-Filter und "Nur ungespielte Platten"-Modus.
+  - `GET /api/collection/unplayed` & MCP-Tool `get_unplayed_records`: Paginierte Liste ungespielter Alben der Sammlung ("Shelf of Shame").
+  - `GET /api/records/{id}` & MCP-Tool `get_record_details`: Umfassende Album-Details inklusive Tracklist, Release-Formate, Labels, Notizen und persönlicher Abspielhistorie.
+  - `GET /api/discogs/search` & MCP-Tool `search_discogs`: Globale Discogs-Datenbanksuche nach Alben, Künstlern und Releases.
+- **Backend-Architektur & Qualität**:
+  - `ResourceNotFoundException` mit standardisierten RFC 7807 `ProblemDetail`-Antworten (HTTP 404).
+  - `IllegalArgumentException`-Mapping auf HTTP 400 mit strukturierter Fehlerausgabe.
+  - 100% bestandene Backend-Tests (119 Tests) mit hoher Testabdeckung.
+- **Rust MCP Server Erweiterung**:
+  - Werkzeugsatz auf 14 native Tools erweitert mit vollständiger Typisierung, DTO-Mapping und Unittests.
 
 ## v2.3.0 (2026-10-02)
 - **Model Context Protocol (MCP) Server (Rust)**:

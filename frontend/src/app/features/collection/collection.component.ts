@@ -268,7 +268,6 @@ import { Subscription, firstValueFrom } from 'rxjs';
                     <th class="px-4 py-4">Album Title</th>
                     <th class="px-4 py-4">Genre</th>
                     <th class="px-4 py-4">Year</th>
-                    <th class="px-4 py-4">Wert</th>
                     <th class="px-4 py-4">Plays</th>
                     <th class="px-4 py-4 text-right">Link</th>
                   </tr>
@@ -360,15 +359,6 @@ import { Subscription, firstValueFrom } from 'rxjs';
                       </td>
                       <td class="px-4 py-3 text-slate-500 dark:text-slate-400 text-sm">
                         {{ release.basic_information.year || '—' }}
-                      </td>
-                      <td class="px-4 py-3 text-sm">
-                        @if (release.basic_information.lowest_price != null) {
-                          <span class="font-medium text-emerald-600 dark:text-emerald-400">
-                            {{ release.basic_information.lowest_price | currency:'EUR':'symbol':'1.2-2' }}
-                          </span>
-                        } @else {
-                          <span class="text-slate-400 dark:text-slate-500">—</span>
-                        }
                       </td>
                       <td class="px-4 py-3">
                         <span
@@ -462,11 +452,6 @@ import { Subscription, firstValueFrom } from 'rxjs';
                       {{ release.basic_information.artists.length > 0 ? release.basic_information.artists[0].name : 'Unknown' }} •
                       {{ release.basic_information.year || '—' }}
                     </p>
-                    @if (release.basic_information.lowest_price != null) {
-                      <div class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
-                        {{ release.basic_information.lowest_price | currency:'EUR':'symbol':'1.2-2' }}
-                      </div>
-                    }
                     @if (release.basic_information.genres && release.basic_information.genres.length > 0) {
                       <div class="flex flex-wrap gap-1 mt-1">
                         @for (genre of release.basic_information.genres.slice(0, 2); track genre) {

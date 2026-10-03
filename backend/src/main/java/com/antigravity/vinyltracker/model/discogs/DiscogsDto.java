@@ -32,6 +32,10 @@ public class DiscogsDto {
         private String released;
         private List<String> genres;
         private List<String> styles;
+        @JsonProperty("lowest_price")
+        private Double lowestPrice;
+        @JsonProperty("num_for_sale")
+        private Integer numForSale;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

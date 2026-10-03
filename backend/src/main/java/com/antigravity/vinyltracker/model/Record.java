@@ -27,6 +27,9 @@ public class Record {
     private String year;
     private String thumbUrl;
 
+    @Column(name = "lowest_price")
+    private Double lowestPrice;
+
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "record_genres", joinColumns = @JoinColumn(name = "record_id"))
     @Column(name = "genre")

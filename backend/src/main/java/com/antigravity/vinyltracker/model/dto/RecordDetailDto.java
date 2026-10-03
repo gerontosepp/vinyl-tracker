@@ -32,6 +32,14 @@ public class RecordDetailDto {
     private Long listenCount;
     @JsonProperty("last_listened_at")
     private LocalDateTime lastListenedAt;
+    @JsonProperty("added_at")
+    private LocalDateTime addedAt;
+    @JsonProperty("lowest_price")
+    private Double lowestPrice;
+    @JsonProperty("num_for_sale")
+    private Integer numForSale;
+    @JsonProperty("listen_history")
+    private List<LocalDateTime> listenHistory;
     private List<DiscogsDto.Track> tracklist;
     private List<DiscogsDto.Format> formats;
     private List<DiscogsDto.Label> labels;

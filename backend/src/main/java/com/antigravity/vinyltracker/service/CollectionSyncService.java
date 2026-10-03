@@ -65,6 +65,9 @@ public class CollectionSyncService {
                                 newRecord.setYear(releaseYear != null ? String.valueOf(releaseYear) : "");
                                 newRecord.setThumbUrl(release.getBasicInformation().getThumbUrl());
                                 newRecord.setGenres(extractDiscogsTags(release.getBasicInformation()));
+                                if (release.getBasicInformation() != null && release.getBasicInformation().getLowestPrice() != null) {
+                                    newRecord.setLowestPrice(release.getBasicInformation().getLowestPrice());
+                                }
 
                                 return recordRepository.save(newRecord);
                             });

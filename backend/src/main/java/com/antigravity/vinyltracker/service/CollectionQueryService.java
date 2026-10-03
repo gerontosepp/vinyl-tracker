@@ -178,6 +178,8 @@ public class CollectionQueryService {
             basicInfo.setYear(0);
         }
 
+        basicInfo.setLowestPrice(item.getRecord().getLowestPrice());
+
         release.setBasicInformation(basicInfo);
         return release;
     }

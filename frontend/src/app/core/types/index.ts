@@ -57,6 +57,52 @@ export interface DiscogsBasicInfo {
   artists: DiscogsArtist[];
   genres?: string[];
   styles?: string[];
+  lowest_price?: number;
+  num_for_sale?: number;
+}
+
+export interface RecordTrack {
+  position?: string;
+  title?: string;
+  duration?: string;
+}
+
+export interface RecordFormat {
+  name?: string;
+  qty?: string;
+  descriptions?: string[];
+  text?: string;
+}
+
+export interface RecordLabel {
+  name?: string;
+  catno?: string;
+  id?: number;
+  entity_type_name?: string;
+}
+
+export interface RecordDetailDto {
+  id?: number;
+  discogs_id: number;
+  title?: string;
+  artist?: string;
+  year?: string;
+  thumb_url?: string;
+  genres: string[];
+  in_collection: boolean;
+  instance_id?: number;
+  added_at?: string;
+  listen_count: number;
+  last_listened_at?: string;
+  lowest_price?: number;
+  num_for_sale?: number;
+  listen_history?: string[];
+  tracklist: RecordTrack[];
+  formats: RecordFormat[];
+  labels: RecordLabel[];
+  notes?: string;
+  country?: string;
+  released?: string;
 }
 
 export interface CollectionRelease {

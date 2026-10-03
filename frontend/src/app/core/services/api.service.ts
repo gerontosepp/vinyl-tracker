@@ -11,7 +11,8 @@ import {
   CollectionValueResponse,
   GenreBreakdownItem,
   QrCodeItem,
-  SyncResult
+  SyncResult,
+  RecordDetailDto,
 } from '../types';
 
 @Injectable({
@@ -55,6 +56,10 @@ export class ApiService {
 
   getCollectionValue(): Observable<CollectionValueResponse> {
     return this.http.get<CollectionValueResponse>(`${this.baseUrl}/analytics/collection/value`);
+  }
+
+  getRecordDetails(id: number): Observable<RecordDetailDto> {
+    return this.http.get<RecordDetailDto>(`${this.baseUrl}/records/${id}`);
   }
 
   getGenreBreakdown(): Observable<GenreBreakdownItem[]> {

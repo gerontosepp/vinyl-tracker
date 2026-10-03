@@ -206,7 +206,7 @@ The system is deployed as a multi-container Docker application orchestrated by D
 - **Dependency Hygiene**: Backend dependencies are checked in CI against Sonatype OSS Index; findings are reported to an audit artifact (`ossindex-audit.json`) with the current configuration set to non-blocking (`fail=false`).
 - **Test Execution Split**: Unit tests run via Surefire during `test`, while integration tests run via Failsafe during `verify`. This improves local feedback speed while keeping full validation in CI.
 - **Responsiveness**: The UI must adapt to mobile screens (< 768px) for usable barcode scanning on phones.
-- **Performance**: API responses should be < 200ms (excluding external Discogs calls). Heavily accessed database relationships (e.g. `user_id` on collections, `discogs_id` on records) are backed by explicit B-tree indexes applied via Flyway to prevent query degradation as dataset sizes grow. The `Record.genres` `@ElementCollection` is fetched `LAZY` with a Hibernate `@BatchSize(50)` to avoid per-row genre queries (N+1) when listing collections and computing analytics.
+- **Performance**: API responses should be < 200ms (excluding external Discogs calls). Heavily accessed database relationships (e.g. `user_id` on collections, `discogs_id` on records) are backed by explicit B-tree indexes applied via Flyway to prevent query degradation as dataset sizes grow. The `Record.genres` `@ElementCollection` is fetched `LAZY` with a Hibernate `@BatchSize(50)` to avoid per-row genre queries (N+1) when listing collections and computing analytics. Release pricing (`lowest_price`) is cached directly in the `record_cache` table via Flyway migration `V3` to avoid repeated remote marketplace lookups.
 
 ## 11. Risks and Technical Debt
 

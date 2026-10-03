@@ -51,7 +51,7 @@ The project follows a modern containerized micro-architecture:
 - **Live Collection Insights**: Dashboard charts for Discogs collection value and genre breakdown via `/api/analytics/collection/value` and `/api/analytics/collection/genres`.
 - **QR Code Generation**: Generate a PDF with QR codes for your entire collection, sorted by artist.
 - **Quick Logging**: Scan generated QR codes to instantly log a listen without searching.
-- **Collection Management**: Search, filter (e.g., "Played Only"), and sort your vinyl catalog. Force a manual sync with Discogs at any time.
+- **Collection Management & Values**: Search, filter (e.g., "Played Only"), and sort your vinyl catalog. Displays the market lowest price / value for records in the list, and opens a comprehensive detail popup on album cover/title click (showing full DB attributes, genres, tracklists, formats, labels, notes, and listening history). Force a manual sync with Discogs at any time.
 - **Data Management**: Reset your entire listening history with a single click from Settings (with confirmation dialog to prevent accidental deletions).
 - **Modern UI**: Fully responsive, mobile-first design with dark mode, glassmorphism, and smooth micro-animations.
 - **Resilient API**: Robust Discogs integration with **Resilience4j** rate-limiting (60 req/min) and automatic retries with exponential backoff.

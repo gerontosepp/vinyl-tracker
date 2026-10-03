@@ -115,6 +115,8 @@ pub struct BasicInformation {
     pub artists: Vec<Artist>,
     #[serde(default)]
     pub genres: Vec<String>,
+    #[serde(alias = "lowestPrice", alias = "lowest_price")]
+    pub lowest_price: Option<f64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -236,6 +238,14 @@ pub struct RecordDetailDto {
     pub listen_count: i64,
     #[serde(alias = "lastListenedAt", alias = "last_listened_at")]
     pub last_listened_at: Option<String>,
+    #[serde(alias = "addedAt", alias = "added_at")]
+    pub added_at: Option<String>,
+    #[serde(alias = "lowestPrice", alias = "lowest_price")]
+    pub lowest_price: Option<f64>,
+    #[serde(alias = "numForSale", alias = "num_for_sale")]
+    pub num_for_sale: Option<i32>,
+    #[serde(default, alias = "listenHistory", alias = "listen_history")]
+    pub listen_history: Vec<String>,
     #[serde(default)]
     pub tracklist: Vec<TrackDto>,
     #[serde(default)]

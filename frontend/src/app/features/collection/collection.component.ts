@@ -6,7 +6,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
-import { CollectionRelease, QrCodeItem } from '../../core/types';
+import { CollectionRelease, QrCodeItem, RecordDetailDto } from '../../core/types';
 import { getErrorMessage } from '../../core/utils/error';
 import {
   LucideDownload,
@@ -268,6 +268,7 @@ import { Subscription, firstValueFrom } from 'rxjs';
                     <th class="px-4 py-4">Album Title</th>
                     <th class="px-4 py-4">Genre</th>
                     <th class="px-4 py-4">Year</th>
+                    <th class="px-4 py-4">Wert</th>
                     <th class="px-4 py-4">Plays</th>
                     <th class="px-4 py-4 text-right">Link</th>
                   </tr>
@@ -300,7 +301,9 @@ import { Subscription, firstValueFrom } from 'rxjs';
                       </td>
                       <td class="px-4 py-3">
                         <div
-                          class="w-10 h-10 rounded-md bg-slate-100 dark:bg-slate-700 overflow-hidden shadow-button"
+                          (click)="$event.stopPropagation(); openDetail(release)"
+                          class="w-10 h-10 rounded-md bg-slate-100 dark:bg-slate-700 overflow-hidden shadow-button cursor-pointer hover:ring-2 hover:ring-indigo-500 transition-all"
+                          title="Details anzeigen"
                         >
                           @if (release.basic_information.thumb) {
                             <img
@@ -324,7 +327,13 @@ import { Subscription, firstValueFrom } from 'rxjs';
                         class="px-4 py-3 text-slate-600 dark:text-slate-300 truncate max-w-[200px]"
                         [title]="release.basic_information.title"
                       >
-                        {{ release.basic_information.title }}
+                        <button
+                          type="button"
+                          (click)="$event.stopPropagation(); openDetail(release)"
+                          class="text-left font-medium hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline truncate max-w-full cursor-pointer focus:outline-none"
+                        >
+                          {{ release.basic_information.title }}
+                        </button>
                       </td>
                       <td class="px-4 py-3">
                         @if (release.basic_information.genres && release.basic_information.genres.length > 0) {
@@ -351,6 +360,15 @@ import { Subscription, firstValueFrom } from 'rxjs';
                       </td>
                       <td class="px-4 py-3 text-slate-500 dark:text-slate-400 text-sm">
                         {{ release.basic_information.year || '—' }}
+                      </td>
+                      <td class="px-4 py-3 text-sm">
+                        @if (release.basic_information.lowest_price != null) {
+                          <span class="font-medium text-emerald-600 dark:text-emerald-400">
+                            {{ release.basic_information.lowest_price | currency:'EUR':'symbol':'1.2-2' }}
+                          </span>
+                        } @else {
+                          <span class="text-slate-400 dark:text-slate-500">—</span>
+                        }
                       </td>
                       <td class="px-4 py-3">
                         <span
@@ -413,7 +431,9 @@ import { Subscription, firstValueFrom } from 'rxjs';
                   </div>
 
                   <div
-                    class="w-full aspect-square bg-slate-100 dark:bg-slate-700/50 rounded-xl overflow-hidden relative shadow-inner"
+                    (click)="$event.stopPropagation(); openDetail(release)"
+                    class="w-full aspect-square bg-slate-100 dark:bg-slate-700/50 rounded-xl overflow-hidden relative shadow-inner cursor-pointer hover:ring-2 hover:ring-indigo-500 transition-all"
+                    title="Details anzeigen"
                   >
                     @if (release.basic_information.thumb) {
                       <img
@@ -432,7 +452,8 @@ import { Subscription, firstValueFrom } from 'rxjs';
 
                   <div class="flex-1 min-w-0 flex flex-col pt-1">
                     <h3
-                      class="font-bold text-slate-900 dark:text-slate-100 truncate text-sm leading-tight mb-0.5"
+                      (click)="$event.stopPropagation(); openDetail(release)"
+                      class="font-bold text-slate-900 dark:text-slate-100 truncate text-sm leading-tight mb-0.5 cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline"
                       [title]="release.basic_information.title"
                     >
                       {{ release.basic_information.title }}
@@ -441,6 +462,11 @@ import { Subscription, firstValueFrom } from 'rxjs';
                       {{ release.basic_information.artists.length > 0 ? release.basic_information.artists[0].name : 'Unknown' }} •
                       {{ release.basic_information.year || '—' }}
                     </p>
+                    @if (release.basic_information.lowest_price != null) {
+                      <div class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                        {{ release.basic_information.lowest_price | currency:'EUR':'symbol':'1.2-2' }}
+                      </div>
+                    }
                     @if (release.basic_information.genres && release.basic_information.genres.length > 0) {
                       <div class="flex flex-wrap gap-1 mt-1">
                         @for (genre of release.basic_information.genres.slice(0, 2); track genre) {
@@ -496,6 +522,414 @@ import { Subscription, firstValueFrom } from 'rxjs';
           }
         </div>
       </div>
+
+      <!-- --- DETAIL MODAL --- -->
+      @if (selectedRecord()) {
+        <div
+          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in"
+          (click)="closeDetail()"
+        >
+          <div
+            class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-scale-up"
+            (click)="$event.stopPropagation()"
+          >
+            <!-- Modal Header -->
+            <div
+              class="p-5 border-b border-slate-100 dark:border-slate-700/60 flex items-start justify-between gap-4"
+            >
+              <div class="flex items-center gap-4 min-w-0">
+                <div
+                  class="w-16 h-16 rounded-xl bg-slate-100 dark:bg-slate-700 overflow-hidden shadow-sm shrink-0"
+                >
+                  @if (selectedRecord()?.basic_information?.thumb) {
+                    <img
+                      [src]="
+                        apiService.getProxiedImageUrl(
+                          selectedRecord()!.basic_information.thumb
+                        )
+                      "
+                      alt=""
+                      class="w-full h-full object-cover"
+                    />
+                  } @else {
+                    <div
+                      class="w-full h-full flex items-center justify-center text-xl opacity-50"
+                    >
+                      💿
+                    </div>
+                  }
+                </div>
+                <div class="min-w-0">
+                  <h2
+                    class="text-lg md:text-xl font-bold text-slate-900 dark:text-slate-100 truncate"
+                  >
+                    {{ selectedRecord()?.basic_information?.title }}
+                  </h2>
+                  <p
+                    class="text-sm font-medium text-slate-600 dark:text-slate-400 truncate"
+                  >
+                    {{
+                      selectedRecord()?.basic_information?.artists?.[0]?.name ||
+                        'Unknown Artist'
+                    }}
+                    @if (selectedRecord()?.basic_information?.year) {
+                      • {{ selectedRecord()?.basic_information?.year }}
+                    }
+                  </p>
+                </div>
+              </div>
+              <button
+                (click)="closeDetail()"
+                class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer shrink-0"
+                title="Schließen"
+              >
+                <svg lucideX [size]="20"></svg>
+              </button>
+            </div>
+
+            <!-- Modal Body (Scrollable) -->
+            <div class="p-6 overflow-y-auto space-y-6 text-sm">
+              @if (loadingDetail()) {
+                <div
+                  class="flex flex-col items-center justify-center py-12 gap-3 text-slate-400"
+                >
+                  <div
+                    class="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"
+                  ></div>
+                  <span>Lade Details aus Datenbank...</span>
+                </div>
+              } @else if (recordDetail()) {
+                <!-- Key Stats Grid -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div
+                    class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700/50"
+                  >
+                    <div
+                      class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500"
+                    >
+                      Wert / Mindestpreis
+                    </div>
+                    <div
+                      class="text-lg font-bold text-emerald-600 dark:text-emerald-400 mt-0.5"
+                    >
+                      {{
+                        recordDetail()?.lowest_price != null
+                          ? (recordDetail()?.lowest_price
+                            | currency: 'EUR' : 'symbol' : '1.2-2')
+                          : '—'
+                      }}
+                    </div>
+                    @if (recordDetail()?.num_for_sale != null) {
+                      <div class="text-[11px] text-slate-400">
+                        {{ recordDetail()?.num_for_sale }} auf Discogs
+                      </div>
+                    }
+                  </div>
+
+                  <div
+                    class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700/50"
+                  >
+                    <div
+                      class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500"
+                    >
+                      Plays
+                    </div>
+                    <div
+                      class="text-lg font-bold text-indigo-600 dark:text-indigo-400 mt-0.5"
+                    >
+                      {{ recordDetail()?.listen_count || 0 }}
+                    </div>
+                    <div class="text-[11px] text-slate-400">
+                      {{
+                        recordDetail()?.last_listened_at
+                          ? (recordDetail()?.last_listened_at | date: 'shortDate')
+                          : 'Nie'
+                      }}
+                    </div>
+                  </div>
+
+                  <div
+                    class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700/50"
+                  >
+                    <div
+                      class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500"
+                    >
+                      Discogs ID
+                    </div>
+                    <div
+                      class="text-lg font-bold text-slate-800 dark:text-slate-200 mt-0.5"
+                    >
+                      #{{ recordDetail()?.discogs_id }}
+                    </div>
+                    <div class="text-[11px] text-slate-400">
+                      DB ID: {{ recordDetail()?.id }}
+                    </div>
+                  </div>
+
+                  <div
+                    class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700/50"
+                  >
+                    <div
+                      class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500"
+                    >
+                      Hinzugefügt am
+                    </div>
+                    <div
+                      class="text-sm font-semibold text-slate-800 dark:text-slate-200 mt-1"
+                    >
+                      {{
+                        recordDetail()?.added_at
+                          ? (recordDetail()?.added_at | date: 'mediumDate')
+                          : '—'
+                      }}
+                    </div>
+                    <div class="text-[11px] text-slate-400">
+                      {{ recordDetail()?.country || 'Land unbekannt' }}
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Details Section -->
+                <div class="space-y-3">
+                  <h3
+                    class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500"
+                  >
+                    Metadaten
+                  </h3>
+                  <div
+                    class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs bg-slate-50 dark:bg-slate-900/40 p-3 rounded-xl border border-slate-100 dark:border-slate-700/40"
+                  >
+                    <div>
+                      <span class="text-slate-400">Künstler:</span>
+                      <strong class="text-slate-700 dark:text-slate-200 ml-1">{{
+                        recordDetail()?.artist
+                      }}</strong>
+                    </div>
+                    <div>
+                      <span class="text-slate-400">Album:</span>
+                      <strong class="text-slate-700 dark:text-slate-200 ml-1">{{
+                        recordDetail()?.title
+                      }}</strong>
+                    </div>
+                    <div>
+                      <span class="text-slate-400">Erscheinungsjahr:</span>
+                      <strong class="text-slate-700 dark:text-slate-200 ml-1">{{
+                        recordDetail()?.year || '—'
+                      }}</strong>
+                    </div>
+                    <div>
+                      <span class="text-slate-400">Veröffentlichung:</span>
+                      <strong class="text-slate-700 dark:text-slate-200 ml-1">{{
+                        recordDetail()?.released || '—'
+                      }}</strong>
+                    </div>
+                    <div>
+                      <span class="text-slate-400">Land:</span>
+                      <strong class="text-slate-700 dark:text-slate-200 ml-1">{{
+                        recordDetail()?.country || '—'
+                      }}</strong>
+                    </div>
+                    <div>
+                      <span class="text-slate-400">Zuletzt gehört:</span>
+                      <strong class="text-slate-700 dark:text-slate-200 ml-1">{{
+                        recordDetail()?.last_listened_at
+                          ? (recordDetail()?.last_listened_at | date: 'medium')
+                          : 'Noch nie'
+                      }}</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Genres -->
+                @if ((recordDetail()?.genres?.length || 0) > 0) {
+                  <div class="space-y-2">
+                    <h3
+                      class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500"
+                    >
+                      Genre
+                    </h3>
+                    <div class="flex flex-wrap gap-1.5">
+                      @for (genre of recordDetail()?.genres; track genre) {
+                        <span
+                          class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/50"
+                        >
+                          {{ genre }}
+                        </span>
+                      }
+                    </div>
+                  </div>
+                }
+
+                <!-- Formats & Labels -->
+                @if (
+                  (recordDetail()?.formats?.length || 0) > 0 ||
+                  (recordDetail()?.labels?.length || 0) > 0
+                ) {
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    @if ((recordDetail()?.formats?.length || 0) > 0) {
+                      <div>
+                        <h3
+                          class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2"
+                        >
+                          Formate
+                        </h3>
+                        <div class="space-y-1">
+                          @for (
+                            fmt of recordDetail()?.formats;
+                            track fmt.name
+                          ) {
+                            <div class="text-xs text-slate-700 dark:text-slate-300">
+                              <span class="font-semibold"
+                                >{{ fmt.qty }}x {{ fmt.name }}</span
+                              >
+                              @if (
+                                fmt.descriptions &&
+                                fmt.descriptions.length > 0
+                              ) {
+                                <span class="text-slate-400">
+                                  ({{ fmt.descriptions.join(', ') }})</span
+                                >
+                              }
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    }
+                    @if ((recordDetail()?.labels?.length || 0) > 0) {
+                      <div>
+                        <h3
+                          class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2"
+                        >
+                          Labels / Katalog-Nr.
+                        </h3>
+                        <div class="space-y-1">
+                          @for (lbl of recordDetail()?.labels; track lbl.id) {
+                            <div class="text-xs text-slate-700 dark:text-slate-300">
+                              <span class="font-semibold">{{ lbl.name }}</span>
+                              @if (lbl.catno) {
+                                <span class="text-slate-400">
+                                  • {{ lbl.catno }}</span
+                                >
+                              }
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+
+                <!-- Tracklist -->
+                @if ((recordDetail()?.tracklist?.length || 0) > 0) {
+                  <div class="space-y-2">
+                    <h3
+                      class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500"
+                    >
+                      Trackliste
+                    </h3>
+                    <div
+                      class="divide-y divide-slate-100 dark:divide-slate-700/50 border border-slate-100 dark:border-slate-700/50 rounded-xl overflow-hidden max-h-48 overflow-y-auto"
+                    >
+                      @for (
+                        track of recordDetail()?.tracklist;
+                        track $index
+                      ) {
+                        <div
+                          class="flex items-center justify-between px-3 py-1.5 text-xs hover:bg-slate-50 dark:hover:bg-slate-700/30"
+                        >
+                          <div class="flex items-center gap-2 truncate">
+                            <span
+                              class="w-6 font-mono text-slate-400 shrink-0"
+                              >{{ track.position || $index + 1 }}</span
+                            >
+                            <span
+                              class="font-medium text-slate-700 dark:text-slate-200 truncate"
+                              >{{ track.title }}</span
+                            >
+                          </div>
+                          @if (track.duration) {
+                            <span
+                              class="text-slate-400 font-mono ml-2 shrink-0"
+                              >{{ track.duration }}</span
+                            >
+                          }
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+
+                <!-- Listen History from DB -->
+                @if ((recordDetail()?.listen_history?.length || 0) > 0) {
+                  <div class="space-y-2">
+                    <h3
+                      class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500"
+                    >
+                      Wiedergabeverlauf ({{
+                        recordDetail()?.listen_history?.length
+                      }})
+                    </h3>
+                    <div class="space-y-1 max-h-32 overflow-y-auto">
+                      @for (
+                        timestamp of recordDetail()?.listen_history;
+                        track timestamp
+                      ) {
+                        <div
+                          class="text-xs text-slate-600 dark:text-slate-400 flex items-center gap-2"
+                        >
+                          <span
+                            class="w-1.5 h-1.5 rounded-full bg-indigo-500"
+                          ></span>
+                          {{ timestamp | date: 'medium' }}
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+
+                <!-- Notes -->
+                @if (recordDetail()?.notes) {
+                  <div class="space-y-1">
+                    <h3
+                      class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500"
+                    >
+                      Notizen
+                    </h3>
+                    <p
+                      class="text-xs text-slate-600 dark:text-slate-400 italic bg-slate-50 dark:bg-slate-900/30 p-2.5 rounded-lg border border-slate-100 dark:border-slate-700/30"
+                    >
+                      {{ recordDetail()?.notes }}
+                    </p>
+                  </div>
+                }
+              }
+            </div>
+
+            <!-- Modal Footer -->
+            <div
+              class="p-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between"
+            >
+              <a
+                [href]="
+                  'https://www.discogs.com/release/' + selectedRecord()?.id
+                "
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors"
+              >
+                <svg lucideExternalLink [size]="14"></svg>
+                Auf Discogs öffnen
+              </a>
+              <button
+                (click)="closeDetail()"
+                class="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+              >
+                Schließen
+              </button>
+            </div>
+          </div>
+        </div>
+      }
     </app-layout>
   `,
 })
@@ -503,6 +937,10 @@ export class CollectionComponent implements OnInit, OnDestroy {
   readonly authService = inject(AuthService);
   readonly apiService = inject(ApiService);
   readonly toastService = inject(ToastService);
+
+  readonly selectedRecord = signal<CollectionRelease | null>(null);
+  readonly recordDetail = signal<RecordDetailDto | null>(null);
+  readonly loadingDetail = signal<boolean>(false);
 
   readonly page = signal<number>(1);
   readonly perPage = signal<number>(50);
@@ -717,6 +1155,46 @@ export class CollectionComponent implements OnInit, OnDestroy {
     } finally {
       this.generating.set(false);
     }
+  }
+
+  openDetail(release: CollectionRelease): void {
+    this.selectedRecord.set(release);
+    this.recordDetail.set(null);
+    this.loadingDetail.set(true);
+
+    this.apiService.getRecordDetails(release.id).subscribe({
+      next: (detail) => {
+        this.recordDetail.set(detail);
+        this.loadingDetail.set(false);
+        if (detail.lowest_price != null) {
+          this.releases.update((list) =>
+            list.map((r) =>
+              r.id === release.id
+                ? {
+                    ...r,
+                    basic_information: {
+                      ...r.basic_information,
+                      lowest_price: detail.lowest_price,
+                      num_for_sale: detail.num_for_sale,
+                    },
+                  }
+                : r
+            )
+          );
+        }
+      },
+      error: (err) => {
+        console.error(err);
+        this.toastService.showToast(getErrorMessage(err, 'Fehler beim Laden der Details'), 'error');
+        this.loadingDetail.set(false);
+      },
+    });
+  }
+
+  closeDetail(): void {
+    this.selectedRecord.set(null);
+    this.recordDetail.set(null);
+    this.loadingDetail.set(false);
   }
 
   private downloadBlob(blob: Blob, filename: string): void {

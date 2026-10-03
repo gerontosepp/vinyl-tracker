@@ -150,8 +150,9 @@ import { Subscription, firstValueFrom } from 'rxjs';
                   (ngModelChange)="onSortChange($event)"
                   class="border border-slate-200 dark:border-slate-600 rounded-xl py-1.5 px-2.5 bg-white/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100 shadow-sm font-medium focus:ring-2 focus:ring-indigo-500/50 outline-none backdrop-blur-sm cursor-pointer hover:bg-white dark:hover:bg-slate-800 transition-all duration-200"
                 >
-                  <option value="artist">{{ 'collection.sortArtist' | translate }}</option>
-                  <option value="listens">{{ 'collection.sortListens' | translate }}</option>
+                  <option value="artist">{{ 'collection.sortArtistYear' | translate }}</option>
+                  <option value="year">{{ 'collection.sortYearArtist' | translate }}</option>
+                  <option value="listens">{{ 'collection.sortListensArtistYear' | translate }}</option>
                 </select>
                 <button
                   (click)="toggleSortOrder()"
@@ -1040,6 +1041,11 @@ export class CollectionComponent implements OnInit, OnDestroy {
 
   onSortChange(value: string): void {
     this.sort.set(value);
+    if (value === 'listens') {
+      this.sortOrder.set('desc');
+    } else {
+      this.sortOrder.set('asc');
+    }
     this.page.set(1);
     this.loadData();
   }

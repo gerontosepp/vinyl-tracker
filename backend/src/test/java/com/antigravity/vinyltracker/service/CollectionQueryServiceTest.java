@@ -7,9 +7,11 @@ import com.antigravity.vinyltracker.repository.ListenEventRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.mockito.ArgumentCaptor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import java.util.List;
 
@@ -217,6 +219,44 @@ class CollectionQueryServiceTest {
         assertEquals(1, response.getReleases().size());
         assertEquals(201L, response.getReleases().get(0).getId());
         assertEquals(0L, response.getReleases().get(0).getListenCount());
+    }
+
+    @Test
+    void getCollection_ShouldSortByYearThenArtist_WhenSortIsYear() {
+        ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
+        Mockito.when(collectionItemRepository.findAllByUser(Mockito.eq(user), captor.capture()))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        collectionQueryService.getCollection(user, 1, 20, "year", "asc", null, null);
+
+        Pageable captured = captor.getValue();
+        assertNotNull(captured.getSort());
+        List<Sort.Order> orders = captured.getSort().stream().toList();
+        assertEquals(3, orders.size());
+        assertEquals("record.year", orders.get(0).getProperty());
+        assertEquals(Sort.Direction.ASC, orders.get(0).getDirection());
+        assertEquals("record.artist", orders.get(1).getProperty());
+        assertEquals(Sort.Direction.ASC, orders.get(1).getDirection());
+        assertEquals("record.title", orders.get(2).getProperty());
+    }
+
+    @Test
+    void getCollection_ShouldSortByArtistThenYearAsc_WhenSortIsArtistDesc() {
+        ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
+        Mockito.when(collectionItemRepository.findAllByUser(Mockito.eq(user), captor.capture()))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        collectionQueryService.getCollection(user, 1, 20, "artist", "desc", null, null);
+
+        Pageable captured = captor.getValue();
+        assertNotNull(captured.getSort());
+        List<Sort.Order> orders = captured.getSort().stream().toList();
+        assertEquals(3, orders.size());
+        assertEquals("record.artist", orders.get(0).getProperty());
+        assertEquals(Sort.Direction.DESC, orders.get(0).getDirection());
+        assertEquals("record.year", orders.get(1).getProperty());
+        assertEquals(Sort.Direction.ASC, orders.get(1).getDirection());
+        assertEquals("record.title", orders.get(2).getProperty());
     }
 }
 

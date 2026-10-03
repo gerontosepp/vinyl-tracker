@@ -37,8 +37,20 @@ public class CollectionQueryService {
         Pageable pageable;
         if ("listens".equalsIgnoreCase(sort)) {
             pageable = PageRequest.of(page - 1, perPage);
+        } else if ("year".equalsIgnoreCase(sort)) {
+            pageable = PageRequest.of(page - 1, perPage,
+                    Sort.by(
+                            new Sort.Order(direction, "record.year").nullsLast(),
+                            new Sort.Order(Sort.Direction.ASC, "record.artist").nullsLast(),
+                            new Sort.Order(Sort.Direction.ASC, "record.title").nullsLast()
+                    ));
         } else if ("artist".equalsIgnoreCase(sort)) {
-            pageable = PageRequest.of(page - 1, perPage, Sort.by(direction, "record.artist"));
+            pageable = PageRequest.of(page - 1, perPage,
+                    Sort.by(
+                            new Sort.Order(direction, "record.artist").nullsLast(),
+                            new Sort.Order(Sort.Direction.ASC, "record.year").nullsLast(),
+                            new Sort.Order(Sort.Direction.ASC, "record.title").nullsLast()
+                    ));
         } else {
             pageable = PageRequest.of(page - 1, perPage, Sort.by(direction, "addedAt"));
         }

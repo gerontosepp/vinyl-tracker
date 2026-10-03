@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -75,7 +76,7 @@ public class RecordService {
                     .toList();
         }
 
-        Double lowestPrice = release != null && release.getLowestPrice() != null
+        BigDecimal lowestPrice = release != null && release.getLowestPrice() != null
                 ? release.getLowestPrice()
                 : (recordOpt.isPresent() ? recordOpt.get().getLowestPrice() : null);
         Integer numForSale = release != null ? release.getNumForSale() : null;

@@ -18,6 +18,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -75,7 +76,7 @@ class RecordServiceTest {
         release.setNotes("Album notes");
         release.setCountry("UK");
         release.setReleased("1977-05-01");
-        release.setLowestPrice(15.50);
+        release.setLowestPrice(BigDecimal.valueOf(15.50));
         release.setNumForSale(3);
 
         DiscogsDto.Track track = new DiscogsDto.Track();
@@ -108,7 +109,7 @@ class RecordServiceTest {
         assertEquals(9999L, details.getInstanceId());
         assertEquals(7L, details.getListenCount());
         assertEquals(now, details.getLastListenedAt());
-        assertEquals(15.50, details.getLowestPrice());
+        assertEquals(BigDecimal.valueOf(15.50), details.getLowestPrice());
         assertEquals(3, details.getNumForSale());
         assertNotNull(details.getAddedAt());
         assertEquals(1, details.getListenHistory().size());

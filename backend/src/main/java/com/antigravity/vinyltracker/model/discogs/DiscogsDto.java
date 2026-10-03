@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -33,7 +34,7 @@ public class DiscogsDto {
         private List<String> genres;
         private List<String> styles;
         @JsonProperty("lowest_price")
-        private Double lowestPrice;
+        private BigDecimal lowestPrice;
         @JsonProperty("num_for_sale")
         private Integer numForSale;
     }

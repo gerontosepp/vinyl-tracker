@@ -3,6 +3,7 @@ package com.antigravity.vinyltracker.model;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -28,7 +29,7 @@ public class Record {
     private String thumbUrl;
 
     @Column(name = "lowest_price")
-    private Double lowestPrice;
+    private BigDecimal lowestPrice;
 
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "record_genres", joinColumns = @JoinColumn(name = "record_id"))

@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -35,7 +36,7 @@ public class RecordDetailDto {
     @JsonProperty("added_at")
     private LocalDateTime addedAt;
     @JsonProperty("lowest_price")
-    private Double lowestPrice;
+    private BigDecimal lowestPrice;
     @JsonProperty("num_for_sale")
     private Integer numForSale;
     @JsonProperty("listen_history")

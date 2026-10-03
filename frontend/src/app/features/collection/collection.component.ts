@@ -117,7 +117,7 @@ import { Subscription, firstValueFrom } from 'rxjs';
                 } @else {
                   <svg lucideSquare [size]="18"></svg>
                 }
-                <span class="whitespace-nowrap">Select Page</span>
+                <span class="whitespace-nowrap">{{ 'collection.selectPage' | translate }}</span>
               </button>
 
               <button
@@ -129,7 +129,7 @@ import { Subscription, firstValueFrom } from 'rxjs';
                     : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm')
                 "
               >
-                <span class="font-semibold whitespace-nowrap">Played Only</span>
+                <span class="font-semibold whitespace-nowrap">{{ 'collection.playedOnly' | translate }}</span>
                 @if (showPlayedOnly()) {
                   <span
                     class="text-[10px] font-bold bg-indigo-200 dark:bg-indigo-800 text-indigo-800 dark:text-indigo-200 px-1.5 py-0.5 rounded-full"
@@ -143,15 +143,15 @@ import { Subscription, firstValueFrom } from 'rxjs';
               <!-- Sort Controls -->
               <div class="flex items-center gap-1.5 shrink-0">
                 <span class="text-slate-500 dark:text-slate-400 font-medium hidden sm:inline"
-                  >Sort:</span
+                  >{{ 'collection.sortBy' | translate }}</span
                 >
                 <select
                   [ngModel]="sort()"
                   (ngModelChange)="onSortChange($event)"
                   class="border border-slate-200 dark:border-slate-600 rounded-xl py-1.5 px-2.5 bg-white/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100 shadow-sm font-medium focus:ring-2 focus:ring-indigo-500/50 outline-none backdrop-blur-sm cursor-pointer hover:bg-white dark:hover:bg-slate-800 transition-all duration-200"
                 >
-                  <option value="artist">Band Name</option>
-                  <option value="listens">Listens</option>
+                  <option value="artist">{{ 'collection.sortArtist' | translate }}</option>
+                  <option value="listens">{{ 'collection.sortListens' | translate }}</option>
                 </select>
                 <button
                   (click)="toggleSortOrder()"
@@ -195,14 +195,14 @@ import { Subscription, firstValueFrom } from 'rxjs';
               (ngModelChange)="onPerPageChange($event)"
               class="border border-slate-200 dark:border-slate-600 rounded-xl py-1.5 px-3 bg-white/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100 shadow-sm font-medium focus:ring-2 focus:ring-indigo-500/50 outline-none backdrop-blur-sm cursor-pointer hover:bg-white dark:hover:bg-slate-800 transition-all duration-200 hidden sm:block"
             >
-              <option [value]="20">20 / page</option>
-              <option [value]="30">30 / page</option>
-              <option [value]="40">40 / page</option>
-              <option [value]="50">50 / page</option>
-              <option [value]="100">100 (Max)</option>
+              <option [value]="20">{{ 'collection.perPage' | translate: { count: 20 } }}</option>
+              <option [value]="30">{{ 'collection.perPage' | translate: { count: 30 } }}</option>
+              <option [value]="40">{{ 'collection.perPage' | translate: { count: 40 } }}</option>
+              <option [value]="50">{{ 'collection.perPage' | translate: { count: 50 } }}</option>
+              <option [value]="100">{{ 'collection.maxPerPage' | translate }}</option>
             </select>
             <span class="text-slate-500 dark:text-slate-400 font-medium">
-              Page {{ page() }} of {{ totalPages() }}
+              {{ 'collection.pageOf' | translate: { page: page(), total: totalPages() } }}
             </span>
             <div class="flex gap-1">
               <button
@@ -263,13 +263,13 @@ import { Subscription, firstValueFrom } from 'rxjs';
                         }
                       </button>
                     </th>
-                    <th class="px-4 py-4 w-16">Cover</th>
-                    <th class="px-4 py-4">Band Name</th>
-                    <th class="px-4 py-4">Album Title</th>
-                    <th class="px-4 py-4">Genre</th>
-                    <th class="px-4 py-4">Year</th>
-                    <th class="px-4 py-4">Plays</th>
-                    <th class="px-4 py-4 text-right">Link</th>
+                    <th class="px-4 py-4 w-16">{{ 'collection.thCover' | translate }}</th>
+                    <th class="px-4 py-4">{{ 'collection.thArtist' | translate }}</th>
+                    <th class="px-4 py-4">{{ 'collection.thTitle' | translate }}</th>
+                    <th class="px-4 py-4">{{ 'collection.thGenre' | translate }}</th>
+                    <th class="px-4 py-4">{{ 'collection.thYear' | translate }}</th>
+                    <th class="px-4 py-4">{{ 'collection.thPlays' | translate }}</th>
+                    <th class="px-4 py-4 text-right">{{ 'collection.thLink' | translate }}</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50">

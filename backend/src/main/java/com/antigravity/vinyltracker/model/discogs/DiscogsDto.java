@@ -33,6 +33,7 @@ public class DiscogsDto {
         private String released;
         private List<String> genres;
         private List<String> styles;
+        private String format;
         @JsonProperty("lowest_price")
         private BigDecimal lowestPrice;
         @JsonProperty("num_for_sale")
@@ -58,6 +59,58 @@ public class DiscogsDto {
         private String qty;
         private List<String> descriptions;
         private String text;
+    }
+
+    public static String determineFormat(List<Format> formats) {
+        if (formats == null || formats.isEmpty()) {
+            return "LP";
+        }
+        boolean hasCd = false;
+        boolean hasDoubleLp = false;
+        boolean hasVinyl = false;
+
+        for (Format f : formats) {
+            String name = f.getName() != null ? f.getName().toLowerCase().trim() : "";
+            String qtyStr = f.getQty() != null ? f.getQty().trim() : "1";
+            int qty = 1;
+            try {
+                qty = Integer.parseInt(qtyStr);
+            } catch (NumberFormatException ignored) {}
+
+            List<String> descs = f.getDescriptions() != null ? f.getDescriptions() : List.of();
+            boolean descHas2x = descs.stream().anyMatch(d -> {
+                String ld = d.toLowerCase();
+                return ld.contains("2xlp") || ld.contains("2 x lp") || ld.contains("2lp")
+                        || ld.contains("double lp") || ld.contains("2 x vinyl") || ld.contains("2xvinyl");
+            });
+
+            if (name.contains("cd") || descs.stream().anyMatch(d -> d.equalsIgnoreCase("cd"))) {
+                hasCd = true;
+            }
+
+            if (name.contains("vinyl") || descs.stream().anyMatch(d -> d.toLowerCase().contains("lp") || d.equalsIgnoreCase("vinyl"))) {
+                hasVinyl = true;
+                if (qty >= 2 || descHas2x) {
+                    hasDoubleLp = true;
+                }
+            } else if (descHas2x || qty >= 2) {
+                hasDoubleLp = true;
+            }
+        }
+
+        if (hasDoubleLp) {
+            return "Double LP";
+        }
+        if (hasCd && !hasVinyl) {
+            return "CD";
+        }
+        if (hasVinyl) {
+            return "LP";
+        }
+        if (hasCd) {
+            return "CD";
+        }
+        return "LP";
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

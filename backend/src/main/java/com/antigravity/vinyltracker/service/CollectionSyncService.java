@@ -72,13 +72,26 @@ public class CollectionSyncService {
                                 if (release.getBasicInformation() != null && release.getBasicInformation().getLowestPrice() != null) {
                                     newRecord.setLowestPrice(release.getBasicInformation().getLowestPrice());
                                 }
+                                String detectedFormat = DiscogsDto.determineFormat(
+                                        release.getBasicInformation() != null ? release.getBasicInformation().getFormats() : null);
+                                newRecord.setFormat(detectedFormat);
 
                                 return recordRepository.save(newRecord);
                             });
 
+                    boolean recordUpdated = false;
                     List<String> remoteTags = extractDiscogsTags(release.getBasicInformation());
                     if (!remoteTags.isEmpty() && (record.getGenres() == null || record.getGenres().isEmpty())) {
                         record.setGenres(new ArrayList<>(remoteTags));
+                        recordUpdated = true;
+                    }
+                    String remoteFormat = DiscogsDto.determineFormat(
+                            release.getBasicInformation() != null ? release.getBasicInformation().getFormats() : null);
+                    if (remoteFormat != null && (record.getFormat() == null || !remoteFormat.equals(record.getFormat()))) {
+                        record.setFormat(remoteFormat);
+                        recordUpdated = true;
+                    }
+                    if (recordUpdated) {
                         recordRepository.save(record);
                     }
 

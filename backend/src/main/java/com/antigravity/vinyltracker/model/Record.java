@@ -31,6 +31,9 @@ public class Record {
     @Column(name = "lowest_price")
     private BigDecimal lowestPrice;
 
+    @Column(name = "format")
+    private String format;
+
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "record_genres", joinColumns = @JoinColumn(name = "record_id"))
     @Column(name = "genre")

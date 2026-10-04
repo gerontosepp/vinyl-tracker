@@ -8,6 +8,12 @@ Kurze Uebersicht der Aenderungen je Version (abgeleitet aus Git-Tags und Commit-
   - `GET /api/collection/unplayed` & MCP-Tool `get_unplayed_records`: Paginierte Liste ungespielter Alben der Sammlung ("Shelf of Shame").
   - `GET /api/records/{id}` & MCP-Tool `get_record_details`: Umfassende Album-Details inklusive Tracklist, Release-Formate, Labels, Notizen und persönlicher Abspielhistorie.
   - `GET /api/discogs/search` & MCP-Tool `search_discogs`: Globale Discogs-Datenbanksuche nach Alben, Künstlern und Releases.
+- **Format-Anzeige & Icons in der Plattenliste**:
+  - Neue Spalte "Format" nach der Spalte "Cover" in der Alben-Tabelle mit Icons für CD (`LucideDiscAlbum`), LP (`LucideDisc`) und Double LP (`2xLP`).
+  - Automatische Format-Erkennung aus Discogs-Metadaten (`basic_information.formats`) mit Fallback auf Standard-LP.
+  - Persistierung des Media-Formats in `record_cache` via Flyway-Migration `V4__add_format_to_record_cache.sql`.
+  - Responsive Darstellung auf Desktop- und Mobilansicht inklusive interaktiver Hover-Tooltips für die Formatbeschreibungen (`LP (Vinyl)`, `Double LP (2xLP)`, `CD (Compact Disc)`).
+  - Neue Sortieroption "Format, Künstler, Jahr" (`sort=format`) in Frontend und Backend.
 - **Backend-Architektur & Qualität**:
   - `ResourceNotFoundException` mit standardisierten RFC 7807 `ProblemDetail`-Antworten (HTTP 404).
   - `IllegalArgumentException`-Mapping auf HTTP 400 mit strukturierter Fehlerausgabe.

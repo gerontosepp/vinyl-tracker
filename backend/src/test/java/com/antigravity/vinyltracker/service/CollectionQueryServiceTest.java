@@ -64,6 +64,7 @@ class CollectionQueryServiceTest {
         assertEquals(1, result.getReleases().size());
         assertEquals(100L, result.getReleases().get(0).getId());
         assertEquals(5L, result.getReleases().get(0).getListenCount());
+        assertEquals("LP", result.getReleases().get(0).getBasicInformation().getFormat());
     }
 
     @Test
@@ -257,6 +258,27 @@ class CollectionQueryServiceTest {
         assertEquals("record.year", orders.get(1).getProperty());
         assertEquals(Sort.Direction.ASC, orders.get(1).getDirection());
         assertEquals("record.title", orders.get(2).getProperty());
+    }
+
+    @Test
+    void getCollection_ShouldSortByFormatThenArtistThenYear_WhenSortIsFormat() {
+        ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
+        Mockito.when(collectionItemRepository.findAllByUser(Mockito.eq(user), captor.capture()))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        collectionQueryService.getCollection(user, 1, 20, "format", "asc", null, null);
+
+        Pageable captured = captor.getValue();
+        assertNotNull(captured.getSort());
+        List<Sort.Order> orders = captured.getSort().stream().toList();
+        assertEquals(4, orders.size());
+        assertEquals("record.format", orders.get(0).getProperty());
+        assertEquals(Sort.Direction.ASC, orders.get(0).getDirection());
+        assertEquals("record.artist", orders.get(1).getProperty());
+        assertEquals(Sort.Direction.ASC, orders.get(1).getDirection());
+        assertEquals("record.year", orders.get(2).getProperty());
+        assertEquals(Sort.Direction.ASC, orders.get(2).getDirection());
+        assertEquals("record.title", orders.get(3).getProperty());
     }
 }
 

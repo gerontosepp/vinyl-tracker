@@ -59,6 +59,8 @@ export interface DiscogsBasicInfo {
   styles?: string[];
   lowest_price?: number;
   num_for_sale?: number;
+  format?: string;
+  formats?: RecordFormat[];
 }
 
 export interface RecordTrack {
@@ -98,6 +100,7 @@ export interface RecordDetailDto {
   num_for_sale?: number;
   listen_history?: string[];
   tracklist: RecordTrack[];
+  format?: string;
   formats: RecordFormat[];
   labels: RecordLabel[];
   notes?: string;

@@ -108,6 +108,7 @@ class RecordServiceTest {
         assertTrue(details.isInCollection());
         assertEquals(9999L, details.getInstanceId());
         assertEquals(7L, details.getListenCount());
+        assertEquals("LP", details.getFormat());
         assertEquals(now, details.getLastListenedAt());
         assertEquals(BigDecimal.valueOf(15.50), details.getLowestPrice());
         assertEquals(3, details.getNumForSale());

@@ -112,6 +112,19 @@ public class RecordService {
                 ? release.getGenres()
                 : (recordOpt.isPresent() && recordOpt.get().getGenres() != null ? recordOpt.get().getGenres() : List.of());
 
+        String format = recordOpt.map(Record::getFormat).orElse(null);
+        if (format == null && release != null && release.getFormats() != null) {
+            format = DiscogsDto.determineFormat(release.getFormats());
+            if (recordOpt.isPresent()) {
+                Record r = recordOpt.get();
+                r.setFormat(format);
+                recordRepository.save(r);
+            }
+        }
+        if (format == null) {
+            format = "LP";
+        }
+
         return RecordDetailDto.builder()
                 .id(recordOpt.map(Record::getId).orElse(null))
                 .discogsId(discogsId)
@@ -120,6 +133,7 @@ public class RecordService {
                 .year(year)
                 .thumbUrl(thumbUrl)
                 .genres(genres)
+                .format(format)
                 .inCollection(collectionItemOpt.isPresent())
                 .instanceId(collectionItemOpt.map(CollectionItem::getInstanceId).orElse(null))
                 .addedAt(collectionItemOpt.map(CollectionItem::getAddedAt).orElse(null))

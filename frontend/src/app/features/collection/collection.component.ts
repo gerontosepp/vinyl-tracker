@@ -17,6 +17,8 @@ import {
   LucideArrowDown,
   LucideSearch,
   LucideX,
+  LucideDisc,
+  LucideDiscAlbum,
 } from '@lucide/angular';
 import { Subscription, firstValueFrom } from 'rxjs';
 
@@ -36,6 +38,8 @@ import { Subscription, firstValueFrom } from 'rxjs';
     LucideArrowDown,
     LucideSearch,
     LucideX,
+    LucideDisc,
+    LucideDiscAlbum,
   ],
   template: `
     <app-layout [fullWidth]="true">
@@ -154,6 +158,7 @@ import { Subscription, firstValueFrom } from 'rxjs';
                 >
                   <option value="artist">{{ 'collection.sortArtistYear' | translate }}</option>
                   <option value="year">{{ 'collection.sortYearArtist' | translate }}</option>
+                  <option value="format">{{ 'collection.sortFormatArtistYear' | translate }}</option>
                   <option value="listens">{{ 'collection.sortListensArtistYear' | translate }}</option>
                 </select>
                 <button
@@ -271,6 +276,7 @@ import { Subscription, firstValueFrom } from 'rxjs';
                       </button>
                     </th>
                     <th class="px-4 py-4 w-16">{{ 'collection.thCover' | translate }}</th>
+                    <th class="px-3 py-4 w-20 text-center">{{ 'collection.thFormat' | translate }}</th>
                     <th class="px-4 py-4">{{ 'collection.thArtist' | translate }}</th>
                     <th class="px-4 py-4">{{ 'collection.thTitle' | translate }}</th>
                     <th class="px-4 py-4">{{ 'collection.thGenre' | translate }}</th>
@@ -324,6 +330,76 @@ import { Subscription, firstValueFrom } from 'rxjs';
                               💿
                             </div>
                           }
+                        </div>
+                      </td>
+                      <td class="px-3 py-3 text-center">
+                        @let fmt = getFormatType(release);
+                        <div class="relative group/fmt inline-flex items-center justify-center">
+                          @switch (fmt) {
+                            @case ('double_lp') {
+                              <div
+                                class="inline-flex items-center justify-center cursor-help py-1 px-1.5 rounded-lg bg-slate-100/80 dark:bg-slate-700/50 hover:bg-slate-200/70 dark:hover:bg-slate-700 transition-colors"
+                                [title]="'collection.formatDoubleLp' | translate"
+                              >
+                                <div class="relative flex items-center">
+                                  <svg
+                                    lucideDisc
+                                    class="text-slate-400 dark:text-slate-500 shrink-0"
+                                    [size]="19"
+                                  ></svg>
+                                  <svg
+                                    lucideDisc
+                                    class="text-slate-800 dark:text-slate-200 -ml-2.5 shrink-0 drop-shadow-sm"
+                                    [size]="19"
+                                  ></svg>
+                                </div>
+                              </div>
+                            }
+                            @case ('cd') {
+                              <div
+                                class="inline-flex items-center justify-center cursor-help py-1 px-1.5 rounded-lg bg-cyan-50 dark:bg-cyan-950/40 hover:bg-cyan-100/70 dark:hover:bg-cyan-900/50 transition-colors"
+                                [title]="'collection.formatCd' | translate"
+                              >
+                                <svg
+                                  lucideDiscAlbum
+                                  class="text-cyan-600 dark:text-cyan-400"
+                                  [size]="19"
+                                ></svg>
+                              </div>
+                            }
+                            @default {
+                              <div
+                                class="inline-flex items-center justify-center cursor-help py-1 px-1.5 rounded-lg bg-slate-100/80 dark:bg-slate-700/50 hover:bg-slate-200/70 dark:hover:bg-slate-700 transition-colors"
+                                [title]="'collection.formatLp' | translate"
+                              >
+                                <svg
+                                  lucideDisc
+                                  class="text-slate-800 dark:text-slate-200"
+                                  [size]="19"
+                                ></svg>
+                              </div>
+                            }
+                          }
+
+                          <!-- Tooltip on hover -->
+                          <div
+                            class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1 bg-slate-900/95 dark:bg-slate-800 text-white dark:text-slate-100 text-xs font-medium rounded-lg shadow-xl border border-slate-700/60 dark:border-slate-600/80 whitespace-nowrap pointer-events-none opacity-0 invisible group-hover/fmt:opacity-100 group-hover/fmt:visible transition-all duration-150 z-30"
+                          >
+                            @switch (fmt) {
+                              @case ('double_lp') {
+                                <span>{{ 'collection.formatDoubleLp' | translate }}</span>
+                              }
+                              @case ('cd') {
+                                <span>{{ 'collection.formatCd' | translate }}</span>
+                              }
+                              @default {
+                                <span>{{ 'collection.formatLp' | translate }}</span>
+                              }
+                            }
+                            <div
+                              class="absolute top-full left-1/2 -translate-x-1/2 -mt-[1px] border-4 border-transparent border-t-slate-900/95 dark:border-t-slate-800"
+                            ></div>
+                          </div>
                         </div>
                       </td>
                       <td class="px-4 py-3 font-semibold text-slate-900 dark:text-slate-100">
@@ -455,9 +531,49 @@ import { Subscription, firstValueFrom } from 'rxjs';
                     >
                       {{ release.basic_information.title }}
                     </h3>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 truncate font-medium">
-                      {{ release.basic_information.artists.length > 0 ? release.basic_information.artists[0].name : 'Unknown' }} •
-                      {{ release.basic_information.year || '—' }}
+                    <p class="text-xs text-slate-500 dark:text-slate-400 truncate font-medium flex items-center gap-1.5">
+                      <span class="truncate">
+                        {{ release.basic_information.artists.length > 0 ? release.basic_information.artists[0].name : 'Unknown' }} •
+                        {{ release.basic_information.year || '—' }}
+                      </span>
+                      <span class="inline-flex items-center shrink-0">
+                        @let mFmt = getFormatType(release);
+                        <span class="relative group/mfmt inline-flex items-center">
+                          @if (mFmt === 'double_lp') {
+                            <span class="inline-flex items-center gap-0.5 text-[10px] font-bold text-slate-600 dark:text-slate-300 cursor-help" [title]="'collection.formatDoubleLp' | translate">
+                              <svg lucideDisc class="text-slate-400" [size]="12"></svg>
+                              <svg lucideDisc class="text-slate-700 dark:text-slate-200 -ml-1.5" [size]="12"></svg>
+                              <span class="ml-0.5">2LP</span>
+                            </span>
+                          } @else if (mFmt === 'cd') {
+                            <span class="inline-flex items-center gap-0.5 text-[10px] font-bold text-cyan-600 dark:text-cyan-400 cursor-help" [title]="'collection.formatCd' | translate">
+                              <svg lucideDiscAlbum [size]="12"></svg>
+                              <span>CD</span>
+                            </span>
+                          } @else {
+                            <span class="inline-flex items-center gap-0.5 text-[10px] font-bold text-slate-600 dark:text-slate-300 cursor-help" [title]="'collection.formatLp' | translate">
+                              <svg lucideDisc [size]="12"></svg>
+                              <span>LP</span>
+                            </span>
+                          }
+                          <!-- Mobile Tooltip on Hover -->
+                          <span
+                            class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-0.5 bg-slate-900/95 dark:bg-slate-800 text-white dark:text-slate-100 text-[10px] font-medium rounded shadow-lg border border-slate-700/60 pointer-events-none opacity-0 invisible group-hover/mfmt:opacity-100 group-hover/mfmt:visible transition-all duration-150 z-30 whitespace-nowrap"
+                          >
+                            @switch (mFmt) {
+                              @case ('double_lp') {
+                                <span>{{ 'collection.formatDoubleLp' | translate }}</span>
+                              }
+                              @case ('cd') {
+                                <span>{{ 'collection.formatCd' | translate }}</span>
+                              }
+                              @default {
+                                <span>{{ 'collection.formatLp' | translate }}</span>
+                              }
+                            }
+                          </span>
+                        </span>
+                      </span>
                     </p>
                     @if (release.basic_information.genres && release.basic_information.genres.length > 0) {
                       <div class="flex flex-wrap gap-1 mt-1">
@@ -1192,6 +1308,57 @@ export class CollectionComponent implements OnInit, OnDestroy {
     this.selectedRecord.set(null);
     this.recordDetail.set(null);
     this.loadingDetail.set(false);
+  }
+
+  getFormatType(release: CollectionRelease): 'cd' | 'double_lp' | 'lp' {
+    const basic = release?.basic_information;
+    if (!basic) return 'lp';
+
+    const formatStr = (basic.format || '').toLowerCase();
+    if (
+      formatStr.includes('double') ||
+      formatStr.includes('2xlp') ||
+      formatStr.includes('2lp') ||
+      formatStr.includes('2 x lp') ||
+      formatStr.includes('2 x vinyl')
+    ) {
+      return 'double_lp';
+    }
+    if (formatStr.includes('cd')) {
+      return 'cd';
+    }
+
+    if (basic.formats && basic.formats.length > 0) {
+      for (const f of basic.formats) {
+        const name = (f.name || '').toLowerCase();
+        const qty = parseInt(f.qty || '1', 10);
+        const descs = (f.descriptions || []).map((d) => d.toLowerCase());
+        const has2x = descs.some(
+          (d) =>
+            d.includes('2xlp') ||
+            d.includes('2 x lp') ||
+            d.includes('double lp') ||
+            d.includes('2lp') ||
+            d.includes('2 x vinyl')
+        );
+
+        if (name.includes('cd') || descs.some((d) => d === 'cd')) {
+          return 'cd';
+        }
+        if (
+          name.includes('vinyl') ||
+          descs.some((d) => d.includes('lp') || d.includes('album') || d.includes('vinyl'))
+        ) {
+          if (qty >= 2 || has2x) {
+            return 'double_lp';
+          }
+        } else if (has2x || qty >= 2) {
+          return 'double_lp';
+        }
+      }
+    }
+
+    return 'lp';
   }
 
   private downloadBlob(blob: Blob, filename: string): void {

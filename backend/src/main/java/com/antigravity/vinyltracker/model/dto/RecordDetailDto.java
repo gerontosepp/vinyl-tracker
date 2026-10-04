@@ -42,6 +42,7 @@ public class RecordDetailDto {
     @JsonProperty("listen_history")
     private List<LocalDateTime> listenHistory;
     private List<DiscogsDto.Track> tracklist;
+    private String format;
     private List<DiscogsDto.Format> formats;
     private List<DiscogsDto.Label> labels;
     private String notes;

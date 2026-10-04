@@ -44,6 +44,14 @@ public class CollectionQueryService {
                             new Sort.Order(Sort.Direction.ASC, "record.artist").nullsLast(),
                             new Sort.Order(Sort.Direction.ASC, "record.title").nullsLast()
                     ));
+        } else if ("format".equalsIgnoreCase(sort)) {
+            pageable = PageRequest.of(page - 1, perPage,
+                    Sort.by(
+                            new Sort.Order(direction, "record.format").nullsLast(),
+                            new Sort.Order(Sort.Direction.ASC, "record.artist").nullsLast(),
+                            new Sort.Order(Sort.Direction.ASC, "record.year").nullsLast(),
+                            new Sort.Order(Sort.Direction.ASC, "record.title").nullsLast()
+                    ));
         } else if ("artist".equalsIgnoreCase(sort)) {
             pageable = PageRequest.of(page - 1, perPage,
                     Sort.by(
@@ -194,6 +202,12 @@ public class CollectionQueryService {
         }
 
         basicInfo.setLowestPrice(item.getRecord().getLowestPrice());
+
+        String format = item.getRecord().getFormat() != null ? item.getRecord().getFormat() : "LP";
+        basicInfo.setFormat(format);
+        DiscogsDto.Format fmt = new DiscogsDto.Format();
+        fmt.setName(format);
+        basicInfo.setFormats(List.of(fmt));
 
         release.setBasicInformation(basicInfo);
         return release;

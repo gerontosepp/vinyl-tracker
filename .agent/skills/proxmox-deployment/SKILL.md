@@ -74,3 +74,11 @@ docker compose -f docker/docker-compose.registry.yml logs -f postgres
 ```bash
 docker compose -f docker/docker-compose.registry.yml restart
 ```
+
+## 5. Self-Hosted GitHub Actions Runner
+
+To run CI builds and integration tests locally on Proxmox rather than relying on GitHub-hosted queues:
+- Template: [`docker/docker-compose.runner.yml`](../../../docker/docker-compose.runner.yml)
+- Image: `myoung34/github-runner:ubuntu-noble` (Ubuntu 24.04 LTS for modern Playwright & JDK 25)
+- Docker socket (`/var/run/docker.sock`) is mounted to support Testcontainers and container builds.
+

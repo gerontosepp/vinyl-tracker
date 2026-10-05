@@ -5,7 +5,6 @@ import com.antigravity.vinyltracker.model.discogs.DiscogsDto;
 import com.antigravity.vinyltracker.repository.AppUserRepository;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.util.List;
 
 import lombok.RequiredArgsConstructor;
@@ -39,17 +38,17 @@ public class CollectionService {
 
     public com.antigravity.vinyltracker.model.dto.SyncResultDto forceSync(String username) {
         AppUser user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+                .orElseThrow(() -> new com.antigravity.vinyltracker.exception.ResourceNotFoundException("User not found: " + username));
         return collectionSyncService.syncCollection(user);
     }
 
-    public byte[] generateSelectedQrCodesPdf(DiscogsDto.QrCodeRequest request) throws IOException {
+    public byte[] generateSelectedQrCodesPdf(DiscogsDto.QrCodeRequest request) {
         return pdfService.generateQrCodePdf(request.getItems());
     }
 
-    public byte[] generateAllQrCodesPdf(String username) throws IOException {
+    public byte[] generateAllQrCodesPdf(String username) {
         AppUser user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+                .orElseThrow(() -> new com.antigravity.vinyltracker.exception.ResourceNotFoundException("User not found: " + username));
 
         List<DiscogsDto.CollectionRelease> releases = collectionQueryService.getAllCollection(user);
         List<DiscogsDto.QrCodeItem> items = releases.stream().map(this::mapToQrItem).sorted((a, b) -> {

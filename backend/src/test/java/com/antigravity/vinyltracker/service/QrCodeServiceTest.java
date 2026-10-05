@@ -1,16 +1,15 @@
 package com.antigravity.vinyltracker.service;
 
+import com.antigravity.vinyltracker.exception.PdfGenerationException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import java.io.IOException;
 
 class QrCodeServiceTest {
 
     private final QrCodeService qrCodeService = new QrCodeService();
 
     @Test
-    void testGenerateQrCodeImage() throws IOException {
+    void testGenerateQrCodeImage() {
         String testText = "discogs-id:123456";
         byte[] image = qrCodeService.generateQrCodeImage(testText, 200, 200);
 
@@ -22,5 +21,11 @@ class QrCodeServiceTest {
         Assertions.assertEquals((byte) 0x50, image[1]); // P
         Assertions.assertEquals((byte) 0x4E, image[2]); // N
         Assertions.assertEquals((byte) 0x47, image[3]); // G
+    }
+
+    @Test
+    void testGenerateQrCodeImage_ThrowsPdfGenerationException_OnInvalidDimensions() {
+        Assertions.assertThrows(PdfGenerationException.class,
+                () -> qrCodeService.generateQrCodeImage("test", -1, -1));
     }
 }

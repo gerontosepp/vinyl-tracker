@@ -8,8 +8,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.security.Principal;
 
-import java.io.IOException;
-
 @RestController
 @RequestMapping("/api/collection")
 @lombok.RequiredArgsConstructor
@@ -61,22 +59,14 @@ public class CollectionController {
 
     @PostMapping("/qr-codes/selected")
     public ResponseEntity<byte[]> generateSelectedQrCodes(@RequestBody DiscogsDto.QrCodeRequest request) {
-        try {
-            byte[] pdfBytes = collectionService.generateSelectedQrCodesPdf(request);
-            return createPdfResponse(pdfBytes);
-        } catch (IOException e) {
-            throw new RuntimeException("Error generating PDF", e);
-        }
+        byte[] pdfBytes = collectionService.generateSelectedQrCodesPdf(request);
+        return createPdfResponse(pdfBytes);
     }
 
     @GetMapping("/qr-codes/all")
     public ResponseEntity<byte[]> generateAllQrCodes(Principal principal) {
-        try {
-            byte[] pdfBytes = collectionService.generateAllQrCodesPdf(principal.getName());
-            return createPdfResponse(pdfBytes);
-        } catch (IOException e) {
-            throw new RuntimeException("Error generating PDF", e);
-        }
+        byte[] pdfBytes = collectionService.generateAllQrCodesPdf(principal.getName());
+        return createPdfResponse(pdfBytes);
     }
 
     private ResponseEntity<byte[]> createPdfResponse(byte[] pdfBytes) {

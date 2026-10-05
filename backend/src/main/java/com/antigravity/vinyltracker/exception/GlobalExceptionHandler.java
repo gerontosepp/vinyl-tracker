@@ -84,6 +84,15 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problemDetail);
     }
 
+    @ExceptionHandler(PdfGenerationException.class)
+    public ResponseEntity<ProblemDetail> handlePdfGeneration(PdfGenerationException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+        problemDetail.setTitle("PDF generation error");
+        problemDetail.setDetail(ex.getMessage() != null ? ex.getMessage() : "Error generating PDF.");
+        problemDetail.setProperty("timestamp", Instant.now().toString());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problemDetail);
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ProblemDetail> handleRuntime(RuntimeException ex) {
         ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.INTERNAL_SERVER_ERROR);

@@ -59,6 +59,32 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    void handlePdfGeneration_ShouldReturn500() {
+        PdfGenerationException ex = new PdfGenerationException("PDF compilation failed");
+
+        ResponseEntity<ProblemDetail> response = handler.handlePdfGeneration(ex);
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR.value(), response.getStatusCode().value());
+        assertNotNull(response.getBody());
+        assertEquals("PDF generation error", response.getBody().getTitle());
+        assertEquals("PDF compilation failed", response.getBody().getDetail());
+        assertNotNull(response.getBody().getProperties().get("timestamp"));
+    }
+
+    @Test
+    void handlePdfGeneration_ShouldUseFallbackMessage_WhenMessageIsNull() {
+        PdfGenerationException ex = new PdfGenerationException(null);
+
+        ResponseEntity<ProblemDetail> response = handler.handlePdfGeneration(ex);
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR.value(), response.getStatusCode().value());
+        assertNotNull(response.getBody());
+        assertEquals("PDF generation error", response.getBody().getTitle());
+        assertEquals("Error generating PDF.", response.getBody().getDetail());
+        assertNotNull(response.getBody().getProperties().get("timestamp"));
+    }
+
+    @Test
     void handleRuntime_ShouldReturn500() {
         RuntimeException ex = new RuntimeException("Unexpected error");
 

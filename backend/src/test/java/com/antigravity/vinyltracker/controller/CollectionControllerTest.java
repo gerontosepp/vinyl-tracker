@@ -12,7 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.io.IOException;
+import com.antigravity.vinyltracker.exception.PdfGenerationException;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.*;
@@ -105,14 +105,16 @@ class CollectionControllerTest {
                 DiscogsDto.QrCodeRequest request = new DiscogsDto.QrCodeRequest();
                 request.setItems(List.of(new DiscogsDto.QrCodeItem(1L, "Title", "Artist")));
 
-                when(collectionService.generateSelectedQrCodesPdf(any())).thenThrow(new IOException("PDF Error"));
+                when(collectionService.generateSelectedQrCodesPdf(any())).thenThrow(new PdfGenerationException("PDF Error"));
 
                 mockMvc.perform(post("/api/collection/qr-codes/selected")
                                 .content(objectMapper.writeValueAsString(request))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .with(csrf()))
                                 .andExpect(status().isInternalServerError())
-                                .andExpect(content().contentType("application/problem+json"));
+                                .andExpect(content().contentType("application/problem+json"))
+                                .andExpect(jsonPath("$.title").value("PDF generation error"))
+                                .andExpect(jsonPath("$.detail").value("PDF Error"));
         }
 
         @Test
@@ -144,14 +146,16 @@ class CollectionControllerTest {
         @Test
         @WithMockUser(username = "testuser")
         void generateAllQrCodes_ShouldThrowException_WhenPdfServiceFails() throws Exception {
-                when(collectionService.generateAllQrCodesPdf(eq("testuser"))).thenThrow(new IOException("PDF Error"));
+                when(collectionService.generateAllQrCodesPdf(eq("testuser"))).thenThrow(new PdfGenerationException("PDF Error"));
 
                 Principal mockPrincipal = () -> "testuser";
 
                 mockMvc.perform(get("/api/collection/qr-codes/all")
                                 .principal(mockPrincipal))
                                 .andExpect(status().isInternalServerError())
-                                .andExpect(content().contentType("application/problem+json"));
+                                .andExpect(content().contentType("application/problem+json"))
+                                .andExpect(jsonPath("$.title").value("PDF generation error"))
+                                .andExpect(jsonPath("$.detail").value("PDF Error"));
         }
 
         @Test

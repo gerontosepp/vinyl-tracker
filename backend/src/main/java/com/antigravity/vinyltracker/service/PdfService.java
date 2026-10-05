@@ -1,5 +1,6 @@
 package com.antigravity.vinyltracker.service;
 
+import com.antigravity.vinyltracker.exception.PdfGenerationException;
 import com.antigravity.vinyltracker.model.discogs.DiscogsDto;
 import com.lowagie.text.*;
 import com.lowagie.text.pdf.PdfPCell;
@@ -8,7 +9,6 @@ import com.lowagie.text.pdf.PdfWriter;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.List;
 
 import lombok.RequiredArgsConstructor;
@@ -19,7 +19,7 @@ public class PdfService {
 
     private final QrCodeService qrCodeService;
 
-    public byte[] generateQrCodePdf(List<DiscogsDto.QrCodeItem> items) throws IOException {
+    public byte[] generateQrCodePdf(List<DiscogsDto.QrCodeItem> items) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
         try {
@@ -57,14 +57,16 @@ public class PdfService {
             document.add(table);
             document.close();
 
-        } catch (DocumentException e) {
-            throw new IOException("Error generating PDF", e);
+        } catch (PdfGenerationException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new PdfGenerationException("Error generating PDF", e);
         }
 
         return out.toByteArray();
     }
 
-    private PdfPCell createItemCell(DiscogsDto.QrCodeItem item) throws IOException, BadElementException {
+    private PdfPCell createItemCell(DiscogsDto.QrCodeItem item) throws Exception {
         PdfPCell cell = new PdfPCell();
         cell.setBorder(Rectangle.NO_BORDER);
         cell.setPadding(10);

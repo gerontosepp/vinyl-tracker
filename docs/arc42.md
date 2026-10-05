@@ -172,6 +172,7 @@ The system is deployed as a multi-container Docker application orchestrated by D
     - `DiscogsTokenException` (HTTP 422) for encryption and token-level issues.
     - `DiscogsApiException` (HTTP 502) for external API communication failures.
     - `CollectionSyncException` (HTTP 500) for batch synchronization errors.
+    - `PdfGenerationException` (HTTP 500) for PDF and QR code compilation failures.
 - Endpoint-specific failure paths in analytics endpoints are aligned to the same ProblemDetail structure.
 - Lightweight success responses for scan-related endpoints are returned as typed DTOs instead of ad-hoc maps, improving schema clarity across backend and frontend.
 

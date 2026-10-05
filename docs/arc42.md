@@ -202,10 +202,12 @@ The system is deployed as a multi-container Docker application orchestrated by D
 | **Tailwind CSS** | Utility-first CSS allows for rapid UI development and consistent design tokens without managing complex stylesheets. | Accepted |
 | **PostgreSQL** | Industry standard, robust relational database. Suitable for structured data like catalog entries. | Accepted |
 | **Flyway Migrations** | Replaced Hibernate `ddl-auto: update` with Flyway for reliable, versioned schema migrations in production. | Accepted |
+| **Modular Frontend Components** | Decomposed monolithic page components (such as `CollectionComponent`) into focused subcomponents with dedicated HTML templates and clear Angular Signal inputs/outputs to maintain low file complexity (< 350 lines). | Accepted |
 
 ## 10. Quality Requirements
 
-- **Test Coverage**: Strict requirement of >80% line coverage for both Backend (JaCoCo) and Frontend (Karma/Jasmine). Enforced by CI/CD.
+- **Test Coverage**: Strict requirement of >80% line coverage for both Backend (JaCoCo) and Frontend (Karma/Jasmine). Enforced in CI/CD via `karma.conf.js` global threshold checks and JaCoCo maven verification.
+- **End-to-End Testing**: Automated Playwright E2E test suite covering authentication, navigation, dashboard scanner access, and Discogs sync flows, executed on every PR/push in the CI pipeline.
 - **Dependency Hygiene**: Backend dependencies are checked in CI against Sonatype OSS Index; findings are reported to an audit artifact (`ossindex-audit.json`) with the current configuration set to non-blocking (`fail=false`).
 - **Test Execution Split**: Unit tests run via Surefire during `test`, while integration tests run via Failsafe during `verify`. This improves local feedback speed while keeping full validation in CI.
 - **Responsiveness**: The UI must adapt to mobile screens (< 768px) for usable barcode scanning on phones.

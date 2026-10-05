@@ -14,10 +14,22 @@ Kurze Uebersicht der Aenderungen je Version (abgeleitet aus Git-Tags und Commit-
   - Persistierung des Media-Formats in `record_cache` via Flyway-Migration `V4__add_format_to_record_cache.sql`.
   - Responsive Darstellung auf Desktop- und Mobilansicht inklusive interaktiver Hover-Tooltips für die Formatbeschreibungen (`LP (Vinyl)`, `Double LP (2xLP)`, `CD (Compact Disc)`).
   - Neue Sortieroption "Format, Künstler, Jahr" (`sort=format`) in Frontend und Backend.
+- **Security & Authentifizierung**:
+  - Per-IP Rate Limiting (Resilience4j) für alle öffentlichen Authentifizierungsendpunkte (`/api/users/login`, `/api/users/register`, `/api/users/reset-password`) mit konfigurierbarem Limit (`AUTH_RATE_LIMIT_FOR_PERIOD`, Standard: 10 Anfragen/Minute) und HTTP 429 `ProblemDetail`-Fehlerantworten.
+  - Verschärfte Passwort-Policy: Erhöhung der Mindestpasswortlänge von 6 auf 8 Zeichen in DTOs und Frontend-Formularen.
+- **Exception-Handling & Robustheit**:
+  - `PdfGenerationException` (HTTP 500) eingeführt; generische `RuntimeException` und `IOException` in Controllern und Services vollständig entfernt.
+- **Frontend-Architektur & Wartbarkeit**:
+  - Modulare Aufteilung der monolithischen `CollectionComponent` (von 1.374 auf 312 Zeilen) in fokussierte Standalone-Komponenten (`CollectionToolbarComponent`, `CollectionTableComponent`, `CollectionCardListComponent`, `RecordDetailModalComponent`, `FormatBadgeComponent`).
+  - Auslagerung der HTML-Templates in separate, syntax-validierte `.html`-Dateien.
+  - Reines Hilfsmodul `format-type.util.ts` für deterministische Formattyp-Erkennung.
+- **Test-Qualität & CI/CD-Pipelines**:
+  - Frontend-Coverage-Erzwingung via `karma.conf.js` mit striktem globalen Schwellwert von > 80 % (Statements, Lines, Branches, Functions).
+  - Ausführung von 12 Playwright E2E-Tests in der GitHub Actions CI-Pipeline (`ci.yml`) mit automatischem Browser-Setup und non-interaktivem Reporting.
+  - 145 Backend-Tests mit JaCoCo-Mindestabdeckung (> 80 %) und 64 Frontend-Unit-Tests erfolgreich.
 - **Backend-Architektur & Qualität**:
   - `ResourceNotFoundException` mit standardisierten RFC 7807 `ProblemDetail`-Antworten (HTTP 404).
   - `IllegalArgumentException`-Mapping auf HTTP 400 mit strukturierter Fehlerausgabe.
-  - 100% bestandene Backend-Tests (119 Tests) mit hoher Testabdeckung.
 - **Rust MCP Server Erweiterung**:
   - Werkzeugsatz auf 14 native Tools erweitert mit vollständiger Typisierung, DTO-Mapping und Unittests.
 - **Dependencies**:

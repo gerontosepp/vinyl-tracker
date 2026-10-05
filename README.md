@@ -164,15 +164,15 @@ cd frontend
 npm install
 npm test
 ```
-*Note: Tests enforce >80% code coverage for core services, utilities, and components.*
+*Note: Unit tests strictly enforce >80% code coverage via karma.conf.js for statements, lines, branches, and functions.*
 
 **Available NPM Scripts:**
 | Script | Description |
 | :--- | :--- |
 | `npm run dev` | Starts the Angular development server on port 5173 with proxy configuration |
 | `npm run build` | Builds the application for production |
-| `npm run test` | Runs unit tests (Karma/Jasmine) in headless mode |
-| `npm run test:e2e` | Runs end-to-end tests (Playwright) - requires local env running |
+| `npm run test` | Runs unit tests (Karma/Jasmine) in headless mode with code coverage enforcement |
+| `npm run test:e2e` | Runs end-to-end tests (Playwright) with automatic dev server bootstrap |
 
 Current high-risk regression coverage focuses on authentication, dashboard scanner access, and manual Discogs sync flows in Playwright plus backend negative-path tests for scan validation and ownership checks.
 
@@ -234,9 +234,10 @@ Create `~/.m2/settings.xml` with an `ossindex` server entry so Maven can use the
 The project includes GitHub Actions workflows:
 - **CI Pipeline** (`.github/workflows/ci.yml`):
   - Automatically builds and tests the Backend (Java 25/Maven).
-  - Builds and tests the Frontend (Node 20/Angular, Karma headless).
+  - Builds and tests the Frontend (Node 20/Angular, Karma headless with strict >80% coverage check via `karma.conf.js`).
+  - Runs Playwright end-to-end tests for all critical user workflows.
   - Builds and tests the MCP Server (Rust/Cargo, `rmcp`).
-  - Enforces >80% test coverage for both Frontend and Backend.
+  - Enforces >80% test coverage for both Frontend (Karma) and Backend (JaCoCo).
   - Runs the backend online dependency vulnerability audit through the `security-online` Maven profile.
   - Runs on push and pull requests for `main`, `master`, and `develop`, plus release tags `v*.*.*` (which triggers building and pushing Docker images to GHCR).
 - **Auto Release** (`.github/workflows/release.yml`):

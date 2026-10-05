@@ -17,16 +17,20 @@ Kurze Uebersicht der Aenderungen je Version (abgeleitet aus Git-Tags und Commit-
 - **Security & Authentifizierung**:
   - Per-IP Rate Limiting (Resilience4j) für alle öffentlichen Authentifizierungsendpunkte (`/api/users/login`, `/api/users/register`, `/api/users/reset-password`) mit konfigurierbarem Limit (`AUTH_RATE_LIMIT_FOR_PERIOD`, Standard: 10 Anfragen/Minute) und HTTP 429 `ProblemDetail`-Fehlerantworten.
   - Verschärfte Passwort-Policy: Erhöhung der Mindestpasswortlänge von 6 auf 8 Zeichen in DTOs und Frontend-Formularen.
-- **Exception-Handling & Robustheit**:
+  - Bereinigung des Authentifizierungsmodells: Überflüssiges separates `salt`-Feld aus `app_user` und `AppUser`-Entity entfernt (Flyway `V5__drop_salt_from_app_user.sql`), da BCrypt das Salt bereits selbst generiert und im Hash ablegt.
+- **API-Validierung & Exception-Handling**:
   - `PdfGenerationException` (HTTP 500) eingeführt; generische `RuntimeException` und `IOException` in Controllern und Services vollständig entfernt.
+  - `@Valid`-Absicherung für `POST /api/collection/qr-codes/selected` mit `@NotEmpty`, `@NotNull` und `@NotBlank` auf `QrCodeRequest` und `QrCodeItem`.
 - **Frontend-Architektur & Wartbarkeit**:
   - Modulare Aufteilung der monolithischen `CollectionComponent` (von 1.374 auf 312 Zeilen) in fokussierte Standalone-Komponenten (`CollectionToolbarComponent`, `CollectionTableComponent`, `CollectionCardListComponent`, `RecordDetailModalComponent`, `FormatBadgeComponent`).
   - Auslagerung der HTML-Templates in separate, syntax-validierte `.html`-Dateien.
   - Reines Hilfsmodul `format-type.util.ts` für deterministische Formattyp-Erkennung.
+  - Entfernung des veralteten Prototyp-Ordners `frontend_react/` und Bereinigung der `.gitignore`.
 - **Test-Qualität & CI/CD-Pipelines**:
   - Frontend-Coverage-Erzwingung via `karma.conf.js` mit striktem globalen Schwellwert von > 80 % (Statements, Lines, Branches, Functions).
   - Ausführung von 12 Playwright E2E-Tests in der GitHub Actions CI-Pipeline (`ci.yml`) mit automatischem Browser-Setup und non-interaktivem Reporting.
-  - 145 Backend-Tests mit JaCoCo-Mindestabdeckung (> 80 %) und 64 Frontend-Unit-Tests erfolgreich.
+  - GitHub Actions Workflow auf Node 24 vereinheitlicht (`setup-node` und `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24`).
+  - 146 Backend-Tests mit JaCoCo-Mindestabdeckung (> 80 %) und 64 Frontend-Unit-Tests erfolgreich.
 - **Backend-Architektur & Qualität**:
   - `ResourceNotFoundException` mit standardisierten RFC 7807 `ProblemDetail`-Antworten (HTTP 404).
   - `IllegalArgumentException`-Mapping auf HTTP 400 mit strukturierter Fehlerausgabe.

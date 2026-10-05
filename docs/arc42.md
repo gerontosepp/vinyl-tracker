@@ -159,12 +159,12 @@ The system is deployed as a multi-container Docker application orchestrated by D
 - **Authentication**: JWT-based authentication. Backend issues and verifies an HttpOnly auth cookie for normal request flows; frontend additionally supports `Authorization: Bearer` fallback when cookie propagation is not available.
 - **Rate Limiting & Brute-Force Protection**: Public authentication endpoints (`/api/users/login`, `/api/users/register`, `/api/users/reset-password`) are protected against brute-force attacks via Resilience4j `RateLimiter` (`AuthRateLimitingInterceptor` & `AuthRateLimiterService`). Limits are enforced per client IP (configurable via `AUTH_RATE_LIMIT_FOR_PERIOD`, default 10 requests/minute). Requests exceeding the limit immediately receive HTTP 429 (`TOO_MANY_REQUESTS`) formatted as RFC-7807 `ProblemDetail`.
 - **Data Protection**:
-    - User passwords are hashed with **BCrypt**.
+    - User passwords are hashed with **BCrypt** (which embeds a cryptographically secure random salt directly into the hash string; the redundant database `salt` column was removed in Flyway `V5`).
     - Sensitive external tokens (Discogs PAT) are encrypted using **AES-256** (via Spring Security Crypto) with a salt and key defined in environment variables.
 - **Dependency Security**: The backend provides an opt-in Maven profile `security-online` that audits dependencies against the Sonatype OSS Index online service during `verify`.
 
 ### 8.2 Validation
-- Input validation using Jakarta Validation API (`@Valid`, `@NotNull`, `@Size`, etc.).
+- Input validation using Jakarta Validation API (`@Valid`, `@NotNull`, `@NotBlank`, `@NotEmpty`, `@Size`, etc.) across all controllers and DTOs, including QR code generation requests (`QrCodeRequest`).
 - **Password Policy**: User passwords must be at least 8 characters long (up to 128), enforced in backend DTOs and frontend registration/reset forms.
 - Destructive user actions in the UI require an explicit confirmation step before the backend request is issued.
 
@@ -203,6 +203,8 @@ The system is deployed as a multi-container Docker application orchestrated by D
 | **PostgreSQL** | Industry standard, robust relational database. Suitable for structured data like catalog entries. | Accepted |
 | **Flyway Migrations** | Replaced Hibernate `ddl-auto: update` with Flyway for reliable, versioned schema migrations in production. | Accepted |
 | **Modular Frontend Components** | Decomposed monolithic page components (such as `CollectionComponent`) into focused subcomponents with dedicated HTML templates and clear Angular Signal inputs/outputs to maintain low file complexity (< 350 lines). | Accepted |
+| **BCrypt Self-Contained Salt** | Dropped redundant `salt` column from `app_user` (Flyway `V5`) since BCrypt handles salt generation internally. | Accepted |
+| **Node.js 24 CI Runtime** | Aligned GitHub Actions workflow runner and setup-node action to Node 24. | Accepted |
 
 ## 10. Quality Requirements
 

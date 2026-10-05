@@ -52,7 +52,7 @@ Einfach entpacken und den Pfad in deiner `mcp_config.json` eintragen.
 
 ### 1. Repository-Verzeichnis aufrufen
 ```bash
-cd /Users/opolm/develop/AntiGrafity/mcp
+cd mcp
 ```
 
 ### 2. Tests ausführen
@@ -66,7 +66,7 @@ cargo build --release
 ```
 Die erzeugte Binärdatei liegt anschließend unter:
 ```
-/Users/opolm/develop/AntiGrafity/mcp/target/release/vinyl-mcp-server
+./target/release/vinyl-mcp-server
 ```
 
 ---
@@ -95,10 +95,10 @@ Füge den Server in deine globale oder Workspace-spezifische MCP-Konfiguration e
 {
   "mcpServers": {
     "vinyl-tracker": {
-      "command": "/Users/opolm/develop/AntiGrafity/mcp/target/release/vinyl-mcp-server",
+      "command": "/path/to/vinyl-tracker/mcp/target/release/vinyl-mcp-server",
       "env": {
         "VINYL_API_URL": "http://localhost:8080",
-        "VINYL_USERNAME": "opolm",
+        "VINYL_USERNAME": "dein_benutzername",
         "VINYL_PASSWORD": "dein_passwort"
       }
     }
@@ -113,10 +113,10 @@ Bearbeite die Datei `~/Library/Application Support/Claude/claude_desktop_config.
 {
   "mcpServers": {
     "vinyl-tracker": {
-      "command": "/Users/opolm/develop/AntiGrafity/mcp/target/release/vinyl-mcp-server",
+      "command": "/path/to/vinyl-tracker/mcp/target/release/vinyl-mcp-server",
       "env": {
         "VINYL_API_URL": "http://localhost:8080",
-        "VINYL_USERNAME": "opolm",
+        "VINYL_USERNAME": "dein_benutzername",
         "VINYL_PASSWORD": "dein_passwort"
       }
     }
@@ -126,7 +126,7 @@ Bearbeite die Datei `~/Library/Application Support/Claude/claude_desktop_config.
 
 ### 3. Cursor / VS Code (Cline / Roo-Code)
 In den MCP-Einstellungen der jeweiligen Erweiterung hinzufügen:
-- **Command:** `/Users/opolm/develop/AntiGrafity/mcp/target/release/vinyl-mcp-server`
+- **Command:** `/path/to/vinyl-tracker/mcp/target/release/vinyl-mcp-server`
 - **Env:**
   - `VINYL_API_URL`: `http://localhost:8080`
   - `VINYL_USERNAME`: `dein_benutzername`

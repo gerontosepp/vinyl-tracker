@@ -54,4 +54,4 @@ cd ..
 
 ## 5. Documentation
 
-Update [`docs/arc42.md`](file:///home/opolm/develop/vinyl-tracker/docs/arc42.md) under Section 8 (Concepts / Persistence) and [`docs/Release-Info.md`](file:///home/opolm/develop/vinyl-tracker/docs/Release-Info.md) if the schema change introduces new domain models or alters existing relationships.
+Update [`docs/arc42.md`](../../../docs/arc42.md) under Section 8 (Concepts / Persistence) and [`docs/Release-Info.md`](../../../docs/Release-Info.md) if the schema change introduces new domain models or alters existing relationships.

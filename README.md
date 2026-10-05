@@ -264,7 +264,7 @@ Config snippet for Antigravity IDE / Claude Desktop (`mcp_config.json`):
 {
   "mcpServers": {
     "vinyl-tracker": {
-      "command": "/Users/opolm/develop/AntiGrafity/mcp/target/release/vinyl-mcp-server",
+      "command": "/path/to/vinyl-tracker/mcp/target/release/vinyl-mcp-server",
       "env": {
         "VINYL_API_URL": "http://localhost:8080",
         "VINYL_USERNAME": "your_user",

@@ -32,19 +32,19 @@ The following files **must** be updated synchronously:
 
 | Component / File | Field / Target Location |
 | :--- | :--- |
-| [`frontend/package.json`](file:///home/opolm/develop/vinyl-tracker/frontend/package.json) | `"version": "<NEW_VERSION>"` |
-| [`frontend/package-lock.json`](file:///home/opolm/develop/vinyl-tracker/frontend/package-lock.json) | `"version": "<NEW_VERSION>"` (root & packages[""]) |
-| [`top-menu-bar.component.ts`](file:///home/opolm/develop/vinyl-tracker/frontend/src/app/shared/components/layout/top-menu-bar/top-menu-bar.component.ts) | `readonly appVersion = '<NEW_VERSION>';` |
-| [`login.component.ts`](file:///home/opolm/develop/vinyl-tracker/frontend/src/app/features/auth/login/login.component.ts) | `v<NEW_VERSION>` badge |
-| [`register.component.ts`](file:///home/opolm/develop/vinyl-tracker/frontend/src/app/features/auth/register/register.component.ts) | `v<NEW_VERSION>` badge |
-| [`backend/pom.xml`](file:///home/opolm/develop/vinyl-tracker/backend/pom.xml) | `<version><NEW_VERSION></version>` |
-| [`README.md`](file:///home/opolm/develop/vinyl-tracker/README.md) | Header line 1 `# Vinyl Tracker v<NEW_VERSION>` and deploy examples |
-| [`docs/Release-Info.md`](file:///home/opolm/develop/vinyl-tracker/docs/Release-Info.md) | New section `## v<NEW_VERSION> (YYYY-MM-DD)` with change summary |
-| [`docs/DEPLOYMENT.md`](file:///home/opolm/develop/vinyl-tracker/docs/DEPLOYMENT.md) | Example version string update (if applicable) |
-| [`deploy_proxmox.sh`](file:///home/opolm/develop/vinyl-tracker/deploy_proxmox.sh) | Example version string in header comment |
+| [`frontend/package.json`](../../../frontend/package.json) | `"version": "<NEW_VERSION>"` |
+| [`frontend/package-lock.json`](../../../frontend/package-lock.json) | `"version": "<NEW_VERSION>"` (root & packages[""]) |
+| [`top-menu-bar.component.ts`](../../../frontend/src/app/shared/components/layout/top-menu-bar/top-menu-bar.component.ts) | `readonly appVersion = '<NEW_VERSION>';` |
+| [`login.component.ts`](../../../frontend/src/app/features/auth/login/login.component.ts) | `v<NEW_VERSION>` badge |
+| [`register.component.ts`](../../../frontend/src/app/features/auth/register/register.component.ts) | `v<NEW_VERSION>` badge |
+| [`backend/pom.xml`](../../../backend/pom.xml) | `<version><NEW_VERSION></version>` |
+| [`README.md`](../../../README.md) | Header line 1 `# Vinyl Tracker v<NEW_VERSION>` and deploy examples |
+| [`docs/Release-Info.md`](../../../docs/Release-Info.md) | New section `## v<NEW_VERSION> (YYYY-MM-DD)` with change summary |
+| [`docs/DEPLOYMENT.md`](../../../docs/DEPLOYMENT.md) | Example version string update (if applicable) |
+| [`deploy_proxmox.sh`](../../../deploy_proxmox.sh) | Example version string in header comment |
 
 ### Option A: Using the Automated Script
-Execute [`release.sh`](file:///home/opolm/develop/vinyl-tracker/release.sh):
+Execute [`release.sh`](../../../release.sh):
 ```bash
 ./release.sh
 ```
@@ -59,7 +59,7 @@ cd ..
 
 ## 3. Documentation Sync
 
-Always add a new release entry at the top of [`docs/Release-Info.md`](file:///home/opolm/develop/vinyl-tracker/docs/Release-Info.md) directly below `## Unreleased`:
+Always add a new release entry at the top of [`docs/Release-Info.md`](../../../docs/Release-Info.md) directly below `## Unreleased`:
 
 ```markdown
 ## v<NEW_VERSION> (YYYY-MM-DD)

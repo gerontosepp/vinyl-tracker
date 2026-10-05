@@ -108,6 +108,9 @@ jobs:
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps chromium
 
+    - name: Ensure Development Certificates
+      run: node scripts/ensure-certs.js
+
     - name: Run Playwright E2E Tests
       run: npm run test:e2e
 

@@ -29,6 +29,7 @@ Kurze Uebersicht der Aenderungen je Version (abgeleitet aus Git-Tags und Commit-
 - **Test-Qualität & CI/CD-Pipelines**:
   - Frontend-Coverage-Erzwingung via `karma.conf.js` mit striktem globalen Schwellwert von > 80 % (Statements, Lines, Branches, Functions).
   - Ausführung von 12 Playwright E2E-Tests in der GitHub Actions CI-Pipeline (`ci.yml`) mit automatischem Browser-Setup und non-interaktivem Reporting.
+  - Automatisierte Generierung von Entwicklungs-SSL-Zertifikaten (`ensure-certs.js`) für `ng serve`, um ENOENT-Fehler in frischen CI- und Headless-Testumgebungen zu verhindern.
   - GitHub Actions Workflow auf Node 24 vereinheitlicht (`setup-node` und `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24`).
   - 146 Backend-Tests mit JaCoCo-Mindestabdeckung (> 80 %) und 64 Frontend-Unit-Tests erfolgreich.
 - **Backend-Architektur & Qualität**:

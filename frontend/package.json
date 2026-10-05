@@ -4,10 +4,12 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
+    "predev": "node scripts/ensure-certs.js",
     "dev": "ng serve --port 5173",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
+    "pretest:e2e": "node scripts/ensure-certs.js",
     "test:e2e": "playwright test"
   },
   "private": true,

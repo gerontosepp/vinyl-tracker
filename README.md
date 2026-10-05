@@ -149,7 +149,7 @@ The application requires environment variables for configuration (database crede
 2. **Discogs Integration**: 
    - Go to **Settings**.
    - Enter your Discogs Username.
-   - Enter your Discogs Personal Access Token (generate at Discogs -> Settings -> Developers).
+   - Enter your Discogs Personal Access Token (generate at [Discogs Settings -> Developers](https://www.discogs.com/settings/developers)).
    - Your token is securely encrypted using your login password.
 
 ## Development & Testing

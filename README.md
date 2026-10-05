@@ -234,7 +234,7 @@ Create `~/.m2/settings.xml` with an `ossindex` server entry so Maven can use the
 The project includes GitHub Actions workflows:
 - **CI Pipeline** (`.github/workflows/ci.yml`):
   - Automatically builds and tests the Backend (Java 25/Maven).
-  - Builds and tests the Frontend (Node 20/Angular, Karma headless with strict >80% coverage check via `karma.conf.js`).
+  - Builds and tests the Frontend (Node 24/Angular, Karma headless with strict >80% coverage check via `karma.conf.js`).
   - Runs Playwright end-to-end tests for all critical user workflows.
   - Builds and tests the MCP Server (Rust/Cargo, `rmcp`).
   - Enforces >80% test coverage for both Frontend (Karma) and Backend (JaCoCo).

@@ -1,0 +1,142 @@
+<div
+  class="hidden md:block bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-600 shadow-sm overflow-hidden"
+>
+  <table class="w-full text-left border-collapse">
+    <thead
+      class="bg-slate-50/80 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-600 text-xs uppercase text-slate-500 dark:text-slate-400 font-semibold sticky top-0 z-10 backdrop-blur-md"
+    >
+      <tr>
+        <th class="px-4 py-4 w-12 text-center">
+          <button
+            (click)="toggleSelectAll.emit()"
+            class="hover:text-indigo-500 transition-colors cursor-pointer"
+          >
+            @if (isAllPageSelected()) {
+              <svg lucideCheckSquare size="16" class="text-indigo-505 mx-auto"></svg>
+            } @else {
+              <svg lucideSquare size="16" class="mx-auto"></svg>
+            }
+          </button>
+        </th>
+        <th class="px-4 py-4 w-16">{{ 'collection.thCover' | translate }}</th>
+        <th class="px-3 py-4 w-20 text-center">{{ 'collection.thFormat' | translate }}</th>
+        <th class="px-4 py-4">{{ 'collection.thArtist' | translate }}</th>
+        <th class="px-4 py-4">{{ 'collection.thTitle' | translate }}</th>
+        <th class="px-4 py-4">{{ 'collection.thGenre' | translate }}</th>
+        <th class="px-4 py-4">{{ 'collection.thYear' | translate }}</th>
+        <th class="px-4 py-4">{{ 'collection.thPlays' | translate }}</th>
+        <th class="px-4 py-4 text-right">{{ 'collection.thLink' | translate }}</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50">
+      @for (release of releases(); track release.id) {
+        <tr
+          (click)="toggleSelection.emit(release)"
+          [class]="
+            'group transition-all duration-200 cursor-pointer ' +
+            (selectedItems().has(release.id)
+              ? 'bg-indigo-50/50 dark:bg-indigo-900/20'
+              : 'hover:bg-slate-50 dark:hover:bg-slate-700/30')
+          "
+        >
+          <td class="px-4 py-3 text-center">
+            @if (selectedItems().has(release.id)) {
+              <svg
+                lucideCheckSquare
+                class="text-indigo-500 dark:text-indigo-400 mx-auto"
+                [size]="18"
+              ></svg>
+            } @else {
+              <svg
+                lucideSquare
+                class="text-slate-300 dark:text-slate-600 group-hover:text-slate-400 mx-auto transition-colors"
+                [size]="18"
+              ></svg>
+            }
+          </td>
+          <td class="px-4 py-3">
+            <div
+              (click)="$event.stopPropagation(); openDetail.emit(release)"
+              class="w-10 h-10 rounded-md bg-slate-100 dark:bg-slate-700 overflow-hidden shadow-button cursor-pointer hover:ring-2 hover:ring-indigo-500 transition-all"
+              title="Details anzeigen"
+            >
+              @if (release.basic_information.thumb) {
+                <img
+                  [src]="apiService.getProxiedImageUrl(release.basic_information.thumb)"
+                  alt=""
+                  class="w-full h-full object-cover"
+                />
+              } @else {
+                <div class="w-full h-full flex items-center justify-center text-xs opacity-50">
+                  💿
+                </div>
+              }
+            </div>
+          </td>
+          <td class="px-3 py-3 text-center">
+            <app-format-badge [format]="getFormatType(release)" />
+          </td>
+          <td class="px-4 py-3 font-semibold text-slate-900 dark:text-slate-100">
+            {{ release.basic_information.artists.length > 0 ? release.basic_information.artists[0].name : 'Unknown' }}
+          </td>
+          <td
+            class="px-4 py-3 text-slate-600 dark:text-slate-300 truncate max-w-[200px]"
+            [title]="release.basic_information.title"
+          >
+            <button
+              type="button"
+              (click)="$event.stopPropagation(); openDetail.emit(release)"
+              class="text-left font-medium hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline truncate max-w-full cursor-pointer focus:outline-none"
+            >
+              {{ release.basic_information.title }}
+            </button>
+          </td>
+          <td class="px-4 py-3">
+            @if (release.basic_information.genres && release.basic_information.genres.length > 0) {
+              <div class="flex flex-wrap gap-1 max-w-[200px]">
+                @for (genre of release.basic_information.genres.slice(0, 2); track genre) {
+                  <span
+                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/50"
+                  >
+                    {{ genre }}
+                  </span>
+                }
+                @if (release.basic_information.genres.length > 2) {
+                  <span
+                    class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400"
+                    [title]="release.basic_information.genres.slice(2).join(', ')"
+                  >
+                    +{{ release.basic_information.genres.length - 2 }}
+                  </span>
+                }
+              </div>
+            } @else {
+              <span class="text-slate-400 dark:text-slate-500 text-sm">—</span>
+            }
+          </td>
+          <td class="px-4 py-3 text-slate-500 dark:text-slate-400 text-sm">
+            {{ release.basic_information.year || '—' }}
+          </td>
+          <td class="px-4 py-3">
+            <span
+              class="inline-flex items-center justify-center px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 shadow-sm border border-slate-200 dark:border-slate-700"
+            >
+              {{ release.listen_count || 0 }}
+            </span>
+          </td>
+          <td class="px-4 py-3 text-right">
+            <a
+              [href]="'https://www.discogs.com/release/' + release.id"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="p-1.5 rounded-lg text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-all inline-flex"
+              (click)="$event.stopPropagation()"
+            >
+              <svg lucideExternalLink [size]="16"></svg>
+            </a>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,402 @@
+@if (record()) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in"
+    (click)="close.emit()"
+  >
+    <div
+      class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-scale-up"
+      (click)="$event.stopPropagation()"
+    >
+      <!-- Modal Header -->
+      <div
+        class="p-5 border-b border-slate-100 dark:border-slate-700/60 flex items-start justify-between gap-4"
+      >
+        <div class="flex items-center gap-4 min-w-0">
+          <div
+            class="w-16 h-16 rounded-xl bg-slate-100 dark:bg-slate-700 overflow-hidden shadow-sm shrink-0"
+          >
+            @if (record()?.basic_information?.thumb) {
+              <img
+                [src]="apiService.getProxiedImageUrl(record()!.basic_information.thumb)"
+                alt=""
+                class="w-full h-full object-cover"
+              />
+            } @else {
+              <div
+                class="w-full h-full flex items-center justify-center text-xl opacity-50"
+              >
+                💿
+              </div>
+            }
+          </div>
+          <div class="min-w-0">
+            <h2
+              class="text-lg md:text-xl font-bold text-slate-900 dark:text-slate-100 truncate"
+            >
+              {{ record()?.basic_information?.title }}
+            </h2>
+            <p
+              class="text-sm font-medium text-slate-600 dark:text-slate-400 truncate"
+            >
+              {{
+                record()?.basic_information?.artists?.[0]?.name ||
+                  'Unknown Artist'
+              }}
+              @if (record()?.basic_information?.year) {
+                • {{ record()?.basic_information?.year }}
+              }
+            </p>
+          </div>
+        </div>
+        <button
+          (click)="close.emit()"
+          class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer shrink-0"
+          title="Schließen"
+        >
+          <svg lucideX [size]="20"></svg>
+        </button>
+      </div>
+
+      <!-- Modal Body (Scrollable) -->
+      <div class="p-6 overflow-y-auto space-y-6 text-sm">
+        @if (loading()) {
+          <div
+            class="flex flex-col items-center justify-center py-12 gap-3 text-slate-400"
+          >
+            <div
+              class="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"
+            ></div>
+            <span>Lade Details aus Datenbank...</span>
+          </div>
+        } @else if (detail()) {
+          <!-- Key Stats Grid -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div
+              class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700/50"
+            >
+              <div
+                class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500"
+              >
+                Wert / Mindestpreis
+              </div>
+              <div
+                class="text-lg font-bold text-emerald-600 dark:text-emerald-400 mt-0.5"
+              >
+                {{
+                  detail()?.lowest_price != null
+                    ? (detail()?.lowest_price
+                      | currency: 'EUR' : 'symbol' : '1.2-2')
+                    : '—'
+                }}
+              </div>
+              @if (detail()?.num_for_sale != null) {
+                <div class="text-[11px] text-slate-400">
+                  {{ detail()?.num_for_sale }} auf Discogs
+                </div>
+              }
+            </div>
+
+            <div
+              class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700/50"
+            >
+              <div
+                class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500"
+              >
+                Plays
+              </div>
+              <div
+                class="text-lg font-bold text-indigo-600 dark:text-indigo-400 mt-0.5"
+              >
+                {{ detail()?.listen_count || 0 }}
+              </div>
+              <div class="text-[11px] text-slate-400">
+                {{
+                  detail()?.last_listened_at
+                    ? (detail()?.last_listened_at | date: 'shortDate')
+                    : 'Nie'
+                }}
+              </div>
+            </div>
+
+            <div
+              class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700/50"
+            >
+              <div
+                class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500"
+              >
+                Discogs ID
+              </div>
+              <div
+                class="text-lg font-bold text-slate-800 dark:text-slate-200 mt-0.5"
+              >
+                #{{ detail()?.discogs_id }}
+              </div>
+              <div class="text-[11px] text-slate-400">
+                DB ID: {{ detail()?.id }}
+              </div>
+            </div>
+
+            <div
+              class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700/50"
+            >
+              <div
+                class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500"
+              >
+                Hinzugefügt am
+              </div>
+              <div
+                class="text-sm font-semibold text-slate-800 dark:text-slate-200 mt-1"
+              >
+                {{
+                  detail()?.added_at
+                    ? (detail()?.added_at | date: 'mediumDate')
+                    : '—'
+                }}
+              </div>
+              <div class="text-[11px] text-slate-400">
+                {{ detail()?.country || 'Land unbekannt' }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Details Section -->
+          <div class="space-y-3">
+            <h3
+              class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500"
+            >
+              Metadaten
+            </h3>
+            <div
+              class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs bg-slate-50 dark:bg-slate-900/40 p-3 rounded-xl border border-slate-100 dark:border-slate-700/40"
+            >
+              <div>
+                <span class="text-slate-400">Künstler:</span>
+                <strong class="text-slate-700 dark:text-slate-200 ml-1">{{
+                  detail()?.artist
+                }}</strong>
+              </div>
+              <div>
+                <span class="text-slate-400">Album:</span>
+                <strong class="text-slate-700 dark:text-slate-200 ml-1">{{
+                  detail()?.title
+                }}</strong>
+              </div>
+              <div>
+                <span class="text-slate-400">Erscheinungsjahr:</span>
+                <strong class="text-slate-700 dark:text-slate-200 ml-1">{{
+                  detail()?.year || '—'
+                }}</strong>
+              </div>
+              <div>
+                <span class="text-slate-400">Veröffentlichung:</span>
+                <strong class="text-slate-700 dark:text-slate-200 ml-1">{{
+                  detail()?.released || '—'
+                }}</strong>
+              </div>
+              <div>
+                <span class="text-slate-400">Land:</span>
+                <strong class="text-slate-700 dark:text-slate-200 ml-1">{{
+                  detail()?.country || '—'
+                }}</strong>
+              </div>
+              <div>
+                <span class="text-slate-400">Zuletzt gehört:</span>
+                <strong class="text-slate-700 dark:text-slate-200 ml-1">{{
+                  detail()?.last_listened_at
+                    ? (detail()?.last_listened_at | date: 'medium')
+                    : 'Noch nie'
+                }}</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Genres -->
+          @if ((detail()?.genres?.length || 0) > 0) {
+            <div class="space-y-2">
+              <h3
+                class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500"
+              >
+                Genre
+              </h3>
+              <div class="flex flex-wrap gap-1.5">
+                @for (genre of detail()?.genres; track genre) {
+                  <span
+                    class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/50"
+                  >
+                    {{ genre }}
+                  </span>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Formats & Labels -->
+          @if (
+            (detail()?.formats?.length || 0) > 0 ||
+            (detail()?.labels?.length || 0) > 0
+          ) {
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              @if ((detail()?.formats?.length || 0) > 0) {
+                <div>
+                  <h3
+                    class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2"
+                  >
+                    Formate
+                  </h3>
+                  <div class="space-y-1">
+                    @for (
+                      fmt of detail()?.formats;
+                      track fmt.name
+                    ) {
+                      <div class="text-xs text-slate-700 dark:text-slate-300">
+                        <span class="font-semibold"
+                          >{{ fmt.qty }}x {{ fmt.name }}</span
+                        >
+                        @if (
+                          fmt.descriptions &&
+                          fmt.descriptions.length > 0
+                        ) {
+                          <span class="text-slate-400">
+                            ({{ fmt.descriptions.join(', ') }})</span
+                          >
+                        }
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+              @if ((detail()?.labels?.length || 0) > 0) {
+                <div>
+                  <h3
+                    class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2"
+                  >
+                    Labels / Katalog-Nr.
+                  </h3>
+                  <div class="space-y-1">
+                    @for (lbl of detail()?.labels; track lbl.id) {
+                      <div class="text-xs text-slate-700 dark:text-slate-300">
+                        <span class="font-semibold">{{ lbl.name }}</span>
+                        @if (lbl.catno) {
+                          <span class="text-slate-400">
+                            • {{ lbl.catno }}</span
+                          >
+                        }
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Tracklist -->
+          @if ((detail()?.tracklist?.length || 0) > 0) {
+            <div class="space-y-2">
+              <h3
+                class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500"
+              >
+                Trackliste
+              </h3>
+              <div
+                class="divide-y divide-slate-100 dark:divide-slate-700/50 border border-slate-100 dark:border-slate-700/50 rounded-xl overflow-hidden max-h-48 overflow-y-auto"
+              >
+                @for (
+                  track of detail()?.tracklist;
+                  track $index
+                ) {
+                  <div
+                    class="flex items-center justify-between px-3 py-1.5 text-xs hover:bg-slate-50 dark:hover:bg-slate-700/30"
+                  >
+                    <div class="flex items-center gap-2 truncate">
+                      <span
+                        class="w-6 font-mono text-slate-400 shrink-0"
+                        >{{ track.position || $index + 1 }}</span
+                      >
+                      <span
+                        class="font-medium text-slate-700 dark:text-slate-200 truncate"
+                        >{{ track.title }}</span
+                      >
+                    </div>
+                    @if (track.duration) {
+                      <span
+                        class="text-slate-400 font-mono ml-2 shrink-0"
+                        >{{ track.duration }}</span
+                      >
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Listen History from DB -->
+          @if ((detail()?.listen_history?.length || 0) > 0) {
+            <div class="space-y-2">
+              <h3
+                class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500"
+              >
+                Wiedergabeverlauf ({{
+                  detail()?.listen_history?.length
+                }})
+              </h3>
+              <div class="space-y-1 max-h-32 overflow-y-auto">
+                @for (
+                  timestamp of detail()?.listen_history;
+                  track timestamp
+                ) {
+                  <div
+                    class="text-xs text-slate-600 dark:text-slate-400 flex items-center gap-2"
+                  >
+                    <span
+                      class="w-1.5 h-1.5 rounded-full bg-indigo-500"
+                    ></span>
+                    {{ timestamp | date: 'medium' }}
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Notes -->
+          @if (detail()?.notes) {
+            <div class="space-y-1">
+              <h3
+                class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500"
+              >
+                Notizen
+              </h3>
+              <p
+                class="text-xs text-slate-600 dark:text-slate-400 italic bg-slate-50 dark:bg-slate-900/30 p-2.5 rounded-lg border border-slate-100 dark:border-slate-700/30"
+              >
+                {{ detail()?.notes }}
+              </p>
+            </div>
+          }
+        }
+      </div>
+
+      <!-- Modal Footer -->
+      <div
+        class="p-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between"
+      >
+        <a
+          [href]="
+            'https://www.discogs.com/release/' + record()?.id
+          "
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors"
+        >
+          <svg lucideExternalLink [size]="14"></svg>
+          Auf Discogs öffnen
+        </a>
+        <button
+          (click)="close.emit()"
+          class="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+        >
+          Schließen
+        </button>
+      </div>
+    </div>
+  </div>
+}

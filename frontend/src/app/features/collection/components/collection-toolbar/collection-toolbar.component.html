@@ -1,0 +1,188 @@
+<!-- Header / Actions -->
+<div
+  class="p-5 md:p-6 border-b border-slate-100 dark:border-slate-600 flex flex-col md:flex-row justify-between items-center gap-4"
+>
+  <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+    {{ 'collection.title' | translate }}
+  </h1>
+
+  <div class="flex gap-3 w-full md:w-auto">
+    <button
+      (click)="downloadSelected.emit()"
+      [disabled]="selectedCount() === 0 || generating()"
+      [class]="
+        'flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer ' +
+        (selectedCount() > 0
+          ? 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md hover:-translate-y-0.5'
+          : 'bg-slate-100 text-slate-400 dark:bg-slate-700/50 dark:text-slate-500 cursor-not-allowed')
+      "
+    >
+      <svg lucideDownload [size]="18"></svg>
+      {{ 'collection.selectedQr' | translate: { count: selectedCount() } }}
+    </button>
+    <button
+      (click)="downloadAll.emit()"
+      [disabled]="generating()"
+      class="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-slate-100 dark:bg-slate-700/50 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+    >
+      <svg lucideDownload [size]="18"></svg>
+      {{ 'collection.downloadQr' | translate }}
+    </button>
+  </div>
+</div>
+
+<!-- Controls & Pagination Top -->
+<div
+  class="sticky top-0 z-20 p-3 sm:p-4 md:px-6 bg-slate-50/80 dark:bg-slate-900/70 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-600 text-sm transition-colors shadow-sm"
+>
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <!-- Left Group: Search & Filter Toggles -->
+    <div class="flex flex-wrap items-center gap-2.5 sm:gap-3 flex-1 min-w-0">
+      <!-- Search Bar -->
+      <div class="relative group flex-1 min-w-[180px] max-w-xs md:max-w-sm shrink-0">
+        <svg
+          lucideSearch
+          [size]="16"
+          class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 group-focus-within:text-indigo-500 transition-colors"
+        ></svg>
+        <input
+          type="text"
+          [placeholder]="'collection.searchPlaceholder' | translate"
+          [ngModel]="search()"
+          (ngModelChange)="onSearchInput($event)"
+          class="pl-9 pr-8 py-1.5 border border-slate-200 dark:border-slate-600 rounded-xl bg-white/70 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all duration-300 backdrop-blur-sm shadow-sm"
+        />
+        @if (search()) {
+          <button
+            (click)="clearSearch.emit()"
+            class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-1 cursor-pointer"
+          >
+            <svg lucideX [size]="14"></svg>
+          </button>
+        }
+      </div>
+
+      <!-- Filter Toggles -->
+      <div class="flex items-center gap-2 shrink-0">
+        <button
+          (click)="toggleSelectAllPage.emit()"
+          class="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium transition-colors cursor-pointer px-2 py-1.5 rounded-lg hover:bg-white dark:hover:bg-slate-800"
+        >
+          @if (isAllPageSelected()) {
+            <svg lucideCheckSquare class="text-indigo-600 dark:text-indigo-400" [size]="18"></svg>
+          } @else {
+            <svg lucideSquare [size]="18"></svg>
+          }
+          <span class="whitespace-nowrap">{{ 'collection.selectPage' | translate }}</span>
+        </button>
+
+        <button
+          (click)="toggleShowPlayedOnly.emit()"
+          [class]="
+            'flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all duration-200 cursor-pointer ' +
+            (showPlayedOnly()
+              ? 'bg-indigo-50 dark:bg-indigo-900/40 border-indigo-200 dark:border-indigo-800/50 text-indigo-800 dark:text-indigo-300'
+              : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm')
+          "
+        >
+          <span class="font-semibold whitespace-nowrap">{{ 'collection.playedOnly' | translate }}</span>
+          @if (showPlayedOnly()) {
+            <span
+              class="text-[10px] font-bold bg-indigo-200 dark:bg-indigo-800 text-indigo-800 dark:text-indigo-200 px-1.5 py-0.5 rounded-full"
+              >ON</span
+            >
+          }
+        </button>
+      </div>
+    </div>
+
+    <!-- Right Group: Sort & Pagination in one fluid line -->
+    <div class="flex items-center gap-2.5 sm:gap-3 shrink-0">
+      <!-- Sort Controls -->
+      <div class="flex items-center gap-1.5 shrink-0">
+        <span class="text-slate-500 dark:text-slate-400 font-medium hidden md:inline text-xs sm:text-sm">
+          {{ 'collection.sortBy' | translate }}
+        </span>
+        <select
+          [ngModel]="sort()"
+          (ngModelChange)="onSortSelect($event)"
+          class="border border-slate-200 dark:border-slate-600 rounded-xl py-1.5 px-2 bg-white/70 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100 shadow-sm font-medium focus:ring-2 focus:ring-indigo-500/50 outline-none backdrop-blur-sm cursor-pointer hover:bg-white dark:hover:bg-slate-800 transition-all duration-200 text-xs sm:text-sm"
+        >
+          <option value="artist">{{ 'collection.sortArtistYear' | translate }}</option>
+          <option value="year">{{ 'collection.sortYearArtist' | translate }}</option>
+          <option value="format">{{ 'collection.sortFormatArtistYear' | translate }}</option>
+          <option value="listens">{{ 'collection.sortListensArtistYear' | translate }}</option>
+        </select>
+        <button
+          (click)="sortOrderToggle.emit()"
+          class="p-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 shadow-sm transition-colors cursor-pointer shrink-0"
+          [title]="sortOrder() === 'asc' ? 'Aufsteigend' : 'Absteigend'"
+        >
+          @if (sortOrder() === 'asc') {
+            <svg lucideArrowUp [size]="16"></svg>
+          } @else {
+            <svg lucideArrowDown [size]="16"></svg>
+          }
+        </button>
+      </div>
+
+      <div class="hidden xl:block h-5 w-px bg-slate-200 dark:bg-slate-700 shrink-0"></div>
+
+      <!-- Discogs Status -->
+      @if (!loading() && loadStatus()) {
+        <div
+          class="hidden 2xl:inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400 truncate max-w-[14rem]"
+          role="status"
+          aria-live="polite"
+          [title]="'Discogs-Status: ' + loadStatus()"
+        >
+          <span
+            [class]="
+              'h-2 w-2 rounded-full shrink-0 ' +
+              (loadStatus().includes('Error')
+                ? 'bg-red-500 dark:bg-red-400'
+                : 'bg-emerald-500 dark:emerald-400')
+            "
+          ></span>
+          <span class="truncate">Discogs: {{ loadStatus() }}</span>
+        </div>
+      }
+
+      <div class="h-5 w-px bg-slate-200 dark:bg-slate-700 shrink-0"></div>
+
+      <!-- Pagination Controls -->
+      <div class="flex items-center gap-2 sm:gap-2.5 shrink-0">
+        <select
+          [ngModel]="perPage()"
+          (ngModelChange)="onPerPageSelect($event)"
+          class="border border-slate-200 dark:border-slate-600 rounded-xl py-1.5 px-2 bg-white/70 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100 shadow-sm font-medium focus:ring-2 focus:ring-indigo-500/50 outline-none backdrop-blur-sm cursor-pointer hover:bg-white dark:hover:bg-slate-800 transition-all duration-200 text-xs sm:text-sm"
+        >
+          <option [value]="20">{{ 'collection.perPage' | translate: { count: 20 } }}</option>
+          <option [value]="30">{{ 'collection.perPage' | translate: { count: 30 } }}</option>
+          <option [value]="40">{{ 'collection.perPage' | translate: { count: 40 } }}</option>
+          <option [value]="50">{{ 'collection.perPage' | translate: { count: 50 } }}</option>
+          <option [value]="100">{{ 'collection.maxPerPage' | translate }}</option>
+        </select>
+        <span class="text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap text-xs sm:text-sm">
+          {{ 'collection.pageOf' | translate: { page: page(), total: totalPages() } }}
+        </span>
+        <div class="flex gap-1 shrink-0">
+          <button
+            [disabled]="page() <= 1"
+            (click)="prevPage.emit()"
+            class="p-1 px-2 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-white dark:hover:bg-slate-700 bg-transparent text-slate-600 dark:text-slate-300 disabled:opacity-40 transition-colors shadow-sm cursor-pointer text-xs sm:text-sm"
+          >
+            &lt;
+          </button>
+          <button
+            [disabled]="page() >= totalPages()"
+            (click)="nextPage.emit()"
+            class="p-1 px-2 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-white dark:hover:bg-slate-700 bg-transparent text-slate-600 dark:text-slate-300 disabled:opacity-40 transition-colors shadow-sm cursor-pointer text-xs sm:text-sm"
+          >
+            &gt;
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -13,7 +13,7 @@ Die Zielmaschine benötigt:
 Die Zielmaschine benötigt Zugriff auf die Docker Images. Sie haben zwei Möglichkeiten:
 
 ### Option A: Automatisiert via CI/CD (Empfohlen)
-Dieses Projekt ist mit GitHub Actions so konfiguriert, dass es automatisch Images baut und in die **GitHub Container Registry (GHCR)** pusht, sobald ein neues Release erstellt wird.
+Dieses Projekt ist mit GitHub Actions so konfiguriert, dass es automatisch Images baut und in die **GitHub Container Registry (GHCR)** pusht, sobald Änderungen in den `main`-Branch gemergt werden oder ein Release-Tag erstellt wird.
 
 Voraussetzung für den Backend-Build in CI ist zusätzlich ein Online-Dependency-Scan via Sonatype OSS Index. Dafür müssen im GitHub-Repository diese **Actions Secrets** gesetzt sein:
 - `OSSINDEX_USERNAME`
@@ -22,15 +22,17 @@ Voraussetzung für den Backend-Build in CI ist zusätzlich ein Online-Dependency
 Zusätzlich wird der Backend-Job mit `mvn clean verify -Psecurity-online` ausgeführt. Dabei laufen Unit-Tests (Surefire) und Integrationstests (Failsafe). In CI wird für den Integrations-Shutdown explizit ein robuster Timeout gesetzt:
 - `-Dtest.integration.forkedProcessExitTimeoutInSeconds=120`
 
-1.  Mergen Sie Ihre fertigen Features aus `develop` in den `main` Branch.
-2.  Erstellen Sie auf GitHub ein **neues Release** (z.B. `v1.7.0`), das auf den `main` Branch zeigt.
-3.  Warten Sie, bis die "CI Pipeline" für dieses Tag erfolgreich abgeschlossen ist.
-4.  Die Images sind dann mit dem entsprechenden Versions-Tag sowie als `latest` verfügbar unter:
-    - `ghcr.io/<ihr-benutzername>/vinyl-tracker-backend:latest` (oder `:v1.7.0`)
-    - `ghcr.io/<ihr-benutzername>/vinyl-tracker-frontend:latest` (oder `:v1.7.0`)
+1.  Mergen Sie Ihre fertigen Features aus `develop` in den `main` Branch (oder erstellen Sie ein Release-Tag).
+2.  Die GitHub Actions "CI Pipeline" baut und testet das Projekt vollautomatisch.
+3.  Die Images stehen öffentlich (**Public**) unter folgenden Adressen bereit:
+    - `ghcr.io/gerontosepp/vinyl-tracker-backend:latest` (oder z.B. `:v2.4.1`)
+    - `ghcr.io/gerontosepp/vinyl-tracker-frontend:latest` (oder z.B. `:v2.4.1`)
+
+> [!NOTE]
+> Die Docker-Images sind in der GitHub Container Registry öffentlich zugänglich (**Public**). Sie können auf jedem Server direkt ohne Authentifizierung (`docker login` oder Personal Access Token) heruntergeladen werden.
 
 ### Option B: Manueller Build
-Wenn Sie die Images manuell von Ihrem Entwicklungsrechner pushen möchten:
+Wenn Sie die Images manuell von Ihrem Entwicklungsrechner bauen und pushen möchten:
 
 1.  **Beim Registry-Anbieter einloggen**:
     ```bash
@@ -38,7 +40,7 @@ Wenn Sie die Images manuell von Ihrem Entwicklungsrechner pushen möchten:
     ```
 2.  **Das Build & Push Skript ausführen**:
     ```bash
-    # Ersetzen Sie 'meinbenutzer/' durch Ihren Docker Hub Benutzernamen oder die Registry-URL
+    # Ersetzen Sie 'meinbenutzer/' durch Ihren Docker Hub Benutzernamen oder Ihre Registry-URL
     ./push-images.sh meinbenutzer/
     ```
 
@@ -52,8 +54,8 @@ Sie benötigen lediglich **zwei Dateien** auf der Zielmaschine (plus Zertifikate
 Sie können diese Dateien herunterladen, ohne das gesamte Git-Repository clonen zu müssen. Führen Sie auf Ihrem Server einfach folgende Befehle aus:
 
 ```bash
-wget https://raw.githubusercontent.com/gerontosepp/vinyl-tracker/develop/docker-compose.registry.yml -O docker-compose.yml
-wget https://raw.githubusercontent.com/gerontosepp/vinyl-tracker/develop/.env.example -O .env
+wget https://raw.githubusercontent.com/gerontosepp/vinyl-tracker/main/docker-compose.registry.yml -O docker-compose.yml
+wget https://raw.githubusercontent.com/gerontosepp/vinyl-tracker/main/.env.example -O .env
 ```
 *(Alternativ können Sie die beiden Dateien natürlich auch via `scp`, SFTP oder USB-Stick auf Ihren Server kopieren).*
 
@@ -65,17 +67,17 @@ wget https://raw.githubusercontent.com/gerontosepp/vinyl-tracker/develop/.env.ex
 3.  **Wichtig für den Salt & JWT:** 
     - Der `VINYL_ENCRYPTION_SALT` **MUSS** ein gültiger Hexadezimal-String sein (z.B. 16 Zeichen).
     - Der `JWT_SECRET` **MUSS** ein sicheres, langes Passwort (mindestens 32 Zeichen) zur Session-Sicherung sein.
-4.  **Registry Prefix konfigurieren**:
-    - **Für CI/CD (Option A)**:
+4.  **Registry Prefix & Version konfigurieren (optional)**:
+    Standardmäßig greift `docker-compose.registry.yml` direkt auf die öffentlichen Images `ghcr.io/gerontosepp/` zu (kein Login erforderlich). Eine Anpassung ist nur nötig, wenn Sie eigene Builds/Forks verwenden:
+    - **Offizielle Images (Default)**:
       ```bash
-      # Beachten Sie den abschließenden Schrägstrich (Slash)!
-      REGISTRY_PREFIX=ghcr.io/<ihr-github-benutzername>/
+      REGISTRY_PREFIX=ghcr.io/gerontosepp/
+      IMAGE_TAG=latest # oder z.B. v2.4.1
       ```
-        - **CI-Secrets prüfen**:
-            Stellen Sie sicher, dass `OSSINDEX_USERNAME` und `OSSINDEX_TOKEN` im GitHub-Repository unter Settings -> Secrets and variables -> Actions hinterlegt sind, damit der Backend-Job erfolgreich durchläuft.
-    - **Für manuelles Pushen (Option B)**:
+    - **Für manuelle / eigene Builds (Option B)**:
       ```bash
       REGISTRY_PREFIX=meinbenutzer/
+      IMAGE_TAG=latest
       ```
 5.  **Datenbank-Migrationen & Flyway Baselining**:
     Wenn Sie die Anwendung gegen eine bereits existierende Datenbank deployen, stellen Sie sicher, dass `SPRING_FLYWAY_BASELINE_ON_MIGRATE=true` in Ihrer `.env` oder der Compose-Datei gesetzt ist (standardmäßig in `docker-compose.registry.yml` und `docker-compose.prod.yml` aktiviert), um die Datenbank korrekt zu initialisieren.
@@ -96,7 +98,7 @@ Nutzen Sie das bereitgestellte Skript `./deploy_proxmox.sh` für die automatisch
 ./deploy_proxmox.sh
 
 # Ein spezifisches Release installieren:
-./deploy_proxmox.sh v2.2.0
+./deploy_proxmox.sh v2.4.1
 ```
 
 ### Option B: Manuelles Docker Compose

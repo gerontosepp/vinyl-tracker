@@ -8,7 +8,7 @@ set -e
 #   ./deploy_proxmox.sh [VERSION_TAG] [REGISTRY_PREFIX]
 # Examples:
 #   ./deploy_proxmox.sh                     # Deploy latest version from default GHCR
-#   ./deploy_proxmox.sh v2.2.0              # Deploy specific version v2.2.0
+#   ./deploy_proxmox.sh v2.4.1              # Deploy specific version v2.4.1
 #   ./deploy_proxmox.sh latest myuser/      # Custom registry prefix
 # ==============================================================================
 
@@ -130,6 +130,7 @@ echo -e "\n${BLUE}[4/5] Deploying Release (${VERSION})...${NC}"
 
 # If using registry file, set the image tag env variable or update Compose
 export REGISTRY_PREFIX="${REGISTRY_PREFIX}"
+export IMAGE_TAG="${VERSION}"
 export VERSION_TAG="${VERSION}"
 
 echo "Pulling latest container images..."

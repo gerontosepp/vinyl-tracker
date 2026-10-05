@@ -18,8 +18,8 @@ services:
       retries: 5
 
   backend:
-    # REPLACE WITH YOUR REGISTRY IMAGE (e.g., ghcr.io/youruser/vinyl-tracker-backend:latest)
-    image: ${REGISTRY_PREFIX}vinyl-tracker-backend:latest
+    # Public GHCR image by default; customizable via REGISTRY_PREFIX and IMAGE_TAG
+    image: ${REGISTRY_PREFIX:-ghcr.io/gerontosepp/}vinyl-tracker-backend:${IMAGE_TAG:-latest}
     container_name: vinyl-backend-prod
     restart: always
     environment:
@@ -41,8 +41,8 @@ services:
         condition: service_healthy
 
   frontend:
-    # REPLACE WITH YOUR REGISTRY IMAGE (e.g., ghcr.io/youruser/vinyl-tracker-frontend:latest)
-    image: ${REGISTRY_PREFIX}vinyl-tracker-frontend:latest
+    # Public GHCR image by default; customizable via REGISTRY_PREFIX and IMAGE_TAG
+    image: ${REGISTRY_PREFIX:-ghcr.io/gerontosepp/}vinyl-tracker-frontend:${IMAGE_TAG:-latest}
     container_name: vinyl-frontend-prod
     restart: always
     ports:

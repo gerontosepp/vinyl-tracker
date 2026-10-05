@@ -18,13 +18,13 @@ Use [`deploy_proxmox.sh`](../../../deploy_proxmox.sh) for automated rollout:
 ./deploy_proxmox.sh
 
 # Or deploy a pinned release tag:
-./deploy_proxmox.sh v2.1.3
+./deploy_proxmox.sh v2.4.1
 ```
 
 The script automatically:
 1. Verifies Docker and Docker Compose availability.
 2. Generates secure random passwords for Postgres, AES encryption, and JWT secret if no `.env` exists.
-3. Pulls published images from `ghcr.io/gerontosepp/`.
+3. Pulls published public images from `ghcr.io/gerontosepp/` (no Docker login required).
 4. Deploys using `docker-compose.registry.yml`.
 5. Waits for healthchecks to pass on Postgres and Backend.
 

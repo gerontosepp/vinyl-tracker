@@ -11,9 +11,9 @@ echo ""
 # 1. Backend
 echo "=== Backend ==="
 echo "Building..."
-docker build -t vinly-tracker-backend:latest ./backend
+docker build -t vinyl-tracker-backend:latest ./backend
 echo "Tagging..."
-docker tag vinly-tracker-backend:latest "${REGISTRY_PREFIX}vinyl-tracker-backend:latest"
+docker tag vinyl-tracker-backend:latest "${REGISTRY_PREFIX}vinyl-tracker-backend:latest"
 echo "Pushing..."
 docker push "${REGISTRY_PREFIX}vinyl-tracker-backend:latest"
 

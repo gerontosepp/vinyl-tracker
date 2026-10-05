@@ -11,7 +11,7 @@ This skill provides operational procedures for deploying, upgrading, and diagnos
 
 ## 1. Quick Deployment via Script
 
-Use [`deploy_proxmox.sh`](file:///home/opolm/develop/vinyl-tracker/deploy_proxmox.sh) for automated rollout:
+Use [`deploy_proxmox.sh`](../../../deploy_proxmox.sh) for automated rollout:
 
 ```bash
 # Deploy latest release:

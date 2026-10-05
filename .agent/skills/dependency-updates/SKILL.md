@@ -41,7 +41,7 @@ cd ..
    Maintain Testcontainers 1.21.x compatibility (`testcontainers.version`).
 
 ### Backend Validation
-After updating [`backend/pom.xml`](file:///home/opolm/develop/vinyl-tracker/backend/pom.xml):
+After updating [`backend/pom.xml`](../../../backend/pom.xml):
 ```bash
 cd backend
 mvn clean test
@@ -95,7 +95,7 @@ docker compose build
 
 ## 4. Documentation & Commit
 
-1. Record updated libraries in [`docs/Release-Info.md`](file:///home/opolm/develop/vinyl-tracker/docs/Release-Info.md).
+1. Record updated libraries in [`docs/Release-Info.md`](../../../docs/Release-Info.md).
 2. Commit with Conventional Commits:
    ```bash
    git add backend/pom.xml frontend/package.json frontend/package-lock.json docs/Release-Info.md

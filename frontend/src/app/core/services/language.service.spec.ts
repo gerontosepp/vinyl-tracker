@@ -41,4 +41,13 @@ describe('LanguageService', () => {
   it('should fallback to key if translation is missing', () => {
     expect(service.translate('unknown.key')).toBe('unknown.key');
   });
+
+  it('should load initial language from localStorage when set', () => {
+    localStorage.setItem('language', 'en');
+    let otherService: LanguageService;
+    TestBed.runInInjectionContext(() => {
+      otherService = new LanguageService();
+    });
+    expect(otherService!.language()).toBe('en');
+  });
 });

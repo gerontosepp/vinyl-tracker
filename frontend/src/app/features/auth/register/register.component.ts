@@ -27,7 +27,7 @@ import { AuthService } from '../../../core/services/auth.service';
             <span
               class="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full"
             >
-              v2.4.0
+              v2.4.1
             </span>
           </div>
         </div>
@@ -73,6 +73,7 @@ import { AuthService } from '../../../core/services/auth.service';
               type="password"
               [(ngModel)]="password"
               required
+              minlength="8"
               class="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             />
           </div>
@@ -89,6 +90,7 @@ import { AuthService } from '../../../core/services/auth.service';
               type="password"
               [(ngModel)]="confirmPassword"
               required
+              minlength="8"
               class="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             />
           </div>
@@ -122,6 +124,11 @@ export class RegisterComponent {
   async handleSubmit(): Promise<void> {
     this.error.set('');
 
+    if (this.password.length < 8) {
+      this.error.set('Password must be at least 8 characters long');
+      return;
+    }
+
     if (this.password !== this.confirmPassword) {
       this.error.set('Passwords do not match');
       return;
@@ -130,8 +137,12 @@ export class RegisterComponent {
     try {
       await this.authService.register(this.username, this.password);
       this.router.navigate(['/']);
-    } catch {
-      this.error.set('Registration failed. Username may be taken.');
+    } catch (err: any) {
+      if (err?.status === 429) {
+        this.error.set('Too many attempts. Please wait a minute and try again.');
+      } else {
+        this.error.set('Registration failed. Username may be taken.');
+      }
     }
   }
 }

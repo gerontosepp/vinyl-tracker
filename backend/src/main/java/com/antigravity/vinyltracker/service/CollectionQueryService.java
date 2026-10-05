@@ -37,8 +37,28 @@ public class CollectionQueryService {
         Pageable pageable;
         if ("listens".equalsIgnoreCase(sort)) {
             pageable = PageRequest.of(page - 1, perPage);
+        } else if ("year".equalsIgnoreCase(sort)) {
+            pageable = PageRequest.of(page - 1, perPage,
+                    Sort.by(
+                            new Sort.Order(direction, "record.year").nullsLast(),
+                            new Sort.Order(Sort.Direction.ASC, "record.artist").nullsLast(),
+                            new Sort.Order(Sort.Direction.ASC, "record.title").nullsLast()
+                    ));
+        } else if ("format".equalsIgnoreCase(sort)) {
+            pageable = PageRequest.of(page - 1, perPage,
+                    Sort.by(
+                            new Sort.Order(direction, "record.format").nullsLast(),
+                            new Sort.Order(Sort.Direction.ASC, "record.artist").nullsLast(),
+                            new Sort.Order(Sort.Direction.ASC, "record.year").nullsLast(),
+                            new Sort.Order(Sort.Direction.ASC, "record.title").nullsLast()
+                    ));
         } else if ("artist".equalsIgnoreCase(sort)) {
-            pageable = PageRequest.of(page - 1, perPage, Sort.by(direction, "record.artist"));
+            pageable = PageRequest.of(page - 1, perPage,
+                    Sort.by(
+                            new Sort.Order(direction, "record.artist").nullsLast(),
+                            new Sort.Order(Sort.Direction.ASC, "record.year").nullsLast(),
+                            new Sort.Order(Sort.Direction.ASC, "record.title").nullsLast()
+                    ));
         } else {
             pageable = PageRequest.of(page - 1, perPage, Sort.by(direction, "addedAt"));
         }
@@ -157,8 +177,11 @@ public class CollectionQueryService {
         release.setId(item.getRecord().getDiscogsId());
         release.setInstanceId(item.getInstanceId());
         release.setListenCount(listenCount);
+        if (item.getAddedAt() != null) {
+            release.setDateAdded(item.getAddedAt().toString());
+        }
 
-        DiscogsDto.BasicInformation basicInfo = new DiscogsDto.BasicInformation();
+        DiscogsDto.Release basicInfo = new DiscogsDto.Release();
         basicInfo.setId(item.getRecord().getDiscogsId());
         basicInfo.setTitle(item.getRecord().getTitle());
         basicInfo.setThumbUrl(item.getRecord().getThumbUrl());
@@ -177,6 +200,14 @@ public class CollectionQueryService {
         } catch (NumberFormatException e) {
             basicInfo.setYear(0);
         }
+
+        basicInfo.setLowestPrice(item.getRecord().getLowestPrice());
+
+        String format = item.getRecord().getFormat() != null ? item.getRecord().getFormat() : "LP";
+        basicInfo.setFormat(format);
+        DiscogsDto.Format fmt = new DiscogsDto.Format();
+        fmt.setName(format);
+        basicInfo.setFormats(List.of(fmt));
 
         release.setBasicInformation(basicInfo);
         return release;

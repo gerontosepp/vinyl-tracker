@@ -24,8 +24,8 @@ type CollectionValueTrendPoint = {
   standalone: true,
   imports: [CommonModule, LayoutComponent, StatisticWidgetComponent, TranslatePipe],
   template: `
-    <app-layout>
-      <div class="flex flex-col space-y-6 md:h-[calc(100vh-5rem)]">
+    <app-layout [fullWidth]="true">
+      <div class="flex flex-col space-y-6">
         <div
           class="flex-none flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 shrink-0"
         >

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -22,6 +23,8 @@ public class DiscogsDto {
         private Integer year;
         @JsonProperty("thumb")
         private String thumbUrl;
+        @JsonProperty("cover_image")
+        private String coverImage;
         private List<Track> tracklist;
         private List<Format> formats;
         private List<Label> labels;
@@ -30,6 +33,11 @@ public class DiscogsDto {
         private String released;
         private List<String> genres;
         private List<String> styles;
+        private String format;
+        @JsonProperty("lowest_price")
+        private BigDecimal lowestPrice;
+        @JsonProperty("num_for_sale")
+        private Integer numForSale;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -51,6 +59,58 @@ public class DiscogsDto {
         private String qty;
         private List<String> descriptions;
         private String text;
+    }
+
+    public static String determineFormat(List<Format> formats) {
+        if (formats == null || formats.isEmpty()) {
+            return "LP";
+        }
+        boolean hasCd = false;
+        boolean hasDoubleLp = false;
+        boolean hasVinyl = false;
+
+        for (Format f : formats) {
+            String name = f.getName() != null ? f.getName().toLowerCase().trim() : "";
+            String qtyStr = f.getQty() != null ? f.getQty().trim() : "1";
+            int qty = 1;
+            try {
+                qty = Integer.parseInt(qtyStr);
+            } catch (NumberFormatException ignored) {}
+
+            List<String> descs = f.getDescriptions() != null ? f.getDescriptions() : List.of();
+            boolean descHas2x = descs.stream().anyMatch(d -> {
+                String ld = d.toLowerCase();
+                return ld.contains("2xlp") || ld.contains("2 x lp") || ld.contains("2lp")
+                        || ld.contains("double lp") || ld.contains("2 x vinyl") || ld.contains("2xvinyl");
+            });
+
+            if (name.contains("cd") || descs.stream().anyMatch(d -> d.equalsIgnoreCase("cd"))) {
+                hasCd = true;
+            }
+
+            if (name.contains("vinyl") || descs.stream().anyMatch(d -> d.toLowerCase().contains("lp") || d.equalsIgnoreCase("vinyl"))) {
+                hasVinyl = true;
+                if (qty >= 2 || descHas2x) {
+                    hasDoubleLp = true;
+                }
+            } else if (descHas2x || qty >= 2) {
+                hasDoubleLp = true;
+            }
+        }
+
+        if (hasDoubleLp) {
+            return "Double LP";
+        }
+        if (hasCd && !hasVinyl) {
+            return "CD";
+        }
+        if (hasVinyl) {
+            return "LP";
+        }
+        if (hasCd) {
+            return "CD";
+        }
+        return "LP";
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -136,25 +196,15 @@ public class DiscogsDto {
         private String dateAdded;
         private Integer rating;
         @JsonProperty("basic_information")
-        private BasicInformation basicInformation;
+        private Release basicInformation;
     }
 
+    @Deprecated
     @JsonIgnoreProperties(ignoreUnknown = true)
     @Data
-    @lombok.AllArgsConstructor
+    @lombok.EqualsAndHashCode(callSuper = true)
     @lombok.NoArgsConstructor
-    public static class BasicInformation {
-        private Long id;
-        private String title;
-        private Integer year;
-        @JsonProperty("thumb")
-        private String thumbUrl;
-        @JsonProperty("cover_image")
-        private String coverImage;
-        private List<Artist> artists;
-        private List<Label> labels;
-        private List<String> genres;
-        private List<String> styles;
+    public static class BasicInformation extends Release {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -238,6 +288,8 @@ public class DiscogsDto {
     @lombok.AllArgsConstructor
     @lombok.NoArgsConstructor
     public static class QrCodeRequest {
+        @jakarta.validation.constraints.NotEmpty(message = "Items list must not be empty")
+        @jakarta.validation.Valid
         private List<QrCodeItem> items;
     }
 
@@ -245,7 +297,9 @@ public class DiscogsDto {
     @lombok.AllArgsConstructor
     @lombok.NoArgsConstructor
     public static class QrCodeItem {
+        @jakarta.validation.constraints.NotNull(message = "Record ID must not be null")
         private Long id;
+        @jakarta.validation.constraints.NotBlank(message = "Title must not be blank")
         private String title;
         private String artist;
     }

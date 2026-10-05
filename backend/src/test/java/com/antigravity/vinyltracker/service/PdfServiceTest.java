@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import java.io.IOException;
+import com.antigravity.vinyltracker.exception.PdfGenerationException;
 import java.util.Collections;
 import java.util.List;
 
@@ -15,7 +15,7 @@ import static org.mockito.Mockito.when;
 class PdfServiceTest {
 
     @Test
-    void testGenerateQrCodePdf() throws IOException {
+    void testGenerateQrCodePdf() {
         QrCodeService qrCodeService = Mockito.mock(QrCodeService.class);
         // Return a valid minimal 1x1 pixel PNG
         byte[] mockPng = new byte[] {
@@ -52,5 +52,20 @@ class PdfServiceTest {
         Assertions.assertEquals((byte) 'D', pdfBytes[2]);
         Assertions.assertEquals((byte) 'F', pdfBytes[3]);
         Assertions.assertEquals((byte) '-', pdfBytes[4]);
+    }
+
+    @Test
+    void testGenerateQrCodePdf_ThrowsPdfGenerationException_WhenQrCodeFails() {
+        QrCodeService qrCodeService = Mockito.mock(QrCodeService.class);
+        when(qrCodeService.generateQrCodeImage(anyString(), anyInt(), anyInt()))
+                .thenThrow(new PdfGenerationException("QR code failure"));
+
+        PdfService pdfService = new PdfService(qrCodeService);
+        DiscogsDto.QrCodeItem item = new DiscogsDto.QrCodeItem(12345L, "Test Album", "Test Artist");
+        List<DiscogsDto.QrCodeItem> items = Collections.singletonList(item);
+
+        PdfGenerationException ex = Assertions.assertThrows(PdfGenerationException.class,
+                () -> pdfService.generateQrCodePdf(items));
+        Assertions.assertEquals("QR code failure", ex.getMessage());
     }
 }

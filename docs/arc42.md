@@ -157,13 +157,15 @@ The system is deployed as a multi-container Docker application orchestrated by D
 
 ### 8.1 Security
 - **Authentication**: JWT-based authentication. Backend issues and verifies an HttpOnly auth cookie for normal request flows; frontend additionally supports `Authorization: Bearer` fallback when cookie propagation is not available.
+- **Rate Limiting & Brute-Force Protection**: Public authentication endpoints (`/api/users/login`, `/api/users/register`, `/api/users/reset-password`) are protected against brute-force attacks via Resilience4j `RateLimiter` (`AuthRateLimitingInterceptor` & `AuthRateLimiterService`). Limits are enforced per client IP (configurable via `AUTH_RATE_LIMIT_FOR_PERIOD`, default 10 requests/minute). Requests exceeding the limit immediately receive HTTP 429 (`TOO_MANY_REQUESTS`) formatted as RFC-7807 `ProblemDetail`.
 - **Data Protection**:
-    - User passwords are hashed with **BCrypt**.
+    - User passwords are hashed with **BCrypt** (which embeds a cryptographically secure random salt directly into the hash string; the redundant database `salt` column was removed in Flyway `V5`).
     - Sensitive external tokens (Discogs PAT) are encrypted using **AES-256** (via Spring Security Crypto) with a salt and key defined in environment variables.
 - **Dependency Security**: The backend provides an opt-in Maven profile `security-online` that audits dependencies against the Sonatype OSS Index online service during `verify`.
 
 ### 8.2 Validation
-- Input validation using Jakarta Validation API (`@Valid`, `@NotNull`, etc.).
+- Input validation using Jakarta Validation API (`@Valid`, `@NotNull`, `@NotBlank`, `@NotEmpty`, `@Size`, etc.) across all controllers and DTOs, including QR code generation requests (`QrCodeRequest`).
+- **Password Policy**: User passwords must be at least 8 characters long (up to 128), enforced in backend DTOs and frontend registration/reset forms.
 - Destructive user actions in the UI require an explicit confirmation step before the backend request is issued.
 
 ### 8.3 Error Handling
@@ -172,6 +174,7 @@ The system is deployed as a multi-container Docker application orchestrated by D
     - `DiscogsTokenException` (HTTP 422) for encryption and token-level issues.
     - `DiscogsApiException` (HTTP 502) for external API communication failures.
     - `CollectionSyncException` (HTTP 500) for batch synchronization errors.
+    - `PdfGenerationException` (HTTP 500) for PDF and QR code compilation failures.
 - Endpoint-specific failure paths in analytics endpoints are aligned to the same ProblemDetail structure.
 - Lightweight success responses for scan-related endpoints are returned as typed DTOs instead of ad-hoc maps, improving schema clarity across backend and frontend.
 
@@ -199,14 +202,18 @@ The system is deployed as a multi-container Docker application orchestrated by D
 | **Tailwind CSS** | Utility-first CSS allows for rapid UI development and consistent design tokens without managing complex stylesheets. | Accepted |
 | **PostgreSQL** | Industry standard, robust relational database. Suitable for structured data like catalog entries. | Accepted |
 | **Flyway Migrations** | Replaced Hibernate `ddl-auto: update` with Flyway for reliable, versioned schema migrations in production. | Accepted |
+| **Modular Frontend Components** | Decomposed monolithic page components (such as `CollectionComponent`) into focused subcomponents with dedicated HTML templates and clear Angular Signal inputs/outputs to maintain low file complexity (< 350 lines). | Accepted |
+| **BCrypt Self-Contained Salt** | Dropped redundant `salt` column from `app_user` (Flyway `V5`) since BCrypt handles salt generation internally. | Accepted |
+| **Node.js 24 CI Runtime** | Aligned GitHub Actions workflow runner and setup-node action to Node 24. | Accepted |
 
 ## 10. Quality Requirements
 
-- **Test Coverage**: Strict requirement of >80% line coverage for both Backend (JaCoCo) and Frontend (Karma/Jasmine). Enforced by CI/CD.
+- **Test Coverage**: Strict requirement of >80% line coverage for both Backend (JaCoCo) and Frontend (Karma/Jasmine). Enforced in CI/CD via `karma.conf.js` global threshold checks and JaCoCo maven verification.
+- **End-to-End Testing**: Automated Playwright E2E test suite covering authentication, navigation, dashboard scanner access, and Discogs sync flows, executed on every PR/push in the CI pipeline.
 - **Dependency Hygiene**: Backend dependencies are checked in CI against Sonatype OSS Index; findings are reported to an audit artifact (`ossindex-audit.json`) with the current configuration set to non-blocking (`fail=false`).
 - **Test Execution Split**: Unit tests run via Surefire during `test`, while integration tests run via Failsafe during `verify`. This improves local feedback speed while keeping full validation in CI.
 - **Responsiveness**: The UI must adapt to mobile screens (< 768px) for usable barcode scanning on phones.
-- **Performance**: API responses should be < 200ms (excluding external Discogs calls). Heavily accessed database relationships (e.g. `user_id` on collections, `discogs_id` on records) are backed by explicit B-tree indexes applied via Flyway to prevent query degradation as dataset sizes grow. The `Record.genres` `@ElementCollection` is fetched `LAZY` with a Hibernate `@BatchSize(50)` to avoid per-row genre queries (N+1) when listing collections and computing analytics.
+- **Performance**: API responses should be < 200ms (excluding external Discogs calls). Heavily accessed database relationships (e.g. `user_id` on collections, `discogs_id` on records) are backed by explicit B-tree indexes applied via Flyway to prevent query degradation as dataset sizes grow. The `Record.genres` `@ElementCollection` is fetched `LAZY` with a Hibernate `@BatchSize(50)` to avoid per-row genre queries (N+1) when listing collections and computing analytics. Release pricing (`lowest_price`) and media format (`format`) are cached directly in the `record_cache` table via Flyway migrations `V3` and `V4` to avoid repeated remote marketplace lookups.
 
 ## 11. Risks and Technical Debt
 

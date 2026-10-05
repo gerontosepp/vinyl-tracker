@@ -7,7 +7,6 @@ import com.antigravity.vinyltracker.model.dto.ResetPasswordRequestDto;
 import com.antigravity.vinyltracker.model.dto.UpdateDiscogsRequestDto;
 import com.antigravity.vinyltracker.model.dto.UserResponseDto;
 import com.antigravity.vinyltracker.repository.AppUserRepository;
-import org.springframework.security.crypto.keygen.KeyGenerators;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import com.antigravity.vinyltracker.security.JwtService;
 import org.springframework.stereotype.Service;
@@ -33,10 +32,9 @@ public class AppUserService {
             return Optional.empty();
         }
 
-        String salt = KeyGenerators.string().generateKey();
         String hashedPassword = passwordEncoder.encode(password);
 
-        AppUser newUser = new AppUser(username, hashedPassword, salt);
+        AppUser newUser = new AppUser(username, hashedPassword);
         AppUser savedUser = userRepository.save(newUser);
 
         String token = jwtService.generateToken(savedUser.getUsername());
@@ -76,11 +74,9 @@ public class AppUserService {
 
         return userRepository.findByUsername(username)
                 .map(user -> {
-                    String newSalt = KeyGenerators.string().generateKey();
                     String hashedPassword = passwordEncoder.encode(newPassword);
 
                     user.setPassword(hashedPassword);
-                    user.setSalt(newSalt);
 
                     if (discogsToken != null && !discogsToken.isEmpty()) {
                         user.setDiscogsToken(tokenService.encrypt(discogsToken));

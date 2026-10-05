@@ -94,16 +94,25 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v6
       with:
-        node-version: '20'
+        node-version: '24'
         cache: 'npm'
         cache-dependency-path: frontend/package-lock.json
 
     - name: Install Dependencies
       run: npm ci --legacy-peer-deps
 
-    - name: Run Tests
-      # Runs Angular Karma unit tests in headless mode with code coverage
-      run: npm run test -- --watch=false --code-coverage --browsers=ChromeHeadless
+    - name: Run Karma Unit Tests
+      # Runs Angular Karma unit tests with > 80% coverage check enforced via karma.conf.js
+      run: npm run test -- --watch=false --code-coverage --browsers=ChromeHeadlessCI
+
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps chromium
+
+    - name: Ensure Development Certificates
+      run: node scripts/ensure-certs.js
+
+    - name: Run Playwright E2E Tests
+      run: npm run test:e2e
 
     # We build the Docker image which includes the build step, so explicit 'npm run build' is redundant for the artifact if we just want the image.
     # But sticking to the pattern:

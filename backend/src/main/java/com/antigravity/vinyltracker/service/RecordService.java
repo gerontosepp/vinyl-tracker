@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -32,6 +33,7 @@ public class RecordService {
     private final AppUserRepository userRepository;
     private final DiscogsApiClient discogsApiClient;
 
+    @Transactional
     public RecordDetailDto getRecordDetails(Long id, String username) {
         log.info("Fetching record details for id: {} by user: {}", id, username);
         AppUser user = userRepository.findByUsername(username)
@@ -61,12 +63,30 @@ public class RecordService {
 
         Long listenCount = 0L;
         LocalDateTime lastListenedAt = null;
+        List<LocalDateTime> listenHistory = List.of();
         if (recordOpt.isPresent()) {
             Record record = recordOpt.get();
             listenCount = listenEventRepository.countByRecordAndUser(record, user);
             lastListenedAt = listenEventRepository.findFirstByRecordAndUserOrderByTimestampDesc(record, user)
                     .map(ListenEvent::getTimestamp)
                     .orElse(null);
+            listenHistory = listenEventRepository.findAllByRecordAndUserOrderByTimestampDesc(record, user)
+                    .stream()
+                    .map(ListenEvent::getTimestamp)
+                    .toList();
+        }
+
+        BigDecimal lowestPrice = release != null && release.getLowestPrice() != null
+                ? release.getLowestPrice()
+                : (recordOpt.isPresent() ? recordOpt.get().getLowestPrice() : null);
+        Integer numForSale = release != null ? release.getNumForSale() : null;
+
+        if (release != null && release.getLowestPrice() != null && recordOpt.isPresent()) {
+            Record r = recordOpt.get();
+            if (r.getLowestPrice() == null || !r.getLowestPrice().equals(release.getLowestPrice())) {
+                r.setLowestPrice(release.getLowestPrice());
+                recordRepository.save(r);
+            }
         }
 
         String title = release != null && release.getTitle() != null
@@ -92,6 +112,19 @@ public class RecordService {
                 ? release.getGenres()
                 : (recordOpt.isPresent() && recordOpt.get().getGenres() != null ? recordOpt.get().getGenres() : List.of());
 
+        String format = recordOpt.map(Record::getFormat).orElse(null);
+        if (format == null && release != null && release.getFormats() != null) {
+            format = DiscogsDto.determineFormat(release.getFormats());
+            if (recordOpt.isPresent()) {
+                Record r = recordOpt.get();
+                r.setFormat(format);
+                recordRepository.save(r);
+            }
+        }
+        if (format == null) {
+            format = "LP";
+        }
+
         return RecordDetailDto.builder()
                 .id(recordOpt.map(Record::getId).orElse(null))
                 .discogsId(discogsId)
@@ -100,10 +133,15 @@ public class RecordService {
                 .year(year)
                 .thumbUrl(thumbUrl)
                 .genres(genres)
+                .format(format)
                 .inCollection(collectionItemOpt.isPresent())
                 .instanceId(collectionItemOpt.map(CollectionItem::getInstanceId).orElse(null))
+                .addedAt(collectionItemOpt.map(CollectionItem::getAddedAt).orElse(null))
                 .listenCount(listenCount != null ? listenCount : 0L)
                 .lastListenedAt(lastListenedAt)
+                .lowestPrice(lowestPrice)
+                .numForSale(numForSale)
+                .listenHistory(listenHistory)
                 .tracklist(release != null && release.getTracklist() != null ? release.getTracklist() : List.of())
                 .formats(release != null && release.getFormats() != null ? release.getFormats() : List.of())
                 .labels(release != null && release.getLabels() != null ? release.getLabels() : List.of())

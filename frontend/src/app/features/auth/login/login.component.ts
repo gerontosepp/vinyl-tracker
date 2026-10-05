@@ -27,7 +27,7 @@ import { AuthService } from '../../../core/services/auth.service';
             <span
               class="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full"
             >
-              v2.4.0
+              v2.4.1
             </span>
           </div>
         </div>
@@ -104,8 +104,12 @@ export class LoginComponent {
     try {
       await this.authService.login(this.username, this.password);
       this.router.navigate(['/']);
-    } catch {
-      this.error.set('Login failed. Please check your username/password.');
+    } catch (err: any) {
+      if (err?.status === 429) {
+        this.error.set('Too many attempts. Please wait a minute and try again.');
+      } else {
+        this.error.set('Login failed. Please check your username/password.');
+      }
     }
   }
 }

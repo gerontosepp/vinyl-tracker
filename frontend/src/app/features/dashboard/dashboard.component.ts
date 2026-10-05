@@ -28,7 +28,7 @@ import { Subscription, firstValueFrom, forkJoin } from 'rxjs';
     TranslatePipe,
   ],
   template: `
-    <app-layout>
+    <app-layout [fullWidth]="true">
       @if (scannerService.showScanner()) {
         <div
           class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-600 p-6 sm:p-8 animate-fade-in h-full transition-colors"

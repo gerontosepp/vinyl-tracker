@@ -29,13 +29,8 @@ public class AppUser {
     @Column(nullable = false)
     private String password;
 
-    @JsonIgnore
-    @Column(nullable = false)
-    private String salt;
-
-    public AppUser(String username, String password, String salt) {
+    public AppUser(String username, String password) {
         this.username = username;
         this.password = password;
-        this.salt = salt;
     }
 }

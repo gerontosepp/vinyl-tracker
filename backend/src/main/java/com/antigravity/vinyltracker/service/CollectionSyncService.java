@@ -8,6 +8,10 @@ import com.antigravity.vinyltracker.repository.RecordRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -65,24 +69,48 @@ public class CollectionSyncService {
                                 newRecord.setYear(releaseYear != null ? String.valueOf(releaseYear) : "");
                                 newRecord.setThumbUrl(release.getBasicInformation().getThumbUrl());
                                 newRecord.setGenres(extractDiscogsTags(release.getBasicInformation()));
+                                if (release.getBasicInformation() != null && release.getBasicInformation().getLowestPrice() != null) {
+                                    newRecord.setLowestPrice(release.getBasicInformation().getLowestPrice());
+                                }
+                                String detectedFormat = DiscogsDto.determineFormat(
+                                        release.getBasicInformation() != null ? release.getBasicInformation().getFormats() : null);
+                                newRecord.setFormat(detectedFormat);
 
                                 return recordRepository.save(newRecord);
                             });
 
+                    boolean recordUpdated = false;
                     List<String> remoteTags = extractDiscogsTags(release.getBasicInformation());
                     if (!remoteTags.isEmpty() && (record.getGenres() == null || record.getGenres().isEmpty())) {
                         record.setGenres(new ArrayList<>(remoteTags));
+                        recordUpdated = true;
+                    }
+                    String remoteFormat = DiscogsDto.determineFormat(
+                            release.getBasicInformation() != null ? release.getBasicInformation().getFormats() : null);
+                    if (remoteFormat != null && (record.getFormat() == null || !remoteFormat.equals(record.getFormat()))) {
+                        record.setFormat(remoteFormat);
+                        recordUpdated = true;
+                    }
+                    if (recordUpdated) {
                         recordRepository.save(record);
                     }
+
+                    LocalDateTime addedAt = parseDiscogsDate(release.getDateAdded());
 
                     // Check if CollectionItem linkage exists for user, create if not
                     java.util.Optional<com.antigravity.vinyltracker.model.CollectionItem> existingItem = collectionItemRepository
                             .findByUserAndInstanceId(user, release.getInstanceId());
                     if (existingItem.isEmpty()) {
                         com.antigravity.vinyltracker.model.CollectionItem item = new com.antigravity.vinyltracker.model.CollectionItem(
-                                user, record, release.getInstanceId());
+                                user, record, release.getInstanceId(), addedAt);
                         collectionItemRepository.save(item);
                         addedCount++;
+                    } else {
+                        com.antigravity.vinyltracker.model.CollectionItem item = existingItem.get();
+                        if (addedAt != null && !addedAt.equals(item.getAddedAt())) {
+                            item.setAddedAt(addedAt);
+                            collectionItemRepository.save(item);
+                        }
                     }
                 }
 
@@ -111,23 +139,39 @@ public class CollectionSyncService {
         return new SyncResultDto(addedCount, removedCount);
     }
 
-    private List<String> extractDiscogsTags(DiscogsDto.BasicInformation basicInformation) {
-        if (basicInformation == null) {
+    private List<String> extractDiscogsTags(DiscogsDto.Release release) {
+        if (release == null) {
             return List.of();
         }
 
         Set<String> tags = new LinkedHashSet<>();
-        if (basicInformation.getGenres() != null) {
-            basicInformation.getGenres().stream()
+        if (release.getGenres() != null) {
+            release.getGenres().stream()
                     .filter(tag -> tag != null && !tag.isBlank())
                     .forEach(tags::add);
         }
-        if (basicInformation.getStyles() != null) {
-            basicInformation.getStyles().stream()
+        if (release.getStyles() != null) {
+            release.getStyles().stream()
                     .filter(tag -> tag != null && !tag.isBlank())
                     .forEach(tags::add);
         }
 
         return new ArrayList<>(tags);
+    }
+
+    private LocalDateTime parseDiscogsDate(String dateStr) {
+        if (dateStr == null || dateStr.isBlank()) {
+            return LocalDateTime.now(ZoneOffset.UTC);
+        }
+        try {
+            return OffsetDateTime.parse(dateStr).atZoneSameInstant(ZoneOffset.UTC).toLocalDateTime();
+        } catch (DateTimeParseException e) {
+            try {
+                return java.time.Instant.parse(dateStr).atZone(ZoneOffset.UTC).toLocalDateTime();
+            } catch (Exception ex) {
+                log.warn("Could not parse Discogs date_added: {}", dateStr);
+                return LocalDateTime.now(ZoneOffset.UTC);
+            }
+        }
     }
 }

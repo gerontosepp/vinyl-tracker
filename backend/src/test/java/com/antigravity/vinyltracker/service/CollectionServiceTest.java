@@ -11,7 +11,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.io.IOException;
+import com.antigravity.vinyltracker.exception.ResourceNotFoundException;
 import java.util.List;
 import java.util.Optional;
 
@@ -41,7 +41,7 @@ public class CollectionServiceTest {
 
     @BeforeEach
     void setUp() {
-        testUser = new AppUser("testuser", "pw", "salt");
+        testUser = new AppUser("testuser", "pw");
     }
 
     @Test
@@ -69,11 +69,11 @@ public class CollectionServiceTest {
     @Test
     void forceSync_UserNotFound() {
         when(userRepository.findByUsername("unknown")).thenReturn(Optional.empty());
-        assertThrows(RuntimeException.class, () -> collectionService.forceSync("unknown"));
+        assertThrows(ResourceNotFoundException.class, () -> collectionService.forceSync("unknown"));
     }
 
     @Test
-    void generateSelectedQrCodesPdf_Success() throws IOException {
+    void generateSelectedQrCodesPdf_Success() {
         DiscogsDto.QrCodeRequest req = new DiscogsDto.QrCodeRequest();
         req.setItems(List.of(new DiscogsDto.QrCodeItem(1L, "Title", "Artist")));
 
@@ -85,7 +85,7 @@ public class CollectionServiceTest {
     }
 
     @Test
-    void generateAllQrCodesPdf_Success() throws IOException {
+    void generateAllQrCodesPdf_Success() {
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
 
         DiscogsDto.CollectionRelease r1 = new DiscogsDto.CollectionRelease();
@@ -102,6 +102,12 @@ public class CollectionServiceTest {
 
         byte[] result = collectionService.generateAllQrCodesPdf("testuser");
         assertArrayEquals(pdfOutput, result);
+    }
+
+    @Test
+    void generateAllQrCodesPdf_UserNotFound() {
+        when(userRepository.findByUsername("unknown")).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> collectionService.generateAllQrCodesPdf("unknown"));
     }
 
     @Test

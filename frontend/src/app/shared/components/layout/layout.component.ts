@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, input } from '@angular/core';
 import { Router } from '@angular/router';
 import { SidebarComponent } from './sidebar/sidebar.component';
 import { BottomNavComponent } from './bottom-nav/bottom-nav.component';
@@ -25,7 +25,13 @@ import { ScannerService } from '../../../core/services/scanner.service';
       <main
         class="flex-1 w-full pt-16 pb-24 md:pb-0 md:ml-24 min-h-screen transition-all duration-300"
       >
-        <div class="max-w-7xl mx-auto p-4 sm:p-6 md:p-8 lg:p-10">
+        <div
+          [class]="
+            fullWidth()
+              ? 'w-full p-3 sm:p-4 md:p-6'
+              : 'max-w-7xl mx-auto p-4 sm:p-6 md:p-8 lg:p-10'
+          "
+        >
           <ng-content></ng-content>
         </div>
       </main>
@@ -48,6 +54,7 @@ import { ScannerService } from '../../../core/services/scanner.service';
   `,
 })
 export class LayoutComponent {
+  readonly fullWidth = input<boolean>(true);
   readonly authService = inject(AuthService);
   private readonly scannerService = inject(ScannerService);
   private readonly router = inject(Router);

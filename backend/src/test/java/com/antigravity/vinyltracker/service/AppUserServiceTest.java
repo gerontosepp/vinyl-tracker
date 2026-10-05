@@ -45,7 +45,7 @@ public class AppUserServiceTest {
 
     @BeforeEach
     void setUp() {
-        testUser = new AppUser("testuser", "encodedPsw", "saltsalt");
+        testUser = new AppUser("testuser", "encodedPsw");
         testUser.setId(1L);
     }
 

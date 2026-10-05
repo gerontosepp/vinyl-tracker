@@ -43,13 +43,13 @@ public interface CollectionItemRepository extends JpaRepository<CollectionItem, 
         @Query(value = "SELECT ci, (SELECT COUNT(le) FROM ListenEvent le WHERE le.record = ci.record AND le.user = ci.user) as playCount "
                         +
                         "FROM CollectionItem ci WHERE ci.user = :user " +
-                        "ORDER BY playCount DESC")
+                        "ORDER BY playCount DESC, ci.record.artist ASC, ci.record.year ASC")
         Page<Object[]> findAllByUserOrderByPlayCountDesc(@Param("user") AppUser user, Pageable pageable);
 
         @Query(value = "SELECT ci, (SELECT COUNT(le) FROM ListenEvent le WHERE le.record = ci.record AND le.user = ci.user) as playCount "
                         +
                         "FROM CollectionItem ci WHERE ci.user = :user " +
-                        "ORDER BY playCount ASC")
+                        "ORDER BY playCount ASC, ci.record.artist ASC, ci.record.year ASC")
         Page<Object[]> findAllByUserOrderByPlayCountAsc(@Param("user") AppUser user, Pageable pageable);
 
         @Query("SELECT ci FROM CollectionItem ci WHERE ci.user = :user AND (LOWER(ci.record.artist) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(ci.record.title) LIKE LOWER(CONCAT('%', :search, '%')))")
@@ -60,7 +60,7 @@ public interface CollectionItemRepository extends JpaRepository<CollectionItem, 
                         +
                         "FROM CollectionItem ci WHERE ci.user = :user AND (LOWER(ci.record.artist) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(ci.record.title) LIKE LOWER(CONCAT('%', :search, '%'))) "
                         +
-                        "ORDER BY playCount DESC")
+                        "ORDER BY playCount DESC, ci.record.artist ASC, ci.record.year ASC")
         Page<Object[]> searchByUserAndKeywordOrderByPlayCountDesc(@Param("user") AppUser user,
                         @Param("search") String search, Pageable pageable);
 
@@ -68,7 +68,7 @@ public interface CollectionItemRepository extends JpaRepository<CollectionItem, 
                         +
                         "FROM CollectionItem ci WHERE ci.user = :user AND (LOWER(ci.record.artist) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(ci.record.title) LIKE LOWER(CONCAT('%', :search, '%'))) "
                         +
-                        "ORDER BY playCount ASC")
+                        "ORDER BY playCount ASC, ci.record.artist ASC, ci.record.year ASC")
         Page<Object[]> searchByUserAndKeywordOrderByPlayCountAsc(@Param("user") AppUser user,
                         @Param("search") String search, Pageable pageable);
 }

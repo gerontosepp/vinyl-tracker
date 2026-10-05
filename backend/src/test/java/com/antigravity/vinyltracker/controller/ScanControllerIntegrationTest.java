@@ -81,7 +81,6 @@ class ScanControllerIntegrationTest extends AbstractIntegrationTest {
         testUser.setDiscogsUsername("discogsUser");
         testUser.setDiscogsToken("token");
         testUser.setPassword("password");
-        testUser.setSalt("salt");
         userRepository.save(testUser);
     }
 

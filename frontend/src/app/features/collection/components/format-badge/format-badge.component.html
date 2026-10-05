@@ -1,0 +1,119 @@
+@if (!compact()) {
+  <div class="relative group/fmt inline-flex items-center justify-center">
+    @switch (format()) {
+      @case ('double_lp') {
+        <div
+          class="inline-flex items-center justify-center cursor-help py-1 px-1.5 rounded-lg bg-slate-100/80 dark:bg-slate-700/50 hover:bg-slate-200/70 dark:hover:bg-slate-700 transition-colors"
+          [title]="'collection.formatDoubleLp' | translate"
+        >
+          <div class="relative flex items-center">
+            <svg
+              lucideDisc
+              class="text-slate-400 dark:text-slate-500 shrink-0"
+              [size]="19"
+            ></svg>
+            <svg
+              lucideDisc
+              class="text-slate-800 dark:text-slate-200 -ml-2.5 shrink-0 drop-shadow-sm"
+              [size]="19"
+            ></svg>
+          </div>
+        </div>
+      }
+      @case ('cd') {
+        <div
+          class="inline-flex items-center justify-center cursor-help py-1 px-1.5 rounded-lg bg-cyan-50 dark:bg-cyan-950/40 hover:bg-cyan-100/70 dark:hover:bg-cyan-900/50 transition-colors"
+          [title]="'collection.formatCd' | translate"
+        >
+          <svg
+            lucideDiscAlbum
+            class="text-cyan-600 dark:text-cyan-400"
+            [size]="19"
+          ></svg>
+        </div>
+      }
+      @default {
+        <div
+          class="inline-flex items-center justify-center cursor-help py-1 px-1.5 rounded-lg bg-slate-100/80 dark:bg-slate-700/50 hover:bg-slate-200/70 dark:hover:bg-slate-700 transition-colors"
+          [title]="'collection.formatLp' | translate"
+        >
+          <svg
+            lucideDisc
+            class="text-slate-800 dark:text-slate-200"
+            [size]="19"
+          ></svg>
+        </div>
+      }
+    }
+
+    <!-- Desktop Tooltip on hover -->
+    <div
+      class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1 bg-slate-900/95 dark:bg-slate-800 text-white dark:text-slate-100 text-xs font-medium rounded-lg shadow-xl border border-slate-700/60 dark:border-slate-600/80 whitespace-nowrap pointer-events-none opacity-0 invisible group-hover/fmt:opacity-100 group-hover/fmt:visible transition-all duration-150 z-30"
+    >
+      @switch (format()) {
+        @case ('double_lp') {
+          <span>{{ 'collection.formatDoubleLp' | translate }}</span>
+        }
+        @case ('cd') {
+          <span>{{ 'collection.formatCd' | translate }}</span>
+        }
+        @default {
+          <span>{{ 'collection.formatLp' | translate }}</span>
+        }
+      }
+      <div
+        class="absolute top-full left-1/2 -translate-x-1/2 -mt-[1px] border-4 border-transparent border-t-slate-900/95 dark:border-t-slate-800"
+      ></div>
+    </div>
+  </div>
+} @else {
+  <!-- Compact mobile format badge with label -->
+  <span class="relative group/mfmt inline-flex items-center">
+    @switch (format()) {
+      @case ('double_lp') {
+        <span
+          class="inline-flex items-center gap-0.5 text-[10px] font-bold text-slate-600 dark:text-slate-300 cursor-help"
+          [title]="'collection.formatDoubleLp' | translate"
+        >
+          <svg lucideDisc class="text-slate-400" [size]="12"></svg>
+          <svg lucideDisc class="text-slate-700 dark:text-slate-200 -ml-1.5" [size]="12"></svg>
+          <span class="ml-0.5">2LP</span>
+        </span>
+      }
+      @case ('cd') {
+        <span
+          class="inline-flex items-center gap-0.5 text-[10px] font-bold text-cyan-600 dark:text-cyan-400 cursor-help"
+          [title]="'collection.formatCd' | translate"
+        >
+          <svg lucideDiscAlbum [size]="12"></svg>
+          <span>CD</span>
+        </span>
+      }
+      @default {
+        <span
+          class="inline-flex items-center gap-0.5 text-[10px] font-bold text-slate-600 dark:text-slate-300 cursor-help"
+          [title]="'collection.formatLp' | translate"
+        >
+          <svg lucideDisc [size]="12"></svg>
+          <span>LP</span>
+        </span>
+      }
+    }
+    <!-- Mobile Tooltip on Hover -->
+    <span
+      class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-0.5 bg-slate-900/95 dark:bg-slate-800 text-white dark:text-slate-100 text-[10px] font-medium rounded shadow-lg border border-slate-700/60 pointer-events-none opacity-0 invisible group-hover/mfmt:opacity-100 group-hover/mfmt:visible transition-all duration-150 z-30 whitespace-nowrap"
+    >
+      @switch (format()) {
+        @case ('double_lp') {
+          <span>{{ 'collection.formatDoubleLp' | translate }}</span>
+        }
+        @case ('cd') {
+          <span>{{ 'collection.formatCd' | translate }}</span>
+        }
+        @default {
+          <span>{{ 'collection.formatLp' | translate }}</span>
+        }
+      }
+    </span>
+  </span>
+}

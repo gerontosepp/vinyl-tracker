@@ -1,4 +1,4 @@
-# Vinyl Tracker v2.4.0
+# Vinyl Tracker v2.4.1
 
 A personal vinyl record tracking application that allows users to scan barcodes, identify records via Discogs, and log listening sessions.
 
@@ -51,7 +51,7 @@ The project follows a modern containerized micro-architecture:
 - **Live Collection Insights**: Dashboard charts for Discogs collection value and genre breakdown via `/api/analytics/collection/value` and `/api/analytics/collection/genres`.
 - **QR Code Generation**: Generate a PDF with QR codes for your entire collection, sorted by artist.
 - **Quick Logging**: Scan generated QR codes to instantly log a listen without searching.
-- **Collection Management**: Search, filter (e.g., "Played Only"), and sort your vinyl catalog. Force a manual sync with Discogs at any time.
+- **Collection Management & Values**: Search, filter (e.g., "Played Only"), and sort your vinyl catalog. Displays the market lowest price / value for records in the list, and opens a comprehensive detail popup on album cover/title click (showing full DB attributes, genres, tracklists, formats, labels, notes, and listening history). Force a manual sync with Discogs at any time.
 - **Data Management**: Reset your entire listening history with a single click from Settings (with confirmation dialog to prevent accidental deletions).
 - **Modern UI**: Fully responsive, mobile-first design with dark mode, glassmorphism, and smooth micro-animations.
 - **Resilient API**: Robust Discogs integration with **Resilience4j** rate-limiting (60 req/min) and automatic retries with exponential backoff.
@@ -102,10 +102,11 @@ The application requires environment variables for configuration (database crede
     - `CORS_ALLOW_CREDENTIALS` (`false` by default; set `true` only if cookie-based auth is required).
     - `IMAGE_PROXY_ALLOWED_HOSTS` (Comma-separated allowlist for `/api/proxy/image`, e.g. `i.discogs.com,s.discogs.com,api.discogs.com`).
     - `AUTH_COOKIE_NAME`, `AUTH_COOKIE_MAX_AGE_SECONDS`, `AUTH_COOKIE_SECURE`, `AUTH_COOKIE_SAME_SITE` (controls the backend HttpOnly session cookie used for authentication).
+    - `AUTH_RATE_LIMIT_FOR_PERIOD` (optional rate limit for authentication endpoints; default: `10` requests per minute per IP).
 
-    Authentication note: The frontend uses backend-managed HttpOnly cookies by default and supports a Bearer token fallback for environments where cookie propagation is constrained.
+    Authentication note: The frontend uses backend-managed HttpOnly cookies by default and supports a Bearer token fallback for environments where cookie propagation is constrained. Public auth endpoints (`/login`, `/register`, `/reset-password`) are protected against brute force via Resilience4j rate limiting, and enforce a minimum password length of 8 characters.
    
-    API error note: Backend validation and runtime failures are returned as structured `ProblemDetail` JSON payloads.
+    API error note: Backend validation and runtime failures are returned as structured `ProblemDetail` JSON payloads. Rate limit violations return HTTP 429 (`Too Many Requests`).
 
 ### 3. Start the Application
 
@@ -163,15 +164,15 @@ cd frontend
 npm install
 npm test
 ```
-*Note: Tests enforce >80% code coverage for core services, utilities, and components.*
+*Note: Unit tests strictly enforce >80% code coverage via karma.conf.js for statements, lines, branches, and functions.*
 
 **Available NPM Scripts:**
 | Script | Description |
 | :--- | :--- |
 | `npm run dev` | Starts the Angular development server on port 5173 with proxy configuration |
 | `npm run build` | Builds the application for production |
-| `npm run test` | Runs unit tests (Karma/Jasmine) in headless mode |
-| `npm run test:e2e` | Runs end-to-end tests (Playwright) - requires local env running |
+| `npm run test` | Runs unit tests (Karma/Jasmine) in headless mode with code coverage enforcement |
+| `npm run test:e2e` | Runs end-to-end tests (Playwright) with automatic dev server bootstrap |
 
 Current high-risk regression coverage focuses on authentication, dashboard scanner access, and manual Discogs sync flows in Playwright plus backend negative-path tests for scan validation and ownership checks.
 
@@ -233,9 +234,10 @@ Create `~/.m2/settings.xml` with an `ossindex` server entry so Maven can use the
 The project includes GitHub Actions workflows:
 - **CI Pipeline** (`.github/workflows/ci.yml`):
   - Automatically builds and tests the Backend (Java 25/Maven).
-  - Builds and tests the Frontend (Node 20/Angular, Karma headless).
+  - Builds and tests the Frontend (Node 24/Angular, Karma headless with strict >80% coverage check via `karma.conf.js`).
+  - Runs Playwright end-to-end tests for all critical user workflows.
   - Builds and tests the MCP Server (Rust/Cargo, `rmcp`).
-  - Enforces >80% test coverage for both Frontend and Backend.
+  - Enforces >80% test coverage for both Frontend (Karma) and Backend (JaCoCo).
   - Runs the backend online dependency vulnerability audit through the `security-online` Maven profile.
   - Runs on push and pull requests for `main`, `master`, and `develop`, plus release tags `v*.*.*` (which triggers building and pushing Docker images to GHCR).
 - **Auto Release** (`.github/workflows/release.yml`):

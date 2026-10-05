@@ -18,6 +18,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -75,6 +76,8 @@ class RecordServiceTest {
         release.setNotes("Album notes");
         release.setCountry("UK");
         release.setReleased("1977-05-01");
+        release.setLowestPrice(BigDecimal.valueOf(15.50));
+        release.setNumForSale(3);
 
         DiscogsDto.Track track = new DiscogsDto.Track();
         track.setPosition("A1");
@@ -92,6 +95,7 @@ class RecordServiceTest {
         when(collectionItemRepository.findByUserAndRecord(user, record)).thenReturn(Optional.of(item));
         when(listenEventRepository.countByRecordAndUser(record, user)).thenReturn(7L);
         when(listenEventRepository.findFirstByRecordAndUserOrderByTimestampDesc(record, user)).thenReturn(Optional.of(listen));
+        when(listenEventRepository.findAllByRecordAndUserOrderByTimestampDesc(record, user)).thenReturn(List.of(listen));
 
         RecordDetailDto details = recordService.getRecordDetails(1L, "testuser");
 
@@ -104,7 +108,12 @@ class RecordServiceTest {
         assertTrue(details.isInCollection());
         assertEquals(9999L, details.getInstanceId());
         assertEquals(7L, details.getListenCount());
+        assertEquals("LP", details.getFormat());
         assertEquals(now, details.getLastListenedAt());
+        assertEquals(BigDecimal.valueOf(15.50), details.getLowestPrice());
+        assertEquals(3, details.getNumForSale());
+        assertNotNull(details.getAddedAt());
+        assertEquals(1, details.getListenHistory().size());
         assertEquals(1, details.getTracklist().size());
         assertEquals("Track 1", details.getTracklist().get(0).getTitle());
         assertEquals("Album notes", details.getNotes());

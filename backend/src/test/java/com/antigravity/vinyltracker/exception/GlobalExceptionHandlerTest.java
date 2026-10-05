@@ -59,6 +59,52 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    void handlePdfGeneration_ShouldReturn500() {
+        PdfGenerationException ex = new PdfGenerationException("PDF compilation failed");
+
+        ResponseEntity<ProblemDetail> response = handler.handlePdfGeneration(ex);
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR.value(), response.getStatusCode().value());
+        assertNotNull(response.getBody());
+        assertEquals("PDF generation error", response.getBody().getTitle());
+        assertEquals("PDF compilation failed", response.getBody().getDetail());
+        assertNotNull(response.getBody().getProperties().get("timestamp"));
+    }
+
+    @Test
+    void handlePdfGeneration_ShouldUseFallbackMessage_WhenMessageIsNull() {
+        PdfGenerationException ex = new PdfGenerationException(null);
+
+        ResponseEntity<ProblemDetail> response = handler.handlePdfGeneration(ex);
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR.value(), response.getStatusCode().value());
+        assertNotNull(response.getBody());
+        assertEquals("PDF generation error", response.getBody().getTitle());
+        assertEquals("Error generating PDF.", response.getBody().getDetail());
+        assertNotNull(response.getBody().getProperties().get("timestamp"));
+    }
+
+    @Test
+    void handleRateLimit_ShouldReturn429() {
+        io.github.resilience4j.ratelimiter.RateLimiterConfig config = io.github.resilience4j.ratelimiter.RateLimiterConfig.custom()
+                .limitForPeriod(1)
+                .limitRefreshPeriod(java.time.Duration.ofMinutes(1))
+                .timeoutDuration(java.time.Duration.ZERO)
+                .build();
+        io.github.resilience4j.ratelimiter.RateLimiter limiter = io.github.resilience4j.ratelimiter.RateLimiter.of("test", config);
+        io.github.resilience4j.ratelimiter.RequestNotPermitted ex = io.github.resilience4j.ratelimiter.RequestNotPermitted
+                .createRequestNotPermitted(limiter);
+
+        ResponseEntity<ProblemDetail> response = handler.handleRateLimit(ex);
+
+        assertEquals(HttpStatus.TOO_MANY_REQUESTS.value(), response.getStatusCode().value());
+        assertNotNull(response.getBody());
+        assertEquals("Too Many Requests", response.getBody().getTitle());
+        assertEquals("Rate limit exceeded for authentication requests. Please try again later.", response.getBody().getDetail());
+        assertNotNull(response.getBody().getProperties().get("timestamp"));
+    }
+
+    @Test
     void handleRuntime_ShouldReturn500() {
         RuntimeException ex = new RuntimeException("Unexpected error");
 

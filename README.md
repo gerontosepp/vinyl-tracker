@@ -244,6 +244,8 @@ The project includes GitHub Actions workflows:
   - Enforces >80% test coverage for both Frontend (Karma) and Backend (JaCoCo).
   - Runs the backend online dependency vulnerability audit through the `security-online` Maven profile.
   - Runs on push and pull requests for `main`, `master`, and `develop`, plus release tags `v*.*.*` (which triggers building and pushing Docker images to GHCR).
+  - **Self-Hosted Runner Support**: Optimized for local execution on Proxmox/Docker hosts (`[self-hosted, linux]`) with mounted Docker socket for Testcontainers and Playwright, eliminating queue bottlenecks.
+  - **Hybrid Multi-Platform Releases**: Daily CI runs locally on Proxmox, while release builds automatically provision GitHub-hosted Apple Silicon runners (`macos-latest`) to produce native macOS MCP server binaries.
 - **Auto Release** (`.github/workflows/release.yml`):
   - Automatically creates a GitHub Release (with tag `v<version>` from `frontend/package.json` and auto-generated release notes) when a Pull Request to `main` is successfully merged.
   - Creating a release triggers the CI Pipeline's tag build, automatically publishing the new Docker images.

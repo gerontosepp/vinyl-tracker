@@ -139,3 +139,57 @@ Ab jetzt erreicht jedes Gerät (auch dein Smartphone) die App über `https://vin
 
 ### Lokales Setup / Entwicklung (Ohne Domain)
 Für die reine Entwicklung auf einem lokalen Laptop ohne eigene Domain wird weiterhin `docker-compose.yml` (`npm run dev`) zusammen mit `mkcert` verwendet, da hier kein Reverse Proxy zur Verfügung steht, der Let's Encrypt Zertifikate validieren könnte. (Siehe Haupt-README).
+
+---
+
+## 6. Eigener CI/CD Runner auf Proxmox (Self-Hosted Runner)
+
+Um Build- und Testzeiten zu minimieren und GitHub-Warteschlangen für die Testcontainers- und Playwright-Suites zu vermeiden, unterstützt Vinyl Tracker den Betrieb eines **Self-Hosted GitHub Actions Runners** auf Proxmox (z. B. in einer dedizierten Docker-VM oder einem LXC-Container).
+
+### Architektur & Hybrid-CI
+- **Alltägliche Builds (Commits & PRs)**: Laufen direkt auf dem Proxmox-Runner (`[self-hosted, linux]`).
+  - Java 25 & Maven 3.9.9 via GitHub Actions Cache
+  - Testcontainers startet echte PostgreSQL-Instanzen über den gemounteten Docker-Socket (`/var/run/docker.sock`)
+  - Node 24, Chrome Headless & Playwright E2E-Tests
+  - Rust Toolchain & MCP Server Tests
+- **Multi-Plattform Releases**: Bei Release-Tags (`v*.*.*`) startet GitHub zusätzlich Cloud-Runner (`macos-latest` Apple Silicon) für native macOS MCP-Binaries.
+
+### Sicherheitshinweis (Wichtig bei öffentlichen Repositories)
+In einem öffentlichen Repository könnten fremde Forks ohne Freigabe bösartigen Code auf Ihrem heimischen Server ausführen. Aktivieren Sie zwingend:
+1. Im GitHub-Repo: **Settings** → **Actions** → **General**
+2. Unter **Fork pull request workflows**: **"Require approval for all outside collaborators"** auswählen und speichern.
+
+### Runner mit Docker Compose einrichten
+Verwenden Sie die Vorlage [`docker/docker-compose.runner.yml`](../docker/docker-compose.runner.yml):
+
+```yaml
+services:
+  github-runner:
+    image: myoung34/github-runner:ubuntu-noble
+    container_name: proxmox-github-runner
+    restart: unless-stopped
+    environment:
+      REPO_URL: "https://github.com/gerontosepp/vinyl-tracker"
+      RUNNER_TOKEN: "DEIN_GITHUB_RUNNER_TOKEN"
+      RUNNER_NAME: "proxmox-runner-01"
+      RUNNER_WORKDIR: "/_work"
+      RUNNER_GROUP: "default"
+      LABELS: "self-hosted,linux,x64,proxmox"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - runner-work:/_work
+
+volumes:
+  runner-work:
+```
+
+> **Wichtiger Hinweis zum Image:** Verwenden Sie `ubuntu-noble` (Ubuntu 24.04 LTS). Das veraltete `latest` (Ubuntu 20.04) wird von modernen Versionen von Playwright und Node.js nicht mehr unterstützt.
+
+### Inbetriebnahme:
+1. **Token holen**: Unter **Settings** → **Actions** → **Runners** → **New runner** den temporären Registrierungstoken kopieren (oder ein GitHub Personal Access Token mit `repo`-Scope verwenden).
+2. **Starten**:
+   ```bash
+   docker compose up -d
+   docker compose logs -f
+   ```
+3. Sobald `Listening for Jobs` erscheint, ist der Runner aktiv und nimmt Jobs entgegen.

@@ -115,6 +115,12 @@ jobs:
         cache: 'npm'
         cache-dependency-path: frontend/package-lock.json
 
+    - name: Set up Chrome
+      uses: browser-actions/setup-chrome@v2
+      with:
+        chrome-version: stable
+        install-dependencies: true
+
     - name: Install Dependencies
       run: npm ci --legacy-peer-deps
 

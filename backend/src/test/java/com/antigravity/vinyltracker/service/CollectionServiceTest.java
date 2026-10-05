@@ -41,7 +41,7 @@ public class CollectionServiceTest {
 
     @BeforeEach
     void setUp() {
-        testUser = new AppUser("testuser", "pw", "salt");
+        testUser = new AppUser("testuser", "pw");
     }
 
     @Test

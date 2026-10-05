@@ -51,7 +51,7 @@ public class AnalyticsServiceTest {
  
     @BeforeEach
     void setUp() {
-        testUser = new AppUser("testuser", "pw", "salt");
+        testUser = new AppUser("testuser", "pw");
         testUser.setId(1L);
         testUser.setDiscogsToken("valid_token");
  

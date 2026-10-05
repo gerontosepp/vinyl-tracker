@@ -5,11 +5,11 @@ set -e
 # Vinyl Tracker - Proxmox / Docker Deployment & Release Update Script
 # ==============================================================================
 # Usage:
-#   ./deploy_proxmox.sh [VERSION_TAG] [REGISTRY_PREFIX]
+#   ./scripts/deploy_proxmox.sh [VERSION_TAG] [REGISTRY_PREFIX]
 # Examples:
-#   ./deploy_proxmox.sh                     # Deploy latest version from default GHCR
-#   ./deploy_proxmox.sh v2.4.1              # Deploy specific version v2.4.1
-#   ./deploy_proxmox.sh latest myuser/      # Custom registry prefix
+#   ./scripts/deploy_proxmox.sh                     # Deploy latest version from default GHCR
+#   ./scripts/deploy_proxmox.sh v2.4.1              # Deploy specific version v2.4.1
+#   ./scripts/deploy_proxmox.sh latest myuser/      # Custom registry prefix
 # ==============================================================================
 
 # Output Colors
@@ -111,14 +111,18 @@ echo -e "${GREEN}✓ Environment file (.env) ready.${NC}"
 echo -e "\n${BLUE}[3/5] Selecting Docker Compose configuration...${NC}"
 
 COMPOSE_FILE=""
-if [ -f "docker-compose.registry.yml" ]; then
+if [ -f "docker/docker-compose.registry.yml" ]; then
+    COMPOSE_FILE="docker/docker-compose.registry.yml"
+elif [ -f "docker-compose.registry.yml" ]; then
     COMPOSE_FILE="docker-compose.registry.yml"
+elif [ -f "docker/docker-compose.prod.yml" ]; then
+    COMPOSE_FILE="docker/docker-compose.prod.yml"
 elif [ -f "docker-compose.prod.yml" ]; then
     COMPOSE_FILE="docker-compose.prod.yml"
 elif [ -f "docker-compose.yml" ]; then
     COMPOSE_FILE="docker-compose.yml"
 else
-    echo -e "${RED}Error: No docker-compose file found in current directory.${NC}"
+    echo -e "${RED}Error: No docker-compose file found in current directory or docker/ subfolder.${NC}"
     exit 1
 fi
 echo -e "${GREEN}✓ Using compose file: ${COMPOSE_FILE}${NC}"

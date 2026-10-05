@@ -41,20 +41,20 @@ Wenn Sie die Images manuell von Ihrem Entwicklungsrechner bauen und pushen möch
 2.  **Das Build & Push Skript ausführen**:
     ```bash
     # Ersetzen Sie 'meinbenutzer/' durch Ihren Docker Hub Benutzernamen oder Ihre Registry-URL
-    ./push-images.sh meinbenutzer/
+    ./scripts/push-images.sh meinbenutzer/
     ```
 
 ## 3. Vorbereitung (Auf der Zielmaschine)
 
 Sie benötigen lediglich **zwei Dateien** auf der Zielmaschine (plus Zertifikate, falls Sie lokales SSL nutzen):
-1.  `docker-compose.registry.yml` (zur Vereinfachung in `docker-compose.yml` umbenennen).
+1.  `docker/docker-compose.registry.yml` (zur Vereinfachung in `docker-compose.yml` umbenennen).
 2.  `.env` (Konfiguration).
 
 ### Dateien übertragen
 Sie können diese Dateien herunterladen, ohne das gesamte Git-Repository clonen zu müssen. Führen Sie auf Ihrem Server einfach folgende Befehle aus:
 
 ```bash
-wget https://raw.githubusercontent.com/gerontosepp/vinyl-tracker/main/docker-compose.registry.yml -O docker-compose.yml
+wget https://raw.githubusercontent.com/gerontosepp/vinyl-tracker/main/docker/docker-compose.registry.yml -O docker-compose.yml
 wget https://raw.githubusercontent.com/gerontosepp/vinyl-tracker/main/.env.example -O .env
 ```
 *(Alternativ können Sie die beiden Dateien natürlich auch via `scp`, SFTP oder USB-Stick auf Ihren Server kopieren).*
@@ -80,7 +80,7 @@ wget https://raw.githubusercontent.com/gerontosepp/vinyl-tracker/main/.env.examp
       IMAGE_TAG=latest
       ```
 5.  **Datenbank-Migrationen & Flyway Baselining**:
-    Wenn Sie die Anwendung gegen eine bereits existierende Datenbank deployen, stellen Sie sicher, dass `SPRING_FLYWAY_BASELINE_ON_MIGRATE=true` in Ihrer `.env` oder der Compose-Datei gesetzt ist (standardmäßig in `docker-compose.registry.yml` und `docker-compose.prod.yml` aktiviert), um die Datenbank korrekt zu initialisieren.
+    Wenn Sie die Anwendung gegen eine bereits existierende Datenbank deployen, stellen Sie sicher, dass `SPRING_FLYWAY_BASELINE_ON_MIGRATE=true` in Ihrer `.env` oder der Compose-Datei gesetzt ist (standardmäßig in `docker/docker-compose.registry.yml` und `docker/docker-compose.prod.yml` aktiviert), um die Datenbank korrekt zu initialisieren.
 6.  **OpenAPI / Swagger-Dokumentation**:
     In Produktionsumgebungen ist die API-Dokumentation standardmäßig deaktiviert, um API-Details nicht ungeschützt offenzulegen. Gesteuert wird dies über die Umgebungsvariablen:
     - `SPRINGDOC_API_DOCS_ENABLED=false`
@@ -91,21 +91,21 @@ wget https://raw.githubusercontent.com/gerontosepp/vinyl-tracker/main/.env.examp
 ## 4. Anwendung starten
 
 ### Option A: Automatisiertes Deployment-Skript (Empfohlen für Proxmox / LXC / VMs)
-Nutzen Sie das bereitgestellte Skript `./deploy_proxmox.sh` für die automatische Erstellung sicherer `.env`-Geheimnisse, das Herunterladen der aktuellen Docker-Images und die Ausführung des Healthchecks:
+Nutzen Sie das bereitgestellte Skript `./scripts/deploy_proxmox.sh` für die automatische Erstellung sicherer `.env`-Geheimnisse, das Herunterladen der aktuellen Docker-Images und die Ausführung des Healthchecks:
 
 ```bash
 # Neuestes Release (latest) installieren/aktualisieren:
-./deploy_proxmox.sh
+./scripts/deploy_proxmox.sh
 
 # Ein spezifisches Release installieren:
-./deploy_proxmox.sh v2.4.1
+./scripts/deploy_proxmox.sh v2.4.1
 ```
 
 ### Option B: Manuelles Docker Compose
 Starten Sie die Anwendung manuell mit der Registry-Konfiguration:
 
 ```bash
-docker compose -f docker-compose.registry.yml up -d
+docker compose -f docker/docker-compose.registry.yml up -d
 ```
 
 *Images werden standardmäßig als `latest` gezogen.*
@@ -121,7 +121,7 @@ Für den produktiven Einsatz auf einem Server (z.B. als Docker-VM unter Proxmox)
 ### So funktioniert das Setup mit Nginx Proxy Manager (NPM):
 
 1. **Domain einrichten**: Richte eine DynDNS- oder Sub-Domain ein (z.B. `vinyl.meinedomain.de`), die auf deinen Heimrouter/Server zeigt.
-2. **Vinyl Tracker starten**: Führe `docker compose -f docker-compose.prod.yml up -d` aus (oder die `registry.yml` Variante). Der Frontend-Container läuft nun lokal isoliert auf Port `80`.
+2. **Vinyl Tracker starten**: Führe `docker compose -f docker/docker-compose.prod.yml up -d` aus (oder die `docker/docker-compose.registry.yml` Variante). Der Frontend-Container läuft nun lokal isoliert auf Port `80`.
 3. **Im Nginx Proxy Manager konfigurieren**:
    - Erstelle einen neuen Proxy Host.
    - **Domain Names**: `vinyl.meinedomain.de`

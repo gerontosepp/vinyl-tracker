@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# Ensure we are in the project root
+cd "$(dirname "$0")/.."
+
 # Define colors for output
 GREEN='\033[0;32m'
 NC='\033[0m' # No Color

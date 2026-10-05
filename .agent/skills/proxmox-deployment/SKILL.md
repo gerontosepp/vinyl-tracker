@@ -11,21 +11,21 @@ This skill provides operational procedures for deploying, upgrading, and diagnos
 
 ## 1. Quick Deployment via Script
 
-Use [`deploy_proxmox.sh`](../../../deploy_proxmox.sh) for automated rollout:
+Use [`deploy_proxmox.sh`](../../../scripts/deploy_proxmox.sh) for automated rollout:
 
 ```bash
 # Deploy latest release:
-./deploy_proxmox.sh
+./scripts/deploy_proxmox.sh
 
 # Or deploy a pinned release tag:
-./deploy_proxmox.sh v2.4.1
+./scripts/deploy_proxmox.sh v2.4.1
 ```
 
 The script automatically:
 1. Verifies Docker and Docker Compose availability.
 2. Generates secure random passwords for Postgres, AES encryption, and JWT secret if no `.env` exists.
 3. Pulls published public images from `ghcr.io/gerontosepp/` (no Docker login required).
-4. Deploys using `docker-compose.registry.yml`.
+4. Deploys using `docker/docker-compose.registry.yml`.
 5. Waits for healthchecks to pass on Postgres and Backend.
 
 ## 2. Environment Configuration Checklist (`.env`)
@@ -55,22 +55,22 @@ Before running in production, verify the following configuration values:
 
 ### Check Container Status
 ```bash
-docker compose -f docker-compose.registry.yml ps
+docker compose -f docker/docker-compose.registry.yml ps
 ```
 
 ### View Application Logs
 ```bash
 # Backend logs (JSON structured in production):
-docker compose -f docker-compose.registry.yml logs -f backend
+docker compose -f docker/docker-compose.registry.yml logs -f backend
 
 # Frontend (Nginx access & error logs):
-docker compose -f docker-compose.registry.yml logs -f frontend
+docker compose -f docker/docker-compose.registry.yml logs -f frontend
 
 # Database logs:
-docker compose -f docker-compose.registry.yml logs -f postgres
+docker compose -f docker/docker-compose.registry.yml logs -f postgres
 ```
 
 ### Restart Services
 ```bash
-docker compose -f docker-compose.registry.yml restart
+docker compose -f docker/docker-compose.registry.yml restart
 ```

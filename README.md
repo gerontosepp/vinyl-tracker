@@ -119,28 +119,28 @@ The application requires environment variables for configuration (database crede
 2. **Start Production Environment (or Proxmox / LXC)**:
    - **Automated Proxmox Deployment Script** (pulls official public images from GHCR):
      ```bash
-     ./deploy_proxmox.sh [v2.4.1]
+     ./scripts/deploy_proxmox.sh [v2.4.1]
      ```
    - **Manual Compose with Public Registry Images**:
      ```bash
-     docker compose -f docker-compose.registry.yml up -d
+     docker compose -f docker/docker-compose.registry.yml up -d
      ```
    - **Manual Compose with Local Source Build**:
      ```bash
-     docker compose -f docker-compose.prod.yml up --build -d
+     docker compose -f docker/docker-compose.prod.yml up --build -d
      ```
    *Optimized build, no hot-reloading, runs on port 80.*
 
    👉 **[See Detailed Deployment Guide](docs/DEPLOYMENT.md)** for server setup, public images, and HTTPS requirements.
 
    > [!IMPORTANT]
-   > For the **first deployment** against an existing database, ensure `SPRING_FLYWAY_BASELINE_ON_MIGRATE=true` is set (this is already the default in `docker-compose.prod.yml`) to correctly baseline your schema.
+   > For the **first deployment** against an existing database, ensure `SPRING_FLYWAY_BASELINE_ON_MIGRATE=true` is set (this is already the default in `docker/docker-compose.prod.yml`) to correctly baseline your schema.
 
 2. **Access the App**:
    - **Frontend**: [https://localhost:5173](https://localhost:5173) (or `https://<YOUR_IP>:5173`)
    - **Backend API**: [http://localhost:8080](http://localhost:8080)
    - **API Docs (Swagger UI)**: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html) (OpenAPI spec at `/v3/api-docs`).
-     > Interactive API docs are enabled in development only. They are disabled in production via `SPRINGDOC_API_DOCS_ENABLED=false` and `SPRINGDOC_SWAGGER_UI_ENABLED=false` (set in `docker-compose.prod.yml`).
+     > Interactive API docs are enabled in development only. They are disabled in production via `SPRINGDOC_API_DOCS_ENABLED=false` and `SPRINGDOC_SWAGGER_UI_ENABLED=false` (set in `docker/docker-compose.prod.yml`).
 
 ## User Guide
 

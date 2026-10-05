@@ -58,7 +58,7 @@ public class CollectionController {
     }
 
     @PostMapping("/qr-codes/selected")
-    public ResponseEntity<byte[]> generateSelectedQrCodes(@RequestBody DiscogsDto.QrCodeRequest request) {
+    public ResponseEntity<byte[]> generateSelectedQrCodes(@jakarta.validation.Valid @RequestBody DiscogsDto.QrCodeRequest request) {
         byte[] pdfBytes = collectionService.generateSelectedQrCodesPdf(request);
         return createPdfResponse(pdfBytes);
     }

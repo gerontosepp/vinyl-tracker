@@ -288,6 +288,8 @@ public class DiscogsDto {
     @lombok.AllArgsConstructor
     @lombok.NoArgsConstructor
     public static class QrCodeRequest {
+        @jakarta.validation.constraints.NotEmpty(message = "Items list must not be empty")
+        @jakarta.validation.Valid
         private List<QrCodeItem> items;
     }
 
@@ -295,7 +297,9 @@ public class DiscogsDto {
     @lombok.AllArgsConstructor
     @lombok.NoArgsConstructor
     public static class QrCodeItem {
+        @jakarta.validation.constraints.NotNull(message = "Record ID must not be null")
         private Long id;
+        @jakarta.validation.constraints.NotBlank(message = "Title must not be blank")
         private String title;
         private String artist;
     }

@@ -119,6 +119,19 @@ class CollectionControllerTest {
 
         @Test
         @WithMockUser(username = "testuser")
+        void generateSelectedQrCodes_ShouldReturnBadRequest_WhenRequestIsInvalid() throws Exception {
+                DiscogsDto.QrCodeRequest request = new DiscogsDto.QrCodeRequest();
+                request.setItems(java.util.Collections.emptyList());
+
+                mockMvc.perform(post("/api/collection/qr-codes/selected")
+                                .content(objectMapper.writeValueAsString(request))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .with(csrf()))
+                                .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @WithMockUser(username = "testuser")
         void generateAllQrCodes_ShouldReturnPdf() throws Exception {
                 when(collectionService.generateAllQrCodesPdf(eq("testuser"))).thenReturn("pdf-content".getBytes());
 

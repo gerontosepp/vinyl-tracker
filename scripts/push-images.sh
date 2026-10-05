@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# Ensure we are in the project root
+cd "$(dirname "$0")/.."
+
 # Default registry prefix (change this or pass as argument)
 REGISTRY_PREFIX=${1:-"myuser/"}
 

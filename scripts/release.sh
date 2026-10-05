@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Ensure we are in the project root
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/.."
 
 # Read current version from frontend/package.json
 CURRENT_VERSION=$(grep -m1 '"version":' frontend/package.json | awk -F: '{ print $2 }' | sed 's/[ ",]//g')

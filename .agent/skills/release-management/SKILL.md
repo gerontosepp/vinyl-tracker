@@ -41,12 +41,12 @@ The following files **must** be updated synchronously:
 | [`README.md`](../../../README.md) | Header line 1 `# Vinyl Tracker v<NEW_VERSION>` and deploy examples |
 | [`docs/Release-Info.md`](../../../docs/Release-Info.md) | New section `## v<NEW_VERSION> (YYYY-MM-DD)` with change summary |
 | [`docs/DEPLOYMENT.md`](../../../docs/DEPLOYMENT.md) | Example version string update (if applicable) |
-| [`deploy_proxmox.sh`](../../../deploy_proxmox.sh) | Example version string in header comment |
+| [`scripts/deploy_proxmox.sh`](../../../scripts/deploy_proxmox.sh) | Example version string in header comment |
 
 ### Option A: Using the Automated Script
-Execute [`release.sh`](../../../release.sh):
+Execute [`release.sh`](../../../scripts/release.sh):
 ```bash
-./release.sh
+./scripts/release.sh
 ```
 Follow the prompt to enter the new version.
 

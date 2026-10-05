@@ -10,7 +10,9 @@ Vinyl Tracker — a personal vinyl record tracking app. Users scan barcodes / QR
 
 - `backend/` — Spring Boot 4 / Java 25 REST API (the active backend).
 - `frontend/` — **Angular 19 PWA (the active frontend)** — this is what Docker Compose builds and deploys, dev and prod.
-- `docs/` — `DEPLOYMENT.md`, `arc42.md` (architecture), `Release-Info.md`.
+- `docker/` — production & registry Docker Compose configurations (`docker-compose.prod.yml`, `docker-compose.registry.yml`).
+- `scripts/` — operational automation scripts (`deploy_proxmox.sh`, `push-images.sh`, `release.sh`, `update_docker.sh`).
+- `docs/` — `DEPLOYMENT.md`, `arc42.md` (architecture), `Release-Info.md`, `CLAUDE.md`.
 - `.agent/rules/` — coding/quality/documentation conventions.
 - `certs/` — local mkcert SSL certs (HTTPS required for webcam barcode scanning).
 
@@ -18,8 +20,8 @@ Vinyl Tracker — a personal vinyl record tracking app. Users scan barcodes / QR
 
 ### Run the full stack
 ```bash
-docker compose up --build -d                          # dev: hot-reload frontend, waits for postgres healthcheck
-docker compose -f docker-compose.prod.yml up --build -d # prod: optimized build, port 80
+docker compose up --build -d                                 # dev: hot-reload frontend, waits for postgres healthcheck
+docker compose -f docker/docker-compose.prod.yml up --build -d # prod: optimized build, port 80
 ```
 Dev URLs: frontend `https://localhost:5173`, backend `http://localhost:8080`, Swagger UI `http://localhost:8080/swagger-ui.html`.
 

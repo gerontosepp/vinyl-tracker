@@ -186,11 +186,11 @@ The system is deployed as a multi-container Docker application orchestrated by D
 
 ### 8.5 API Documentation
 - The backend exposes an OpenAPI 3 specification and interactive Swagger UI via `springdoc-openapi` (`/v3/api-docs` and `/swagger-ui.html`).
-- These endpoints are permitted without authentication in `SecurityConfig`, but are **disabled in production** through the `SPRINGDOC_API_DOCS_ENABLED=false` and `SPRINGDOC_SWAGGER_UI_ENABLED=false` environment variables set in `docker-compose.prod.yml`, so the schema is not exposed on public deployments.
+- These endpoints are permitted without authentication in `SecurityConfig`, but are **disabled in production** through the `SPRINGDOC_API_DOCS_ENABLED=false` and `SPRINGDOC_SWAGGER_UI_ENABLED=false` environment variables set in `docker/docker-compose.prod.yml`, so the schema is not exposed on public deployments.
 
 ### 8.6 Delivery Workflow
 - **Branch Strategy**: The project uses a simplified flow with two main branches: `develop` (for new features) and `main` (for stable releases). Development happens in temporary feature branches that are merged into `develop`.
-- **Versioning**: Before merging into `main`, version bumps across the frontend, backend, and documentation are automated via the `./release.sh` script on the `develop` branch.
+- **Versioning**: Before merging into `main`, version bumps across the frontend, backend, and documentation are automated via the `./scripts/release.sh` script on the `develop` branch.
 - **Continuous Deployment (CD)**: Releases are managed via GitHub Releases. Creating a new GitHub Release (e.g. `v1.5.0`) pointing to `main` issues a Git Tag. The GitHub Actions CI pipeline listens to tags matching `v*.*.*`, runs backend tests and the `security-online` dependency audit, builds the frontend and backend Docker Images, tags them appropriately (`latest` and `v1.5.0`), and pushes them to the GitHub Container Registry (GHCR).
 
 ## 9. Architecture Decisions

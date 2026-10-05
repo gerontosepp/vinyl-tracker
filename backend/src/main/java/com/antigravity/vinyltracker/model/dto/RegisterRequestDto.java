@@ -11,6 +11,6 @@ public class RegisterRequestDto {
     private String username;
 
     @NotBlank
-    @Size(min = 6, max = 128)
+    @Size(min = 8, max = 128)
     private String password;
 }

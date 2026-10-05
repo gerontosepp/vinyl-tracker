@@ -155,7 +155,7 @@ class AppUserControllerTest {
         void resetPassword_ShouldUpdatePassword_WithoutExposingSensitiveData() throws Exception {
                 Map<String, String> payload = Map.of(
                                 "username", "user1",
-                                "newPassword", "newPass",
+                                "newPassword", "newPassword123",
                                 "discogsToken", "newToken");
 
                 UserResponseDto dto = new UserResponseDto();
@@ -196,6 +196,36 @@ class AppUserControllerTest {
                                 .andExpect(content().contentType("application/problem+json"))
                                 .andExpect(jsonPath("$.title", is("Validation failed")))
                                 .andExpect(jsonPath("$.status", is(400)));
+
+                verifyNoInteractions(appUserService);
+        }
+
+        @Test
+        void register_ShouldReturnBadRequest_WhenPasswordShorterThan8Chars() throws Exception {
+                Map<String, String> shortPasswordPayload = Map.of("username", "testuser", "password", "short12");
+
+                mockMvc.perform(post("/api/users/register")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(shortPasswordPayload)))
+                                .andExpect(status().isBadRequest())
+                                .andExpect(content().contentType("application/problem+json"))
+                                .andExpect(jsonPath("$.title", is("Validation failed")))
+                                .andExpect(jsonPath("$.errors.password").exists());
+
+                verifyNoInteractions(appUserService);
+        }
+
+        @Test
+        void resetPassword_ShouldReturnBadRequest_WhenNewPasswordShorterThan8Chars() throws Exception {
+                Map<String, String> shortPasswordPayload = Map.of("username", "testuser", "newPassword", "short12");
+
+                mockMvc.perform(post("/api/users/reset-password")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(shortPasswordPayload)))
+                                .andExpect(status().isBadRequest())
+                                .andExpect(content().contentType("application/problem+json"))
+                                .andExpect(jsonPath("$.title", is("Validation failed")))
+                                .andExpect(jsonPath("$.errors.newPassword").exists());
 
                 verifyNoInteractions(appUserService);
         }

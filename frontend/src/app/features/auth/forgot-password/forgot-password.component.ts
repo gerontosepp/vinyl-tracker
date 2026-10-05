@@ -64,6 +64,7 @@ import { firstValueFrom } from 'rxjs';
               type="password"
               [(ngModel)]="newPassword"
               required
+              minlength="8"
               class="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             />
           </div>
@@ -80,6 +81,7 @@ import { firstValueFrom } from 'rxjs';
               type="password"
               [(ngModel)]="confirmPassword"
               required
+              minlength="8"
               class="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             />
           </div>
@@ -132,6 +134,11 @@ export class ForgotPasswordComponent {
   async handleSubmit(): Promise<void> {
     this.error.set('');
 
+    if (this.newPassword.length < 8) {
+      this.error.set('New password must be at least 8 characters long');
+      return;
+    }
+
     if (this.newPassword !== this.confirmPassword) {
       this.error.set('Passwords do not match');
       return;
@@ -143,9 +150,13 @@ export class ForgotPasswordComponent {
         this.apiService.resetPassword(this.username, this.newPassword, this.discogsToken)
       );
       this.router.navigate(['/login']);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      this.error.set('Failed to reset password. Verify username.');
+      if (err?.status === 429) {
+        this.error.set('Too many attempts. Please wait a minute and try again.');
+      } else {
+        this.error.set('Failed to reset password. Verify username.');
+      }
     } finally {
       this.isLoading.set(false);
     }

@@ -157,13 +157,15 @@ The system is deployed as a multi-container Docker application orchestrated by D
 
 ### 8.1 Security
 - **Authentication**: JWT-based authentication. Backend issues and verifies an HttpOnly auth cookie for normal request flows; frontend additionally supports `Authorization: Bearer` fallback when cookie propagation is not available.
+- **Rate Limiting & Brute-Force Protection**: Public authentication endpoints (`/api/users/login`, `/api/users/register`, `/api/users/reset-password`) are protected against brute-force attacks via Resilience4j `RateLimiter` (`AuthRateLimitingInterceptor` & `AuthRateLimiterService`). Limits are enforced per client IP (configurable via `AUTH_RATE_LIMIT_FOR_PERIOD`, default 10 requests/minute). Requests exceeding the limit immediately receive HTTP 429 (`TOO_MANY_REQUESTS`) formatted as RFC-7807 `ProblemDetail`.
 - **Data Protection**:
     - User passwords are hashed with **BCrypt**.
     - Sensitive external tokens (Discogs PAT) are encrypted using **AES-256** (via Spring Security Crypto) with a salt and key defined in environment variables.
 - **Dependency Security**: The backend provides an opt-in Maven profile `security-online` that audits dependencies against the Sonatype OSS Index online service during `verify`.
 
 ### 8.2 Validation
-- Input validation using Jakarta Validation API (`@Valid`, `@NotNull`, etc.).
+- Input validation using Jakarta Validation API (`@Valid`, `@NotNull`, `@Size`, etc.).
+- **Password Policy**: User passwords must be at least 8 characters long (up to 128), enforced in backend DTOs and frontend registration/reset forms.
 - Destructive user actions in the UI require an explicit confirmation step before the backend request is issued.
 
 ### 8.3 Error Handling

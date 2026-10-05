@@ -102,10 +102,11 @@ The application requires environment variables for configuration (database crede
     - `CORS_ALLOW_CREDENTIALS` (`false` by default; set `true` only if cookie-based auth is required).
     - `IMAGE_PROXY_ALLOWED_HOSTS` (Comma-separated allowlist for `/api/proxy/image`, e.g. `i.discogs.com,s.discogs.com,api.discogs.com`).
     - `AUTH_COOKIE_NAME`, `AUTH_COOKIE_MAX_AGE_SECONDS`, `AUTH_COOKIE_SECURE`, `AUTH_COOKIE_SAME_SITE` (controls the backend HttpOnly session cookie used for authentication).
+    - `AUTH_RATE_LIMIT_FOR_PERIOD` (optional rate limit for authentication endpoints; default: `10` requests per minute per IP).
 
-    Authentication note: The frontend uses backend-managed HttpOnly cookies by default and supports a Bearer token fallback for environments where cookie propagation is constrained.
+    Authentication note: The frontend uses backend-managed HttpOnly cookies by default and supports a Bearer token fallback for environments where cookie propagation is constrained. Public auth endpoints (`/login`, `/register`, `/reset-password`) are protected against brute force via Resilience4j rate limiting, and enforce a minimum password length of 8 characters.
    
-    API error note: Backend validation and runtime failures are returned as structured `ProblemDetail` JSON payloads.
+    API error note: Backend validation and runtime failures are returned as structured `ProblemDetail` JSON payloads. Rate limit violations return HTTP 429 (`Too Many Requests`).
 
 ### 3. Start the Application
 

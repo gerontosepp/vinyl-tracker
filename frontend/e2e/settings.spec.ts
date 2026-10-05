@@ -74,7 +74,7 @@ test.describe('Settings Sync', () => {
       await route.fulfill({
         status: 500,
         contentType: 'application/json',
-        body: JSON.stringify({ message: 'sync failed' }),
+        body: JSON.stringify({ message: 'Failed to synchronize collection.' }),
       });
     });
 

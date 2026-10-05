@@ -51,7 +51,7 @@ test.describe('Authentication', () => {
 
     // specific element on dashboard
     await expect(page).toHaveURL('/');
-    await expect(page.getByRole('button', { name: 'SCAN RECORD' })).toBeVisible();
+    await expect(page.locator('aside').getByRole('button', { name: 'Scan' })).toBeVisible();
   });
 
   test('should be able to logout', async ({ page }) => {
@@ -84,7 +84,7 @@ test.describe('Authentication', () => {
     await expect(profileNavItem).toBeVisible();
     await profileNavItem.click();
     await expect(page).toHaveURL('/profile');
-    await page.getByRole('button', { name: 'Sign Out' }).click();
+    await page.locator('main').getByRole('button', { name: 'Sign Out' }).click();
     await expect(page).toHaveURL('/login');
   });
 });

@@ -77,7 +77,7 @@ test.describe('Dashboard', () => {
   });
 
   test('should display dashboard sections', async ({ page }) => {
-    await expect(page.getByRole('heading', { name: 'Top Records', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Most Played Albums', exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Recent Listens', exact: true })).toBeVisible();
     await expect(page.getByText('Collection Value', { exact: false })).toBeVisible();
     await expect(page.getByText('Genre Breakdown', { exact: true })).toBeVisible();
@@ -86,17 +86,14 @@ test.describe('Dashboard', () => {
   });
 
   test('should toggle scanner', async ({ page }) => {
-    const scanButton = page.locator('aside').getByRole('button', { name: 'Scan Record' });
+    const scanButton = page.locator('aside').getByRole('button', { name: 'Scan' });
     await expect(scanButton).toBeVisible();
     await scanButton.click();
 
-    await expect(page.getByText('Back to Dashboard')).toBeVisible();
-    // Verify scanner container or elements
-    // Since camera might not work in CI/headless, we look for the component structure
-    // e.g., the fallback or the video element
-    // await expect(page.locator('#html5-qrcode-reader')).toBeVisible(); // example ID if used
+    const homeButton = page.getByRole('button', { name: /Home/ });
+    await expect(homeButton).toBeVisible();
 
-    await page.getByRole('button', { name: 'Back to Dashboard' }).click();
+    await homeButton.click();
     await expect(scanButton).toBeVisible();
   });
 });

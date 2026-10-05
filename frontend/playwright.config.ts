@@ -5,12 +5,12 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
-  reporter: 'html',
+  reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : [['html', { open: 'never' }], ['list']],
   use: {
     baseURL: 'https://localhost:5173',
     ignoreHTTPSErrors: true,
     trace: 'on-first-retry',
+    locale: 'en-US',
   },
   projects: [
     {

@@ -101,9 +101,15 @@ jobs:
     - name: Install Dependencies
       run: npm ci --legacy-peer-deps
 
-    - name: Run Tests
-      # Runs Angular Karma unit tests in headless mode with code coverage
-      run: npm run test -- --watch=false --code-coverage --browsers=ChromeHeadless
+    - name: Run Karma Unit Tests
+      # Runs Angular Karma unit tests with > 80% coverage check enforced via karma.conf.js
+      run: npm run test -- --watch=false --code-coverage --browsers=ChromeHeadlessCI
+
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps chromium
+
+    - name: Run Playwright E2E Tests
+      run: npm run test:e2e
 
     # We build the Docker image which includes the build step, so explicit 'npm run build' is redundant for the artifact if we just want the image.
     # But sticking to the pattern:

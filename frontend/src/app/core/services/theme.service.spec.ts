@@ -34,12 +34,36 @@ describe('ThemeService', () => {
     expect(localStorage.setItem).toHaveBeenCalledWith('theme', 'dark');
   });
 
-  it('should read initial theme from localStorage', () => {
-    store['theme'] = 'light';
+  it('should handle system theme with light and dark media query', () => {
+    service.setTheme('system');
+    TestBed.flushEffects();
+    expect(service.theme()).toBe('system');
+    expect(document.documentElement.classList.contains('light')).toBeTrue();
+  });
+
+  it('should update class on media query change when system theme', () => {
+    let changeHandler: ((e: any) => void) | undefined;
+    (window.matchMedia as jasmine.Spy).and.returnValue({
+      matches: false,
+      addEventListener: (evt: string, cb: any) => {
+        if (evt === 'change') changeHandler = cb;
+      },
+      removeEventListener: () => {}
+    } as any);
+
     let otherService: ThemeService;
     TestBed.runInInjectionContext(() => {
       otherService = new ThemeService();
     });
-    expect(otherService!.theme()).toBe('light');
+    otherService!.setTheme('system');
+    TestBed.flushEffects();
+
+    if (changeHandler) {
+      changeHandler({ matches: true });
+      expect(document.documentElement.classList.contains('dark')).toBeTrue();
+
+      changeHandler({ matches: false });
+      expect(document.documentElement.classList.contains('light')).toBeTrue();
+    }
   });
 });

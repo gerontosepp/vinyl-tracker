@@ -66,7 +66,7 @@ test.describe('Settings Sync', () => {
     const syncButton = page.getByRole('button', { name: 'Force Sync Collection' });
     await syncButton.click();
 
-    await expect(page.getByText('Synced successfully! Added: 3, Removed: 1')).toBeVisible();
+    await expect(page.getByText('Synced successfully! Added: 3, Removed: 1').first()).toBeVisible();
   });
 
   test('should show error toast when manual sync fails', async ({ page }) => {
@@ -83,6 +83,6 @@ test.describe('Settings Sync', () => {
 
     await page.getByRole('button', { name: 'Force Sync Collection' }).click();
 
-    await expect(page.getByText('Failed to synchronize collection.')).toBeVisible();
+    await expect(page.getByText('Failed to synchronize collection.').first()).toBeVisible();
   });
 });

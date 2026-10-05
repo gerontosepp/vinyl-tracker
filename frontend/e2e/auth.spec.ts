@@ -23,7 +23,7 @@ test.describe('Authentication', () => {
     await page.getByPlaceholder('Enter your password').fill('wrongpass');
     await page.getByRole('button', { name: 'Login' }).click();
 
-    await expect(page.getByText('Login failed')).toBeVisible();
+    await expect(page.getByText('Login failed').first()).toBeVisible();
   });
 
   test('should redirect to dashboard on successful login', async ({ page }) => {

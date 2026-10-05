@@ -3,6 +3,8 @@
 Kurze Uebersicht der Aenderungen je Version (abgeleitet aus Git-Tags und Commit-Historie).
 
 ## Unreleased
+
+## v2.4.1 (2026-10-05)
 - **Neue Backend REST-APIs & MCP-Tools**:
   - `GET /api/collection/random` & MCP-Tool `get_random_record`: Liefert zufällige Empfehlungen aus der Vinyl-Sammlung mit optionalem Genre-Filter und "Nur ungespielte Platten"-Modus.
   - `GET /api/collection/unplayed` & MCP-Tool `get_unplayed_records`: Paginierte Liste ungespielter Alben der Sammlung ("Shelf of Shame").

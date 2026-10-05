@@ -27,7 +27,7 @@ import { AuthService } from '../../../core/services/auth.service';
             <span
               class="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full"
             >
-              v2.4.0
+              v2.4.1
             </span>
           </div>
         </div>

@@ -4,6 +4,14 @@ Kurze Uebersicht der Aenderungen je Version (abgeleitet aus Git-Tags und Commit-
 
 ## Unreleased
 
+## v0.2.1 (2026-10-05)
+- **Version Re-Baseline (Reset auf v0.2.1)**:
+  - Anpassung des Versionsschemas von v2.x auf `v0.2.1` zur Verdeutlichung des Work-in-Progress (WiP) / Beta-Charakters des Projekts.
+  - Bereitstellung der Docker-Images als öffentliche Packages (**Public**) in der GitHub Container Registry (GHCR) ohne Authentifizierungsanforderung.
+  - Restrukturierung der Repository-Wurzel: Shell-Skripte nach `scripts/`, alternative Docker-Compose-Dateien nach `docker/`, Sicherheitsrichtlinie nach `.github/` und AI-Guidelines nach `docs/`.
+  - Absicherung des `main`-Branches via GitHub Branch Protection (Pushes nur via Pull Requests).
+  - Volle Synchronisation aller Frontend-, Backend- und Deployment-Konfigurationen auf Version 0.2.1.
+
 ## v2.4.1 (2026-10-05)
 - **Neue Backend REST-APIs & MCP-Tools**:
   - `GET /api/collection/random` & MCP-Tool `get_random_record`: Liefert zufällige Empfehlungen aus der Vinyl-Sammlung mit optionalem Genre-Filter und "Nur ungespielte Platten"-Modus.

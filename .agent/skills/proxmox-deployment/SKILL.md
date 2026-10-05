@@ -18,7 +18,7 @@ Use [`deploy_proxmox.sh`](../../../scripts/deploy_proxmox.sh) for automated roll
 ./scripts/deploy_proxmox.sh
 
 # Or deploy a pinned release tag:
-./scripts/deploy_proxmox.sh v2.4.1
+./scripts/deploy_proxmox.sh v0.2.1
 ```
 
 The script automatically:

@@ -29,6 +29,9 @@ public class CollectionServiceTest {
     private CollectionSyncService collectionSyncService;
 
     @Mock
+    private DiscogsApiClient discogsApiClient;
+
+    @Mock
     private PdfService pdfService;
 
     @Mock
@@ -70,6 +73,26 @@ public class CollectionServiceTest {
     void forceSync_UserNotFound() {
         when(userRepository.findByUsername("unknown")).thenReturn(Optional.empty());
         assertThrows(ResourceNotFoundException.class, () -> collectionService.forceSync("unknown"));
+    }
+
+    @Test
+    void addReleaseAndSync_Success() {
+        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+        SyncResultDto mockResult = new SyncResultDto(1, 0);
+        when(collectionSyncService.syncCollection(testUser)).thenReturn(mockResult);
+
+        SyncResultDto result = collectionService.addReleaseAndSync("testuser", 12345L);
+        verify(discogsApiClient).addReleaseToCollection(12345L, testUser);
+        verify(collectionSyncService).syncCollection(testUser);
+        assertEquals(1, result.getAdded());
+        assertEquals(0, result.getRemoved());
+    }
+
+    @Test
+    void addReleaseAndSync_UserNotFound() {
+        when(userRepository.findByUsername("unknown")).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> collectionService.addReleaseAndSync("unknown", 12345L));
+        verifyNoInteractions(discogsApiClient);
     }
 
     @Test

@@ -18,10 +18,21 @@ export interface ListenEvent {
   timestamp: string;
 }
 
+export interface DiscogsMatch {
+  id: number;
+  title: string;
+  year?: string;
+  thumbUrl?: string;
+  coverImage?: string;
+  format?: string[];
+  country?: string;
+}
+
 export interface ScanResult {
   success: boolean;
   message: string;
   record?: TrackedRecord;
+  discogsMatches?: DiscogsMatch[];
 }
 
 export interface SyncResult {

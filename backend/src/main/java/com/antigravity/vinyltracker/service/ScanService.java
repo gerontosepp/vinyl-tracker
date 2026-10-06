@@ -11,6 +11,7 @@ import com.antigravity.vinyltracker.repository.RecordRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -35,25 +36,7 @@ public class ScanService {
             String idStr = barcode.replace("discogs-id:", "");
             try {
                 Long releaseId = Long.parseLong(idStr);
-                if (discogsApiClient.isReleaseInCollection(releaseId, user)) {
-                    discogsRelease = discogsApiClient.getRelease(releaseId, user);
-                } else {
-                    DiscogsDto.Release fetched = discogsApiClient.getRelease(releaseId, user);
-                    if (fetched != null) {
-                        String artist = (fetched.getArtists() != null && !fetched.getArtists().isEmpty())
-                                ? fetched.getArtists().get(0).getName()
-                                : "Unknown";
-                        discogsMatches.add(new ScanDto.DiscogsMatch(
-                                fetched.getId(),
-                                artist + " - " + fetched.getTitle(),
-                                String.valueOf(fetched.getYear()),
-                                fetched.getThumbUrl(),
-                                fetched.getThumbUrl(),
-                                java.util.Collections.emptyList(),
-                                null
-                        ));
-                    }
-                }
+                discogsRelease = discogsApiClient.getRelease(releaseId, user);
             } catch (NumberFormatException e) {
                 return new ScanDto.Result(false, "Invalid custom barcode format", null, null);
             }
@@ -90,7 +73,7 @@ public class ScanService {
             if (!discogsMatches.isEmpty()) {
                 return new ScanDto.Result(false, "Release not found in collection, but found on Discogs.", null, discogsMatches);
             }
-            return new ScanDto.Result(false, "Release not found in collection or on Discogs.", null, null);
+            return new ScanDto.Result(false, "Release not found in collection or invalid barcode.", null, null);
         }
 
         final DiscogsDto.Release finalRelease = discogsRelease;

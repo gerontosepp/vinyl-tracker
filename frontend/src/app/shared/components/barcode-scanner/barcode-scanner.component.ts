@@ -1,14 +1,18 @@
 import { Component, AfterViewInit, OnDestroy, inject, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { AuthService } from '../../../core/services/auth.service';
 import { ApiService } from '../../../core/services/api.service';
 import { ToastService } from '../../../core/services/toast.service';
-import { ScanResult, DiscogsMatch } from '../../../core/types';
+import { ScannerService } from '../../../core/services/scanner.service';
+import { ScanResult, DiscogsMatch, SyncResult } from '../../../core/types';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-barcode-scanner',
   standalone: true,
+  imports: [CommonModule, FormsModule],
   template: `
     <div class="flex flex-col items-center p-4 h-full">
       <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">Scan Vinyl Barcode</h2>
@@ -16,8 +20,47 @@ import { firstValueFrom } from 'rxjs';
       @if (isScanning()) {
         <div
           id="reader"
-          class="w-full max-w-md bg-white dark:bg-gray-800 rounded-xl overflow-hidden [&_*]:dark:text-gray-200"
+          class="w-full max-w-md bg-white dark:bg-gray-800 rounded-xl overflow-hidden [&_*]:dark:text-gray-200 shadow-sm"
         ></div>
+
+        <!-- Manual Barcode Input Section on Scan Page -->
+        <div class="w-full max-w-md mt-6 pt-5 border-t border-gray-200 dark:border-gray-700/80">
+          <label class="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
+            Oder Barcode-Nummer manuell eingeben:
+          </label>
+          <div class="flex gap-2">
+            <div class="relative flex-1">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
+                </svg>
+              </span>
+              <input
+                type="text"
+                [ngModel]="manualQuery()"
+                (ngModelChange)="manualQuery.set($event)"
+                (keyup.enter)="searchManual()"
+                placeholder="z. B. 075678645624"
+                class="w-full pl-9 pr-3 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors shadow-sm"
+              />
+            </div>
+            <button
+              (click)="searchManual()"
+              [disabled]="isSearchingManual() || !manualQuery().trim()"
+              class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium rounded-lg text-sm transition-colors shadow-sm cursor-pointer shrink-0 flex items-center gap-1.5"
+            >
+              @if (isSearchingManual()) {
+                <span class="animate-spin text-xs">⏳</span>
+                <span>Suchen...</span>
+              } @else {
+                <span>Code prüfen</span>
+              }
+            </button>
+          </div>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
+            Ziffern unter dem Strichcode auf dem Plattencover eingeben.
+          </p>
+        </div>
       }
 
       @if (scanResult(); as result) {
@@ -165,15 +208,44 @@ import { firstValueFrom } from 'rxjs';
         } @else {
           <!-- Error / Not found anywhere -->
           <div
-            class="mt-4 p-4 rounded-xl shadow-sm w-full max-w-md border bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300 border-red-200 dark:border-red-900/50"
+            class="mt-4 p-5 rounded-xl shadow-sm w-full max-w-md border bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300 border-red-200 dark:border-red-900/50"
           >
             <h3 class="font-bold flex items-center gap-2">
               <span>⚠️</span> Nicht gefunden
             </h3>
             <p class="text-sm mt-1">{{ result.message }}</p>
+
+            <!-- Manual barcode / title fallback search -->
+            <div class="mt-4 pt-3 border-t border-red-200 dark:border-red-800/60 text-left">
+              <label class="block text-xs font-semibold text-red-900 dark:text-red-200 mb-1.5">
+                Code korrigieren oder Album manuell suchen:
+              </label>
+              <div class="flex gap-2">
+                <input
+                  type="text"
+                  [ngModel]="manualQuery()"
+                  (ngModelChange)="manualQuery.set($event)"
+                  (keyup.enter)="searchManual()"
+                  placeholder="Barcode oder Album/Künstler eingeben"
+                  class="flex-1 px-3 py-2 text-sm rounded-lg border border-red-300 dark:border-red-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  (click)="searchManual()"
+                  [disabled]="isSearchingManual() || !manualQuery().trim()"
+                  class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors cursor-pointer shrink-0"
+                >
+                  @if (isSearchingManual()) {
+                    ⏳
+                  } @else {
+                    Suchen
+                  }
+                </button>
+              </div>
+            </div>
+
             <button
               (click)="handleReset()"
-              class="mt-4 w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 cursor-pointer text-sm font-medium"
+              class="mt-4 w-full px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-lg cursor-pointer text-sm font-medium transition-colors"
             >
               Erneut scannen
             </button>
@@ -187,6 +259,7 @@ export class BarcodeScannerComponent implements AfterViewInit, OnDestroy {
   readonly authService = inject(AuthService);
   readonly apiService = inject(ApiService);
   readonly toastService = inject(ToastService);
+  readonly scannerService = inject(ScannerService);
 
   readonly scanResult = signal<ScanResult | null>(null);
   readonly isScanning = signal<boolean>(true);
@@ -194,6 +267,8 @@ export class BarcodeScannerComponent implements AfterViewInit, OnDestroy {
   readonly selectedMatchId = signal<number | null>(null);
   readonly addSuccessMessage = signal<string | null>(null);
   readonly addErrorMessage = signal<string | null>(null);
+  readonly manualQuery = signal<string>('');
+  readonly isSearchingManual = signal<boolean>(false);
 
   private scanner: Html5QrcodeScanner | null = null;
   private timerId: any = null;
@@ -241,28 +316,7 @@ export class BarcodeScannerComponent implements AfterViewInit, OnDestroy {
           console.log('Scanned:', result);
           this.cleanupScanner();
           this.isScanning.set(false);
-
-          const user = this.authService.user();
-          if (user) {
-            try {
-              const apiResult = await firstValueFrom(
-                this.apiService.scanBarcode(result)
-              );
-              this.scanResult.set(apiResult);
-              if (apiResult.discogsMatches && apiResult.discogsMatches.length > 0) {
-                this.selectedMatchId.set(apiResult.discogsMatches[0].id);
-              }
-            } catch (error) {
-              const msg =
-                typeof error === 'object' &&
-                error !== null &&
-                'error' in error &&
-                typeof (error as { error?: { message?: string } }).error?.message === 'string'
-                  ? (error as { error?: { message?: string } }).error?.message
-                  : 'Network error or backend failure';
-              this.scanResult.set({ success: false, message: msg || 'Scan failed' });
-            }
-          }
+          await this.executeBarcodeScan(result);
         },
         (_error) => {
           // Scanning...
@@ -271,6 +325,54 @@ export class BarcodeScannerComponent implements AfterViewInit, OnDestroy {
     } catch (err) {
       console.error('Failed to render scanner', err);
     }
+  }
+
+  async executeBarcodeScan(barcode: string): Promise<void> {
+    const user = this.authService.user();
+    if (!user) return;
+
+    this.manualQuery.set(barcode);
+    this.isSearchingManual.set(true);
+
+    try {
+      const apiResult: ScanResult = await firstValueFrom(
+        this.apiService.scanBarcode(barcode)
+      );
+      this.handleScanResponse(apiResult);
+    } catch (error: any) {
+      const errorResult = error?.error;
+      if (
+        errorResult &&
+        typeof errorResult === 'object' &&
+        ('discogsMatches' in errorResult || 'message' in errorResult)
+      ) {
+        this.handleScanResponse(errorResult);
+      } else {
+        const msg =
+          errorResult?.message || error?.message || 'Netzwerkfehler oder Serverfehler';
+        this.scanResult.set({ success: false, message: msg });
+      }
+    } finally {
+      this.isSearchingManual.set(false);
+    }
+  }
+
+  private handleScanResponse(apiResult: ScanResult): void {
+    this.scanResult.set(apiResult);
+    if (apiResult.success) {
+      this.scannerService.notifyScanLogged();
+    }
+    if (apiResult.discogsMatches && apiResult.discogsMatches.length > 0) {
+      this.selectedMatchId.set(apiResult.discogsMatches[0].id);
+    }
+  }
+
+  searchManual(): void {
+    const q = this.manualQuery().trim();
+    if (!q) return;
+    this.cleanupScanner();
+    this.isScanning.set(false);
+    this.executeBarcodeScan(q);
   }
 
   private cleanupScanner(): void {
@@ -298,7 +400,7 @@ export class BarcodeScannerComponent implements AfterViewInit, OnDestroy {
     this.isAddingToCollection.set(true);
     this.addErrorMessage.set(null);
     try {
-      const syncResult = await firstValueFrom(
+      const syncResult: SyncResult = await firstValueFrom(
         this.apiService.addReleaseToCollection(releaseId)
       );
       this.addSuccessMessage.set(
@@ -308,6 +410,7 @@ export class BarcodeScannerComponent implements AfterViewInit, OnDestroy {
         'Erfolgreich zu deiner Discogs-Sammlung hinzugefügt!',
         'success'
       );
+      this.scannerService.notifyScanLogged();
     } catch (err: any) {
       const msg =
         err?.error?.message ||
@@ -326,6 +429,8 @@ export class BarcodeScannerComponent implements AfterViewInit, OnDestroy {
     this.selectedMatchId.set(null);
     this.addSuccessMessage.set(null);
     this.addErrorMessage.set(null);
+    this.manualQuery.set('');
+    this.isSearchingManual.set(false);
     this.isScanning.set(true);
     setTimeout(() => this.startScanner(), 100);
   }

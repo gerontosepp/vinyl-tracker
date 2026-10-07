@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LayoutComponent } from '../../shared/components/layout/layout.component';
@@ -12,7 +12,7 @@ import { ToastService } from '../../core/services/toast.service';
 import { ScannerService } from '../../core/services/scanner.service';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { ListenEvent, AnalyticsTopRecord, CollectionValueResponse, GenreBreakdownItem } from '../../core/types';
-import { Subscription, firstValueFrom, forkJoin } from 'rxjs';
+import { Subscription, firstValueFrom, forkJoin, of, catchError } from 'rxjs';
 
 @Component({
   selector: 'app-dashboard',
@@ -196,12 +196,27 @@ export class DashboardComponent implements OnInit, OnDestroy {
   });
 
   private sub: Subscription | null = null;
+  private previousScannerOpen = false;
+
+  constructor() {
+    effect(() => {
+      const scanCount = this.scannerService.scanLogged();
+      const isScannerOpen = this.scannerService.showScanner();
+      const wasOpen = this.previousScannerOpen;
+      this.previousScannerOpen = isScannerOpen;
+
+      if (this.authService.user() && ((wasOpen && !isScannerOpen) || scanCount > 0)) {
+        this.loadData();
+      }
+    });
+  }
 
   ngOnInit(): void {
     this.loadData();
   }
 
   ngOnDestroy(): void {
+    this.scannerService.closeScanner();
     if (this.sub) {
       this.sub.unsubscribe();
     }
@@ -218,10 +233,30 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.loadingStats.set(true);
 
     this.sub = forkJoin({
-      recents: this.apiService.getRecentListens(this.startDate(), this.endDate()),
-      tops: this.apiService.getTopRecords(this.startDate(), this.endDate()),
-      value: this.apiService.getCollectionValue(),
-      genres: this.apiService.getGenreBreakdown(),
+      recents: this.apiService.getRecentListens(this.startDate(), this.endDate()).pipe(
+        catchError((err) => {
+          console.error('Failed to load recent listens', err);
+          return of([]);
+        })
+      ),
+      tops: this.apiService.getTopRecords(this.startDate(), this.endDate()).pipe(
+        catchError((err) => {
+          console.error('Failed to load top records', err);
+          return of([]);
+        })
+      ),
+      value: this.apiService.getCollectionValue().pipe(
+        catchError((err) => {
+          console.warn('Failed to load collection value', err);
+          return of(null);
+        })
+      ),
+      genres: this.apiService.getGenreBreakdown().pipe(
+        catchError((err) => {
+          console.warn('Failed to load genre breakdown', err);
+          return of([]);
+        })
+      ),
     }).subscribe({
       next: ({ recents, tops, value, genres }) => {
         this.recentListens.set(recents);

@@ -8,7 +8,7 @@ set -e
 #   ./scripts/deploy_proxmox.sh [VERSION_TAG] [REGISTRY_PREFIX]
 # Examples:
 #   ./scripts/deploy_proxmox.sh                     # Deploy latest version from default GHCR
-#   ./scripts/deploy_proxmox.sh v0.3.0              # Deploy specific version v0.3.0
+#   ./scripts/deploy_proxmox.sh v0.3.1              # Deploy specific version v0.3.1
 #   ./scripts/deploy_proxmox.sh latest myuser/      # Custom registry prefix
 # ==============================================================================
 
@@ -82,15 +82,15 @@ EOF
     # Auto-generate secure production secrets if default values remain
     if command -v openssl &> /dev/null; then
         echo -e "${GREEN}Generating secure random production keys for JWT and encryption...${NC}"
-        RAND_JWT=$(openssl rand -base64 32 | tr -d '\n')
+        RAND_JWT=$(openssl rand -hex 32 | tr -d '\n')
         RAND_SALT=$(openssl rand -hex 8 | tr -d '\n')
-        RAND_ENC=$(openssl rand -base64 24 | tr -d '\n')
-        RAND_DB_PASS=$(openssl rand -hex 12 | tr -d '\n')
+        RAND_ENC=$(openssl rand -hex 24 | tr -d '\n')
+        RAND_DB_PASS=$(openssl rand -hex 16 | tr -d '\n')
 
-        sed -i.bak "s/JWT_SECRET=.*/JWT_SECRET=${RAND_JWT}/" .env
-        sed -i.bak "s/VINYL_ENCRYPTION_SALT=.*/VINYL_ENCRYPTION_SALT=${RAND_SALT}/" .env
-        sed -i.bak "s/VINYL_ENCRYPTION_PASSWORD=.*/VINYL_ENCRYPTION_PASSWORD=${RAND_ENC}/" .env
-        sed -i.bak "s/POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=${RAND_DB_PASS}/" .env
+        sed -i.bak "s|^JWT_SECRET=.*|JWT_SECRET=${RAND_JWT}|" .env
+        sed -i.bak "s|^VINYL_ENCRYPTION_SALT=.*|VINYL_ENCRYPTION_SALT=${RAND_SALT}|" .env
+        sed -i.bak "s|^VINYL_ENCRYPTION_PASSWORD=.*|VINYL_ENCRYPTION_PASSWORD=${RAND_ENC}|" .env
+        sed -i.bak "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=${RAND_DB_PASS}|" .env
         rm -f .env.bak
     fi
 fi
@@ -104,6 +104,10 @@ else
 fi
 
 echo -e "${GREEN}✓ Environment file (.env) ready.${NC}"
+
+if grep -q "^CORS_ALLOWED_ORIGINS=https://localhost:5173" .env; then
+    echo -e "${YELLOW}Hinweis: Wenn Sie über eine Domain (z.B. https://vinyl.meinedomain.de) zugreifen, tragen Sie diese bitte in .env bei CORS_ALLOWED_ORIGINS ein.${NC}"
+fi
 
 # ------------------------------------------------------------------------------
 # 3. Determine Compose File
@@ -138,13 +142,13 @@ export IMAGE_TAG="${VERSION}"
 export VERSION_TAG="${VERSION}"
 
 echo "Pulling latest container images..."
-$DOCKER_COMPOSE_CMD -f "$COMPOSE_FILE" pull || echo -e "${YELLOW}Warning: Pull skipped or using local images.${NC}"
+$DOCKER_COMPOSE_CMD --env-file .env -f "$COMPOSE_FILE" pull || echo -e "${YELLOW}Warning: Pull skipped or using local images.${NC}"
 
 echo "Stopping existing containers..."
-$DOCKER_COMPOSE_CMD -f "$COMPOSE_FILE" down --remove-orphans || true
+$DOCKER_COMPOSE_CMD --env-file .env -f "$COMPOSE_FILE" down --remove-orphans || true
 
 echo "Starting updated application stack..."
-$DOCKER_COMPOSE_CMD -f "$COMPOSE_FILE" up -d
+$DOCKER_COMPOSE_CMD --env-file .env -f "$COMPOSE_FILE" up -d
 
 # ------------------------------------------------------------------------------
 # 5. Health Check & Post-Deployment Info

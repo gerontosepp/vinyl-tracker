@@ -69,8 +69,9 @@ public class AnalyticsServiceTest {
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
         when(listenEventRepository.findByUserIdOrderByTimestampDesc(1L)).thenReturn(List.of(listenEvent));
  
-        List<ListenEvent> result = analyticsService.getRecentListens("testuser", null, null);
+        List<com.antigravity.vinyltracker.model.dto.ListenEventDto> result = analyticsService.getRecentListens("testuser", null, null);
         assertEquals(1, result.size());
+        assertEquals("Test Title", result.get(0).getRecord().getTitle());
     }
  
     @Test
@@ -79,8 +80,9 @@ public class AnalyticsServiceTest {
         when(listenEventRepository.findByUserIdAndTimestampBetweenOrderByTimestampDesc(
                 eq(1L), any(), any())).thenReturn(List.of(listenEvent));
  
-        List<ListenEvent> result = analyticsService.getRecentListens("testuser", LocalDate.now(), LocalDate.now());
+        List<com.antigravity.vinyltracker.model.dto.ListenEventDto> result = analyticsService.getRecentListens("testuser", LocalDate.now(), LocalDate.now());
         assertEquals(1, result.size());
+        assertEquals("Test Title", result.get(0).getRecord().getTitle());
     }
  
     @Test

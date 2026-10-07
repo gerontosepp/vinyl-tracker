@@ -138,13 +138,13 @@ export IMAGE_TAG="${VERSION}"
 export VERSION_TAG="${VERSION}"
 
 echo "Pulling latest container images..."
-$DOCKER_COMPOSE_CMD -f "$COMPOSE_FILE" pull || echo -e "${YELLOW}Warning: Pull skipped or using local images.${NC}"
+$DOCKER_COMPOSE_CMD --env-file .env -f "$COMPOSE_FILE" pull || echo -e "${YELLOW}Warning: Pull skipped or using local images.${NC}"
 
 echo "Stopping existing containers..."
-$DOCKER_COMPOSE_CMD -f "$COMPOSE_FILE" down --remove-orphans || true
+$DOCKER_COMPOSE_CMD --env-file .env -f "$COMPOSE_FILE" down --remove-orphans || true
 
 echo "Starting updated application stack..."
-$DOCKER_COMPOSE_CMD -f "$COMPOSE_FILE" up -d
+$DOCKER_COMPOSE_CMD --env-file .env -f "$COMPOSE_FILE" up -d
 
 # ------------------------------------------------------------------------------
 # 5. Health Check & Post-Deployment Info

@@ -134,6 +134,13 @@ Für den produktiven Einsatz auf einem Server (z.B. als Docker-VM unter Proxmox)
    - Wähle "Request a new SSL Certificate".
    - Aktiviere "Force SSL".
    - Speichern. Nginx Proxy Manager besorgt nun via Let's Encrypt ein gültiges Zertifikat.
+5. **CORS in `.env` konfigurieren**:
+   Tragen Sie Ihre Domain in der `.env`-Datei auf dem Server ein:
+   ```env
+   CORS_ALLOWED_ORIGINS=https://vinyl.meinedomain.de,https://localhost:5173,https://127.0.0.1:5173
+   ```
+   > [!IMPORTANT]
+   > Moderne Browser senden bei POST-Anfragen (Login, Registrierung) stets einen `Origin`-Header. Wenn Ihre Domain nicht in `CORS_ALLOWED_ORIGINS` hinterlegt ist, blockiert Spring Boot die Anfrage mit einem HTTP `403 Invalid CORS request` Fehler.
 
 Ab jetzt erreicht jedes Gerät (auch dein Smartphone) die App über `https://vinyl.meinedomain.de` mit einem zu 100% gültigen und vertrauenswürdigen Zertifikat. Der Kamera-Zugriff für das Barcode-Scanning wird ohne Warnungen gestattet!
 

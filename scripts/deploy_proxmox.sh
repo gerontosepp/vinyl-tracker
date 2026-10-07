@@ -105,6 +105,10 @@ fi
 
 echo -e "${GREEN}✓ Environment file (.env) ready.${NC}"
 
+if grep -q "^CORS_ALLOWED_ORIGINS=https://localhost:5173" .env; then
+    echo -e "${YELLOW}Hinweis: Wenn Sie über eine Domain (z.B. https://vinyl.meinedomain.de) zugreifen, tragen Sie diese bitte in .env bei CORS_ALLOWED_ORIGINS ein.${NC}"
+fi
+
 # ------------------------------------------------------------------------------
 # 3. Determine Compose File
 # ------------------------------------------------------------------------------

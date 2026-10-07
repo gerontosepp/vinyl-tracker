@@ -1,6 +1,7 @@
-import { Component, output } from '@angular/core';
+import { Component, output, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
+import { ScannerService } from '../../../../core/services/scanner.service';
 import {
   LucideHome,
   LucideDisc,
@@ -29,30 +30,32 @@ import {
       <!-- Home -->
       <a
         routerLink="/"
+        (click)="scannerService.closeScanner()"
         [routerLinkActiveOptions]="{ exact: true }"
         routerLinkActive
         #rlaHome="routerLinkActive"
         [attr.aria-label]="'nav.home' | translate"
         [class]="
-          'p-4 transition-all duration-200 ' +
-          (rlaHome.isActive
-            ? 'text-indigo-600 dark:text-indigo-400 scale-110 drop-shadow-sm'
+          'p-4 transition-all duration-200 cursor-pointer ' +
+          (rlaHome.isActive && !scannerService.showScanner()
+            ? 'text-indigo-600 dark:text-indigo-400 scale-110 drop-shadow-sm font-bold'
             : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300')
         "
       >
-        <svg lucideHome [size]="28" [strokeWidth]="rlaHome.isActive ? 2.5 : 2"></svg>
+        <svg lucideHome [size]="28" [strokeWidth]="rlaHome.isActive && !scannerService.showScanner() ? 2.5 : 2"></svg>
       </a>
 
       <!-- Collection -->
       <a
         routerLink="/collection"
+        (click)="scannerService.closeScanner()"
         routerLinkActive
         #rlaCol="routerLinkActive"
         [attr.aria-label]="'nav.collection' | translate"
         [class]="
-          'p-4 transition-all duration-200 ' +
+          'p-4 transition-all duration-200 cursor-pointer ' +
           (rlaCol.isActive
-            ? 'text-indigo-600 dark:text-indigo-400 scale-110 drop-shadow-sm'
+            ? 'text-indigo-600 dark:text-indigo-400 scale-110 drop-shadow-sm font-bold'
             : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300')
         "
       >
@@ -64,7 +67,12 @@ import {
         <button
           (click)="scanClick.emit()"
           [attr.aria-label]="'nav.scan' | translate"
-          class="bg-indigo-500 hover:bg-indigo-600 text-white rounded-full p-4 shadow-[0_8px_16px_-6px_rgba(79,70,229,0.5)] flex items-center justify-center transition-transform hover:-translate-y-1 active:scale-95 w-16 h-16 border-4 border-slate-50 dark:border-slate-900 cursor-pointer"
+          [class]="
+            'rounded-full p-4 flex items-center justify-center transition-transform hover:-translate-y-1 active:scale-95 w-16 h-16 border-4 border-slate-50 dark:border-slate-900 cursor-pointer ' +
+            (scannerService.showScanner()
+              ? 'bg-indigo-600 ring-4 ring-indigo-400 text-white shadow-[0_8px_20px_-4px_rgba(79,70,229,0.7)]'
+              : 'bg-indigo-500 hover:bg-indigo-600 text-white shadow-[0_8px_16px_-6px_rgba(79,70,229,0.5)]')
+          "
         >
           <svg lucideScanLine [size]="30" strokeWidth="2.5"></svg>
         </button>
@@ -73,13 +81,14 @@ import {
       <!-- Stats -->
       <a
         routerLink="/statistics"
+        (click)="scannerService.closeScanner()"
         routerLinkActive
         #rlaStats="routerLinkActive"
         [attr.aria-label]="'nav.stats' | translate"
         [class]="
-          'p-4 transition-all duration-200 ' +
+          'p-4 transition-all duration-200 cursor-pointer ' +
           (rlaStats.isActive
-            ? 'text-indigo-600 dark:text-indigo-400 scale-110 drop-shadow-sm'
+            ? 'text-indigo-600 dark:text-indigo-400 scale-110 drop-shadow-sm font-bold'
             : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300')
         "
       >
@@ -89,13 +98,14 @@ import {
       <!-- Profile -->
       <a
         routerLink="/profile"
+        (click)="scannerService.closeScanner()"
         routerLinkActive
         #rlaProfile="routerLinkActive"
         [attr.aria-label]="'nav.profile' | translate"
         [class]="
-          'p-4 transition-all duration-200 ' +
+          'p-4 transition-all duration-200 cursor-pointer ' +
           (rlaProfile.isActive
-            ? 'text-indigo-600 dark:text-indigo-400 scale-110 drop-shadow-sm'
+            ? 'text-indigo-600 dark:text-indigo-400 scale-110 drop-shadow-sm font-bold'
             : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300')
         "
       >
@@ -109,5 +119,7 @@ import {
 })
 export class BottomNavComponent {
   readonly scanClick = output<void>();
+  readonly scannerService = inject(ScannerService);
 }
+
 

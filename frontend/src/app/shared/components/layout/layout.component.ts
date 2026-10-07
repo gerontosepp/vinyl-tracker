@@ -60,11 +60,15 @@ export class LayoutComponent {
   private readonly router = inject(Router);
 
   handleScan(): void {
-    this.scannerService.openScanner();
-    const currentUrl = this.router.url;
-    // If not on dashboard, navigate to dashboard to show scanner
-    if (currentUrl !== '/' && currentUrl !== '/#') {
-      this.router.navigate(['/']);
+    if (this.scannerService.showScanner()) {
+      this.scannerService.closeScanner();
+    } else {
+      this.scannerService.openScanner();
+      const currentUrl = this.router.url;
+      // If not on dashboard, navigate to dashboard to show scanner
+      if (currentUrl !== '/' && currentUrl !== '/#') {
+        this.router.navigate(['/']);
+      }
     }
   }
 }

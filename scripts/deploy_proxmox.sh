@@ -82,15 +82,15 @@ EOF
     # Auto-generate secure production secrets if default values remain
     if command -v openssl &> /dev/null; then
         echo -e "${GREEN}Generating secure random production keys for JWT and encryption...${NC}"
-        RAND_JWT=$(openssl rand -base64 32 | tr -d '\n')
+        RAND_JWT=$(openssl rand -hex 32 | tr -d '\n')
         RAND_SALT=$(openssl rand -hex 8 | tr -d '\n')
-        RAND_ENC=$(openssl rand -base64 24 | tr -d '\n')
-        RAND_DB_PASS=$(openssl rand -hex 12 | tr -d '\n')
+        RAND_ENC=$(openssl rand -hex 24 | tr -d '\n')
+        RAND_DB_PASS=$(openssl rand -hex 16 | tr -d '\n')
 
-        sed -i.bak "s/JWT_SECRET=.*/JWT_SECRET=${RAND_JWT}/" .env
-        sed -i.bak "s/VINYL_ENCRYPTION_SALT=.*/VINYL_ENCRYPTION_SALT=${RAND_SALT}/" .env
-        sed -i.bak "s/VINYL_ENCRYPTION_PASSWORD=.*/VINYL_ENCRYPTION_PASSWORD=${RAND_ENC}/" .env
-        sed -i.bak "s/POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=${RAND_DB_PASS}/" .env
+        sed -i.bak "s|^JWT_SECRET=.*|JWT_SECRET=${RAND_JWT}|" .env
+        sed -i.bak "s|^VINYL_ENCRYPTION_SALT=.*|VINYL_ENCRYPTION_SALT=${RAND_SALT}|" .env
+        sed -i.bak "s|^VINYL_ENCRYPTION_PASSWORD=.*|VINYL_ENCRYPTION_PASSWORD=${RAND_ENC}|" .env
+        sed -i.bak "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=${RAND_DB_PASS}|" .env
         rm -f .env.bak
     fi
 fi

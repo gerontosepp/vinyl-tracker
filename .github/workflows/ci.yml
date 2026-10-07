@@ -212,50 +212,6 @@ jobs:
     - name: Run Unit Tests
       run: cargo test --verbose
 
-  mcp-release:
-    name: MCP Server Release (${{ matrix.target }})
-    if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: ${{ matrix.os }}
-    permissions:
-      contents: write
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            target: linux-x86_64
-            binary: vinyl-mcp-server
-          - os: macos-latest
-            target: macos-aarch64
-            binary: vinyl-mcp-server
-    defaults:
-      run:
-        working-directory: ./mcp
-
-    steps:
-    - uses: actions/checkout@v6
-      with:
-        fetch-depth: 0
-
-    - name: Set up Rust toolchain
-      uses: dtolnay/rust-toolchain@stable
-
-    - name: Rust Cache
-      uses: Swatinem/rust-cache@v2
-      with:
-        workspaces: "./mcp -> ./mcp/target"
-
-    - name: Build Release Binary
-      run: cargo build --release
-
-    - name: Package & Upload to GitHub Release
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        ARCHIVE_NAME="vinyl-mcp-server-${{ matrix.target }}.tar.gz"
-        tar -czf "../$ARCHIVE_NAME" -C target/release "${{ matrix.binary }}"
-        gh release upload "${{ github.ref_name }}" "../$ARCHIVE_NAME" --clobber
-
   cleanup-ghcr:
     needs: [backend-build, frontend-build]
     if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')

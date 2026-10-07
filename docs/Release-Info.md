@@ -7,7 +7,22 @@
 
 ---
 
-## v0.3.0 (2026-10-07) – Aktueller Release (WiP / Beta)
+## v0.3.1 (2026-10-07) – Aktueller Release (WiP / Beta)
+
+- **Proxmox & Reverse Proxy / DynDNS Stabilität**:
+  - **CORS- & Auth-Umgebungsvariablen in Docker Compose**: Explizite Weiterleitung von `CORS_ALLOWED_ORIGINS`, `CORS_ALLOW_CREDENTIALS`, `AUTH_COOKIE_*`, `IMAGE_PROXY_ALLOWED_HOSTS` und `AUTH_RATE_LIMIT_FOR_PERIOD` an den `backend`-Container in `docker-compose.registry.yml` und `docker-compose.prod.yml`. Behebt `403 Invalid CORS request` Fehler bei Zugriffen über DynDNS- und Reverse-Proxy-Domains (z.B. IPv64.net / Nginx Proxy Manager).
+  - **Robustes Deployment-Skript (`deploy_proxmox.sh`)**:
+    - Erzeugung kollisionsfreier Hex-Secrets (`openssl rand -hex`) und Pipe-Delimiter in `sed` gegen Syntaxfehler durch Sonderzeichen in Passwörtern/Salts.
+    - Explizite Übergabe von `--env-file .env` an alle `docker compose`-Befehle zur Vermeidung leerer Umgebungsvariablen.
+    - Automatische Erkennung und Warnhinweis für `CORS_ALLOWED_ORIGINS` bei Verwendung benutzerdefinierter Domains.
+  - **Deployment-Dokumentation (`DEPLOYMENT.md`)**: Ergänzung der CORS-Konfigurationsschritte im Reverse-Proxy-Kapitel.
+- **CI/CD & Release Automatisierung**:
+  - **Multi-Plattform MCP Server Release Binaries**: Integration des Rust-MCP-Server-Matrix-Builds (`linux-x86_64` und `macos-aarch64`) in den GitHub Actions Auto-Release-Workflow (`release.yml`) mit automatischem Asset-Upload.
+  - **Multi-Runner Support**: Vorbereitung und Dokumentation paralleler CI-Runner-Container auf Proxmox (`docker-compose.runner.yml`).
+
+---
+
+## v0.3.0 (2026-10-07) – Vorgänger-Release (WiP / Beta)
 
 - **Barcode-Scanning & Discogs-Integration Enhancements**:
   - **Manuelle Suche & Barcode-Korrektur**: Neue Eingabemöglichkeit für Barcode-Ziffern und Albumtitel direkt in der Scanner-Ansicht sowie im Fehlermeldungs-Dialog bei nicht erkannten Platten.

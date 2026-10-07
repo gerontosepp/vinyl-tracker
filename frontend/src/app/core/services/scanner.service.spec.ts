@@ -20,4 +20,12 @@ describe('ScannerService', () => {
     service.closeScanner();
     expect(service.showScanner()).toBeFalse();
   });
+
+  it('should toggleScanner correctly', () => {
+    expect(service.showScanner()).toBeFalse();
+    service.toggleScanner();
+    expect(service.showScanner()).toBeTrue();
+    service.toggleScanner();
+    expect(service.showScanner()).toBeFalse();
+  });
 });

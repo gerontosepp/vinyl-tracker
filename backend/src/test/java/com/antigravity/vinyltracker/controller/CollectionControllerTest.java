@@ -214,4 +214,18 @@ class CollectionControllerTest {
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.releases[0].id").value(456));
         }
+
+        @Test
+        @WithMockUser(username = "testuser")
+        void addReleaseToCollection_ShouldReturnSyncResult() throws Exception {
+                com.antigravity.vinyltracker.model.dto.SyncResultDto syncResult = new com.antigravity.vinyltracker.model.dto.SyncResultDto(1, 0);
+                when(collectionService.addReleaseAndSync("testuser", 789L)).thenReturn(syncResult);
+
+                mockMvc.perform(post("/api/collection/releases/789")
+                                .principal(() -> "testuser")
+                                .with(csrf()))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.added").value(1))
+                                .andExpect(jsonPath("$.removed").value(0));
+        }
 }

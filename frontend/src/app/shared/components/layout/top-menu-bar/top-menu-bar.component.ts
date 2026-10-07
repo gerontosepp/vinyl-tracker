@@ -3,6 +3,7 @@ import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth.service';
 import { ApiService } from '../../../../core/services/api.service';
 import { LanguageService } from '../../../../core/services/language.service';
+import { ScannerService } from '../../../../core/services/scanner.service';
 import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
 import { LucideLogOut, LucideSettings, LucideGlobe } from '@lucide/angular';
 import { firstValueFrom } from 'rxjs';
@@ -17,16 +18,21 @@ import { firstValueFrom } from 'rxjs';
         class="fixed top-0 left-0 right-0 h-16 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-700 z-30 px-4 md:px-8 flex items-center justify-between transition-colors shadow-sm"
       >
         <!-- Logo / Left Side -->
-        <div class="flex items-center gap-2 md:gap-3">
+        <a
+          routerLink="/"
+          (click)="scannerService.closeScanner()"
+          class="flex items-center gap-2 md:gap-3 cursor-pointer group"
+          title="Home"
+        >
           <img
             src="/logo.png"
             alt="Logo"
-            class="w-8 h-8 md:w-10 md:h-10 rounded-full shadow-sm"
+            class="w-8 h-8 md:w-10 md:h-10 rounded-full shadow-sm group-hover:scale-105 transition-transform"
           />
           <span class="font-black text-lg md:text-xl text-slate-900 dark:text-white tracking-tighter">
             Vinyl<span class="text-indigo-600 dark:text-indigo-400">Tracker</span>
           </span>
-        </div>
+        </a>
 
         <!-- Center - Stats -->
         <div class="hidden sm:flex flex-1 justify-center items-center">
@@ -93,11 +99,12 @@ import { firstValueFrom } from 'rxjs';
 export class TopMenuBarComponent {
   readonly authService = inject(AuthService);
   readonly languageService = inject(LanguageService);
+  readonly scannerService = inject(ScannerService);
   private readonly apiService = inject(ApiService);
   private readonly router = inject(Router);
 
   readonly totalRecords = signal<number | null>(null);
-  readonly appVersion = '0.2.1';
+  readonly appVersion = '0.3.0';
 
   constructor() {
     effect(() => {

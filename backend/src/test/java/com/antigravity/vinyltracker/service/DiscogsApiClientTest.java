@@ -86,20 +86,28 @@ class DiscogsApiClientTest {
     }
 
     @Test
-    void isReleaseInCollection_ShouldReturnTrue_WhenInCollection() {
+    void isReleaseInCollection_ShouldReturnTrue_WhenInCollection() throws Exception {
         Long releaseId = 100L;
+        DiscogsDto.CollectionRelease colRel = new DiscogsDto.CollectionRelease();
+        colRel.setId(releaseId);
+        DiscogsDto.CollectionResponse response = new DiscogsDto.CollectionResponse();
+        response.setReleases(List.of(colRel));
+
         server.expect(requestTo("https://api.discogs.com/users/" + user.getDiscogsUsername() + "/collection/releases/" + releaseId))
-                .andRespond(withSuccess());
+                .andRespond(withSuccess(objectMapper.writeValueAsString(response), MediaType.APPLICATION_JSON));
 
         boolean result = discogsApiClient.isReleaseInCollection(releaseId, user);
         assertTrue(result);
     }
 
     @Test
-    void isReleaseInCollection_ShouldReturnFalse_WhenNotInCollection() {
+    void isReleaseInCollection_ShouldReturnFalse_WhenNotInCollection() throws Exception {
         Long releaseId = 100L;
+        DiscogsDto.CollectionResponse response = new DiscogsDto.CollectionResponse();
+        response.setReleases(List.of());
+
         server.expect(requestTo("https://api.discogs.com/users/" + user.getDiscogsUsername() + "/collection/releases/" + releaseId))
-                .andRespond(withStatus(HttpStatus.NOT_FOUND));
+                .andRespond(withSuccess(objectMapper.writeValueAsString(response), MediaType.APPLICATION_JSON));
 
         boolean result = discogsApiClient.isReleaseInCollection(releaseId, user);
         assertFalse(result);

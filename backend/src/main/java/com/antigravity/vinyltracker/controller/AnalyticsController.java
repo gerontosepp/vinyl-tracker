@@ -18,7 +18,7 @@ public class AnalyticsController {
     private final AnalyticsService analyticsService;
  
     @GetMapping("/recent")
-    public ResponseEntity<List<ListenEvent>> getRecentListens(
+    public ResponseEntity<List<com.antigravity.vinyltracker.model.dto.ListenEventDto>> getRecentListens(
             Principal principal,
             @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate from,
             @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate to) {

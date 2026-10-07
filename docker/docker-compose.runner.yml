@@ -1,0 +1,18 @@
+services:
+  github-runner:
+    image: myoung34/github-runner:ubuntu-noble
+    container_name: proxmox-github-runner
+    restart: unless-stopped
+    environment:
+      REPO_URL: "https://github.com/gerontosepp/vinyl-tracker"
+      RUNNER_TOKEN: "${RUNNER_TOKEN}"
+      RUNNER_NAME: "${RUNNER_NAME:-proxmox-runner-01}"
+      RUNNER_WORKDIR: "/_work"
+      RUNNER_GROUP: "default"
+      LABELS: "self-hosted,linux,x64,proxmox"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - runner-work:/_work
+
+volumes:
+  runner-work:

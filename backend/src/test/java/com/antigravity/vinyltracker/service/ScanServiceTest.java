@@ -6,6 +6,7 @@ import com.antigravity.vinyltracker.model.Record;
 import com.antigravity.vinyltracker.model.discogs.DiscogsDto;
 import com.antigravity.vinyltracker.model.dto.ScanDto;
 import com.antigravity.vinyltracker.repository.AppUserRepository;
+import com.antigravity.vinyltracker.repository.CollectionItemRepository;
 import com.antigravity.vinyltracker.repository.ListenEventRepository;
 import com.antigravity.vinyltracker.repository.RecordRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,6 +35,9 @@ class ScanServiceTest {
 
     @Mock
     private ListenEventRepository listenEventRepository;
+
+    @Mock
+    private CollectionItemRepository collectionItemRepository;
 
     @Mock
     private AppUserRepository userRepository;
@@ -103,6 +107,40 @@ class ScanServiceTest {
 
         assertFalse(result.isSuccess());
         assertEquals("Release not found in collection or invalid barcode.", result.getMessage());
+        verify(listenEventRepository, never()).save(any(ListenEvent.class));
+    }
+
+    @Test
+    void processScan_ShouldReturnDiscogsMatches_WhenBarcodeFoundOnDiscogsButNotInCollection() {
+        String barcode = "555555555";
+        String username = "testuser";
+        Long releaseId = 99999L;
+
+        when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
+
+        DiscogsDto.SearchResult mockSearchResult = new DiscogsDto.SearchResult();
+        mockSearchResult.setId(releaseId);
+        mockSearchResult.setTitle("Artist - Album");
+        mockSearchResult.setYear("2024");
+        mockSearchResult.setThumbUrl("http://thumb.url");
+        mockSearchResult.setCoverImage("http://cover.url");
+        mockSearchResult.setFormat(java.util.List.of("Vinyl", "LP"));
+        mockSearchResult.setCountry("Germany");
+
+        DiscogsDto.SearchResponse mockSearchResponse = new DiscogsDto.SearchResponse();
+        mockSearchResponse.setResults(java.util.List.of(mockSearchResult));
+
+        when(discogsApiClient.searchDatabaseByBarcode(barcode, user)).thenReturn(mockSearchResponse);
+        when(discogsApiClient.isReleaseInCollection(releaseId, user)).thenReturn(false);
+
+        ScanDto.Result result = scanService.processScan(barcode, username);
+
+        assertFalse(result.isSuccess());
+        assertEquals("Release not found in collection, but found on Discogs.", result.getMessage());
+        assertNotNull(result.getDiscogsMatches());
+        assertEquals(1, result.getDiscogsMatches().size());
+        assertEquals(releaseId, result.getDiscogsMatches().get(0).getId());
+        assertEquals("Artist - Album", result.getDiscogsMatches().get(0).getTitle());
         verify(listenEventRepository, never()).save(any(ListenEvent.class));
     }
 

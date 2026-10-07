@@ -120,6 +120,10 @@ export class ApiService {
     return this.http.post<SyncResult>(`${this.baseUrl}/collection/sync`, {});
   }
 
+  addReleaseToCollection(releaseId: number): Observable<SyncResult> {
+    return this.http.post<SyncResult>(`${this.baseUrl}/collection/releases/${releaseId}`, {});
+  }
+
   downloadQrCodes(): Observable<Blob> {
     return this.http.get(`${this.baseUrl}/collection/qr-codes/all`, { responseType: 'blob' });
   }

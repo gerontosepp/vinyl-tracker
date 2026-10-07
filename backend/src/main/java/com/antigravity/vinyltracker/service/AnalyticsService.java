@@ -29,19 +29,24 @@ public class AnalyticsService {
     private final DiscogsApiClient discogsApiClient;
     private final CollectionItemRepository collectionItemRepository;
  
-    public List<ListenEvent> getRecentListens(String username, LocalDate from, LocalDate to) {
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public List<com.antigravity.vinyltracker.model.dto.ListenEventDto> getRecentListens(String username, LocalDate from, LocalDate to) {
         AppUser user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
- 
+
+        List<ListenEvent> events;
         if (from != null && to != null) {
-            return listenEventRepository.findByUserIdAndTimestampBetweenOrderByTimestampDesc(
+            events = listenEventRepository.findByUserIdAndTimestampBetweenOrderByTimestampDesc(
                     user.getId(),
                     from.atStartOfDay(),
                     to.atTime(java.time.LocalTime.MAX));
+        } else {
+            events = listenEventRepository.findByUserIdOrderByTimestampDesc(user.getId());
         }
-        return listenEventRepository.findByUserIdOrderByTimestampDesc(user.getId());
+        return events.stream().map(com.antigravity.vinyltracker.model.dto.ListenEventDto::from).toList();
     }
  
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public List<TopRecordDto> getTopRecords(String username, LocalDate from, LocalDate to) {
         AppUser user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));

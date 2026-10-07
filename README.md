@@ -1,4 +1,4 @@
-# Vinyl Tracker v0.2.1
+# Vinyl Tracker v0.3.0
 
 A personal vinyl record tracking application that allows users to scan barcodes, identify records via Discogs, and log listening sessions.
 
@@ -44,7 +44,7 @@ The project follows a modern containerized micro-architecture:
 - **Unplayed Records ("Shelf of Shame")**: Dedicated endpoint (`/api/collection/unplayed`) to quickly find and listen to albums you have never played.
 - **Detailed Album Metadata**: Complete record details (`/api/records/{id}`) including tracklist, formats, labels, release notes, and personal play counts.
 - **Global Discogs Search**: Direct database search (`/api/discogs/search`) for exploring albums, artists, and releases.
-- **Barcode Scanning**: Scan vinyl barcodes to retrieve metadata from Discogs.
+- **Smart Barcode Scanning & Discogs Auto-Add**: Scan vinyl barcodes or custom QR codes to instantly log listens. If a scanned record is not yet in your collection, Vinyl Tracker searches Discogs, previews pressing details with variant selection, and adds it directly to your Discogs collection (`POST /api/collection/releases/{id}`) followed by automatic library synchronization.
 - **Multi-User Support**: Individual user accounts with personal Discogs collection integration.
 - **Listening History**: Log when you listen to a record.
 - **Analytics**: View most played records and listening trends.
@@ -119,7 +119,7 @@ The application requires environment variables for configuration (database crede
 2. **Start Production Environment (or Proxmox / LXC)**:
    - **Automated Proxmox Deployment Script** (pulls official public images from GHCR):
      ```bash
-     ./scripts/deploy_proxmox.sh [v0.2.1]
+     ./scripts/deploy_proxmox.sh [v0.3.0]
      ```
    - **Manual Compose with Public Registry Images**:
      ```bash
@@ -244,6 +244,8 @@ The project includes GitHub Actions workflows:
   - Enforces >80% test coverage for both Frontend (Karma) and Backend (JaCoCo).
   - Runs the backend online dependency vulnerability audit through the `security-online` Maven profile.
   - Runs on push and pull requests for `main`, `master`, and `develop`, plus release tags `v*.*.*` (which triggers building and pushing Docker images to GHCR).
+  - **Self-Hosted Runner Support**: Optimized for local execution on Proxmox/Docker hosts (`[self-hosted, linux]`) with mounted Docker socket for Testcontainers and Playwright, eliminating queue bottlenecks.
+  - **Hybrid Multi-Platform Releases**: Daily CI runs locally on Proxmox, while release builds automatically provision GitHub-hosted Apple Silicon runners (`macos-latest`) to produce native macOS MCP server binaries.
 - **Auto Release** (`.github/workflows/release.yml`):
   - Automatically creates a GitHub Release (with tag `v<version>` from `frontend/package.json` and auto-generated release notes) when a Pull Request to `main` is successfully merged.
   - Creating a release triggers the CI Pipeline's tag build, automatically publishing the new Docker images.

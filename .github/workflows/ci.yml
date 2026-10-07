@@ -12,7 +12,7 @@ on:
 
 jobs:
   backend-build:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux]
     permissions:
       contents: read
       packages: write
@@ -37,6 +37,11 @@ jobs:
       env:
         OSSINDEX_USERNAME: ${{ secrets.OSSINDEX_USERNAME }}
         OSSINDEX_TOKEN: ${{ secrets.OSSINDEX_TOKEN }}
+        
+    - name: Set up Maven
+      uses: stCarolas/setup-maven@v5
+      with:
+        maven-version: '3.9.9'
         
     - name: Check Docker
       run: docker info
@@ -90,7 +95,7 @@ jobs:
         labels:  ${{ steps.meta.outputs.labels }}
 
   frontend-build:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux]
     permissions:
       contents: read
       packages: write
@@ -110,11 +115,20 @@ jobs:
         cache: 'npm'
         cache-dependency-path: frontend/package-lock.json
 
+    - name: Set up Chrome
+      id: setup-chrome
+      uses: browser-actions/setup-chrome@v2
+      with:
+        chrome-version: stable
+        install-dependencies: true
+
     - name: Install Dependencies
       run: npm ci --legacy-peer-deps
 
     - name: Run Karma Unit Tests
       # Runs Angular Karma unit tests with > 80% coverage check enforced via karma.conf.js
+      env:
+        CHROME_BIN: ${{ steps.setup-chrome.outputs.chrome-path }}
       run: npm run test -- --watch=false --code-coverage --browsers=ChromeHeadlessCI
 
     - name: Install Playwright Browsers
@@ -170,21 +184,9 @@ jobs:
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
 
-  mcp-build:
-    name: MCP Server (${{ matrix.target }})
-    runs-on: ${{ matrix.os }}
-    permissions:
-      contents: write
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            target: linux-x86_64
-            binary: vinyl-mcp-server
-          - os: macos-latest
-            target: macos-aarch64
-            binary: vinyl-mcp-server
+  mcp-test:
+    name: MCP Server Tests (Linux)
+    runs-on: [self-hosted, linux]
     defaults:
       run:
         working-directory: ./mcp
@@ -210,31 +212,54 @@ jobs:
     - name: Run Unit Tests
       run: cargo test --verbose
 
+  mcp-release:
+    name: MCP Server Release (${{ matrix.target }})
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: linux-x86_64
+            binary: vinyl-mcp-server
+          - os: macos-latest
+            target: macos-aarch64
+            binary: vinyl-mcp-server
+    defaults:
+      run:
+        working-directory: ./mcp
+
+    steps:
+    - uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+
+    - name: Set up Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Rust Cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: "./mcp -> ./mcp/target"
+
     - name: Build Release Binary
       run: cargo build --release
 
     - name: Package & Upload to GitHub Release
-      if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        VERSION=$(jq -r .version ../frontend/package.json)
-        TAG_NAME="v$VERSION"
         ARCHIVE_NAME="vinyl-mcp-server-${{ matrix.target }}.tar.gz"
         tar -czf "../$ARCHIVE_NAME" -C target/release "${{ matrix.binary }}"
-        if gh release view "$TAG_NAME" >/dev/null 2>&1; then
-          gh release upload "$TAG_NAME" "../$ARCHIVE_NAME" --clobber
-        elif [ -n "${{ github.ref_name }}" ] && gh release view "${{ github.ref_name }}" >/dev/null 2>&1; then
-          gh release upload "${{ github.ref_name }}" "../$ARCHIVE_NAME" --clobber
-        else
-          echo "Release $TAG_NAME not found, skipping asset upload."
-        fi
-
+        gh release upload "${{ github.ref_name }}" "../$ARCHIVE_NAME" --clobber
 
   cleanup-ghcr:
-    needs: [backend-build, frontend-build, mcp-build]
+    needs: [backend-build, frontend-build]
     if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux]
     permissions:
       packages: write
       contents: read

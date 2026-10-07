@@ -96,13 +96,13 @@ public class DiscogsApiClient {
         if (token == null) return false;
 
         try {
-            executeWithRateLimit(() -> restClient.get()
+            DiscogsDto.CollectionResponse response = executeWithRateLimit(() -> restClient.get()
                     .uri("/users/{username}/collection/releases/{releaseId}", user.getDiscogsUsername(), releaseId)
                     .header(HttpHeaders.USER_AGENT, "VinylTrackerApp/1.0")
                     .header(HttpHeaders.AUTHORIZATION, "Discogs token=" + token)
                     .retrieve()
-                    .toBodilessEntity());
-            return true;
+                    .body(DiscogsDto.CollectionResponse.class));
+            return response != null && response.getReleases() != null && !response.getReleases().isEmpty();
         } catch (Exception e) {
             return false;
         }
@@ -127,5 +127,15 @@ public class DiscogsApiClient {
                 .header(HttpHeaders.AUTHORIZATION, "Discogs token=" + getDecryptedToken(user))
                 .retrieve()
                 .body(DiscogsDto.CollectionResponse.class));
+    }
+
+    public void addReleaseToCollection(Long releaseId, AppUser user) {
+        log.info("Adding release ID {} to Discogs collection for user {}", releaseId, user.getUsername());
+        executeWithRateLimit(() -> restClient.post()
+                .uri("/users/{username}/collection/folders/1/releases/{releaseId}", user.getDiscogsUsername(), releaseId)
+                .header(HttpHeaders.USER_AGENT, "VinylTrackerApp/1.0")
+                .header(HttpHeaders.AUTHORIZATION, "Discogs token=" + getDecryptedToken(user))
+                .retrieve()
+                .toBodilessEntity());
     }
 }

@@ -45,11 +45,11 @@ package com.antigravity.vinyltracker.controller;
  
      @Test
      void getRecentListens_ShouldReturnList() throws Exception {
-         ListenEvent event = new ListenEvent();
-         event.setId(1L);
+         com.antigravity.vinyltracker.model.dto.ListenEventDto dto = new com.antigravity.vinyltracker.model.dto.ListenEventDto();
+         dto.setId(1L);
  
          given(analyticsService.getRecentListens(eq("testuser"), any(), any()))
-                 .willReturn(List.of(event));
+                 .willReturn(List.of(dto));
  
          Principal mockPrincipal = () -> "testuser";
  

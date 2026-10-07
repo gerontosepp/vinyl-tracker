@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 public class CollectionService {
     private final CollectionQueryService collectionQueryService;
     private final CollectionSyncService collectionSyncService;
+    private final DiscogsApiClient discogsApiClient;
     private final PdfService pdfService;
     private final AppUserRepository userRepository;
 
@@ -39,6 +40,13 @@ public class CollectionService {
     public com.antigravity.vinyltracker.model.dto.SyncResultDto forceSync(String username) {
         AppUser user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new com.antigravity.vinyltracker.exception.ResourceNotFoundException("User not found: " + username));
+        return collectionSyncService.syncCollection(user);
+    }
+
+    public com.antigravity.vinyltracker.model.dto.SyncResultDto addReleaseAndSync(String username, Long releaseId) {
+        AppUser user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new com.antigravity.vinyltracker.exception.ResourceNotFoundException("User not found: " + username));
+        discogsApiClient.addReleaseToCollection(releaseId, user);
         return collectionSyncService.syncCollection(user);
     }
 

@@ -57,6 +57,14 @@ public class CollectionController {
         return ResponseEntity.ok(result);
     }
 
+    @PostMapping("/releases/{releaseId}")
+    public ResponseEntity<com.antigravity.vinyltracker.model.dto.SyncResultDto> addReleaseToCollection(
+            Principal principal,
+            @PathVariable Long releaseId) {
+        com.antigravity.vinyltracker.model.dto.SyncResultDto result = collectionService.addReleaseAndSync(principal.getName(), releaseId);
+        return ResponseEntity.ok(result);
+    }
+
     @PostMapping("/qr-codes/selected")
     public ResponseEntity<byte[]> generateSelectedQrCodes(@jakarta.validation.Valid @RequestBody DiscogsDto.QrCodeRequest request) {
         byte[] pdfBytes = collectionService.generateSelectedQrCodesPdf(request);

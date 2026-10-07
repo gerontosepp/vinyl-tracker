@@ -41,7 +41,9 @@ describe('LayoutComponent', () => {
       isSyncing: signal(false)
     };
     mockScannerService = {
-      openScanner: jasmine.createSpy('openScanner')
+      openScanner: jasmine.createSpy('openScanner'),
+      closeScanner: jasmine.createSpy('closeScanner'),
+      showScanner: signal(false)
     };
     mockRouter = {
       url: '/collection',
@@ -88,5 +90,11 @@ describe('LayoutComponent', () => {
     component.handleScan();
     expect(mockScannerService.openScanner).toHaveBeenCalled();
     expect(mockRouter.navigate).not.toHaveBeenCalled();
+  });
+
+  it('should handle scan by closing scanner if already open', () => {
+    mockScannerService.showScanner.set(true);
+    component.handleScan();
+    expect(mockScannerService.closeScanner).toHaveBeenCalled();
   });
 });

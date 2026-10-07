@@ -159,37 +159,63 @@ In einem öffentlichen Repository könnten fremde Forks ohne Freigabe bösartige
 1. Im GitHub-Repo: **Settings** → **Actions** → **General**
 2. Unter **Fork pull request workflows**: **"Require approval for all outside collaborators"** auswählen und speichern.
 
-### Runner mit Docker Compose einrichten
+### Runner mit Docker Compose einrichten (Multi-Runner für parallele Jobs)
 Verwenden Sie die Vorlage [`docker/docker-compose.runner.yml`](../docker/docker-compose.runner.yml):
 
 ```yaml
 services:
-  github-runner:
+  github-runner-01:
     image: myoung34/github-runner:ubuntu-noble
-    container_name: proxmox-github-runner
+    container_name: proxmox-github-runner-01
     restart: unless-stopped
     environment:
       REPO_URL: "https://github.com/gerontosepp/vinyl-tracker"
-      RUNNER_TOKEN: "DEIN_GITHUB_RUNNER_TOKEN"
-      RUNNER_NAME: "proxmox-runner-01"
+      RUNNER_TOKEN: "${RUNNER_TOKEN:-}"
+      ACCESS_TOKEN: "${ACCESS_TOKEN:-}"
+      RUNNER_NAME: "${RUNNER_NAME_01:-proxmox-runner-01}"
       RUNNER_WORKDIR: "/_work"
       RUNNER_GROUP: "default"
       LABELS: "self-hosted,linux,x64,proxmox"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - runner-work:/_work
+      - runner-work-01:/_work
+
+  github-runner-02:
+    image: myoung34/github-runner:ubuntu-noble
+    container_name: proxmox-github-runner-02
+    restart: unless-stopped
+    environment:
+      REPO_URL: "https://github.com/gerontosepp/vinyl-tracker"
+      RUNNER_TOKEN: "${RUNNER_TOKEN:-}"
+      ACCESS_TOKEN: "${ACCESS_TOKEN:-}"
+      RUNNER_NAME: "${RUNNER_NAME_02:-proxmox-runner-02}"
+      RUNNER_WORKDIR: "/_work"
+      RUNNER_GROUP: "default"
+      LABELS: "self-hosted,linux,x64,proxmox"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - runner-work-02:/_work
 
 volumes:
-  runner-work:
+  runner-work-01:
+  runner-work-02:
 ```
 
 > **Wichtiger Hinweis zum Image:** Verwenden Sie `ubuntu-noble` (Ubuntu 24.04 LTS). Das veraltete `latest` (Ubuntu 20.04) wird von modernen Versionen von Playwright und Node.js nicht mehr unterstützt.
 
-### Inbetriebnahme:
-1. **Token holen**: Unter **Settings** → **Actions** → **Runners** → **New runner** den temporären Registrierungstoken kopieren (oder ein GitHub Personal Access Token mit `repo`-Scope verwenden).
+### Inbetriebnahme auf dem Proxmox-Host:
+1. **Token holen**:
+   - **Option A (Empfohlen für Dauerbetrieb)**: GitHub Personal Access Token (Classic) mit Scope `repo` erzeugen und als `ACCESS_TOKEN` eintragen. Dieser läuft nicht nach 1 Stunde ab.
+   - **Option B**: Auf GitHub unter **Settings** → **Actions** → **Runners** → **New runner** einen temporären Registrierungstoken kopieren und als `RUNNER_TOKEN` eintragen (Hinweis: Gilt 1 Stunde für Registrierungen).
 2. **Starten**:
    ```bash
-   docker compose up -d
-   docker compose logs -f
+   # Beide Runner (01 und 02) starten:
+   RUNNER_TOKEN="<DEIN_TOKEN>" docker compose -f docker/docker-compose.runner.yml up -d
+
+   # Oder gezielt nur den zweiten Runner starten:
+   RUNNER_TOKEN="<DEIN_TOKEN>" docker compose -f docker/docker-compose.runner.yml up -d github-runner-02
+
+   # Logs prüfen:
+   docker compose -f docker/docker-compose.runner.yml logs -f
    ```
-3. Sobald `Listening for Jobs` erscheint, ist der Runner aktiv und nimmt Jobs entgegen.
+3. Sobald `Listening for Jobs` in den Logs erscheint, ist der Runner aktiv und nimmt Jobs entgegen. Beide Runner bearbeiten Jobs vollkommen unabhängig und parallel.

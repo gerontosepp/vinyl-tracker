@@ -1,18 +1,36 @@
 services:
-  github-runner:
+  github-runner-01:
     image: myoung34/github-runner:ubuntu-noble
-    container_name: proxmox-github-runner
+    container_name: proxmox-github-runner-01
     restart: unless-stopped
     environment:
       REPO_URL: "https://github.com/gerontosepp/vinyl-tracker"
-      RUNNER_TOKEN: "${RUNNER_TOKEN}"
-      RUNNER_NAME: "${RUNNER_NAME:-proxmox-runner-01}"
+      RUNNER_TOKEN: "${RUNNER_TOKEN:-}"
+      ACCESS_TOKEN: "${ACCESS_TOKEN:-}"
+      RUNNER_NAME: "${RUNNER_NAME_01:-proxmox-runner-01}"
       RUNNER_WORKDIR: "/_work"
       RUNNER_GROUP: "default"
       LABELS: "self-hosted,linux,x64,proxmox"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - runner-work:/_work
+      - runner-work-01:/_work
+
+  github-runner-02:
+    image: myoung34/github-runner:ubuntu-noble
+    container_name: proxmox-github-runner-02
+    restart: unless-stopped
+    environment:
+      REPO_URL: "https://github.com/gerontosepp/vinyl-tracker"
+      RUNNER_TOKEN: "${RUNNER_TOKEN:-}"
+      ACCESS_TOKEN: "${ACCESS_TOKEN:-}"
+      RUNNER_NAME: "${RUNNER_NAME_02:-proxmox-runner-02}"
+      RUNNER_WORKDIR: "/_work"
+      RUNNER_GROUP: "default"
+      LABELS: "self-hosted,linux,x64,proxmox"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - runner-work-02:/_work
 
 volumes:
-  runner-work:
+  runner-work-01:
+  runner-work-02:

@@ -62,6 +62,10 @@ export class ApiService {
     return this.http.get<RecordDetailDto>(`${this.baseUrl}/records/${id}`);
   }
 
+  logRecordListen(id: number): Observable<RecordDetailDto> {
+    return this.http.post<RecordDetailDto>(`${this.baseUrl}/records/${id}/listen`, {});
+  }
+
   getGenreBreakdown(): Observable<GenreBreakdownItem[]> {
     return this.http.get<GenreBreakdownItem[]>(`${this.baseUrl}/analytics/collection/genres`);
   }

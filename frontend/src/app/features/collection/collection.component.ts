@@ -295,6 +295,17 @@ export class CollectionComponent implements OnInit, OnDestroy {
     this.loadingDetail.set(false);
   }
 
+  onListenLogged(updated: RecordDetailDto): void {
+    this.recordDetail.set(updated);
+    this.releases.update((list) =>
+      list.map((r) =>
+        r.id === updated.discogs_id || (updated.id != null && r.id === updated.id)
+          ? { ...r, listen_count: updated.listen_count }
+          : r
+      )
+    );
+  }
+
   getFormatType(release: CollectionRelease): 'cd' | 'double_lp' | 'lp' {
     return getFormatType(release);
   }

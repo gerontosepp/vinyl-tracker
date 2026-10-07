@@ -46,7 +46,7 @@ The project follows a modern containerized micro-architecture:
 - **Global Discogs Search**: Direct database search (`/api/discogs/search`) for exploring albums, artists, and releases.
 - **Smart Barcode Scanning & Discogs Auto-Add**: Scan vinyl barcodes or custom QR codes to instantly log listens. If a scanned record is not yet in your collection, Vinyl Tracker searches Discogs, previews pressing details with variant selection, and adds it directly to your Discogs collection (`POST /api/collection/releases/{id}`) followed by automatic library synchronization.
 - **Multi-User Support**: Individual user accounts with personal Discogs collection integration.
-- **Listening History**: Log when you listen to a record.
+- **Listening History & Just Listening**: Log listening sessions via barcode/QR scan or directly via the **"Höre ich gerade" (Just listening)** button in the album detail view.
 - **Analytics**: View most played records and listening trends.
 - **Live Collection Insights**: Dashboard charts for Discogs collection value and genre breakdown via `/api/analytics/collection/value` and `/api/analytics/collection/genres`.
 - **QR Code Generation**: Generate a PDF with QR codes for your entire collection, sorted by artist.

@@ -144,4 +144,43 @@ describe('CollectionComponent', () => {
       );
     });
   });
+
+  describe('onListenLogged', () => {
+    it('should update recordDetail and the matching release listen_count', () => {
+      component.releases.set([
+        {
+          id: 100,
+          instance_id: 1,
+          date_added: '',
+          rating: 0,
+          listen_count: 2,
+          basic_information: {
+            id: 100,
+            title: 'Test Album',
+            year: 2020,
+            thumb: '',
+            cover_image: '',
+            artists: [],
+          },
+        } as CollectionRelease,
+      ]);
+
+      const updatedDetail = {
+        id: 1,
+        discogs_id: 100,
+        title: 'Test Album',
+        genres: [],
+        in_collection: true,
+        listen_count: 3,
+        tracklist: [],
+        formats: [],
+        labels: [],
+      };
+
+      component.onListenLogged(updatedDetail);
+
+      expect(component.recordDetail()).toEqual(updatedDetail);
+      expect(component.releases()[0].listen_count).toBe(3);
+    });
+  });
 });

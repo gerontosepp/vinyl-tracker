@@ -46,6 +46,27 @@
                 • {{ record()?.basic_information?.year }}
               }
             </p>
+            <div class="mt-2 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                id="listen-now-header-btn"
+                (click)="onLogListen()"
+                [disabled]="isLoggingListen() || loading()"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 active:scale-95 transition-all shadow-sm hover:shadow disabled:opacity-50 cursor-pointer"
+                title="Platte als gehört erfassen"
+              >
+                @if (isLoggingListen()) {
+                  <div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>Wird erfasst...</span>
+                } @else if (justListened()) {
+                  <svg lucideCheck [size]="14" class="text-emerald-300"></svg>
+                  <span class="text-emerald-100">Erfasst! 🎧</span>
+                } @else {
+                  <svg lucideHeadphones [size]="14"></svg>
+                  <span>Höre ich gerade</span>
+                }
+              </button>
+            </div>
           </div>
         </div>
         <button

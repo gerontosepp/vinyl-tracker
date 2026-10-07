@@ -150,4 +150,46 @@ public class RecordService {
                 .released(release != null ? release.getReleased() : null)
                 .build();
     }
+
+    @Transactional
+    public RecordDetailDto logListen(Long id, String username) {
+        log.info("Logging listen event for record id: {} by user: {}", id, username);
+        AppUser user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
+
+        Optional<Record> recordOpt = recordRepository.findById(id)
+                .or(() -> recordRepository.findByDiscogsId(id));
+
+        Long discogsId = recordOpt.map(Record::getDiscogsId).orElse(id);
+
+        Record record = recordOpt.orElseGet(() -> {
+            DiscogsDto.Release release = null;
+            try {
+                release = discogsApiClient.getRelease(discogsId, user);
+            } catch (Exception e) {
+                log.warn("Could not fetch Discogs release for ID: {}", discogsId, e);
+            }
+            if (release == null) {
+                throw new ResourceNotFoundException("Release not found with ID: " + discogsId);
+            }
+            String artistName = (release.getArtists() != null && !release.getArtists().isEmpty())
+                    ? release.getArtists().get(0).getName()
+                    : "Unknown";
+            Record newRecord = new Record(
+                    release.getId(),
+                    release.getTitle(),
+                    artistName,
+                    String.valueOf(release.getYear()),
+                    release.getThumbUrl());
+            if (release.getFormats() != null) {
+                newRecord.setFormat(DiscogsDto.determineFormat(release.getFormats()));
+            }
+            return recordRepository.save(newRecord);
+        });
+
+        ListenEvent event = new ListenEvent(user, record);
+        listenEventRepository.save(event);
+
+        return getRecordDetails(record.getId(), username);
+    }
 }

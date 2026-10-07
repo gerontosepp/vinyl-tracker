@@ -7,7 +7,30 @@
 
 ---
 
-## v0.2.1 (2026-10-05) – Aktueller Release (WiP / Beta)
+## v0.3.0 (2026-10-07) – Aktueller Release (WiP / Beta)
+
+- **Barcode-Scanning & Discogs-Integration Enhancements**:
+  - **Manuelle Suche & Barcode-Korrektur**: Neue Eingabemöglichkeit für Barcode-Ziffern und Albumtitel direkt in der Scanner-Ansicht sowie im Fehlermeldungs-Dialog bei nicht erkannten Platten.
+  - **Unbekannte Platten zur Sammlung hinzufügen**: Automatische Erkennung noch nicht in der eigenen Sammlung vorhandener Alben bei Barcode-Scans inklusive Trefferauswahl und 1-Klick-Import in die Discogs-Sammlung.
+  - **Intelligente Barcode-Normalisierung & Fallbacks**: `ScanService` bereinigt Barcodes (Whitespace), testet EAN-13/UPC-A Konvertierungen (führende 0) und nutzt automatische Volltextsuche als Fallback.
+  - **Robuste Discogs-Bestandsprüfung**: Korrektur der Discogs-API-Prüfung (`isReleaseInCollection`) bei leeren Responses sowie vorgelagerte Prüfung der lokalen Datenbank via `CollectionItemRepository`.
+  - **API-Statusbereinigung**: `ScanController` liefert `200 OK` mit Trefferliste, wenn Alben gefunden wurden, die noch nicht in der Nutzersammlung sind.
+- **Frontend Navigation & Scanner UX**:
+  - **Freie Hauptmenü-Navigation bei aktivem Scan**: Das Scanner-Overlay blockiert nicht mehr das App-Menü. Klicks auf Navigationselemente (Sidebar, Bottom Navigation, Top Bar) oder URL-Wechsel schließen den Scanner automatisch und sauber.
+  - **Scanner-Toggle & Indikator**: Der Scan-Button in der Navigation agiert nun als Toggle mit visuellem Aktivitätsstatus.
+  - **Automatischer Dashboard-Refresh**: Nach erfolgreichem Scan oder Import aktualisieren sich die Dashboard-Listen ("Zuletzt gehört", "Meistgespielt") ohne manuellen Reload.
+- **Backend Analytics Stabilität & DTO-Entkopplung**:
+  - **LazyInitializationException behoben**: Einführung von `ListenEventDto` und `@Transactional(readOnly = true)` auf `AnalyticsService` zur Entkopplung der JPA-Entities.
+  - **Resilientes Dashboard-Laden**: Absicherung der parallelen API-Aufrufe im Frontend via `catchError` und Fallbacks.
+- **CI/CD & Self-Hosted Proxmox Runner**:
+  - Migration der GitHub Actions CI-Pipeline auf Self-Hosted Linux Runner (Proxmox LXC/VM).
+  - Dedizierte Actions für `setup-chrome` und `setup-maven` zur zuverlässigen Ausführung von Karma-, Playwright-, Maven- und Rust-MCP-Testsuiten.
+- **Entwicklungs- & Build-Umgebung**:
+  - Konfiguration für Java 25 mit ByteBuddy Experimental Flag (`-Dnet.bytebuddy.experimental=true`), Mockito Subclass-Maker sowie JEnv- und SDKMAN-Projektdateien (`.java-version`, `.sdkmanrc`).
+
+---
+
+## v0.2.1 (2026-10-05) – Vorgänger-Release (WiP / Beta)
 
 - **Version Re-Baseline & Deployment**:
   - Reset des Versionsschemas auf `0.2.1` zur Verdeutlichung des Work-in-Progress (WiP) / Beta-Charakters des Projekts.

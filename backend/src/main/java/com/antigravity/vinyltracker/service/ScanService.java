@@ -6,6 +6,7 @@ import com.antigravity.vinyltracker.model.Record;
 import com.antigravity.vinyltracker.model.discogs.DiscogsDto;
 import com.antigravity.vinyltracker.model.dto.ScanDto;
 import com.antigravity.vinyltracker.repository.AppUserRepository;
+import com.antigravity.vinyltracker.repository.CollectionItemRepository;
 import com.antigravity.vinyltracker.repository.ListenEventRepository;
 import com.antigravity.vinyltracker.repository.RecordRepository;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,7 @@ public class ScanService {
     private final DiscogsApiClient discogsApiClient;
     private final RecordRepository recordRepository;
     private final ListenEventRepository listenEventRepository;
+    private final CollectionItemRepository collectionItemRepository;
     private final AppUserRepository userRepository;
 
     @Transactional
@@ -41,14 +43,41 @@ public class ScanService {
                 return new ScanDto.Result(false, "Invalid custom barcode format", null, null);
             }
         } else {
+            String cleanBarcode = barcode.replaceAll("\\s+", "");
             // Standard Barcode -> Search Global DB and filter by Collection Ownership
-            DiscogsDto.SearchResponse searchResponse = discogsApiClient.searchDatabaseByBarcode(barcode, user);
+            DiscogsDto.SearchResponse searchResponse = discogsApiClient.searchDatabaseByBarcode(cleanBarcode, user);
             List<DiscogsDto.SearchResult> results = (searchResponse != null && searchResponse.getResults() != null)
-                    ? searchResponse.getResults()
-                    : java.util.Collections.emptyList();
+                    ? new java.util.ArrayList<>(searchResponse.getResults())
+                    : new java.util.ArrayList<>();
+
+            // Fallback 1: If 12 digits (UPC-A), try 13 digits EAN with leading 0
+            if (results.isEmpty() && cleanBarcode.length() == 12) {
+                DiscogsDto.SearchResponse fb = discogsApiClient.searchDatabaseByBarcode("0" + cleanBarcode, user);
+                if (fb != null && fb.getResults() != null) {
+                    results.addAll(fb.getResults());
+                }
+            }
+
+            // Fallback 2: If 13 digits starting with 0, try 12 digits without leading 0
+            if (results.isEmpty() && cleanBarcode.length() == 13 && cleanBarcode.startsWith("0")) {
+                DiscogsDto.SearchResponse fb = discogsApiClient.searchDatabaseByBarcode(cleanBarcode.substring(1), user);
+                if (fb != null && fb.getResults() != null) {
+                    results.addAll(fb.getResults());
+                }
+            }
+
+            // Fallback 3: Search with general query (q=barcode)
+            if (results.isEmpty()) {
+                DiscogsDto.SearchResponse fb = discogsApiClient.searchDatabase(cleanBarcode, "release", 1, 10, user);
+                if (fb != null && fb.getResults() != null) {
+                    results.addAll(fb.getResults());
+                }
+            }
 
             for (DiscogsDto.SearchResult result : results) {
-                if (discogsApiClient.isReleaseInCollection(result.getId(), user)) {
+                boolean inCollection = collectionItemRepository.findByUserAndRecord_DiscogsId(user, result.getId()).isPresent()
+                        || discogsApiClient.isReleaseInCollection(result.getId(), user);
+                if (inCollection) {
                     discogsRelease = discogsApiClient.getRelease(result.getId(), user);
                     break;
                 }

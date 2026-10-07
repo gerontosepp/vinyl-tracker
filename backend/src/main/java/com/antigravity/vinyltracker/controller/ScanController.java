@@ -18,7 +18,7 @@ public class ScanController {
             @RequestBody ScanDto.Request request,
             Principal principal) {
         ScanDto.Result result = scanService.processScan(request.getBarcode(), principal.getName());
-        if (result.isSuccess()) {
+        if (result.isSuccess() || (result.getDiscogsMatches() != null && !result.getDiscogsMatches().isEmpty())) {
             return ResponseEntity.ok(result);
         } else {
             return ResponseEntity.badRequest().body(result);

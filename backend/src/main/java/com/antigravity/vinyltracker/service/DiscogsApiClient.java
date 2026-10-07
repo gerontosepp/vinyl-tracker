@@ -96,13 +96,13 @@ public class DiscogsApiClient {
         if (token == null) return false;
 
         try {
-            executeWithRateLimit(() -> restClient.get()
+            DiscogsDto.CollectionResponse response = executeWithRateLimit(() -> restClient.get()
                     .uri("/users/{username}/collection/releases/{releaseId}", user.getDiscogsUsername(), releaseId)
                     .header(HttpHeaders.USER_AGENT, "VinylTrackerApp/1.0")
                     .header(HttpHeaders.AUTHORIZATION, "Discogs token=" + token)
                     .retrieve()
-                    .toBodilessEntity());
-            return true;
+                    .body(DiscogsDto.CollectionResponse.class));
+            return response != null && response.getReleases() != null && !response.getReleases().isEmpty();
         } catch (Exception e) {
             return false;
         }

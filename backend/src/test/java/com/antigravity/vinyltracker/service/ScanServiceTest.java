@@ -6,6 +6,7 @@ import com.antigravity.vinyltracker.model.Record;
 import com.antigravity.vinyltracker.model.discogs.DiscogsDto;
 import com.antigravity.vinyltracker.model.dto.ScanDto;
 import com.antigravity.vinyltracker.repository.AppUserRepository;
+import com.antigravity.vinyltracker.repository.CollectionItemRepository;
 import com.antigravity.vinyltracker.repository.ListenEventRepository;
 import com.antigravity.vinyltracker.repository.RecordRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,6 +35,9 @@ class ScanServiceTest {
 
     @Mock
     private ListenEventRepository listenEventRepository;
+
+    @Mock
+    private CollectionItemRepository collectionItemRepository;
 
     @Mock
     private AppUserRepository userRepository;

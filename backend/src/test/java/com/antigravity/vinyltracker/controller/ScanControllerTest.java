@@ -74,6 +74,23 @@ public class ScanControllerTest {
 
     @Test
     @WithMockUser(username = "testuser")
+    public void scanBarcode_WhenMatchesFoundOnDiscogs_ShouldReturnOk() throws Exception {
+        ScanDto.DiscogsMatch match = new ScanDto.DiscogsMatch(123L, "Test Title", "2020", "thumb", "cover", java.util.List.of("Vinyl"), "US");
+        ScanDto.Result result = new ScanDto.Result(false, "Release not found in collection, but found on Discogs.", null, java.util.List.of(match));
+        when(scanService.processScan("123456", "testuser")).thenReturn(result);
+
+        mockMvc.perform(post("/api/scan")
+                .principal(() -> "testuser")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"barcode\":\"123456\"}")
+                .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.discogsMatches[0].id").value(123));
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
     public void deleteScan_Success() throws Exception {
         doNothing().when(scanService).deleteScan(1L, "testuser");
 

@@ -60,6 +60,8 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'settings.deleting': 'Wird gelöscht...',
 
     // Dashboard
+    'dashboard.all': 'Alle',
+    'dashboard.today': 'Heute',
     'dashboard.scanTitle': 'Barcode / QR-Code scannen',
     'dashboard.scannedLabel': 'Gescannt:',
     'dashboard.listeningActivity': 'Hör-Aktivität',
@@ -188,6 +190,8 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'settings.deleting': 'Resetting...',
 
     // Dashboard
+    'dashboard.all': 'All',
+    'dashboard.today': 'Today',
     'dashboard.scanTitle': 'Scan Barcode / QR Code',
     'dashboard.scannedLabel': 'Scanned:',
     'dashboard.listeningActivity': 'Listening Activity',

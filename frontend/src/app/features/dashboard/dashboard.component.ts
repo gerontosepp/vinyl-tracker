@@ -61,7 +61,18 @@ import { Subscription, firstValueFrom, forkJoin, of, catchError } from 'rxjs';
                       : 'text-slate-500 dark:text-slate-400 font-medium hover:bg-slate-50 dark:hover:bg-slate-700/50')
                   "
                 >
-                  All
+                  {{ 'dashboard.all' | translate }}
+                </button>
+                <button
+                  (click)="setFilterSevenDays()"
+                  [class]="
+                    'text-xs px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer ' +
+                    (startDate() === sevenDaysAgoString && endDate() === todayString
+                      ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-bold shadow-sm'
+                      : 'text-slate-500 dark:text-slate-400 font-medium hover:bg-slate-50 dark:hover:bg-slate-700/50')
+                  "
+                >
+                  {{ 'dashboard.days7' | translate }}
                 </button>
                 <button
                   (click)="setFilterToday()"
@@ -72,7 +83,7 @@ import { Subscription, firstValueFrom, forkJoin, of, catchError } from 'rxjs';
                       : 'text-slate-500 dark:text-slate-400 font-medium hover:bg-slate-50 dark:hover:bg-slate-700/50')
                   "
                 >
-                  Today
+                  {{ 'dashboard.today' | translate }}
                 </button>
                 <div class="w-px h-5 bg-slate-200 dark:bg-slate-700 mx-1"></div>
                 <input
@@ -186,7 +197,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   readonly loadingStats = signal<boolean>(true);
 
   readonly todayString = this.getTodayString();
-  readonly startDate = signal<string>(this.todayString);
+  readonly sevenDaysAgoString = this.getDaysAgoString(7);
+  readonly startDate = signal<string>(this.sevenDaysAgoString);
   readonly endDate = signal<string>(this.todayString);
 
   readonly GENRE_COLORS = ['#3b82f6', '#f43f5e', '#10b981', '#8b5cf6', '#f59e0b', '#64748b'];
@@ -289,6 +301,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.loadData();
   }
 
+  setFilterSevenDays(): void {
+    this.startDate.set(this.sevenDaysAgoString);
+    this.endDate.set(this.todayString);
+    this.loadData();
+  }
+
   setFilterToday(): void {
     this.startDate.set(this.todayString);
     this.endDate.set(this.todayString);
@@ -335,8 +353,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return `conic-gradient(${segments.join(', ')})`;
   }
 
-  private getTodayString(): string {
+  private getDaysAgoString(days: number): string {
     const d = new Date();
+    d.setDate(d.getDate() - days);
+    return this.formatDateString(d);
+  }
+
+  private getTodayString(): string {
+    return this.formatDateString(new Date());
+  }
+
+  private formatDateString(d: Date): string {
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');

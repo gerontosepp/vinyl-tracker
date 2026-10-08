@@ -91,6 +91,7 @@ describe('DashboardComponent', () => {
           'dashboard.all': 'All',
           'dashboard.days7': '7 Days',
           'dashboard.today': 'Today',
+          'dashboard.other': 'Other',
         };
         return dict[key] || key;
       }),
@@ -231,5 +232,54 @@ describe('DashboardComponent', () => {
 
     component.genreData.set([]);
     expect(component.getConicGradient()).toBe('#cbd5e1');
+  });
+
+  it('should render all genres in the legend without truncation', () => {
+    const sixGenres: GenreBreakdownItem[] = [
+      { name: 'Rock', value: 50 },
+      { name: 'Pop', value: 30 },
+      { name: 'Electronic', value: 20 },
+      { name: 'Jazz', value: 15 },
+      { name: 'Classical', value: 10 },
+      { name: 'Other', value: 40 },
+    ];
+    component.genreData.set(sixGenres);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const legendText = compiled.textContent || '';
+
+    // Verify all 6 genres are rendered in the DOM
+    expect(legendText).toContain('Rock');
+    expect(legendText).toContain('Pop');
+    expect(legendText).toContain('Electronic');
+    expect(legendText).toContain('Jazz');
+    expect(legendText).toContain('Classical');
+    expect(legendText).toContain('Other');
+  });
+
+  it('should compute chartSlices with top 5 and aggregated Other', () => {
+    const genres: GenreBreakdownItem[] = [
+      { name: 'Rock', value: 50 },
+      { name: 'Pop', value: 30 },
+      { name: 'Electronic', value: 20 },
+      { name: 'Jazz', value: 15 },
+      { name: 'Classical', value: 10 },
+      { name: 'Reggae', value: 8 },
+      { name: 'Metal', value: 5 },
+    ];
+    component.genreData.set(genres);
+    const slices = component.chartSlices();
+    expect(slices.length).toBe(6);
+    expect(slices[0]).toEqual({ name: 'Rock', value: 50 });
+    expect(slices[4]).toEqual({ name: 'Classical', value: 10 });
+    expect(slices[5]).toEqual({ name: 'Other', value: 13 });
+  });
+
+  it('should return correct genre colors for top items and others', () => {
+    expect(component.getGenreColor(0)).toBe(component.GENRE_COLORS[0]);
+    expect(component.getGenreColor(4)).toBe(component.GENRE_COLORS[4]);
+    expect(component.getGenreColor(5)).toBe(component.GENRE_COLORS[5]);
+    expect(component.getGenreColor(10)).toBe(component.GENRE_COLORS[5]);
   });
 });

@@ -140,5 +140,17 @@ public class AnalyticsServiceTest {
         assertEquals(2, result.size());
         assertTrue(result.stream().anyMatch(m -> m.get("name").equals("Rock") && m.get("value").equals(1)));
     }
+
+    @Test
+    void getGenreBreakdown_ReturnsAllGenresWithoutTruncation() {
+        testRecord.setGenres(List.of("Rock", "Pop", "Jazz", "Electronic", "Soul", "Classical", "Blues"));
+        CollectionItem item = new CollectionItem(testUser, testRecord, 123L);
+        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+        when(collectionItemRepository.findAllByUser(testUser)).thenReturn(List.of(item));
+
+        List<Map<String, Object>> result = analyticsService.getGenreBreakdown("testuser");
+        assertEquals(7, result.size());
+        assertFalse(result.stream().anyMatch(m -> m.get("name").equals("Other")));
+    }
 }
 

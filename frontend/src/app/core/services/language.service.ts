@@ -80,6 +80,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'dashboard.genreBreakdown': 'Genre-Verteilung',
     'dashboard.records': 'Schallplatten',
     'dashboard.genres': 'Genres',
+    'dashboard.other': 'Andere',
 
     // Collection
     'collection.title': 'Schallplattensammlung',
@@ -214,6 +215,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'dashboard.genreBreakdown': 'Genre Breakdown',
     'dashboard.records': 'Records',
     'dashboard.genres': 'Genres',
+    'dashboard.other': 'Other',
 
     // Collection
     'collection.title': 'Vinyl Collection',

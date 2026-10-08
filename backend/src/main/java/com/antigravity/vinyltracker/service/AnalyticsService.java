@@ -111,7 +111,7 @@ public class AnalyticsService {
             }
         }
  
-        List<Map<String, Object>> result = genreCounts.entrySet().stream()
+        return genreCounts.entrySet().stream()
                 .sorted((e1, e2) -> e2.getValue().compareTo(e1.getValue())) // Descending
                 .map(entry -> {
                     Map<String, Object> map = new HashMap<>();
@@ -120,23 +120,6 @@ public class AnalyticsService {
                     return map;
                 })
                 .collect(Collectors.toList());
- 
-        if (result.size() > 5) {
-            List<Map<String, Object>> top5 = new ArrayList<>(result.subList(0, 5));
-            int otherCount = result.subList(5, result.size()).stream()
-                    .mapToInt(m -> (Integer) m.get("value"))
-                    .sum();
-            
-            if (otherCount > 0) {
-               Map<String, Object> otherMap = new HashMap<>();
-               otherMap.put("name", "Other");
-               otherMap.put("value", otherCount);
-               top5.add(otherMap);
-            }
-            return top5;
-        }
- 
-        return result;
     }
 }
 

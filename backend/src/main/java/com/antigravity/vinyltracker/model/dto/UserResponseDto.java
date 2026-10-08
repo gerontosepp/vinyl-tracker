@@ -14,6 +14,11 @@ public class UserResponseDto {
     private String username;
     private String discogsUsername;
     private String token;
+    private String roonHost;
+    private Integer roonPort;
+    private String roonZoneId;
+    private String roonZoneName;
+    private Boolean roonPaired;
 
     public static UserResponseDto fromEntity(AppUser user, String token) {
         UserResponseDto dto = new UserResponseDto();
@@ -21,6 +26,11 @@ public class UserResponseDto {
         dto.setUsername(user.getUsername());
         dto.setDiscogsUsername(user.getDiscogsUsername());
         dto.setToken(token);
+        dto.setRoonHost(user.getRoonHost());
+        dto.setRoonPort(user.getRoonPort());
+        dto.setRoonZoneId(user.getRoonZoneId());
+        dto.setRoonZoneName(user.getRoonZoneName());
+        dto.setRoonPaired(user.getRoonToken() != null && !user.getRoonToken().isBlank());
         return dto;
     }
 

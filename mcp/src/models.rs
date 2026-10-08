@@ -309,6 +309,22 @@ pub struct DiscogsSearchResult {
     pub country: Option<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct PlayRecordOnRoonArgs {
+    /// Artist name of the record to play
+    pub artist: String,
+    /// Album or track title of the record to play
+    pub title: String,
+    /// Optional target Roon playback zone ID (defaults to user's configured default zone)
+    pub zone_id: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RoonPlayResponse {
+    pub success: bool,
+    pub message: String,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

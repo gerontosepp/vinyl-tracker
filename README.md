@@ -39,7 +39,8 @@ The project follows a modern containerized micro-architecture:
 
 ## Features
 
-- **Model Context Protocol (MCP)**: Native Rust MCP server with 14 tools to query your vinyl collection, get random recommendations, view unplayed records, fetch album tracklists, search Discogs, log listen events, and inspect analytics from AI assistants (Antigravity IDE, Claude Desktop, Cursor).
+- **Model Context Protocol (MCP)**: Native Rust MCP server with 15 tools to query your vinyl collection, trigger local Roon playback, get random recommendations, view unplayed records, fetch album tracklists, search Discogs, log listen events, and inspect analytics from AI assistants (Antigravity IDE, Claude Desktop, Cursor).
+- **Roon Control & Local Playback**: Direct integration with the official Roon API (WebSocket MOO/1 protocol). Configure your local Roon Core in Settings, select playback zones, and trigger playback ("Auf Roon abspielen" / Play Now) directly from the record detail modal or via the MCP tool `play_record_on_roon`.
 - **Random Record Recommendations**: Get random vinyl suggestions (`/api/collection/random`) with optional genre filter and "unplayed only" mode.
 - **Unplayed Records ("Shelf of Shame")**: Dedicated endpoint (`/api/collection/unplayed`) to quickly find and listen to albums you have never played.
 - **Detailed Album Metadata**: Complete record details (`/api/records/{id}`) including tracklist, formats, labels, release notes, and personal play counts.
@@ -151,6 +152,23 @@ The application requires environment variables for configuration (database crede
    - Enter your Discogs Username.
    - Enter your Discogs Personal Access Token (generate at [Discogs Settings -> Developers](https://www.discogs.com/settings/developers)).
    - Your token is securely encrypted using your login password.
+
+### Roon Integration & Local Playback
+1. **Connect Roon Core**:
+   - Navigate to **Settings** $\rightarrow$ **Roon Integration**.
+   - Enter your Roon Core IP or hostname and Port (default: `9330` for Roon 2.0 / Roon OS).
+   - Click **Save Roon Settings**.
+2. **Authorize Extension**:
+   - Open your **Roon Remote** app (Desktop or Mobile).
+   - Go to **Settings $\rightarrow$ Extensions** (*Einstellungen $\rightarrow$ Erweiterungen*).
+   - Locate **Vinyl Tracker** and click **Enable** (*Aktivieren*).
+3. **Select Playback Zone**:
+   - Return to Vinyl Tracker Settings and click **Refresh Zones**.
+   - Choose your default output zone (e.g., Living Room, HiFi system) from the dropdown and save.
+4. **Play Records**:
+   - Open any record in your **Collection** or **Dashboard** to view its details.
+   - Click the purple **▶ Auf Roon abspielen** button in the header. Vinyl Tracker searches Roon and plays the full album from start to finish.
+   - Alternatively, ask an AI assistant via the MCP server (`play_record_on_roon`).
 
 ## Development & Testing
 

@@ -31,6 +31,9 @@ describe('RecordDetailModalComponent', () => {
       logRecordListen: jasmine.createSpy('logRecordListen').and.returnValue(
         of({ ...mockDetail, listen_count: 4 })
       ),
+      playOnRoon: jasmine.createSpy('playOnRoon').and.returnValue(
+        of({ success: true, message: 'Playback started' })
+      ),
     };
 
     mockToastService = {
@@ -93,6 +96,39 @@ describe('RecordDetailModalComponent', () => {
     expect(component.isLoggingListen()).toBeFalse();
     expect(mockToastService.showToast).toHaveBeenCalledWith(
       jasmine.stringContaining('Server error'),
+      'error'
+    );
+  });
+
+  it('should trigger play on Roon successfully', () => {
+    fixture.componentRef.setInput('detail', mockDetail);
+    fixture.detectChanges();
+
+    component.onPlayOnRoon();
+
+    expect(mockApiService.playOnRoon).toHaveBeenCalledWith({
+      artist: 'The Beatles',
+      title: 'Abbey Road',
+    });
+    expect(component.isPlayingOnRoon()).toBeFalse();
+    expect(mockToastService.showToast).toHaveBeenCalledWith(
+      'Wiedergabe auf Roon gestartet: The Beatles - Abbey Road 🎶',
+      'success'
+    );
+  });
+
+  it('should handle error when play on Roon fails', () => {
+    fixture.componentRef.setInput('detail', mockDetail);
+    mockApiService.playOnRoon.and.returnValue(
+      throwError(() => new Error('Roon offline'))
+    );
+    fixture.detectChanges();
+
+    component.onPlayOnRoon();
+
+    expect(component.isPlayingOnRoon()).toBeFalse();
+    expect(mockToastService.showToast).toHaveBeenCalledWith(
+      jasmine.stringContaining('Roon offline'),
       'error'
     );
   });

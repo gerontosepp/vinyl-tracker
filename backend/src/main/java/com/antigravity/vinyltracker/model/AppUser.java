@@ -29,6 +29,22 @@ public class AppUser {
     @Column(nullable = false)
     private String password;
 
+    @Column(name = "roon_host")
+    private String roonHost;
+
+    @Column(name = "roon_port")
+    private Integer roonPort = 9100;
+
+    @Column(name = "roon_zone_id")
+    private String roonZoneId;
+
+    @Column(name = "roon_zone_name")
+    private String roonZoneName;
+
+    @JsonIgnore
+    @Column(name = "roon_token", columnDefinition = "TEXT")
+    private String roonToken;
+
     public AppUser(String username, String password) {
         this.username = username;
         this.password = password;

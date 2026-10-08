@@ -13,6 +13,10 @@ import {
   QrCodeItem,
   SyncResult,
   RecordDetailDto,
+  RoonStatus,
+  RoonZone,
+  RoonSettings,
+  RoonPlayRequest,
 } from '../types';
 
 @Injectable({
@@ -145,5 +149,21 @@ export class ApiService {
       return originalUrl;
     }
     return `${this.baseUrl}/proxy/image?url=${encodeURIComponent(originalUrl)}`;
+  }
+
+  getRoonStatus(): Observable<RoonStatus> {
+    return this.http.get<RoonStatus>(`${this.baseUrl}/roon/status`);
+  }
+
+  getRoonZones(): Observable<RoonZone[]> {
+    return this.http.get<RoonZone[]>(`${this.baseUrl}/roon/zones`);
+  }
+
+  updateRoonSettings(settings: RoonSettings): Observable<RoonStatus> {
+    return this.http.post<RoonStatus>(`${this.baseUrl}/roon/settings`, settings);
+  }
+
+  playOnRoon(request: RoonPlayRequest): Observable<{ success: boolean; message: string }> {
+    return this.http.post<{ success: boolean; message: string }>(`${this.baseUrl}/roon/play`, request);
   }
 }

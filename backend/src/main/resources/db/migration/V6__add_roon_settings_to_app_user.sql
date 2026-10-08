@@ -1,0 +1,6 @@
+-- V6: Add Roon API settings to app_user table
+ALTER TABLE app_user ADD COLUMN IF NOT EXISTS roon_host VARCHAR(255);
+ALTER TABLE app_user ADD COLUMN IF NOT EXISTS roon_port INTEGER DEFAULT 9100;
+ALTER TABLE app_user ADD COLUMN IF NOT EXISTS roon_zone_id VARCHAR(255);
+ALTER TABLE app_user ADD COLUMN IF NOT EXISTS roon_zone_name VARCHAR(255);
+ALTER TABLE app_user ADD COLUMN IF NOT EXISTS roon_token TEXT;

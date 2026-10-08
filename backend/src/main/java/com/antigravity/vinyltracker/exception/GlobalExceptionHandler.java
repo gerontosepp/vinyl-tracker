@@ -77,6 +77,15 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(problemDetail);
     }
 
+    @ExceptionHandler(RoonApiException.class)
+    public ResponseEntity<ProblemDetail> handleRoonApi(RoonApiException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.BAD_GATEWAY);
+        problemDetail.setTitle("Roon API error");
+        problemDetail.setDetail(ex.getMessage() != null ? ex.getMessage() : "Error communicating with Roon API.");
+        problemDetail.setProperty("timestamp", Instant.now().toString());
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(problemDetail);
+    }
+
     @ExceptionHandler(CollectionSyncException.class)
     public ResponseEntity<ProblemDetail> handleCollectionSync(CollectionSyncException ex) {
         ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.INTERNAL_SERVER_ERROR);

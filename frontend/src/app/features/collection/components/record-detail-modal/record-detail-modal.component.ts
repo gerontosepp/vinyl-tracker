@@ -3,13 +3,13 @@ import { CommonModule } from '@angular/common';
 import { ApiService } from '../../../../core/services/api.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { CollectionRelease, RecordDetailDto } from '../../../../core/types';
-import { LucideExternalLink, LucideX, LucideHeadphones, LucideCheck } from '@lucide/angular';
+import { LucideExternalLink, LucideX, LucideHeadphones, LucideCheck, LucidePlay } from '@lucide/angular';
 import { getErrorMessage } from '../../../../core/utils/error';
 
 @Component({
   selector: 'app-record-detail-modal',
   standalone: true,
-  imports: [CommonModule, LucideExternalLink, LucideX, LucideHeadphones, LucideCheck],
+  imports: [CommonModule, LucideExternalLink, LucideX, LucideHeadphones, LucideCheck, LucidePlay],
   templateUrl: './record-detail-modal.component.html',
 })
 export class RecordDetailModalComponent {
@@ -25,7 +25,29 @@ export class RecordDetailModalComponent {
 
   readonly isLoggingListen = signal<boolean>(false);
   readonly justListened = signal<boolean>(false);
+  readonly isPlayingOnRoon = signal<boolean>(false);
   private justListenedTimeout?: ReturnType<typeof setTimeout>;
+
+  onPlayOnRoon(): void {
+    const rec = this.record();
+    const det = this.detail();
+    const artist = det?.artist || rec?.basic_information?.artists?.[0]?.name;
+    const title = det?.title || rec?.basic_information?.title;
+
+    if (!artist || !title || this.isPlayingOnRoon()) return;
+
+    this.isPlayingOnRoon.set(true);
+    this.apiService.playOnRoon({ artist, title }).subscribe({
+      next: () => {
+        this.isPlayingOnRoon.set(false);
+        this.toastService.showToast(`Wiedergabe auf Roon gestartet: ${artist} - ${title} 🎶`, 'success');
+      },
+      error: (err) => {
+        this.isPlayingOnRoon.set(false);
+        this.toastService.showToast(getErrorMessage(err, 'Fehler beim Starten der Roon-Wiedergabe'), 'error');
+      },
+    });
+  }
 
   onLogListen(): void {
     const rec = this.record();

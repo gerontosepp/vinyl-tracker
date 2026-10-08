@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
 import { LayoutComponent } from '../../shared/components/layout/layout.component';
 import { AuthService } from '../../core/services/auth.service';
 import { ApiService } from '../../core/services/api.service';
@@ -8,12 +9,14 @@ import { ThemeService, Theme } from '../../core/services/theme.service';
 import { LanguageService, Language } from '../../core/services/language.service';
 import { ToastService } from '../../core/services/toast.service';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
+import { getErrorMessage } from '../../core/utils/error';
 import { RoonStatus } from '../../core/types';
+import { LucideDownload } from '@lucide/angular';
 
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [FormsModule, LayoutComponent, TranslatePipe],
+  imports: [FormsModule, LayoutComponent, TranslatePipe, LucideDownload],
   template: `
     <app-layout>
       <div class="max-w-6xl mx-auto space-y-6">
@@ -325,6 +328,29 @@ import { RoonStatus } from '../../core/types';
                 </button>
               </div>
             </div>
+
+            <!-- QR-Code Management -->
+            <div
+              class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-600 p-6 transition-colors"
+            >
+              <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100 mb-2">
+                {{ 'settings.qrManagementTitle' | translate }}
+              </h3>
+              <p class="text-sm text-slate-500 dark:text-slate-400 mb-6 font-medium">
+                {{ 'settings.qrManagementDesc' | translate }}
+              </p>
+
+              <div>
+                <button
+                  (click)="handleDownloadQrCodes()"
+                  [disabled]="isDownloadingQr()"
+                  class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2.5 rounded-xl transition-all shadow-sm hover:-translate-y-0.5 cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                >
+                  <svg lucideDownload [size]="18"></svg>
+                  {{ (isDownloadingQr() ? 'settings.generatingQr' : 'settings.downloadQr') | translate }}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -382,6 +408,7 @@ export class SettingsComponent {
   readonly roonStatus = signal<RoonStatus | null>(null);
   readonly isSavingRoon = signal<boolean>(false);
   readonly isLoadingZones = signal<boolean>(false);
+  readonly isDownloadingQr = signal<boolean>(false);
 
   constructor() {
     this.loadRoonStatus();
@@ -504,6 +531,39 @@ export class SettingsComponent {
     this.authService.logout().then(() => {
       this.router.navigate(['/login']);
     });
+  }
+
+  async handleDownloadQrCodes(): Promise<void> {
+    const user = this.authService.user();
+    if (!user) return;
+    if (
+      !window.confirm('Generate QR codes for your ENTIRE collection? This may take a while.')
+    ) {
+      return;
+    }
+
+    this.isDownloadingQr.set(true);
+    try {
+      const blob = await firstValueFrom(this.apiService.downloadQrCodes());
+      this.downloadBlob(blob, 'collection_qr_codes.pdf');
+      this.toastService.showToast('QR codes generated successfully', 'success');
+    } catch (err) {
+      console.error(err);
+      this.toastService.showToast(getErrorMessage(err, 'Failed to generate QR codes.'), 'error');
+    } finally {
+      this.isDownloadingQr.set(false);
+    }
+  }
+
+  private downloadBlob(blob: Blob, filename: string): void {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
   }
 }
 

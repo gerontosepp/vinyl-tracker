@@ -58,6 +58,10 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'settings.cancel': 'Abbrechen',
     'settings.delete': 'Alle Löschen',
     'settings.deleting': 'Wird gelöscht...',
+    'settings.qrManagementTitle': 'QR-Code Verwaltung',
+    'settings.qrManagementDesc': 'Generiere und lade eine druckbare PDF mit QR-Codes für deine gesamte Discogs-Sammlung herunter.',
+    'settings.downloadQr': 'QR-Codes Herunterladen (PDF)',
+    'settings.generatingQr': 'QR-Codes werden generiert...',
 
     // Dashboard
     'dashboard.all': 'Alle',
@@ -188,6 +192,10 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'settings.cancel': 'Cancel',
     'settings.delete': 'Delete All',
     'settings.deleting': 'Resetting...',
+    'settings.qrManagementTitle': 'QR Code Management',
+    'settings.qrManagementDesc': 'Generate and download a printable PDF containing QR codes for your entire Discogs collection.',
+    'settings.downloadQr': 'Download QR Codes (PDF)',
+    'settings.generatingQr': 'Generating QR codes...',
 
     // Dashboard
     'dashboard.all': 'All',

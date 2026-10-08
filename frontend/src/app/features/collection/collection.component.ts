@@ -233,28 +233,6 @@ export class CollectionComponent implements OnInit, OnDestroy {
     }
   }
 
-  async handleDownloadAll(): Promise<void> {
-    const user = this.authService.user();
-    if (!user) return;
-    if (
-      !window.confirm('Generate QR codes for your ENTIRE collection? This may take a while.')
-    ) {
-      return;
-    }
-
-    this.generating.set(true);
-    try {
-      const blob = await firstValueFrom(this.apiService.downloadQrCodes());
-      this.downloadBlob(blob, 'collection_qr_codes.pdf');
-      this.toastService.showToast('QR codes generated successfully', 'success');
-    } catch (err) {
-      console.error(err);
-      this.toastService.showToast(getErrorMessage(err, 'Failed to generate QR codes.'), 'error');
-    } finally {
-      this.generating.set(false);
-    }
-  }
-
   openDetail(release: CollectionRelease): void {
     this.selectedRecord.set(release);
     this.recordDetail.set(null);

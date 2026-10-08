@@ -53,7 +53,6 @@ export class CollectionToolbarComponent {
   readonly toggleSelectAllPage = output<void>();
   readonly toggleShowPlayedOnly = output<void>();
   readonly downloadSelected = output<void>();
-  readonly downloadAll = output<void>();
 
   onSearchInput(value: string): void {
     this.searchChange.emit(value);

@@ -52,6 +52,7 @@ describe('SettingsComponent', () => {
       getRoonStatus: jasmine.createSpy('getRoonStatus').and.returnValue(of(mockRoonStatus)),
       getRoonZones: jasmine.createSpy('getRoonZones').and.returnValue(of(mockRoonStatus.zones)),
       updateRoonSettings: jasmine.createSpy('updateRoonSettings').and.returnValue(of(mockRoonStatus)),
+      downloadQrCodes: jasmine.createSpy('downloadQrCodes').and.returnValue(of(new Blob())),
     };
 
     mockThemeService = {
@@ -136,5 +137,38 @@ describe('SettingsComponent', () => {
     expect(component.isLoadingZones()).toBeFalse();
     expect(component.roonStatus()?.zones).toEqual(updatedZones);
     expect(mockToastService.showToast).toHaveBeenCalledWith('Roon-Zonen aktualisiert', 'success');
+  });
+
+  it('should download QR codes when confirmed', async () => {
+    spyOn(window, 'confirm').and.returnValue(true);
+    spyOn<any>(component, 'downloadBlob').and.callFake(() => {});
+
+    await component.handleDownloadQrCodes();
+
+    expect(mockApiService.downloadQrCodes).toHaveBeenCalled();
+    expect(component.isDownloadingQr()).toBeFalse();
+    expect(mockToastService.showToast).toHaveBeenCalledWith(
+      'QR codes generated successfully',
+      'success'
+    );
+  });
+
+  it('should not download QR codes when confirmation cancelled', async () => {
+    spyOn(window, 'confirm').and.returnValue(false);
+
+    await component.handleDownloadQrCodes();
+
+    expect(mockApiService.downloadQrCodes).not.toHaveBeenCalled();
+    expect(component.isDownloadingQr()).toBeFalse();
+  });
+
+  it('should handle error during QR code download', async () => {
+    spyOn(window, 'confirm').and.returnValue(true);
+    mockApiService.downloadQrCodes.and.returnValue(throwError(() => new Error('Download failed')));
+
+    await component.handleDownloadQrCodes();
+
+    expect(component.isDownloadingQr()).toBeFalse();
+    expect(mockToastService.showToast).toHaveBeenCalledWith('Download failed', 'error');
   });
 });

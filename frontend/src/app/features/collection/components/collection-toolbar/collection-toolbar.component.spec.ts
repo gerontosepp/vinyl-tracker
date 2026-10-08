@@ -39,4 +39,24 @@ describe('CollectionToolbarComponent', () => {
     component.onPerPageSelect('40');
     expect(component.perPageChange.emit).toHaveBeenCalledWith(40);
   });
+
+  it('should have hidden md:flex on selectPage button for responsive mobile hiding', () => {
+    const selectPageBtn = fixture.nativeElement
+      .querySelector('button svg[lucidesquare], button svg[lucidechecksquare]')
+      ?.closest('button');
+    expect(selectPageBtn).toBeTruthy();
+    expect(selectPageBtn?.classList.contains('hidden')).toBeTrue();
+    expect(selectPageBtn?.classList.contains('md:flex')).toBeTrue();
+  });
+
+  it('should have hidden md:flex on downloadSelected container for responsive mobile hiding', () => {
+    fixture.componentRef.setInput('selectedCount', 5);
+    fixture.detectChanges();
+
+    const downloadBtn = fixture.nativeElement.querySelector('button svg[lucidedownload]')?.closest('button');
+    expect(downloadBtn).toBeTruthy();
+    const container = downloadBtn.parentElement;
+    expect(container?.classList.contains('hidden')).toBeTrue();
+    expect(container?.classList.contains('md:flex')).toBeTrue();
+  });
 });

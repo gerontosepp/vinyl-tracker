@@ -14,7 +14,7 @@ import { Component, input } from '@angular/core';
         <h3
           class="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1"
         >
-          {{ title() }}
+          <span>{{ title() }}</span>
           @if (subtitle()) {
             <span class="text-xs text-slate-400 normal-case ml-2">{{ subtitle() }}</span>
           }

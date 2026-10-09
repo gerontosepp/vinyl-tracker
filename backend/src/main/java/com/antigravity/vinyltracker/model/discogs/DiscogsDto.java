@@ -66,8 +66,11 @@ public class DiscogsDto {
             return "LP";
         }
         boolean hasCd = false;
-        boolean hasDoubleLp = false;
+        boolean hasDoubleCd = false;
         boolean hasVinyl = false;
+        boolean hasDoubleLp = false;
+        int cdQty = 0;
+        int vinylQty = 0;
 
         for (Format f : formats) {
             String name = f.getName() != null ? f.getName().toLowerCase().trim() : "";
@@ -78,28 +81,66 @@ public class DiscogsDto {
             } catch (NumberFormatException ignored) {}
 
             List<String> descs = f.getDescriptions() != null ? f.getDescriptions() : List.of();
-            boolean descHas2x = descs.stream().anyMatch(d -> {
+
+            boolean isCd = name.contains("cd") || descs.stream().anyMatch(d -> {
+                String ld = d.toLowerCase();
+                return ld.equals("cd") || ld.equals("cdr") || ld.equals("cd-r")
+                        || ld.contains("compact disc") || ld.contains("2xcd") || ld.contains("2 x cd")
+                        || ld.contains("double cd");
+            });
+
+            boolean isVinyl = name.contains("vinyl") || descs.stream().anyMatch(d -> {
+                String ld = d.toLowerCase();
+                return ld.contains("lp") || ld.contains("vinyl") || ld.contains("12\"") || ld.contains("7\"") || ld.contains("10\"");
+            });
+
+            boolean descHas2xCd = descs.stream().anyMatch(d -> {
+                String ld = d.toLowerCase();
+                return ld.contains("2xcd") || ld.contains("2 x cd") || ld.contains("2cd")
+                        || ld.contains("double cd") || ld.contains("2 x compact disc");
+            });
+
+            boolean descHas2xVinyl = descs.stream().anyMatch(d -> {
                 String ld = d.toLowerCase();
                 return ld.contains("2xlp") || ld.contains("2 x lp") || ld.contains("2lp")
                         || ld.contains("double lp") || ld.contains("2 x vinyl") || ld.contains("2xvinyl");
             });
 
-            if (name.contains("cd") || descs.stream().anyMatch(d -> d.equalsIgnoreCase("cd"))) {
+            if (isCd) {
                 hasCd = true;
+                cdQty += qty;
+                if (qty >= 2 || descHas2xCd) {
+                    hasDoubleCd = true;
+                }
             }
 
-            if (name.contains("vinyl") || descs.stream().anyMatch(d -> d.toLowerCase().contains("lp") || d.equalsIgnoreCase("vinyl"))) {
+            if (isVinyl) {
                 hasVinyl = true;
-                if (qty >= 2 || descHas2x) {
+                vinylQty += qty;
+                if (qty >= 2 || descHas2xVinyl) {
                     hasDoubleLp = true;
                 }
-            } else if (descHas2x || qty >= 2) {
+            } else if (!isCd && (descHas2xVinyl || qty >= 2)) {
+                vinylQty += qty;
                 hasDoubleLp = true;
             }
         }
 
+        if (cdQty >= 2) {
+            hasDoubleCd = true;
+        }
+        if (vinylQty >= 2) {
+            hasDoubleLp = true;
+        }
+
+        if (hasDoubleCd && !hasVinyl) {
+            return "Double CD";
+        }
         if (hasDoubleLp) {
             return "Double LP";
+        }
+        if (hasDoubleCd) {
+            return "Double CD";
         }
         if (hasCd && !hasVinyl) {
             return "CD";

@@ -153,6 +153,17 @@ impl VinylApiClient {
         if let Some(q) = &args.search {
             req = req.query(&[("search", q)]);
         }
+        if let Some(cat) = &args.category {
+            req = req.query(&[("category", cat)]);
+        }
+        if let Some(genres) = &args.genres {
+            for g in genres {
+                req = req.query(&[("genres", g)]);
+            }
+        }
+        if let Some(y) = &args.years {
+            req = req.query(&[("years", y)]);
+        }
 
         let res = req
             .send()

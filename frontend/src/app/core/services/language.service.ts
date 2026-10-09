@@ -84,6 +84,9 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
 
     // Collection
     'collection.title': 'Schallplattensammlung',
+    'collection.categoryAll': 'Alle',
+    'collection.categoryVinyl': 'Platten',
+    'collection.categoryCd': 'CDs',
     'collection.searchPlaceholder': 'Sammlung durchsuchen...',
     'collection.sortBy': 'Sortieren nach:',
     'collection.sortTitle': 'Titel',
@@ -119,6 +122,14 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'collection.pageOf': 'Seite {page} von {total}',
     'collection.perPage': '{count} / Seite',
     'collection.maxPerPage': '100 (Max)',
+    'collection.genreFilter': 'Genre',
+    'collection.genresSelected': 'Genres ({count})',
+    'collection.searchGenres': 'Genre suchen...',
+    'collection.allGenres': 'Alle Genres',
+    'collection.clearGenres': 'Auswahl aufheben',
+    'collection.yearFilter': 'Jahr',
+    'collection.yearPlaceholder': 'z.B. 1970-1972, 1975',
+    'collection.clearFilters': 'Filter zurücksetzen',
 
     // Statistics
     'stats.title': 'Statistiken & Einblicke',
@@ -219,6 +230,9 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
 
     // Collection
     'collection.title': 'Vinyl Collection',
+    'collection.categoryAll': 'All',
+    'collection.categoryVinyl': 'Vinyl',
+    'collection.categoryCd': 'CDs',
     'collection.searchPlaceholder': 'Search collection...',
     'collection.sortBy': 'Sort by:',
     'collection.sortTitle': 'Title',
@@ -254,6 +268,14 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'collection.pageOf': 'Page {page} of {total}',
     'collection.perPage': '{count} / page',
     'collection.maxPerPage': '100 (Max)',
+    'collection.genreFilter': 'Genre',
+    'collection.genresSelected': 'Genres ({count})',
+    'collection.searchGenres': 'Search genres...',
+    'collection.allGenres': 'All Genres',
+    'collection.clearGenres': 'Clear selection',
+    'collection.yearFilter': 'Year',
+    'collection.yearPlaceholder': 'e.g. 1970-1972, 1975',
+    'collection.clearFilters': 'Reset filters',
 
     // Statistics
     'stats.title': 'Statistics & Insights',

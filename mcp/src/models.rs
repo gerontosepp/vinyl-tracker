@@ -20,6 +20,12 @@ pub struct GetCollectionArgs {
     pub min_plays: Option<i32>,
     /// Search query string to filter by album title or artist
     pub search: Option<String>,
+    /// Filter collection by category: "all", "vinyl", or "cd" (default: "all")
+    pub category: Option<String>,
+    /// Filter collection by genres (e.g. ["Jazz", "Rock"])
+    pub genres: Option<Vec<String>>,
+    /// Filter collection by year or year ranges (e.g. "1970, 1971" or "1970-1972")
+    pub years: Option<String>,
 }
 
 /// Arguments for scanning a barcode or custom Discogs QR code.

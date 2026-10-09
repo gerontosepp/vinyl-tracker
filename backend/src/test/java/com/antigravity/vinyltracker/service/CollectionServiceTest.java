@@ -51,10 +51,32 @@ public class CollectionServiceTest {
     void getCollection_Success() {
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
         DiscogsDto.CollectionResponse mockResponse = new DiscogsDto.CollectionResponse();
-        when(collectionQueryService.getCollection(testUser, 1, 50, "artist", "asc", 0, null)).thenReturn(mockResponse);
+        when(collectionQueryService.getCollection(testUser, 1, 50, "artist", "asc", 0, null, "all", null, null)).thenReturn(mockResponse);
 
         DiscogsDto.CollectionResponse result = collectionService.getCollection("testuser", 1, 50, "artist", "asc", 0,
                 null);
+        assertEquals(mockResponse, result);
+    }
+
+    @Test
+    void getCollection_WithCategory() {
+        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+        DiscogsDto.CollectionResponse mockResponse = new DiscogsDto.CollectionResponse();
+        when(collectionQueryService.getCollection(testUser, 1, 50, "artist", "asc", 0, null, "cd", null, null)).thenReturn(mockResponse);
+
+        DiscogsDto.CollectionResponse result = collectionService.getCollection("testuser", 1, 50, "artist", "asc", 0,
+                null, "cd");
+        assertEquals(mockResponse, result);
+    }
+
+    @Test
+    void getCollection_WithGenresAndYears() {
+        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+        DiscogsDto.CollectionResponse mockResponse = new DiscogsDto.CollectionResponse();
+        when(collectionQueryService.getCollection(testUser, 1, 50, "artist", "asc", 0, null, "cd", List.of("Rock"), "1970-1972")).thenReturn(mockResponse);
+
+        DiscogsDto.CollectionResponse result = collectionService.getCollection("testuser", 1, 50, "artist", "asc", 0,
+                null, "cd", List.of("Rock"), "1970-1972");
         assertEquals(mockResponse, result);
     }
 

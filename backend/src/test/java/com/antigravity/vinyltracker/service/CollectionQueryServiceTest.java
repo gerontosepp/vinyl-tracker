@@ -13,6 +13,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
+import java.util.Collection;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -49,8 +50,15 @@ class CollectionQueryServiceTest {
 
         Page<com.antigravity.vinyltracker.model.CollectionItem> mockPage = new PageImpl<>(List.of(item));
 
-        Mockito.when(collectionItemRepository.findAllByUser(
+        Mockito.when(collectionItemRepository.findFilteredCollection(
                         Mockito.eq(user),
+                        Mockito.eq("all"),
+                        Mockito.eq(false),
+                        Mockito.eq(""),
+                        Mockito.eq(false),
+                        Mockito.any(),
+                        Mockito.eq(false),
+                        Mockito.any(),
                         Mockito.any(Pageable.class)))
                 .thenReturn(mockPage);
 
@@ -91,8 +99,15 @@ class CollectionQueryServiceTest {
 
     @Test
     void getCollection_ShouldHandleEmptyResponse() {
-        Mockito.when(collectionItemRepository.findAllByUser(
+        Mockito.when(collectionItemRepository.findFilteredCollection(
                         Mockito.eq(user),
+                        Mockito.eq("all"),
+                        Mockito.eq(false),
+                        Mockito.eq(""),
+                        Mockito.eq(false),
+                        Mockito.any(),
+                        Mockito.eq(false),
+                        Mockito.any(),
                         Mockito.any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of()));
 
@@ -119,8 +134,15 @@ class CollectionQueryServiceTest {
 
         Page<Object[]> mockPage = new PageImpl<>(List.of(row1, row2));
 
-        Mockito.when(collectionItemRepository.findAllByUserOrderByPlayCountDesc(
+        Mockito.when(collectionItemRepository.findFilteredCollectionOrderByPlayCountDesc(
                         Mockito.eq(user),
+                        Mockito.eq("all"),
+                        Mockito.eq(false),
+                        Mockito.eq(""),
+                        Mockito.eq(false),
+                        Mockito.any(),
+                        Mockito.eq(false),
+                        Mockito.any(),
                         Mockito.any(Pageable.class)))
                 .thenReturn(mockPage);
 
@@ -147,8 +169,15 @@ class CollectionQueryServiceTest {
 
         Page<com.antigravity.vinyltracker.model.CollectionItem> mockPage = new PageImpl<>(List.of(item));
 
-        Mockito.when(collectionItemRepository.findAllByUser(
+        Mockito.when(collectionItemRepository.findFilteredCollection(
                         Mockito.eq(user),
+                        Mockito.eq("all"),
+                        Mockito.eq(false),
+                        Mockito.eq(""),
+                        Mockito.eq(false),
+                        Mockito.any(),
+                        Mockito.eq(false),
+                        Mockito.any(),
                         Mockito.any(Pageable.class)))
                 .thenReturn(mockPage);
 
@@ -225,7 +254,9 @@ class CollectionQueryServiceTest {
     @Test
     void getCollection_ShouldSortByYearThenArtist_WhenSortIsYear() {
         ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
-        Mockito.when(collectionItemRepository.findAllByUser(Mockito.eq(user), captor.capture()))
+        Mockito.when(collectionItemRepository.findFilteredCollection(
+                        Mockito.eq(user), Mockito.eq("all"), Mockito.eq(false), Mockito.eq(""),
+                        Mockito.eq(false), Mockito.any(), Mockito.eq(false), Mockito.any(), captor.capture()))
                 .thenReturn(new PageImpl<>(List.of()));
 
         collectionQueryService.getCollection(user, 1, 20, "year", "asc", null, null);
@@ -244,7 +275,9 @@ class CollectionQueryServiceTest {
     @Test
     void getCollection_ShouldSortByArtistThenYearAsc_WhenSortIsArtistDesc() {
         ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
-        Mockito.when(collectionItemRepository.findAllByUser(Mockito.eq(user), captor.capture()))
+        Mockito.when(collectionItemRepository.findFilteredCollection(
+                        Mockito.eq(user), Mockito.eq("all"), Mockito.eq(false), Mockito.eq(""),
+                        Mockito.eq(false), Mockito.any(), Mockito.eq(false), Mockito.any(), captor.capture()))
                 .thenReturn(new PageImpl<>(List.of()));
 
         collectionQueryService.getCollection(user, 1, 20, "artist", "desc", null, null);
@@ -263,7 +296,9 @@ class CollectionQueryServiceTest {
     @Test
     void getCollection_ShouldSortByFormatThenArtistThenYear_WhenSortIsFormat() {
         ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
-        Mockito.when(collectionItemRepository.findAllByUser(Mockito.eq(user), captor.capture()))
+        Mockito.when(collectionItemRepository.findFilteredCollection(
+                        Mockito.eq(user), Mockito.eq("all"), Mockito.eq(false), Mockito.eq(""),
+                        Mockito.eq(false), Mockito.any(), Mockito.eq(false), Mockito.any(), captor.capture()))
                 .thenReturn(new PageImpl<>(List.of()));
 
         collectionQueryService.getCollection(user, 1, 20, "format", "asc", null, null);
@@ -280,5 +315,93 @@ class CollectionQueryServiceTest {
         assertEquals(Sort.Direction.ASC, orders.get(2).getDirection());
         assertEquals("record.title", orders.get(3).getProperty());
     }
-}
 
+    @Test
+    void getCollection_WithCategoryCd_ShouldQueryCategoryCd() {
+        Mockito.when(collectionItemRepository.findFilteredCollection(
+                        Mockito.eq(user), Mockito.eq("cd"), Mockito.eq(false), Mockito.eq(""),
+                        Mockito.eq(false), Mockito.any(), Mockito.eq(false), Mockito.any(), Mockito.any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        DiscogsDto.CollectionResponse response = collectionQueryService.getCollection(user, 1, 20, "artist", "asc", null, null, "cd");
+        assertNotNull(response);
+    }
+
+    @Test
+    void getCollection_WithCategoryVinyl_ShouldQueryCategoryVinyl() {
+        Mockito.when(collectionItemRepository.findFilteredCollection(
+                        Mockito.eq(user), Mockito.eq("vinyl"), Mockito.eq(false), Mockito.eq(""),
+                        Mockito.eq(false), Mockito.any(), Mockito.eq(false), Mockito.any(), Mockito.any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        DiscogsDto.CollectionResponse response = collectionQueryService.getCollection(user, 1, 20, "artist", "asc", null, null, "vinyl");
+        assertNotNull(response);
+    }
+
+    @Test
+    void getCollection_WithCategoryAndSearch_ShouldSearchCategory() {
+        Mockito.when(collectionItemRepository.findFilteredCollection(
+                        Mockito.eq(user), Mockito.eq("cd"), Mockito.eq(true), Mockito.eq("pink"),
+                        Mockito.eq(false), Mockito.any(), Mockito.eq(false), Mockito.any(), Mockito.any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        DiscogsDto.CollectionResponse response = collectionQueryService.getCollection(user, 1, 20, "artist", "asc", null, "Pink", "cd");
+        assertNotNull(response);
+    }
+
+    @Test
+    void getCollection_WithCategoryAndListensAsc_ShouldQueryListensAsc() {
+        Mockito.when(collectionItemRepository.findFilteredCollectionOrderByPlayCountAsc(
+                        Mockito.eq(user), Mockito.eq("vinyl"), Mockito.eq(false), Mockito.eq(""),
+                        Mockito.eq(false), Mockito.any(), Mockito.eq(false), Mockito.any(), Mockito.any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        DiscogsDto.CollectionResponse response = collectionQueryService.getCollection(user, 1, 20, "listens", "asc", null, null, "vinyl");
+        assertNotNull(response);
+    }
+
+    @Test
+    void getCollection_WithCategoryAndSearchAndListensDesc_ShouldSearchListensDesc() {
+        Mockito.when(collectionItemRepository.findFilteredCollectionOrderByPlayCountDesc(
+                        Mockito.eq(user), Mockito.eq("cd"), Mockito.eq(true), Mockito.eq("pink"),
+                        Mockito.eq(false), Mockito.any(), Mockito.eq(false), Mockito.any(), Mockito.any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        DiscogsDto.CollectionResponse response = collectionQueryService.getCollection(user, 1, 20, "listens", "desc", null, "Pink", "cd");
+        assertNotNull(response);
+    }
+
+    @Test
+    void getCollection_WithGenresAndYears_ShouldPassNormalizedFilters() {
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Collection<String>> genresCaptor = ArgumentCaptor.forClass(Collection.class);
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Collection<String>> yearsCaptor = ArgumentCaptor.forClass(Collection.class);
+
+        Mockito.when(collectionItemRepository.findFilteredCollection(
+                        Mockito.eq(user),
+                        Mockito.eq("cd"),
+                        Mockito.eq(false),
+                        Mockito.eq(""),
+                        Mockito.eq(true),
+                        genresCaptor.capture(),
+                        Mockito.eq(true),
+                        yearsCaptor.capture(),
+                        Mockito.any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        DiscogsDto.CollectionResponse response = collectionQueryService.getCollection(
+                user, 1, 20, "artist", "asc", null, null, "cd", List.of("Jazz", "Rock"), "1970 - 1972, 1975");
+
+        assertNotNull(response);
+        Collection<String> capturedGenres = genresCaptor.getValue();
+        assertTrue(capturedGenres.contains("jazz"));
+        assertTrue(capturedGenres.contains("rock"));
+
+        Collection<String> capturedYears = yearsCaptor.getValue();
+        assertTrue(capturedYears.contains("1970"));
+        assertTrue(capturedYears.contains("1971"));
+        assertTrue(capturedYears.contains("1972"));
+        assertTrue(capturedYears.contains("1975"));
+    }
+}

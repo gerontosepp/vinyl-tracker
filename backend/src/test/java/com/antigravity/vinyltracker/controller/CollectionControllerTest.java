@@ -53,7 +53,7 @@ class CollectionControllerTest {
                 mockResponse.setReleases(List.of(release));
 
                 when(collectionService.getCollection(eq("testuser"), anyInt(), anyInt(), anyString(), anyString(),
-                                any(), any()))
+                                any(), any(), any(), any(), any()))
                                 .thenReturn(mockResponse);
 
                 Principal mockPrincipal = () -> "testuser";
@@ -66,10 +66,50 @@ class CollectionControllerTest {
         }
 
         @Test
+        @WithMockUser(username = "testuser")
+        void getCollection_WithCategory_ShouldPassCategoryToService() throws Exception {
+                DiscogsDto.CollectionResponse mockResponse = new DiscogsDto.CollectionResponse();
+                DiscogsDto.CollectionRelease release = new DiscogsDto.CollectionRelease();
+                release.setId(101L);
+                mockResponse.setReleases(List.of(release));
+
+                when(collectionService.getCollection(eq("testuser"), eq(1), eq(50), eq("artist"), eq("asc"),
+                                any(), any(), eq("cd"), any(), any()))
+                                .thenReturn(mockResponse);
+
+                mockMvc.perform(get("/api/collection")
+                                .param("category", "cd")
+                                .contentType(MediaType.APPLICATION_JSON))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.releases[0].id").value(101));
+        }
+
+        @Test
+        @WithMockUser(username = "testuser")
+        void getCollection_WithGenresAndYears_ShouldPassToService() throws Exception {
+                DiscogsDto.CollectionResponse mockResponse = new DiscogsDto.CollectionResponse();
+                DiscogsDto.CollectionRelease release = new DiscogsDto.CollectionRelease();
+                release.setId(102L);
+                mockResponse.setReleases(List.of(release));
+
+                when(collectionService.getCollection(eq("testuser"), eq(1), eq(50), eq("artist"), eq("asc"),
+                                any(), any(), eq("cd"), eq(List.of("Jazz", "Rock")), eq("1970-1972, 1975")))
+                                .thenReturn(mockResponse);
+
+                mockMvc.perform(get("/api/collection")
+                                .param("category", "cd")
+                                .param("genres", "Jazz", "Rock")
+                                .param("years", "1970-1972, 1975")
+                                .contentType(MediaType.APPLICATION_JSON))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.releases[0].id").value(102));
+        }
+
+        @Test
         @WithMockUser
         void getCollection_ShouldThrowException_WhenUserNotFound() throws Exception {
                 when(collectionService.getCollection(anyString(), anyInt(), anyInt(), anyString(), anyString(), any(),
-                                any()))
+                                any(), any(), any(), any()))
                                 .thenThrow(new RuntimeException("User not found"));
 
                 try {

@@ -26,7 +26,7 @@ impl VinylMcpServer {
     /// Retrieve the user's vinyl collection with optional pagination, sorting, search, and min_plays filter.
     #[tool(
         name = "get_user_collection",
-        description = "Retrieve the user's vinyl collection from Vinyl Tracker. Supports pagination (page, per_page), sorting ('artist', 'listens', 'addedAt'), sort order ('asc', 'desc'), minimum plays filter, and search terms."
+        description = "Retrieve the user's vinyl collection from Vinyl Tracker. Supports pagination (page, per_page), sorting ('artist', 'listens', 'addedAt'), sort order ('asc', 'desc'), minimum plays filter, search terms, category filter ('all', 'vinyl', 'cd'), genres filter (e.g. ['Jazz', 'Rock']), and years filter (e.g. '1970-1972, 1975')."
     )]
     async fn get_user_collection(
         &self,

@@ -20,9 +20,19 @@ public class CollectionService {
 
     public DiscogsDto.CollectionResponse getCollection(String username, int page, int per_page, String sort,
             String sort_order, Integer min_plays, String search) {
+        return getCollection(username, page, per_page, sort, sort_order, min_plays, search, "all");
+    }
+
+    public DiscogsDto.CollectionResponse getCollection(String username, int page, int per_page, String sort,
+            String sort_order, Integer min_plays, String search, String category) {
+        return getCollection(username, page, per_page, sort, sort_order, min_plays, search, category, null, null);
+    }
+
+    public DiscogsDto.CollectionResponse getCollection(String username, int page, int per_page, String sort,
+            String sort_order, Integer min_plays, String search, String category, List<String> genres, String years) {
         AppUser user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new com.antigravity.vinyltracker.exception.ResourceNotFoundException("User not found: " + username));
-        return collectionQueryService.getCollection(user, page, per_page, sort, sort_order, min_plays, search);
+        return collectionQueryService.getCollection(user, page, per_page, sort, sort_order, min_plays, search, category, genres, years);
     }
 
     public DiscogsDto.CollectionRelease getRandomRecord(String username, String genre, boolean unplayedOnly) {

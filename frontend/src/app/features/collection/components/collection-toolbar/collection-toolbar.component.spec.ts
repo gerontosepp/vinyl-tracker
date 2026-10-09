@@ -59,4 +59,62 @@ describe('CollectionToolbarComponent', () => {
     expect(container?.classList.contains('hidden')).toBeTrue();
     expect(container?.classList.contains('md:flex')).toBeTrue();
   });
+
+  it('should emit categoryChange when category buttons are clicked', () => {
+    spyOn(component.categoryChange, 'emit');
+    const buttons = fixture.nativeElement.querySelectorAll('div[aria-label="Kategorie Filter"] button');
+    expect(buttons.length).toBe(3);
+
+    buttons[1].click();
+    expect(component.categoryChange.emit).toHaveBeenCalledWith('vinyl');
+
+    buttons[2].click();
+    expect(component.categoryChange.emit).toHaveBeenCalledWith('cd');
+
+    buttons[0].click();
+    expect(component.categoryChange.emit).toHaveBeenCalledWith('all');
+  });
+
+  it('should display filtered count badge on the active category button', () => {
+    fixture.componentRef.setInput('category', 'vinyl');
+    fixture.componentRef.setInput('totalItems', 603);
+    fixture.detectChanges();
+
+    const buttons = fixture.nativeElement.querySelectorAll('div[aria-label="Kategorie Filter"] button');
+    const vinylBtn = buttons[1];
+    expect(vinylBtn.textContent).toContain('603');
+  });
+
+  it('should toggle genre dropdown when genre button is clicked', () => {
+    expect(component.isGenreDropdownOpen()).toBeFalse();
+    component.toggleGenreDropdown();
+    expect(component.isGenreDropdownOpen()).toBeTrue();
+    component.closeGenreDropdown();
+    expect(component.isGenreDropdownOpen()).toBeFalse();
+  });
+
+  it('should emit genresChange when a genre is toggled', () => {
+    spyOn(component.genresChange, 'emit');
+    fixture.componentRef.setInput('selectedGenres', ['Rock']);
+    component.toggleGenre('Jazz');
+    expect(component.genresChange.emit).toHaveBeenCalledWith(['Rock', 'Jazz']);
+
+    component.toggleGenre('Rock');
+    expect(component.genresChange.emit).toHaveBeenCalledWith([]);
+  });
+
+  it('should emit empty array on clearGenres', () => {
+    spyOn(component.genresChange, 'emit');
+    component.clearGenres();
+    expect(component.genresChange.emit).toHaveBeenCalledWith([]);
+  });
+
+  it('should emit yearsChange on year input and clearYears', () => {
+    spyOn(component.yearsChange, 'emit');
+    component.onYearsInput('1970-1972, 1975');
+    expect(component.yearsChange.emit).toHaveBeenCalledWith('1970-1972, 1975');
+
+    component.clearYears();
+    expect(component.yearsChange.emit).toHaveBeenCalledWith('');
+  });
 });

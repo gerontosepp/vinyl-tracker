@@ -108,7 +108,10 @@ export class ApiService {
     minPlays: number = 0,
     sort: string = 'artist',
     sortOrder: string = 'asc',
-    search?: string
+    search?: string,
+    category?: 'all' | 'vinyl' | 'cd' | string,
+    genres?: string[],
+    years?: string
   ): Observable<CollectionResponse> {
     let params = new HttpParams()
       .set('page', page.toString())
@@ -120,6 +123,17 @@ export class ApiService {
     }
     if (search) {
       params = params.set('search', search);
+    }
+    if (category && category !== 'all') {
+      params = params.set('category', category);
+    }
+    if (genres && genres.length > 0) {
+      genres.forEach((g) => {
+        params = params.append('genres', g);
+      });
+    }
+    if (years && years.trim()) {
+      params = params.set('years', years.trim());
     }
     return this.http.get<CollectionResponse>(`${this.baseUrl}/collection`, { params });
   }

@@ -71,4 +71,100 @@ public interface CollectionItemRepository extends JpaRepository<CollectionItem, 
                         "ORDER BY playCount ASC, ci.record.artist ASC, ci.record.year ASC")
         Page<Object[]> searchByUserAndKeywordOrderByPlayCountAsc(@Param("user") AppUser user,
                         @Param("search") String search, Pageable pageable);
+
+        @Query("SELECT ci FROM CollectionItem ci WHERE ci.user = :user " +
+                "AND (:category = 'all' OR (:category = 'cd' AND UPPER(ci.record.format) LIKE '%CD%') OR (:category = 'vinyl' AND (ci.record.format IS NULL OR UPPER(ci.record.format) NOT LIKE '%CD%')))")
+        Page<CollectionItem> findAllByUserAndCategory(@Param("user") AppUser user, @Param("category") String category, Pageable pageable);
+
+        @Query("SELECT ci FROM CollectionItem ci WHERE ci.user = :user " +
+                "AND (:category = 'all' OR (:category = 'cd' AND UPPER(ci.record.format) LIKE '%CD%') OR (:category = 'vinyl' AND (ci.record.format IS NULL OR UPPER(ci.record.format) NOT LIKE '%CD%'))) " +
+                "AND (LOWER(ci.record.artist) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(ci.record.title) LIKE LOWER(CONCAT('%', :search, '%')))")
+        Page<CollectionItem> searchByUserAndCategoryAndKeyword(@Param("user") AppUser user, @Param("category") String category, @Param("search") String search,
+                        Pageable pageable);
+
+        @Query(value = "SELECT ci, (SELECT COUNT(le) FROM ListenEvent le WHERE le.record = ci.record AND le.user = ci.user) as playCount "
+                        +
+                        "FROM CollectionItem ci WHERE ci.user = :user " +
+                        "AND (:category = 'all' OR (:category = 'cd' AND UPPER(ci.record.format) LIKE '%CD%') OR (:category = 'vinyl' AND (ci.record.format IS NULL OR UPPER(ci.record.format) NOT LIKE '%CD%'))) " +
+                        "ORDER BY playCount DESC, ci.record.artist ASC, ci.record.year ASC")
+        Page<Object[]> findAllByUserAndCategoryOrderByPlayCountDesc(@Param("user") AppUser user, @Param("category") String category, Pageable pageable);
+
+        @Query(value = "SELECT ci, (SELECT COUNT(le) FROM ListenEvent le WHERE le.record = ci.record AND le.user = ci.user) as playCount "
+                        +
+                        "FROM CollectionItem ci WHERE ci.user = :user " +
+                        "AND (:category = 'all' OR (:category = 'cd' AND UPPER(ci.record.format) LIKE '%CD%') OR (:category = 'vinyl' AND (ci.record.format IS NULL OR UPPER(ci.record.format) NOT LIKE '%CD%'))) " +
+                        "ORDER BY playCount ASC, ci.record.artist ASC, ci.record.year ASC")
+        Page<Object[]> findAllByUserAndCategoryOrderByPlayCountAsc(@Param("user") AppUser user, @Param("category") String category, Pageable pageable);
+
+        @Query(value = "SELECT ci, (SELECT COUNT(le) FROM ListenEvent le WHERE le.record = ci.record AND le.user = ci.user) as playCount "
+                        +
+                        "FROM CollectionItem ci WHERE ci.user = :user " +
+                        "AND (:category = 'all' OR (:category = 'cd' AND UPPER(ci.record.format) LIKE '%CD%') OR (:category = 'vinyl' AND (ci.record.format IS NULL OR UPPER(ci.record.format) NOT LIKE '%CD%'))) " +
+                        "AND (LOWER(ci.record.artist) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(ci.record.title) LIKE LOWER(CONCAT('%', :search, '%'))) "
+                        +
+                        "ORDER BY playCount DESC, ci.record.artist ASC, ci.record.year ASC")
+        Page<Object[]> searchByUserAndCategoryAndKeywordOrderByPlayCountDesc(@Param("user") AppUser user,
+                        @Param("category") String category, @Param("search") String search, Pageable pageable);
+
+        @Query(value = "SELECT ci, (SELECT COUNT(le) FROM ListenEvent le WHERE le.record = ci.record AND le.user = ci.user) as playCount "
+                        +
+                        "FROM CollectionItem ci WHERE ci.user = :user " +
+                        "AND (:category = 'all' OR (:category = 'cd' AND UPPER(ci.record.format) LIKE '%CD%') OR (:category = 'vinyl' AND (ci.record.format IS NULL OR UPPER(ci.record.format) NOT LIKE '%CD%'))) " +
+                        "AND (LOWER(ci.record.artist) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(ci.record.title) LIKE LOWER(CONCAT('%', :search, '%'))) "
+                        +
+                        "ORDER BY playCount ASC, ci.record.artist ASC, ci.record.year ASC")
+        Page<Object[]> searchByUserAndCategoryAndKeywordOrderByPlayCountAsc(@Param("user") AppUser user,
+                        @Param("category") String category, @Param("search") String search, Pageable pageable);
+
+        @Query("SELECT ci FROM CollectionItem ci WHERE ci.user = :user " +
+                "AND (:category = 'all' OR (:category = 'cd' AND UPPER(ci.record.format) LIKE '%CD%') OR (:category = 'vinyl' AND (ci.record.format IS NULL OR UPPER(ci.record.format) NOT LIKE '%CD%'))) " +
+                "AND (:hasSearch = false OR LOWER(ci.record.artist) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(ci.record.title) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+                "AND (:hasGenres = false OR EXISTS (SELECT 1 FROM ci.record.genres g WHERE LOWER(g) IN (:genres))) " +
+                "AND (:hasYears = false OR ci.record.year IN (:years))")
+        Page<CollectionItem> findFilteredCollection(
+                @Param("user") AppUser user,
+                @Param("category") String category,
+                @Param("hasSearch") boolean hasSearch,
+                @Param("search") String search,
+                @Param("hasGenres") boolean hasGenres,
+                @Param("genres") java.util.Collection<String> genres,
+                @Param("hasYears") boolean hasYears,
+                @Param("years") java.util.Collection<String> years,
+                Pageable pageable);
+
+        @Query(value = "SELECT ci, (SELECT COUNT(le) FROM ListenEvent le WHERE le.record = ci.record AND le.user = ci.user) as playCount " +
+                "FROM CollectionItem ci WHERE ci.user = :user " +
+                "AND (:category = 'all' OR (:category = 'cd' AND UPPER(ci.record.format) LIKE '%CD%') OR (:category = 'vinyl' AND (ci.record.format IS NULL OR UPPER(ci.record.format) NOT LIKE '%CD%'))) " +
+                "AND (:hasSearch = false OR LOWER(ci.record.artist) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(ci.record.title) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+                "AND (:hasGenres = false OR EXISTS (SELECT 1 FROM ci.record.genres g WHERE LOWER(g) IN (:genres))) " +
+                "AND (:hasYears = false OR ci.record.year IN (:years)) " +
+                "ORDER BY playCount DESC, ci.record.artist ASC, ci.record.year ASC")
+        Page<Object[]> findFilteredCollectionOrderByPlayCountDesc(
+                @Param("user") AppUser user,
+                @Param("category") String category,
+                @Param("hasSearch") boolean hasSearch,
+                @Param("search") String search,
+                @Param("hasGenres") boolean hasGenres,
+                @Param("genres") java.util.Collection<String> genres,
+                @Param("hasYears") boolean hasYears,
+                @Param("years") java.util.Collection<String> years,
+                Pageable pageable);
+
+        @Query(value = "SELECT ci, (SELECT COUNT(le) FROM ListenEvent le WHERE le.record = ci.record AND le.user = ci.user) as playCount " +
+                "FROM CollectionItem ci WHERE ci.user = :user " +
+                "AND (:category = 'all' OR (:category = 'cd' AND UPPER(ci.record.format) LIKE '%CD%') OR (:category = 'vinyl' AND (ci.record.format IS NULL OR UPPER(ci.record.format) NOT LIKE '%CD%'))) " +
+                "AND (:hasSearch = false OR LOWER(ci.record.artist) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(ci.record.title) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+                "AND (:hasGenres = false OR EXISTS (SELECT 1 FROM ci.record.genres g WHERE LOWER(g) IN (:genres))) " +
+                "AND (:hasYears = false OR ci.record.year IN (:years)) " +
+                "ORDER BY playCount ASC, ci.record.artist ASC, ci.record.year ASC")
+        Page<Object[]> findFilteredCollectionOrderByPlayCountAsc(
+                @Param("user") AppUser user,
+                @Param("category") String category,
+                @Param("hasSearch") boolean hasSearch,
+                @Param("search") String search,
+                @Param("hasGenres") boolean hasGenres,
+                @Param("genres") java.util.Collection<String> genres,
+                @Param("hasYears") boolean hasYears,
+                @Param("years") java.util.Collection<String> years,
+                Pageable pageable);
 }

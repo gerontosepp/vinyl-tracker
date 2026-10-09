@@ -108,7 +108,7 @@ public class DefaultRoonClient implements RoonClient, WebSocket.Listener {
             Map<String, Object> registerBody = new LinkedHashMap<>();
             registerBody.put("extension_id", "com.antigravity.vinyltracker");
             registerBody.put("display_name", "Vinyl Tracker");
-            registerBody.put("display_version", "0.3.1");
+            registerBody.put("display_version", "0.4.0");
             registerBody.put("publisher", "Vinyl Tracker");
             registerBody.put("email", "info@vinyltracker.local");
             registerBody.put("required_services", List.of("com.roonlabs.transport:2", "com.roonlabs.browse:1"));

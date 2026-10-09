@@ -10,7 +10,7 @@ import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
 import { CollectionRelease, QrCodeItem, RecordDetailDto, GenreBreakdownItem } from '../../core/types';
 import { getErrorMessage } from '../../core/utils/error';
-import { getFormatType } from './utils/format-type.util';
+import { getFormatType, FormatType } from './utils/format-type.util';
 import { Subscription, firstValueFrom } from 'rxjs';
 
 @Component({
@@ -345,7 +345,7 @@ export class CollectionComponent implements OnInit, OnDestroy {
     );
   }
 
-  getFormatType(release: CollectionRelease): 'cd' | 'double_lp' | 'lp' {
+  getFormatType(release: CollectionRelease): FormatType {
     return getFormatType(release);
   }
 

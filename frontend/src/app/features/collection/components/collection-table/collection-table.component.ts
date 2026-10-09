@@ -4,7 +4,7 @@ import { ApiService } from '../../../../core/services/api.service';
 import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
 import { FormatBadgeComponent } from '../format-badge/format-badge.component';
 import { CollectionRelease, QrCodeItem } from '../../../../core/types';
-import { getFormatType } from '../../utils/format-type.util';
+import { getFormatType, FormatType } from '../../utils/format-type.util';
 import { LucideCheckSquare, LucideSquare, LucideExternalLink } from '@lucide/angular';
 
 @Component({
@@ -31,7 +31,7 @@ export class CollectionTableComponent {
   readonly toggleSelectAll = output<void>();
   readonly openDetail = output<CollectionRelease>();
 
-  getFormatType(release: CollectionRelease): 'cd' | 'double_lp' | 'lp' {
+  getFormatType(release: CollectionRelease): FormatType {
     return getFormatType(release);
   }
 }

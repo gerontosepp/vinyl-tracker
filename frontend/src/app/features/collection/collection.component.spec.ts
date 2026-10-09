@@ -68,6 +68,26 @@ describe('CollectionComponent', () => {
       expect(component.getFormatType(release)).toBe('cd');
     });
 
+    it('should return double_cd when format string indicates double cd', () => {
+      const release = {
+        id: 5,
+        instance_id: 5,
+        date_added: '',
+        rating: 0,
+        basic_information: {
+          id: 5,
+          title: 'Double CD Album',
+          year: 2005,
+          thumb: '',
+          cover_image: '',
+          artists: [],
+          format: 'Double CD',
+        },
+      } as CollectionRelease;
+
+      expect(component.getFormatType(release)).toBe('double_cd');
+    });
+
     it('should return double_lp when format string indicates double lp', () => {
       const release = {
         id: 2,

@@ -153,6 +153,17 @@ impl VinylApiClient {
         if let Some(q) = &args.search {
             req = req.query(&[("search", q)]);
         }
+        if let Some(cat) = &args.category {
+            req = req.query(&[("category", cat)]);
+        }
+        if let Some(genres) = &args.genres {
+            for g in genres {
+                req = req.query(&[("genres", g)]);
+            }
+        }
+        if let Some(y) = &args.years {
+            req = req.query(&[("years", y)]);
+        }
 
         let res = req
             .send()
@@ -509,6 +520,35 @@ impl VinylApiClient {
         res.json::<DiscogsSearchResponse>()
             .await
             .map_err(|e| format!("Failed to parse Discogs search JSON: {}", e))
+    }
+
+    pub async fn play_on_roon(&self, args: &PlayRecordOnRoonArgs) -> Result<RoonPlayResponse, String> {
+        self.ensure_authenticated().await?;
+        let url = format!("{}/api/roon/play", self.base_url);
+        let headers = self.build_auth_headers().await;
+
+        let payload = serde_json::json!({
+            "artist": args.artist,
+            "title": args.title,
+            "zoneId": args.zone_id,
+        });
+
+        let res = self
+            .http_client
+            .post(&url)
+            .headers(headers)
+            .json(&payload)
+            .send()
+            .await
+            .map_err(|e| format!("Request to /api/roon/play failed: {}", e))?;
+
+        if !res.status().is_success() {
+            return Err(format!("Roon playback error {}: {}", res.status(), res.text().await.unwrap_or_default()));
+        }
+
+        res.json::<RoonPlayResponse>()
+            .await
+            .map_err(|e| format!("Failed to parse Roon play JSON response: {}", e))
     }
 }
 

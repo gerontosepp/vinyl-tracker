@@ -26,7 +26,7 @@ impl VinylMcpServer {
     /// Retrieve the user's vinyl collection with optional pagination, sorting, search, and min_plays filter.
     #[tool(
         name = "get_user_collection",
-        description = "Retrieve the user's vinyl collection from Vinyl Tracker. Supports pagination (page, per_page), sorting ('artist', 'listens', 'addedAt'), sort order ('asc', 'desc'), minimum plays filter, and search terms."
+        description = "Retrieve the user's vinyl collection from Vinyl Tracker. Supports pagination (page, per_page), sorting ('artist', 'listens', 'addedAt'), sort order ('asc', 'desc'), minimum plays filter, search terms, category filter ('all', 'vinyl', 'cd'), genres filter (e.g. ['Jazz', 'Rock']), and years filter (e.g. '1970-1972, 1975')."
     )]
     async fn get_user_collection(
         &self,
@@ -213,6 +213,22 @@ impl VinylMcpServer {
         serde_json::to_string_pretty(&resp)
             .map_err(|e| format!("Failed to serialize Discogs search results: {}", e))
     }
+
+    /// Play an album/record on Roon via Roon Core integration.
+    #[tool(
+        name = "play_record_on_roon",
+        description = "Triggers immediate playback ('Play Now') of a vinyl record or album on a configured local Roon Core zone. Requires Roon to be enabled and paired in Vinyl Tracker Settings."
+    )]
+    async fn play_record_on_roon(
+        &self,
+        Parameters(args): Parameters<PlayRecordOnRoonArgs>,
+    ) -> Result<String, String> {
+        let resp = self.client.play_on_roon(&args).await?;
+        Ok(format!(
+            "Roon playback initiated successfully: {} - {}. Core message: {}",
+            args.artist, args.title, resp.message
+        ))
+    }
 }
 
 #[tool_handler(router = self.tool_router)]
@@ -265,6 +281,9 @@ mod tests {
 
         let t14 = VinylMcpServer::search_discogs_tool_attr();
         assert_eq!(t14.name, "search_discogs");
+
+        let t15 = VinylMcpServer::play_record_on_roon_tool_attr();
+        assert_eq!(t15.name, "play_record_on_roon");
     }
 }
 

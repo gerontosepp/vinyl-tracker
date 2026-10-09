@@ -7,6 +7,8 @@
       [search]="search()"
       [sort]="sort()"
       [sortOrder]="sortOrder()"
+      [category]="category()"
+      [totalItems]="totalItems()"
       [page]="page()"
       [perPage]="perPage()"
       [totalPages]="totalPages()"
@@ -16,17 +18,23 @@
       [generating]="generating()"
       [loadStatus]="loadStatus()"
       [loading]="loading()"
+      [availableGenres]="availableGenres()"
+      [selectedGenres]="selectedGenres()"
+      [years]="years()"
       (searchChange)="onSearchChange($event)"
       (clearSearch)="clearSearch()"
       (sortChange)="onSortChange($event)"
       (sortOrderToggle)="toggleSortOrder()"
+      (categoryChange)="onCategoryChange($event)"
       (perPageChange)="onPerPageChange($event)"
       (prevPage)="prevPage()"
       (nextPage)="nextPage()"
       (toggleSelectAllPage)="toggleSelectAllPage()"
       (toggleShowPlayedOnly)="toggleShowPlayedOnly()"
       (downloadSelected)="handleDownloadSelected()"
-      (downloadAll)="handleDownloadAll()"
+      (genresChange)="onGenresChange($event)"
+      (yearsChange)="onYearsChange($event)"
+      (clearAllFilters)="clearAllFilters()"
     />
 
     <!-- List Content -->
@@ -104,5 +112,6 @@
     [detail]="recordDetail()"
     [loading]="loadingDetail()"
     (close)="closeDetail()"
+    (listenLogged)="onListenLogged($event)"
   />
 </app-layout>

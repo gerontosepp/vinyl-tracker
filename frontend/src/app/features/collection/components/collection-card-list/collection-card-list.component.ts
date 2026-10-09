@@ -3,8 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ApiService } from '../../../../core/services/api.service';
 import { FormatBadgeComponent } from '../format-badge/format-badge.component';
 import { CollectionRelease, QrCodeItem } from '../../../../core/types';
-import { getFormatType } from '../../utils/format-type.util';
-import { LucideCheckSquare, LucideSquare } from '@lucide/angular';
+import { getFormatType, FormatType } from '../../utils/format-type.util';
 
 @Component({
   selector: 'app-collection-card-list',
@@ -12,8 +11,6 @@ import { LucideCheckSquare, LucideSquare } from '@lucide/angular';
   imports: [
     CommonModule,
     FormatBadgeComponent,
-    LucideCheckSquare,
-    LucideSquare,
   ],
   templateUrl: './collection-card-list.component.html',
 })
@@ -26,7 +23,7 @@ export class CollectionCardListComponent {
   readonly toggleSelection = output<CollectionRelease>();
   readonly openDetail = output<CollectionRelease>();
 
-  getFormatType(release: CollectionRelease): 'cd' | 'double_lp' | 'lp' {
+  getFormatType(release: CollectionRelease): FormatType {
     return getFormatType(release);
   }
 }

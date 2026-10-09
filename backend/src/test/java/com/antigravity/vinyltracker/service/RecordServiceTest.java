@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -158,5 +160,23 @@ class RecordServiceTest {
         when(userRepository.findByUsername("unknown")).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> recordService.getRecordDetails(1L, "unknown"));
+    }
+
+    @Test
+    void logListen_Success() {
+        Record record = new Record();
+        record.setId(1L);
+        record.setDiscogsId(12345L);
+        record.setTitle("Local Title");
+        record.setArtist("Local Artist");
+
+        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(user));
+        when(recordRepository.findById(1L)).thenReturn(Optional.of(record));
+        when(listenEventRepository.save(any(ListenEvent.class))).thenAnswer(i -> i.getArgument(0));
+
+        RecordDetailDto details = recordService.logListen(1L, "testuser");
+
+        assertNotNull(details);
+        verify(listenEventRepository).save(any(ListenEvent.class));
     }
 }

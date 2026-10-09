@@ -49,6 +49,7 @@ The system acts as a personal catalog and usage tracker.
 - **User**: Interacts with the Frontend via Browser/Mobile.
 - **AI Assistant**: Interacts with the system via the native Rust Model Context Protocol (MCP) Server.
 - **Discogs API**: External system used to fetch metadata (Artist, Title, Year, Cover Art) based on barcodes or search queries.
+- **Roon Core**: Local music server (WebSocket over `ws://<ip>:9330/api` using binary MOO/1 protocol) used for direct zone selection and album playback ('Play Now').
 
 **Context Diagram**:
 ```mermaid
@@ -59,10 +60,11 @@ graph LR
     Frontend -->|REST API Calls| Backend
     Backend -->|Persists Data| DB[(PostgreSQL)]
     Backend -->|Fetches Metadata| Discogs[Discogs API]
+    Backend -->|WebSocket MOO/1| RoonCore[Roon Core]
 ```
 
 ### 3.2 Technical Context
-- **Protocol**: HTTP/HTTPS (REST).
+- **Protocol**: HTTP/HTTPS (REST), WebSocket (MOO/1 protocol for Roon Core).
 - **Format**: JSON, PDF (for exports).
 - **Security**: JWT-based authentication with backend-managed HttpOnly cookies as primary mechanism and Bearer header fallback for constrained environments; BCrypt password hashing and AES encryption for Discogs API tokens.
 
@@ -91,11 +93,11 @@ The system consists of three main containers:
 
 The Backend follows a layered architecture:
 
-- **Controller Layer**: Handles HTTP requests (`ScanController`, `AppUserController`, `AnalyticsController`, `CollectionController`, `RecordController`, `DiscogsController`).
-- **Service Layer**: Business logic and orchestration (`ScanService`, `DiscogsApiClient`, `CollectionQueryService`, `CollectionSyncService`, `TokenEncryptionService`, `QrCodeService`, `PdfService`, `RecordService`, `DiscogsService`). `ScanService` is responsible for both creating listen events and bulk-deleting all listen events for the authenticated user.
+- **Controller Layer**: Handles HTTP requests (`ScanController`, `AppUserController`, `AnalyticsController`, `CollectionController`, `RecordController`, `DiscogsController`, `RoonController`).
+- **Service Layer**: Business logic and orchestration (`ScanService`, `DiscogsApiClient`, `CollectionQueryService`, `CollectionSyncService`, `TokenEncryptionService`, `QrCodeService`, `PdfService`, `RecordService`, `DiscogsService`, `RoonApiService`, `DefaultRoonClient`). `ScanService` is responsible for both creating listen events and bulk-deleting all listen events for the authenticated user. `RoonApiService` coordinates WebSocket MOO/1 protocol connections to Roon Core, extension pairing, and browse-and-play actions.
 - **Repository Layer**: Data access interface (`RecordRepository`, `ListenEventRepository`, `AppUserRepository`, `CollectionItemRepository`). `ListenEventRepository` provides user-scoped queries for recent history, analytics aggregation, and bulk deletion.
-- **Model Layer**: Domain entities (`AppUser`, `Record`, `ListenEvent`).
-- **DTO Layer**: Request/response payloads are modeled with explicit DTO classes instead of generic maps. Example: scan responses use `ScanDto.Result`, and bulk history reset uses `ScanDto.ResetResult`.
+- **Model Layer**: Domain entities (`AppUser`, `Record`, `ListenEvent`). `AppUser` includes configured Roon host, port, default playback zone, and paired token.
+- **DTO Layer**: Request/response payloads are modeled with explicit DTO classes instead of generic maps. Example: scan responses use `ScanDto.Result`, and Roon operations use `RoonSettingsDto`, `RoonStatusDto`, `RoonZoneDto`, and `RoonPlayRequestDto`.
 
 ## 6. Runtime View
 
@@ -173,6 +175,7 @@ The system is deployed as a multi-container Docker application orchestrated by D
 - **Specific Integration Exceptions**: Replaced generic `RuntimeException` throws in the `DiscogsService` with a tailored hierarchy:
     - `DiscogsTokenException` (HTTP 422) for encryption and token-level issues.
     - `DiscogsApiException` (HTTP 502) for external API communication failures.
+    - `RoonApiException` (HTTP 502) for Roon Core WebSocket and playback execution errors.
     - `CollectionSyncException` (HTTP 500) for batch synchronization errors.
     - `PdfGenerationException` (HTTP 500) for PDF and QR code compilation failures.
 - Endpoint-specific failure paths in analytics endpoints are aligned to the same ProblemDetail structure.

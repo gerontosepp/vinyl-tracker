@@ -39,4 +39,28 @@ class DiscogsDtoTest {
         DiscogsDto.Format cdrFormat = new DiscogsDto.Format("CDr", "1", List.of(), "");
         assertThat(DiscogsDto.determineFormat(List.of(cdrFormat))).isEqualTo("CD");
     }
+
+    @Test
+    void testDetermineFormat_DoubleCd_ReturnsDoubleCd() {
+        // Multi-disc CD with qty >= 2 (e.g. Zappa - You Can't Do That On Stage Anymore)
+        DiscogsDto.Format cdQty2 = new DiscogsDto.Format("CD", "2", List.of("Album"), "");
+        assertThat(DiscogsDto.determineFormat(List.of(cdQty2))).isEqualTo("Double CD");
+
+        // 3xCD (e.g. Zappa - Funky Nothingness)
+        DiscogsDto.Format cdQty3 = new DiscogsDto.Format("CD", "3", List.of("Album", "Stereo"), "");
+        assertThat(DiscogsDto.determineFormat(List.of(cdQty3))).isEqualTo("Double CD");
+
+        // CD with 2xCD description
+        DiscogsDto.Format cdDesc2x = new DiscogsDto.Format("CD", "1", List.of("2xCD", "Album"), "");
+        assertThat(DiscogsDto.determineFormat(List.of(cdDesc2x))).isEqualTo("Double CD");
+
+        // CD with Double CD description
+        DiscogsDto.Format cdDoubleDesc = new DiscogsDto.Format("CD", "1", List.of("Double CD"), "");
+        assertThat(DiscogsDto.determineFormat(List.of(cdDoubleDesc))).isEqualTo("Double CD");
+
+        // Multiple CD format entries summing to >= 2
+        DiscogsDto.Format cdEntry1 = new DiscogsDto.Format("CD", "1", List.of("Album"), "");
+        DiscogsDto.Format cdEntry2 = new DiscogsDto.Format("CD", "1", List.of("Bonus CD"), "");
+        assertThat(DiscogsDto.determineFormat(List.of(cdEntry1, cdEntry2))).isEqualTo("Double CD");
+    }
 }

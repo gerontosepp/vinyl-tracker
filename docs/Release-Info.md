@@ -7,7 +7,29 @@
 
 ---
 
-## v0.3.1 (2026-10-07) – Aktueller Release (WiP / Beta)
+## v0.4.0 (2026-10-09) – Aktueller Release (WiP / Beta)
+
+- **Roon Control API Integration (`#44`)**:
+  - Direkte Steuerung & Wiedergabe von Alben auf Roon Cores und Zonen direkt aus Vinyl Tracker.
+  - Zonenauswahl mit Speicherung der bevorzugten Roon-Zone in den Benutzereinstellungen.
+  - Direkte Wiedergabe-Aktionen ("Auf Roon abspielen") und "Höre ich gerade" im Album-Detail-Modal.
+- **Erweiterte Sammlungsfilter (`#47`)**:
+  - **Genre-Filter**: Dropdown mit Suchfeld und Mehrfachauswahl basierend auf der tatsächlichen Genre-Verteilung der Sammlung.
+  - **Jahres-Filter**: Flexibles Parsen von Einzeljahren und Zeitspannen (z.B. `1970-1972, 1975`).
+  - **Kategorie-Filter & Zähler**: Segmentierte Steuerung (`Alle` / `Platten` / `CDs`) mit Anzeige der jeweiligen Trefferanzahl in Badges.
+- **Doppel-CD & Multi-Format-Support (`#46`)**:
+  - Korrektur der Format-Klassifizierung in `DiscogsDto.determineFormat`: Doppel- und Multi-CDs (`2xCD`, `qty >= 2`) werden nicht mehr fälschlicherweise als `Double LP` eingestuft.
+  - Flyway-Migration `V7__update_double_cd_formats.sql` zur automatischen Bereinigung bestehender Datenbankeinträge in `record_cache`.
+  - Dedizierte Frontend-Darstellung (`double_cd`) mit cyanfarbenen Discs und kompaktem `2CD`-Badge sowie Tooltips auf Deutsch und Englisch.
+- **Dashboard & UX-Optimierungen**:
+  - Standardfilter für die Hör-Aktivität auf 7 Tage gesetzt mit zusätzlichem 7-Tage-Schnellfilter (`#40`).
+  - Vollständige Anzeige aller Genres in der Legende des Genre-Breakdowns (`#31`).
+  - Verlagerung des Gesamtdownloads aller QR-Codes in die Einstellungen (`#33`).
+  - Mobile Optimierung: Ausblenden der QR-Druck-Buttons auf mobilen Geräten (`#36`).
+
+---
+
+## v0.3.1 (2026-10-07) – Vorgänger-Release (WiP / Beta)
 
 - **Proxmox & Reverse Proxy / DynDNS Stabilität**:
   - **CORS- & Auth-Umgebungsvariablen in Docker Compose**: Explizite Weiterleitung von `CORS_ALLOWED_ORIGINS`, `CORS_ALLOW_CREDENTIALS`, `AUTH_COOKIE_*`, `IMAGE_PROXY_ALLOWED_HOSTS` und `AUTH_RATE_LIMIT_FOR_PERIOD` an den `backend`-Container in `docker-compose.registry.yml` und `docker-compose.prod.yml`. Behebt `403 Invalid CORS request` Fehler bei Zugriffen über DynDNS- und Reverse-Proxy-Domains (z.B. IPv64.net / Nginx Proxy Manager).

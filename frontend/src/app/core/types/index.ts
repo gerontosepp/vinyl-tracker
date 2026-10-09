@@ -3,6 +3,42 @@ export interface User {
   username: string;
   discogsUsername?: string;
   token?: string;
+  roonHost?: string;
+  roonPort?: number;
+  roonZoneId?: string;
+  roonZoneName?: string;
+  roonPaired?: boolean;
+}
+
+export interface RoonStatus {
+  connected: boolean;
+  paired: boolean;
+  coreName?: string;
+  coreId?: string;
+  host?: string;
+  port?: number;
+  selectedZoneId?: string;
+  selectedZoneName?: string;
+  zones: RoonZone[];
+}
+
+export interface RoonZone {
+  zoneId: string;
+  name: string;
+  state: string;
+}
+
+export interface RoonSettings {
+  roonHost?: string;
+  roonPort?: number;
+  roonZoneId?: string;
+  roonZoneName?: string;
+}
+
+export interface RoonPlayRequest {
+  artist: string;
+  title: string;
+  zoneId?: string;
 }
 
 export interface TrackedRecord {

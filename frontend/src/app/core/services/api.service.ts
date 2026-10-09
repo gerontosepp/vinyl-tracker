@@ -13,6 +13,10 @@ import {
   QrCodeItem,
   SyncResult,
   RecordDetailDto,
+  RoonStatus,
+  RoonZone,
+  RoonSettings,
+  RoonPlayRequest,
 } from '../types';
 
 @Injectable({
@@ -62,6 +66,10 @@ export class ApiService {
     return this.http.get<RecordDetailDto>(`${this.baseUrl}/records/${id}`);
   }
 
+  logRecordListen(id: number): Observable<RecordDetailDto> {
+    return this.http.post<RecordDetailDto>(`${this.baseUrl}/records/${id}/listen`, {});
+  }
+
   getGenreBreakdown(): Observable<GenreBreakdownItem[]> {
     return this.http.get<GenreBreakdownItem[]>(`${this.baseUrl}/analytics/collection/genres`);
   }
@@ -100,7 +108,10 @@ export class ApiService {
     minPlays: number = 0,
     sort: string = 'artist',
     sortOrder: string = 'asc',
-    search?: string
+    search?: string,
+    category?: 'all' | 'vinyl' | 'cd' | string,
+    genres?: string[],
+    years?: string
   ): Observable<CollectionResponse> {
     let params = new HttpParams()
       .set('page', page.toString())
@@ -112,6 +123,17 @@ export class ApiService {
     }
     if (search) {
       params = params.set('search', search);
+    }
+    if (category && category !== 'all') {
+      params = params.set('category', category);
+    }
+    if (genres && genres.length > 0) {
+      genres.forEach((g) => {
+        params = params.append('genres', g);
+      });
+    }
+    if (years && years.trim()) {
+      params = params.set('years', years.trim());
     }
     return this.http.get<CollectionResponse>(`${this.baseUrl}/collection`, { params });
   }
@@ -141,5 +163,21 @@ export class ApiService {
       return originalUrl;
     }
     return `${this.baseUrl}/proxy/image?url=${encodeURIComponent(originalUrl)}`;
+  }
+
+  getRoonStatus(): Observable<RoonStatus> {
+    return this.http.get<RoonStatus>(`${this.baseUrl}/roon/status`);
+  }
+
+  getRoonZones(): Observable<RoonZone[]> {
+    return this.http.get<RoonZone[]>(`${this.baseUrl}/roon/zones`);
+  }
+
+  updateRoonSettings(settings: RoonSettings): Observable<RoonStatus> {
+    return this.http.post<RoonStatus>(`${this.baseUrl}/roon/settings`, settings);
+  }
+
+  playOnRoon(request: RoonPlayRequest): Observable<{ success: boolean; message: string }> {
+    return this.http.post<{ success: boolean; message: string }>(`${this.baseUrl}/roon/play`, request);
   }
 }

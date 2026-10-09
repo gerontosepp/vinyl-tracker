@@ -1,4 +1,4 @@
-# Vinyl Tracker v0.3.1
+# Vinyl Tracker v0.4.0
 
 A personal vinyl record tracking application that allows users to scan barcodes, identify records via Discogs, and log listening sessions.
 
@@ -39,19 +39,20 @@ The project follows a modern containerized micro-architecture:
 
 ## Features
 
-- **Model Context Protocol (MCP)**: Native Rust MCP server with 14 tools to query your vinyl collection, get random recommendations, view unplayed records, fetch album tracklists, search Discogs, log listen events, and inspect analytics from AI assistants (Antigravity IDE, Claude Desktop, Cursor).
+- **Model Context Protocol (MCP)**: Native Rust MCP server with 15 tools to query your vinyl collection, trigger local Roon playback, get random recommendations, view unplayed records, fetch album tracklists, search Discogs, log listen events, and inspect analytics from AI assistants (Antigravity IDE, Claude Desktop, Cursor).
+- **Roon Control & Local Playback**: Direct integration with the official Roon API (WebSocket MOO/1 protocol). Configure your local Roon Core in Settings, select playback zones, and trigger playback ("Auf Roon abspielen" / Play Now) directly from the record detail modal or via the MCP tool `play_record_on_roon`.
 - **Random Record Recommendations**: Get random vinyl suggestions (`/api/collection/random`) with optional genre filter and "unplayed only" mode.
 - **Unplayed Records ("Shelf of Shame")**: Dedicated endpoint (`/api/collection/unplayed`) to quickly find and listen to albums you have never played.
 - **Detailed Album Metadata**: Complete record details (`/api/records/{id}`) including tracklist, formats, labels, release notes, and personal play counts.
 - **Global Discogs Search**: Direct database search (`/api/discogs/search`) for exploring albums, artists, and releases.
 - **Smart Barcode Scanning & Discogs Auto-Add**: Scan vinyl barcodes or custom QR codes to instantly log listens. If a scanned record is not yet in your collection, Vinyl Tracker searches Discogs, previews pressing details with variant selection, and adds it directly to your Discogs collection (`POST /api/collection/releases/{id}`) followed by automatic library synchronization.
 - **Multi-User Support**: Individual user accounts with personal Discogs collection integration.
-- **Listening History**: Log when you listen to a record.
+- **Listening History & Just Listening**: Log listening sessions via barcode/QR scan or directly via the **"Höre ich gerade" (Just listening)** button in the album detail view.
 - **Analytics**: View most played records and listening trends.
 - **Live Collection Insights**: Dashboard charts for Discogs collection value and genre breakdown via `/api/analytics/collection/value` and `/api/analytics/collection/genres`.
 - **QR Code Generation**: Generate a PDF with QR codes for your entire collection, sorted by artist.
 - **Quick Logging**: Scan generated QR codes to instantly log a listen without searching.
-- **Collection Management & Values**: Search, filter (e.g., "Played Only"), and sort your vinyl catalog. Displays the market lowest price / value for records in the list, and opens a comprehensive detail popup on album cover/title click (showing full DB attributes, genres, tracklists, formats, labels, notes, and listening history). Force a manual sync with Discogs at any time.
+- **Collection Management & Values**: Search, filter by format category ("Alle", "Platten" [inkl. Einzel-/Doppel-LP], "CDs" [inkl. Einzel-/Doppel-CD]), filter by multi-select **Genre** (z. B. Rock, Jazz mit dynamischer Häufigkeitsanzeige), filter nach **Erscheinungsjahr / Zeiträumen** (einzelne Jahre wie `1970, 1971`, Von-Bis-Bereiche wie `1970-1972` oder Kombinationen daraus), toggle "Played Only", and sort your collection catalog. Displays the market lowest price / value for records in the list, and opens a comprehensive detail popup on album cover/title click (showing full DB attributes, genres, tracklists, formats, labels, notes, and listening history). Force a manual sync with Discogs at any time.
 - **Data Management**: Reset your entire listening history with a single click from Settings (with confirmation dialog to prevent accidental deletions).
 - **Modern UI**: Fully responsive, mobile-first design with dark mode, glassmorphism, and smooth micro-animations.
 - **Resilient API**: Robust Discogs integration with **Resilience4j** rate-limiting (60 req/min) and automatic retries with exponential backoff.
@@ -119,7 +120,7 @@ The application requires environment variables for configuration (database crede
 2. **Start Production Environment (or Proxmox / LXC)**:
    - **Automated Proxmox Deployment Script** (pulls official public images from GHCR):
      ```bash
-     ./scripts/deploy_proxmox.sh [v0.3.1]
+     ./scripts/deploy_proxmox.sh [v0.4.0]
      ```
    - **Manual Compose with Public Registry Images**:
      ```bash
@@ -151,6 +152,23 @@ The application requires environment variables for configuration (database crede
    - Enter your Discogs Username.
    - Enter your Discogs Personal Access Token (generate at [Discogs Settings -> Developers](https://www.discogs.com/settings/developers)).
    - Your token is securely encrypted using your login password.
+
+### Roon Integration & Local Playback
+1. **Connect Roon Core**:
+   - Navigate to **Settings** $\rightarrow$ **Roon Integration**.
+   - Enter your Roon Core IP or hostname and Port (default: `9330` for Roon 2.0 / Roon OS).
+   - Click **Save Roon Settings**.
+2. **Authorize Extension**:
+   - Open your **Roon Remote** app (Desktop or Mobile).
+   - Go to **Settings $\rightarrow$ Extensions** (*Einstellungen $\rightarrow$ Erweiterungen*).
+   - Locate **Vinyl Tracker** and click **Enable** (*Aktivieren*).
+3. **Select Playback Zone**:
+   - Return to Vinyl Tracker Settings and click **Refresh Zones**.
+   - Choose your default output zone (e.g., Living Room, HiFi system) from the dropdown and save.
+4. **Play Records**:
+   - Open any record in your **Collection** or **Dashboard** to view its details.
+   - Click the purple **▶ Auf Roon abspielen** button in the header. Vinyl Tracker searches Roon and plays the full album from start to finish.
+   - Alternatively, ask an AI assistant via the MCP server (`play_record_on_roon`).
 
 ## Development & Testing
 

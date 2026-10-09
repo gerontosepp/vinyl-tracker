@@ -20,6 +20,25 @@
           </div>
         </div>
       }
+      @case ('double_cd') {
+        <div
+          class="inline-flex items-center justify-center cursor-help py-1 px-1.5 rounded-lg bg-cyan-50 dark:bg-cyan-950/40 hover:bg-cyan-100/70 dark:hover:bg-cyan-900/50 transition-colors"
+          [title]="'collection.formatDoubleCd' | translate"
+        >
+          <div class="relative flex items-center">
+            <svg
+              lucideDiscAlbum
+              class="text-cyan-400 dark:text-cyan-500 shrink-0"
+              [size]="19"
+            ></svg>
+            <svg
+              lucideDiscAlbum
+              class="text-cyan-700 dark:text-cyan-300 -ml-2.5 shrink-0 drop-shadow-sm"
+              [size]="19"
+            ></svg>
+          </div>
+        </div>
+      }
       @case ('cd') {
         <div
           class="inline-flex items-center justify-center cursor-help py-1 px-1.5 rounded-lg bg-cyan-50 dark:bg-cyan-950/40 hover:bg-cyan-100/70 dark:hover:bg-cyan-900/50 transition-colors"
@@ -54,6 +73,9 @@
         @case ('double_lp') {
           <span>{{ 'collection.formatDoubleLp' | translate }}</span>
         }
+        @case ('double_cd') {
+          <span>{{ 'collection.formatDoubleCd' | translate }}</span>
+        }
         @case ('cd') {
           <span>{{ 'collection.formatCd' | translate }}</span>
         }
@@ -78,6 +100,16 @@
           <svg lucideDisc class="text-slate-400" [size]="12"></svg>
           <svg lucideDisc class="text-slate-700 dark:text-slate-200 -ml-1.5" [size]="12"></svg>
           <span class="ml-0.5">2LP</span>
+        </span>
+      }
+      @case ('double_cd') {
+        <span
+          class="inline-flex items-center gap-0.5 text-[10px] font-bold text-cyan-700 dark:text-cyan-300 cursor-help"
+          [title]="'collection.formatDoubleCd' | translate"
+        >
+          <svg lucideDiscAlbum class="text-cyan-400" [size]="12"></svg>
+          <svg lucideDiscAlbum class="text-cyan-600 dark:text-cyan-300 -ml-1.5" [size]="12"></svg>
+          <span class="ml-0.5">2CD</span>
         </span>
       }
       @case ('cd') {
@@ -106,6 +138,9 @@
       @switch (format()) {
         @case ('double_lp') {
           <span>{{ 'collection.formatDoubleLp' | translate }}</span>
+        }
+        @case ('double_cd') {
+          <span>{{ 'collection.formatDoubleCd' | translate }}</span>
         }
         @case ('cd') {
           <span>{{ 'collection.formatCd' | translate }}</span>

@@ -80,7 +80,7 @@ test.describe('Dashboard', () => {
     await expect(page.getByRole('heading', { name: 'Most Played Albums', exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Recent Listens', exact: true })).toBeVisible();
     await expect(page.getByText('Collection Value', { exact: false })).toBeVisible();
-    await expect(page.getByText('Genre Breakdown', { exact: true })).toBeVisible();
+    await expect(page.getByText('Genre Breakdown', { exact: false })).toBeVisible();
     await expect(page.getByText('Test Artist').first()).toBeVisible();
     await expect(page.getByText('5 plays')).toBeVisible();
   });

@@ -1,17 +1,22 @@
 import { Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
 import { LayoutComponent } from '../../shared/components/layout/layout.component';
 import { AuthService } from '../../core/services/auth.service';
+import { ApiService } from '../../core/services/api.service';
 import { ThemeService, Theme } from '../../core/services/theme.service';
 import { LanguageService, Language } from '../../core/services/language.service';
 import { ToastService } from '../../core/services/toast.service';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
+import { getErrorMessage } from '../../core/utils/error';
+import { RoonStatus } from '../../core/types';
+import { LucideDownload } from '@lucide/angular';
 
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [FormsModule, LayoutComponent, TranslatePipe],
+  imports: [FormsModule, LayoutComponent, TranslatePipe, LucideDownload],
   template: `
     <app-layout>
       <div class="max-w-6xl mx-auto space-y-6">
@@ -178,6 +183,118 @@ import { TranslatePipe } from '../../core/pipes/translate.pipe';
               </form>
             </div>
 
+            <!-- Roon Integration -->
+            <div
+              class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-600 p-6 transition-colors"
+            >
+              <div class="flex items-start justify-between gap-4 mb-2">
+                <div>
+                  <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">
+                    {{ 'settings.roonTitle' | translate }}
+                  </h3>
+                  <p class="text-sm text-slate-500 dark:text-slate-400 font-medium">
+                    {{ 'settings.roonDesc' | translate }}
+                  </p>
+                </div>
+                <!-- Status Badges -->
+                <div class="flex flex-col items-end gap-1.5 shrink-0">
+                  @if (roonStatus()?.connected) {
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
+                      <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      {{ 'settings.roonConnected' | translate }}
+                    </span>
+                  } @else {
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 dark:bg-slate-700/60 dark:text-slate-400">
+                      <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                      {{ 'settings.roonDisconnected' | translate }}
+                    </span>
+                  }
+
+                  @if (roonStatus()?.paired) {
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300">
+                      {{ 'settings.roonPaired' | translate }}
+                    </span>
+                  } @else if (roonStatus()?.connected) {
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300" title="{{ 'settings.roonUnpaired' | translate }}">
+                      ⚠️ Autorisierung nötig
+                    </span>
+                  }
+                </div>
+              </div>
+
+              @if (roonStatus()?.coreName) {
+                <div class="mb-4 text-xs font-medium text-slate-500 dark:text-slate-400">
+                  Core: <span class="font-bold text-slate-700 dark:text-slate-300">{{ roonStatus()?.coreName }}</span>
+                </div>
+              }
+
+              <form (ngSubmit)="handleSaveRoon()" #roonForm="ngForm" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div class="md:col-span-2">
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
+                      {{ 'settings.roonHost' | translate }}
+                    </label>
+                    <input
+                      type="text"
+                      name="roonHost"
+                      [(ngModel)]="roonHost"
+                      placeholder="z.B. 192.168.1.50"
+                      class="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-2.5 text-slate-900 dark:text-slate-100 font-medium focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
+                      {{ 'settings.roonPort' | translate }}
+                    </label>
+                    <input
+                      type="number"
+                      name="roonPort"
+                      [(ngModel)]="roonPort"
+                      min="1"
+                      max="65535"
+                      class="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-2.5 text-slate-900 dark:text-slate-100 font-medium focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div class="flex items-center justify-between mb-2">
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                      {{ 'settings.roonZone' | translate }}
+                    </label>
+                    <button
+                      type="button"
+                      (click)="handleRefreshZones()"
+                      [disabled]="isLoadingZones() || !roonStatus()?.connected"
+                      class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline disabled:opacity-40 cursor-pointer"
+                    >
+                      {{ (isLoadingZones() ? '...' : ('settings.roonRefreshZones' | translate)) }}
+                    </button>
+                  </div>
+                  <select
+                    name="roonZoneId"
+                    [(ngModel)]="roonZoneId"
+                    class="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-2.5 text-slate-900 dark:text-slate-100 font-medium focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all cursor-pointer"
+                  >
+                    <option value="">{{ 'settings.roonSelectZone' | translate }}</option>
+                    @for (z of (roonStatus()?.zones || []); track z.zoneId) {
+                      <option [value]="z.zoneId">{{ z.name }} ({{ z.state }})</option>
+                    }
+                  </select>
+                </div>
+
+                <div class="flex justify-end pt-4 border-t border-slate-100 dark:border-slate-600">
+                  <button
+                    type="submit"
+                    [disabled]="isSavingRoon()"
+                    class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl font-bold transition-all shadow-sm hover:-translate-y-0.5 cursor-pointer disabled:opacity-50"
+                  >
+                    {{ (isSavingRoon() ? 'settings.saving' : 'settings.roonSave') | translate }}
+                  </button>
+                </div>
+              </form>
+            </div>
+
             <!-- Data Management -->
             <div
               class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-600 p-6 transition-colors"
@@ -208,6 +325,29 @@ import { TranslatePipe } from '../../core/pipes/translate.pipe';
                   class="flex-1 bg-slate-100 dark:bg-slate-900/50 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 font-bold px-4 py-3 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors flex items-center justify-center gap-2"
                 >
                   {{ 'settings.exportCsv' | translate }}
+                </button>
+              </div>
+            </div>
+
+            <!-- QR-Code Management -->
+            <div
+              class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-600 p-6 transition-colors"
+            >
+              <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100 mb-2">
+                {{ 'settings.qrManagementTitle' | translate }}
+              </h3>
+              <p class="text-sm text-slate-500 dark:text-slate-400 mb-6 font-medium">
+                {{ 'settings.qrManagementDesc' | translate }}
+              </p>
+
+              <div>
+                <button
+                  (click)="handleDownloadQrCodes()"
+                  [disabled]="isDownloadingQr()"
+                  class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2.5 rounded-xl transition-all shadow-sm hover:-translate-y-0.5 cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                >
+                  <svg lucideDownload [size]="18"></svg>
+                  {{ (isDownloadingQr() ? 'settings.generatingQr' : 'settings.downloadQr') | translate }}
                 </button>
               </div>
             </div>
@@ -250,6 +390,7 @@ import { TranslatePipe } from '../../core/pipes/translate.pipe';
 })
 export class SettingsComponent {
   readonly authService = inject(AuthService);
+  readonly apiService = inject(ApiService);
   readonly themeService = inject(ThemeService);
   readonly languageService = inject(LanguageService);
   private readonly toastService = inject(ToastService);
@@ -259,6 +400,95 @@ export class SettingsComponent {
   token = '';
   password = '';
   readonly showResetConfirm = signal<boolean>(false);
+
+  // Roon Integration
+  roonHost = this.authService.user()?.roonHost || '';
+  roonPort = this.authService.user()?.roonPort || 9330;
+  roonZoneId = this.authService.user()?.roonZoneId || '';
+  readonly roonStatus = signal<RoonStatus | null>(null);
+  readonly isSavingRoon = signal<boolean>(false);
+  readonly isLoadingZones = signal<boolean>(false);
+  readonly isDownloadingQr = signal<boolean>(false);
+
+  constructor() {
+    this.loadRoonStatus();
+  }
+
+  loadRoonStatus(): void {
+    this.apiService.getRoonStatus().subscribe({
+      next: (status) => {
+        this.roonStatus.set(status);
+        if (status.host) {
+          this.roonHost = status.host;
+        }
+        if (status.port) {
+          this.roonPort = status.port;
+        }
+        if (status.selectedZoneId) {
+          this.roonZoneId = status.selectedZoneId;
+        } else if (status.zones && status.zones.length > 0 && !this.roonZoneId) {
+          const userZone = this.authService.user()?.roonZoneId;
+          if (userZone) {
+            this.roonZoneId = userZone;
+          }
+        }
+      },
+      error: () => {
+        // Silently ignore if not configured or offline
+      },
+    });
+  }
+
+  handleRefreshZones(): void {
+    this.isLoadingZones.set(true);
+    this.apiService.getRoonZones().subscribe({
+      next: (zones) => {
+        this.isLoadingZones.set(false);
+        const cur = this.roonStatus();
+        if (cur) {
+          this.roonStatus.set({ ...cur, zones });
+        }
+        this.toastService.showToast('Roon-Zonen aktualisiert', 'success');
+      },
+      error: () => {
+        this.isLoadingZones.set(false);
+        this.toastService.showToast('Zonen konnten nicht geladen werden', 'error');
+      },
+    });
+  }
+
+  handleSaveRoon(): void {
+    this.isSavingRoon.set(true);
+    const selectedZone = this.roonStatus()?.zones?.find((z) => z.zoneId === this.roonZoneId);
+
+    this.apiService
+      .updateRoonSettings({
+        roonHost: this.roonHost,
+        roonPort: this.roonPort,
+        roonZoneId: this.roonZoneId,
+        roonZoneName: selectedZone?.name,
+      })
+      .subscribe({
+        next: (status) => {
+          this.isSavingRoon.set(false);
+          this.roonStatus.set(status);
+          if (status.host) {
+            this.roonHost = status.host;
+          }
+          if (status.port) {
+            this.roonPort = status.port;
+          }
+          if (status.selectedZoneId) {
+            this.roonZoneId = status.selectedZoneId;
+          }
+          this.toastService.showToast('Roon-Einstellungen gespeichert!', 'success');
+        },
+        error: () => {
+          this.isSavingRoon.set(false);
+          this.toastService.showToast('Fehler beim Speichern der Roon-Einstellungen', 'error');
+        },
+      });
+  }
 
   onThemeChange(newTheme: Theme): void {
     this.themeService.setTheme(newTheme);
@@ -301,6 +531,39 @@ export class SettingsComponent {
     this.authService.logout().then(() => {
       this.router.navigate(['/login']);
     });
+  }
+
+  async handleDownloadQrCodes(): Promise<void> {
+    const user = this.authService.user();
+    if (!user) return;
+    if (
+      !window.confirm('Generate QR codes for your ENTIRE collection? This may take a while.')
+    ) {
+      return;
+    }
+
+    this.isDownloadingQr.set(true);
+    try {
+      const blob = await firstValueFrom(this.apiService.downloadQrCodes());
+      this.downloadBlob(blob, 'collection_qr_codes.pdf');
+      this.toastService.showToast('QR codes generated successfully', 'success');
+    } catch (err) {
+      console.error(err);
+      this.toastService.showToast(getErrorMessage(err, 'Failed to generate QR codes.'), 'error');
+    } finally {
+      this.isDownloadingQr.set(false);
+    }
+  }
+
+  private downloadBlob(blob: Blob, filename: string): void {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
   }
 }
 

@@ -11,7 +11,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import lombok.RequiredArgsConstructor;
 
@@ -26,8 +29,27 @@ public class CollectionQueryService {
 
     public DiscogsDto.CollectionResponse getCollection(AppUser user, int page, int perPage, String sort,
                                                        String sortOrder, Integer minPlays, String search) {
+        return getCollection(user, page, perPage, sort, sortOrder, minPlays, search, "all", null, null);
+    }
 
-        log.info("Fetching collection from local DB for user: {}", user.getUsername());
+    public DiscogsDto.CollectionResponse getCollection(AppUser user, int page, int perPage, String sort,
+                                                       String sortOrder, Integer minPlays, String search, String category) {
+        return getCollection(user, page, perPage, sort, sortOrder, minPlays, search, category, null, null);
+    }
+
+    public DiscogsDto.CollectionResponse getCollection(AppUser user, int page, int perPage, String sort,
+                                                       String sortOrder, Integer minPlays, String search,
+                                                       String category, List<String> genres, String years) {
+
+        log.info("Fetching collection from local DB for user: {}, category: {}, genres: {}, years: {}",
+                user.getUsername(), category, genres, years);
+
+        String categoryNorm = (category == null || category.trim().isEmpty())
+                ? "all"
+                : category.trim().toLowerCase();
+        if (!categoryNorm.equals("vinyl") && !categoryNorm.equals("cd")) {
+            categoryNorm = "all";
+        }
 
         // Setup pagination
         Sort.Direction direction = "desc".equalsIgnoreCase(sortOrder)
@@ -63,31 +85,33 @@ public class CollectionQueryService {
             pageable = PageRequest.of(page - 1, perPage, Sort.by(direction, "addedAt"));
         }
 
-        Page<?> pagedResult;
         boolean hasSearch = search != null && !search.trim().isEmpty();
-        String searchLower = (search != null && search.trim().length() > 0) ? search.trim().toLowerCase() : "";
+        String searchLower = hasSearch ? search.trim().toLowerCase() : "";
 
+        Set<String> genresLower = (genres == null) ? Set.of() : genres.stream()
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .map(String::toLowerCase)
+                .collect(Collectors.toSet());
+        boolean hasGenres = !genresLower.isEmpty();
+        Collection<String> genresParam = hasGenres ? genresLower : List.of("__NONE__");
+
+        Set<String> parsedYears = com.antigravity.vinyltracker.util.YearFilterParser.parseYears(years);
+        boolean hasYears = !parsedYears.isEmpty();
+        Collection<String> yearsParam = hasYears ? parsedYears : List.of("__NONE__");
+
+        Page<?> pagedResult;
         if ("listens".equalsIgnoreCase(sort)) {
             if ("desc".equalsIgnoreCase(sortOrder)) {
-                if (hasSearch) {
-                    pagedResult = collectionItemRepository.searchByUserAndKeywordOrderByPlayCountDesc(user, searchLower, pageable);
-                } else {
-                    pagedResult = collectionItemRepository.findAllByUserOrderByPlayCountDesc(user, pageable);
-                }
+                pagedResult = collectionItemRepository.findFilteredCollectionOrderByPlayCountDesc(
+                        user, categoryNorm, hasSearch, searchLower, hasGenres, genresParam, hasYears, yearsParam, pageable);
             } else {
-                if (hasSearch) {
-                    pagedResult = collectionItemRepository.searchByUserAndKeywordOrderByPlayCountAsc(user, searchLower, pageable);
-                } else {
-                    pagedResult = collectionItemRepository.findAllByUserOrderByPlayCountAsc(user, pageable);
-                }
+                pagedResult = collectionItemRepository.findFilteredCollectionOrderByPlayCountAsc(
+                        user, categoryNorm, hasSearch, searchLower, hasGenres, genresParam, hasYears, yearsParam, pageable);
             }
         } else {
-            // Default query with optional sorting
-            if (hasSearch) {
-                pagedResult = collectionItemRepository.searchByUserAndKeyword(user, searchLower, pageable);
-            } else {
-                pagedResult = collectionItemRepository.findAllByUser(user, pageable);
-            }
+            pagedResult = collectionItemRepository.findFilteredCollection(
+                    user, categoryNorm, hasSearch, searchLower, hasGenres, genresParam, hasYears, yearsParam, pageable);
         }
 
         List<DiscogsDto.CollectionRelease> releases = pagedResult.getContent().stream()

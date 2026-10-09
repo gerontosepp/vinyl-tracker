@@ -14,7 +14,9 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(RecordController.class)
@@ -69,5 +71,28 @@ class RecordControllerTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andExpect(content().contentType("application/problem+json"));
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void logListen_Success() throws Exception {
+        RecordDetailDto detail = RecordDetailDto.builder()
+                .id(1L)
+                .discogsId(999L)
+                .title("Dark Side of the Moon")
+                .artist("Pink Floyd")
+                .inCollection(true)
+                .listenCount(6L)
+                .build();
+
+        when(recordService.logListen(1L, "testuser")).thenReturn(detail);
+
+        mockMvc.perform(post("/api/records/1/listen")
+                        .with(csrf())
+                        .principal(() -> "testuser")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.listen_count").value(6));
     }
 }

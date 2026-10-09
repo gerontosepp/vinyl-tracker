@@ -7,6 +7,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.security.Principal;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/collection")
@@ -23,11 +24,14 @@ public class CollectionController {
             @RequestParam(defaultValue = "artist") String sort,
             @RequestParam(defaultValue = "asc") String sort_order,
             @RequestParam(required = false) Integer min_plays,
-            @RequestParam(required = false) String search) {
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false, defaultValue = "all") String category,
+            @RequestParam(required = false) List<String> genres,
+            @RequestParam(required = false) String years) {
 
         return ResponseEntity
                 .ok(collectionService.getCollection(principal.getName(), page, per_page, sort, sort_order, min_plays,
-                        search));
+                        search, category, genres, years));
     }
 
     @GetMapping("/random")

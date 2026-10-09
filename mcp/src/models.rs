@@ -20,6 +20,12 @@ pub struct GetCollectionArgs {
     pub min_plays: Option<i32>,
     /// Search query string to filter by album title or artist
     pub search: Option<String>,
+    /// Filter collection by category: "all", "vinyl", or "cd" (default: "all")
+    pub category: Option<String>,
+    /// Filter collection by genres (e.g. ["Jazz", "Rock"])
+    pub genres: Option<Vec<String>>,
+    /// Filter collection by year or year ranges (e.g. "1970, 1971" or "1970-1972")
+    pub years: Option<String>,
 }
 
 /// Arguments for scanning a barcode or custom Discogs QR code.
@@ -307,6 +313,22 @@ pub struct DiscogsSearchResult {
     #[serde(default)]
     pub format: Vec<String>,
     pub country: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct PlayRecordOnRoonArgs {
+    /// Artist name of the record to play
+    pub artist: String,
+    /// Album or track title of the record to play
+    pub title: String,
+    /// Optional target Roon playback zone ID (defaults to user's configured default zone)
+    pub zone_id: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RoonPlayResponse {
+    pub success: bool,
+    pub message: String,
 }
 
 #[cfg(test)]

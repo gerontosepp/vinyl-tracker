@@ -8,9 +8,9 @@ import { RecordDetailModalComponent } from './components/record-detail-modal/rec
 import { AuthService } from '../../core/services/auth.service';
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
-import { CollectionRelease, QrCodeItem, RecordDetailDto } from '../../core/types';
+import { CollectionRelease, QrCodeItem, RecordDetailDto, GenreBreakdownItem } from '../../core/types';
 import { getErrorMessage } from '../../core/utils/error';
-import { getFormatType } from './utils/format-type.util';
+import { getFormatType, FormatType } from './utils/format-type.util';
 import { Subscription, firstValueFrom } from 'rxjs';
 
 @Component({
@@ -38,6 +38,7 @@ export class CollectionComponent implements OnInit, OnDestroy {
   readonly page = signal<number>(1);
   readonly perPage = signal<number>(50);
   readonly totalPages = signal<number>(1);
+  readonly totalItems = signal<number>(0);
   readonly releases = signal<CollectionRelease[]>([]);
 
   readonly loading = signal<boolean>(false);
@@ -48,6 +49,12 @@ export class CollectionComponent implements OnInit, OnDestroy {
   readonly showPlayedOnly = signal<boolean>(false);
   readonly sort = signal<string>('artist');
   readonly sortOrder = signal<string>('asc');
+  readonly category = signal<'all' | 'vinyl' | 'cd'>('all');
+
+  readonly availableGenres = signal<GenreBreakdownItem[]>([]);
+  readonly selectedGenres = signal<string[]>([]);
+  readonly years = signal<string>('');
+  readonly debouncedYears = signal<string>('');
 
   readonly selectedItems = signal<Map<number, QrCodeItem>>(new Map());
 
@@ -61,8 +68,10 @@ export class CollectionComponent implements OnInit, OnDestroy {
 
   private sub: Subscription | null = null;
   private searchTimer: any = null;
+  private yearsTimer: any = null;
 
   ngOnInit(): void {
+    this.loadGenres();
     this.loadData();
   }
 
@@ -73,6 +82,16 @@ export class CollectionComponent implements OnInit, OnDestroy {
     if (this.searchTimer) {
       clearTimeout(this.searchTimer);
     }
+    if (this.yearsTimer) {
+      clearTimeout(this.yearsTimer);
+    }
+  }
+
+  loadGenres(): void {
+    this.apiService.getGenreBreakdown().subscribe({
+      next: (items) => this.availableGenres.set(items),
+      error: (err) => console.error('Failed to load genres', err),
+    });
   }
 
   loadData(): void {
@@ -93,7 +112,10 @@ export class CollectionComponent implements OnInit, OnDestroy {
         minPlays,
         this.sort(),
         this.sortOrder(),
-        this.debouncedSearch()
+        this.debouncedSearch(),
+        this.category(),
+        this.selectedGenres(),
+        this.debouncedYears()
       )
       .subscribe({
         next: (data) => {
@@ -105,9 +127,11 @@ export class CollectionComponent implements OnInit, OnDestroy {
 
           if (data.pagination) {
             this.totalPages.set(data.pagination.pages);
+            this.totalItems.set(data.pagination.items);
             this.loadStatus.set(`${data.pagination.items} entries • ${loadedTime}`);
           } else {
             this.totalPages.set(1);
+            this.totalItems.set(data.releases.length);
             this.loadStatus.set(`${data.releases.length} entries • ${loadedTime}`);
           }
           this.loading.set(false);
@@ -153,6 +177,43 @@ export class CollectionComponent implements OnInit, OnDestroy {
     } else {
       this.sortOrder.set('asc');
     }
+    this.page.set(1);
+    this.loadData();
+  }
+
+  onCategoryChange(value: 'all' | 'vinyl' | 'cd'): void {
+    if (this.category() === value) return;
+    this.category.set(value);
+    this.page.set(1);
+    this.loadData();
+  }
+
+  onGenresChange(genres: string[]): void {
+    this.selectedGenres.set(genres);
+    this.page.set(1);
+    this.loadData();
+  }
+
+  onYearsChange(value: string): void {
+    this.years.set(value);
+    if (this.yearsTimer) {
+      clearTimeout(this.yearsTimer);
+    }
+    this.yearsTimer = setTimeout(() => {
+      this.debouncedYears.set(value);
+      this.page.set(1);
+      this.loadData();
+    }, 400);
+  }
+
+  clearAllFilters(): void {
+    this.selectedGenres.set([]);
+    this.years.set('');
+    this.debouncedYears.set('');
+    this.search.set('');
+    this.debouncedSearch.set('');
+    this.category.set('all');
+    this.showPlayedOnly.set(false);
     this.page.set(1);
     this.loadData();
   }
@@ -233,28 +294,6 @@ export class CollectionComponent implements OnInit, OnDestroy {
     }
   }
 
-  async handleDownloadAll(): Promise<void> {
-    const user = this.authService.user();
-    if (!user) return;
-    if (
-      !window.confirm('Generate QR codes for your ENTIRE collection? This may take a while.')
-    ) {
-      return;
-    }
-
-    this.generating.set(true);
-    try {
-      const blob = await firstValueFrom(this.apiService.downloadQrCodes());
-      this.downloadBlob(blob, 'collection_qr_codes.pdf');
-      this.toastService.showToast('QR codes generated successfully', 'success');
-    } catch (err) {
-      console.error(err);
-      this.toastService.showToast(getErrorMessage(err, 'Failed to generate QR codes.'), 'error');
-    } finally {
-      this.generating.set(false);
-    }
-  }
-
   openDetail(release: CollectionRelease): void {
     this.selectedRecord.set(release);
     this.recordDetail.set(null);
@@ -295,7 +334,18 @@ export class CollectionComponent implements OnInit, OnDestroy {
     this.loadingDetail.set(false);
   }
 
-  getFormatType(release: CollectionRelease): 'cd' | 'double_lp' | 'lp' {
+  onListenLogged(updated: RecordDetailDto): void {
+    this.recordDetail.set(updated);
+    this.releases.update((list) =>
+      list.map((r) =>
+        r.id === updated.discogs_id || (updated.id != null && r.id === updated.id)
+          ? { ...r, listen_count: updated.listen_count }
+          : r
+      )
+    );
+  }
+
+  getFormatType(release: CollectionRelease): FormatType {
     return getFormatType(release);
   }
 

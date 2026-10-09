@@ -61,7 +61,18 @@ import { Subscription, firstValueFrom, forkJoin, of, catchError } from 'rxjs';
                       : 'text-slate-500 dark:text-slate-400 font-medium hover:bg-slate-50 dark:hover:bg-slate-700/50')
                   "
                 >
-                  All
+                  {{ 'dashboard.all' | translate }}
+                </button>
+                <button
+                  (click)="setFilterSevenDays()"
+                  [class]="
+                    'text-xs px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer ' +
+                    (startDate() === sevenDaysAgoString && endDate() === todayString
+                      ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-bold shadow-sm'
+                      : 'text-slate-500 dark:text-slate-400 font-medium hover:bg-slate-50 dark:hover:bg-slate-700/50')
+                  "
+                >
+                  {{ 'dashboard.days7' | translate }}
                 </button>
                 <button
                   (click)="setFilterToday()"
@@ -72,7 +83,7 @@ import { Subscription, firstValueFrom, forkJoin, of, catchError } from 'rxjs';
                       : 'text-slate-500 dark:text-slate-400 font-medium hover:bg-slate-50 dark:hover:bg-slate-700/50')
                   "
                 >
-                  Today
+                  {{ 'dashboard.today' | translate }}
                 </button>
                 <div class="w-px h-5 bg-slate-200 dark:bg-slate-700 mx-1"></div>
                 <input
@@ -133,35 +144,34 @@ import { Subscription, firstValueFrom, forkJoin, of, catchError } from 'rxjs';
             <!-- Genre Breakdown widget -->
             <app-statistic-widget
               [title]="'dashboard.genreBreakdown' | translate"
+              [subtitle]="genreData().length ? '(' + genreData().length + ')' : ''"
               [loading]="loadingStats()"
             >
-              <div class="flex items-center gap-6 py-2">
-                <!-- Conic Gradient Pie Chart -->
+              <div class="flex items-start gap-4 py-2">
+                <!-- Conic Gradient Donut Chart -->
                 <div
-                  class="w-20 h-20 rounded-full shadow-inner relative flex items-center justify-center shrink-0"
+                  class="w-20 h-20 rounded-full shadow-inner relative flex items-center justify-center shrink-0 mt-1"
                   [style.background]="getConicGradient()"
                 >
                   <div
-                    class="absolute w-14 h-14 rounded-full bg-white dark:bg-slate-800 flex flex-col items-center justify-center shadow"
-                  >
-                    <span class="text-xs font-black text-slate-900 dark:text-slate-100">
-                      {{ totalGenreRecords() }}
-                    </span>
-                  </div>
+                    class="w-12 h-12 rounded-full bg-white dark:bg-slate-800 shadow-sm"
+                  ></div>
                 </div>
 
-                <!-- Legend -->
-                <div class="flex-1 flex flex-col gap-1 min-w-0">
-                  @for (entry of genreData().slice(0, 4); track entry.name; let idx = $index) {
+                <!-- Legend (All genres, scrollable) -->
+                <div class="flex-1 flex flex-col gap-1.5 min-w-0 max-h-56 overflow-y-auto pr-1">
+                  @for (entry of genreData(); track entry.name; let idx = $index) {
                     <div class="flex items-center justify-between text-xs font-medium text-slate-600 dark:text-slate-300">
                       <div class="flex items-center gap-1.5 min-w-0">
                         <span
                           class="w-2 h-2 rounded-full shrink-0"
-                          [style.backgroundColor]="GENRE_COLORS[idx % GENRE_COLORS.length]"
+                          [style.backgroundColor]="getGenreColor(idx)"
                         ></span>
-                        <span class="truncate">{{ entry.name }}</span>
+                        <span class="truncate" [title]="entry.name">
+                          {{ entry.name === 'Other' ? ('dashboard.other' | translate) : entry.name }}
+                        </span>
                       </div>
-                      <span class="font-bold ml-2">{{ entry.value }}</span>
+                      <span class="font-bold ml-2 shrink-0">{{ entry.value }}</span>
                     </div>
                   }
                 </div>
@@ -186,13 +196,25 @@ export class DashboardComponent implements OnInit, OnDestroy {
   readonly loadingStats = signal<boolean>(true);
 
   readonly todayString = this.getTodayString();
-  readonly startDate = signal<string>(this.todayString);
+  readonly sevenDaysAgoString = this.getDaysAgoString(7);
+  readonly startDate = signal<string>(this.sevenDaysAgoString);
   readonly endDate = signal<string>(this.todayString);
 
   readonly GENRE_COLORS = ['#3b82f6', '#f43f5e', '#10b981', '#8b5cf6', '#f59e0b', '#64748b'];
 
   readonly totalGenreRecords = computed(() => {
     return this.genreData().reduce((acc, curr) => acc + curr.value, 0);
+  });
+
+  readonly chartSlices = computed(() => {
+    const data = this.genreData();
+    if (data.length <= 5) return data;
+    const top = data.slice(0, 5);
+    const otherValue = data.slice(5).reduce((acc, curr) => acc + curr.value, 0);
+    return [
+      ...top,
+      { name: 'Other', value: otherValue },
+    ];
   });
 
   private sub: Subscription | null = null;
@@ -289,6 +311,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.loadData();
   }
 
+  setFilterSevenDays(): void {
+    this.startDate.set(this.sevenDaysAgoString);
+    this.endDate.set(this.todayString);
+    this.loadData();
+  }
+
   setFilterToday(): void {
     this.startDate.set(this.todayString);
     this.endDate.set(this.todayString);
@@ -317,7 +345,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   getConicGradient(): string {
-    const data = this.genreData();
+    const data = this.chartSlices();
     if (!data.length) return '#cbd5e1';
 
     const total = this.totalGenreRecords();
@@ -335,8 +363,24 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return `conic-gradient(${segments.join(', ')})`;
   }
 
-  private getTodayString(): string {
+  getGenreColor(idx: number): string {
+    if (idx < 5) {
+      return this.GENRE_COLORS[idx];
+    }
+    return this.GENRE_COLORS[5];
+  }
+
+  private getDaysAgoString(days: number): string {
     const d = new Date();
+    d.setDate(d.getDate() - days);
+    return this.formatDateString(d);
+  }
+
+  private getTodayString(): string {
+    return this.formatDateString(new Date());
+  }
+
+  private formatDateString(d: Date): string {
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');

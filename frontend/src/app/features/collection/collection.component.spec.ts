@@ -18,6 +18,7 @@ describe('CollectionComponent', () => {
   beforeEach(async () => {
     mockApiService = {
       getCollection: jasmine.createSpy('getCollection').and.returnValue(of({ releases: [], pagination: { page: 1, pages: 1, per_page: 50, items: 0, urls: {} } })),
+      getGenreBreakdown: jasmine.createSpy('getGenreBreakdown').and.returnValue(of([{ name: 'Rock', value: 10 }])),
       getProxiedImageUrl: jasmine.createSpy('getProxiedImageUrl').and.callFake((url: string) => url)
     };
     mockAuthService = {
@@ -65,6 +66,26 @@ describe('CollectionComponent', () => {
       } as CollectionRelease;
 
       expect(component.getFormatType(release)).toBe('cd');
+    });
+
+    it('should return double_cd when format string indicates double cd', () => {
+      const release = {
+        id: 5,
+        instance_id: 5,
+        date_added: '',
+        rating: 0,
+        basic_information: {
+          id: 5,
+          title: 'Double CD Album',
+          year: 2005,
+          thumb: '',
+          cover_image: '',
+          artists: [],
+          format: 'Double CD',
+        },
+      } as CollectionRelease;
+
+      expect(component.getFormatType(release)).toBe('double_cd');
     });
 
     it('should return double_lp when format string indicates double lp', () => {
@@ -140,8 +161,129 @@ describe('CollectionComponent', () => {
         0,
         'format',
         'asc',
+        '',
+        'all',
+        [],
         ''
       );
+    });
+  });
+
+  describe('onCategoryChange', () => {
+    it('should update category, reset page to 1, and reload data', () => {
+      mockAuthService.user = signal({ username: 'testuser' });
+      component.page.set(3);
+      component.onCategoryChange('cd');
+      expect(component.category()).toBe('cd');
+      expect(component.page()).toBe(1);
+      expect(mockApiService.getCollection).toHaveBeenCalledWith(
+        1,
+        component.perPage(),
+        0,
+        'artist',
+        'asc',
+        '',
+        'cd',
+        [],
+        ''
+      );
+    });
+
+    it('should ignore category change if already selected', () => {
+      mockAuthService.user = signal({ username: 'testuser' });
+      mockApiService.getCollection.calls.reset();
+      component.onCategoryChange('all');
+      expect(mockApiService.getCollection).not.toHaveBeenCalled();
+    });
+
+    it('should set totalItems from pagination items on loadData', () => {
+      mockAuthService.user = signal({ username: 'testuser' });
+      mockApiService.getCollection.and.returnValue(of({
+        releases: [],
+        pagination: { page: 1, pages: 13, per_page: 50, items: 603, urls: {} }
+      }));
+      component.loadData();
+      expect(component.totalItems()).toBe(603);
+    });
+  });
+
+  describe('onGenresChange and onYearsChange', () => {
+    it('should update selectedGenres, reset page, and reload data', () => {
+      mockAuthService.user = signal({ username: 'testuser' });
+      component.page.set(2);
+      component.onGenresChange(['Rock', 'Jazz']);
+      expect(component.selectedGenres()).toEqual(['Rock', 'Jazz']);
+      expect(component.page()).toBe(1);
+      expect(mockApiService.getCollection).toHaveBeenCalledWith(
+        1,
+        component.perPage(),
+        0,
+        'artist',
+        'asc',
+        '',
+        'all',
+        ['Rock', 'Jazz'],
+        ''
+      );
+    });
+
+    it('should reset all filters on clearAllFilters', () => {
+      mockAuthService.user = signal({ username: 'testuser' });
+      component.selectedGenres.set(['Rock']);
+      component.years.set('1970-1972');
+      component.debouncedYears.set('1970-1972');
+      component.search.set('Pink');
+      component.debouncedSearch.set('Pink');
+      component.category.set('cd');
+      component.showPlayedOnly.set(true);
+
+      component.clearAllFilters();
+
+      expect(component.selectedGenres()).toEqual([]);
+      expect(component.years()).toBe('');
+      expect(component.debouncedYears()).toBe('');
+      expect(component.search()).toBe('');
+      expect(component.category()).toBe('all');
+      expect(component.showPlayedOnly()).toBeFalse();
+    });
+  });
+
+  describe('onListenLogged', () => {
+    it('should update recordDetail and the matching release listen_count', () => {
+      component.releases.set([
+        {
+          id: 100,
+          instance_id: 1,
+          date_added: '',
+          rating: 0,
+          listen_count: 2,
+          basic_information: {
+            id: 100,
+            title: 'Test Album',
+            year: 2020,
+            thumb: '',
+            cover_image: '',
+            artists: [],
+          },
+        } as CollectionRelease,
+      ]);
+
+      const updatedDetail = {
+        id: 1,
+        discogs_id: 100,
+        title: 'Test Album',
+        genres: [],
+        in_collection: true,
+        listen_count: 3,
+        tracklist: [],
+        formats: [],
+        labels: [],
+      };
+
+      component.onListenLogged(updatedDetail);
+
+      expect(component.recordDetail()).toEqual(updatedDetail);
+      expect(component.releases()[0].listen_count).toBe(3);
     });
   });
 });

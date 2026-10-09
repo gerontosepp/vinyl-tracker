@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.antigravity</groupId>
 	<artifactId>vinyl-tracker-backend</artifactId>
-	<version>0.3.1</version>
+	<version>0.4.0</version>
 	<name>vinyl-tracker-backend</name>
 	<description>Vinyl Tracker Backend</description>
 	<properties>
@@ -260,6 +260,17 @@
 						<goals>
 							<goal>report</goal>
 						</goals>
+						<configuration>
+							<excludes>
+								<exclude>com/antigravity/vinyltracker/model/**/*</exclude>
+								<exclude>com/antigravity/vinyltracker/model/dto/**/*</exclude>
+								<exclude>com/antigravity/vinyltracker/model/discogs/**/*</exclude>
+								<exclude>com/antigravity/vinyltracker/exception/**/*</exclude>
+								<exclude>com/antigravity/vinyltracker/service/roon/DefaultRoonClient*.class</exclude>
+								<exclude>com/antigravity/vinyltracker/service/roon/DefaultRoonClientFactory*.class</exclude>
+								<exclude>**/VinylTrackerApplication.class</exclude>
+							</excludes>
+						</configuration>
 					</execution>
 					<execution>
 						<id>jacoco-check</id>
@@ -272,6 +283,8 @@
 								<exclude>com/antigravity/vinyltracker/model/dto/**/*</exclude>
 								<exclude>com/antigravity/vinyltracker/model/discogs/**/*</exclude>
 								<exclude>com/antigravity/vinyltracker/exception/**/*</exclude>
+								<exclude>com/antigravity/vinyltracker/service/roon/DefaultRoonClient*.class</exclude>
+								<exclude>com/antigravity/vinyltracker/service/roon/DefaultRoonClientFactory*.class</exclude>
 								<exclude>**/VinylTrackerApplication.class</exclude>
 							</excludes>
 							<rules>

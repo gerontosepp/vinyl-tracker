@@ -172,7 +172,7 @@ describe('BarcodeScannerComponent', () => {
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.textContent).toContain('Hardware-Scanner bereit');
+    expect(compiled.textContent).toContain('Eyoyo EY-009P');
     expect(compiled.querySelector('#reader')).toBeNull();
   });
 

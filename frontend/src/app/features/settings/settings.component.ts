@@ -9,6 +9,7 @@ import { ThemeService, Theme } from '../../core/services/theme.service';
 import { LanguageService, Language } from '../../core/services/language.service';
 import { ToastService } from '../../core/services/toast.service';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
+import { ScannerService } from '../../core/services/scanner.service';
 import { getErrorMessage } from '../../core/utils/error';
 import { RoonStatus } from '../../core/types';
 import { LucideDownload } from '@lucide/angular';
@@ -351,6 +352,113 @@ import { LucideDownload } from '@lucide/angular';
                 </button>
               </div>
             </div>
+
+            <!-- Barcode & QR Scanner Settings -->
+            <div
+              class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-600 p-6 transition-colors space-y-6"
+            >
+              <div>
+                <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">
+                  {{ 'settings.scannerTitle' | translate }}
+                </h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400 font-medium">
+                  {{ 'settings.scannerDesc' | translate }}
+                </p>
+              </div>
+
+              <!-- Scanner Mode Selection -->
+              <div>
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
+                  {{ 'settings.scannerMode' | translate }}
+                </label>
+                <select
+                  [ngModel]="scannerService.scannerMode()"
+                  (ngModelChange)="scannerService.setScannerMode($event)"
+                  class="w-full border border-slate-200 dark:border-slate-600 rounded-xl py-2.5 px-4 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-slate-100 shadow-sm font-semibold focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all cursor-pointer"
+                >
+                  <option value="hardware">🎯 {{ 'settings.scannerModeHardware' | translate }}</option>
+                  <option value="camera">📷 {{ 'settings.scannerModeCamera' | translate }}</option>
+                  <option value="hybrid">⚡ {{ 'settings.scannerModeHybrid' | translate }}</option>
+                </select>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1.5 font-medium">
+                  {{ 'settings.scannerModeDesc' | translate }}
+                </p>
+              </div>
+
+              <!-- Sound Feedback Toggle -->
+              <div class="border-t border-slate-100 dark:border-slate-700/50 pt-4 flex items-center justify-between">
+                <div>
+                  <h4 class="font-semibold text-slate-700 dark:text-slate-300">
+                    {{ 'settings.scannerSound' | translate }}
+                  </h4>
+                  <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                    {{ 'settings.scannerSoundDesc' | translate }}
+                  </p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    [checked]="scannerService.soundFeedback()"
+                    (change)="scannerService.setSoundFeedback(!scannerService.soundFeedback())"
+                    class="sr-only peer"
+                  />
+                  <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-indigo-600"></div>
+                </label>
+              </div>
+
+              <!-- Live Scanner Test -->
+              <div class="border-t border-slate-100 dark:border-slate-700/50 pt-4 space-y-3">
+                <div class="flex items-center justify-between">
+                  <h4 class="font-semibold text-slate-700 dark:text-slate-300">
+                    {{ 'settings.scannerTestTitle' | translate }}
+                  </h4>
+                  @if (scannerService.lastScannedCode()) {
+                    <button
+                      (click)="scannerService.clearLastScannedCode()"
+                      class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer font-semibold"
+                    >
+                      {{ 'settings.scannerResetTest' | translate }}
+                    </button>
+                  }
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                  {{ 'settings.scannerTestDesc' | translate }}
+                </p>
+
+                @if (scannerService.lastScannedCode(); as lastCode) {
+                  <!-- Scanned Code Display Box -->
+                  <div class="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in">
+                    <div>
+                      <div class="flex items-center gap-2">
+                        <span class="inline-flex items-center gap-1 text-xs font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-800/40 px-2 py-0.5 rounded-full">
+                          <span>✅</span> {{ 'settings.scannerTestSuccess' | translate }}
+                        </span>
+                        <span class="text-xs font-medium text-slate-500 dark:text-slate-400">
+                          {{ lastCode.type === '1d' ? ('settings.scannerType1D' | translate) : ('settings.scannerType2D' | translate) }}
+                        </span>
+                      </div>
+                      <div class="mt-1 font-mono font-bold text-slate-900 dark:text-slate-100 text-base break-all">
+                        {{ lastCode.code }}
+                      </div>
+                    </div>
+                    <button
+                      (click)="scannerService.playBeep()"
+                      class="text-xs px-3 py-1.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 font-semibold cursor-pointer shrink-0"
+                    >
+                      🔊 Test-Beep
+                    </button>
+                  </div>
+                } @else {
+                  <!-- Waiting for scan box -->
+                  <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-dashed border-slate-300 dark:border-slate-700 flex items-center gap-3 text-slate-500 dark:text-slate-400">
+                    <span class="w-3 h-3 rounded-full bg-emerald-500 animate-ping shrink-0"></span>
+                    <span class="text-xs font-medium">
+                      {{ 'settings.scannerTestWaiting' | translate }}
+                    </span>
+                  </div>
+                }
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -393,6 +501,7 @@ export class SettingsComponent {
   readonly apiService = inject(ApiService);
   readonly themeService = inject(ThemeService);
   readonly languageService = inject(LanguageService);
+  readonly scannerService = inject(ScannerService);
   private readonly toastService = inject(ToastService);
   private readonly router = inject(Router);
 

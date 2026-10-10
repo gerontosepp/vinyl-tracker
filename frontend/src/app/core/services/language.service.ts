@@ -63,6 +63,32 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'settings.downloadQr': 'QR-Codes Herunterladen (PDF)',
     'settings.generatingQr': 'QR-Codes werden generiert...',
 
+    // Scanner Settings
+    'settings.scannerTitle': 'Barcode & QR Scanner',
+    'settings.scannerDesc': 'Konfiguriere den externen Eyoyo EY-009P Hardware-Scanner (HID) oder den Kamera-Scanner.',
+    'settings.scannerMode': 'Aktiver Scanner-Modus',
+    'settings.scannerModeHardware': 'Externer Hardware-Scanner (Eyoyo EY-009P / HID)',
+    'settings.scannerModeCamera': 'Interner Kamera-Scanner (Webcam / Smartphone)',
+    'settings.scannerModeHybrid': 'Hybrid-Modus (Kamera & Hardware gleichzeitig)',
+    'settings.scannerModeDesc': 'Im Hardware-Modus bleibt die Kamera aus, was Akku und Prozessorleistung spart.',
+    'settings.scannerSound': 'Akustisches Feedback (Beep)',
+    'settings.scannerSoundDesc': 'Spielt einen kurzen Bestätigungston bei jedem erfassten Scan ab.',
+    'settings.scannerTestTitle': 'Scanner Live-Test',
+    'settings.scannerTestDesc': 'Scanne jetzt einen Barcode oder QR-Code mit deinem Eyoyo Scanner, um die Erkennung zu prüfen.',
+    'settings.scannerTestWaiting': 'Bereit... Scanne jetzt mit dem Eyoyo EY-009P',
+    'settings.scannerLastCode': 'Erfasster Code:',
+    'settings.scannerCodeType': 'Format:',
+    'settings.scannerType1D': '1D Barcode (EAN / UPC)',
+    'settings.scannerType2D': '2D QR-Code',
+    'settings.scannerTestSuccess': 'Erfolgreich empfangen!',
+    'settings.scannerResetTest': 'Test zurücksetzen',
+
+    // Scanner UI in Dashboard / BarcodeScannerComponent
+    'scanner.hardwareReady': 'Hardware-Scanner bereit',
+    'scanner.hardwareWaiting': 'Warte auf Scan vom Eyoyo EY-009P...',
+    'scanner.hardwareHint': 'Halte den Scanner an den Barcode des Plattencovers oder deinen Vinyl-Tracker QR-Code.',
+    'scanner.badgeHardware': 'Eyoyo EY-009P aktiv',
+
     // Dashboard
     'dashboard.all': 'Alle',
     'dashboard.today': 'Heute',
@@ -209,6 +235,32 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'settings.qrManagementDesc': 'Generate and download a printable PDF containing QR codes for your entire Discogs collection.',
     'settings.downloadQr': 'Download QR Codes (PDF)',
     'settings.generatingQr': 'Generating QR codes...',
+
+    // Scanner Settings
+    'settings.scannerTitle': 'Barcode & QR Scanner',
+    'settings.scannerDesc': 'Configure the external Eyoyo EY-009P hardware scanner (HID) or camera scanner.',
+    'settings.scannerMode': 'Active Scanner Mode',
+    'settings.scannerModeHardware': 'External Hardware Scanner (Eyoyo EY-009P / HID)',
+    'settings.scannerModeCamera': 'Internal Camera Scanner (Webcam / Smartphone)',
+    'settings.scannerModeHybrid': 'Hybrid Mode (Camera & Hardware simultaneously)',
+    'settings.scannerModeDesc': 'In Hardware mode, the camera stays off, saving battery and CPU resources.',
+    'settings.scannerSound': 'Audio Feedback (Beep)',
+    'settings.scannerSoundDesc': 'Play a subtle confirmation beep on each scanned code.',
+    'settings.scannerTestTitle': 'Scanner Live Test',
+    'settings.scannerTestDesc': 'Scan a barcode or QR code with your Eyoyo scanner to verify detection.',
+    'settings.scannerTestWaiting': 'Ready... Scan now with the Eyoyo EY-009P',
+    'settings.scannerLastCode': 'Detected Code:',
+    'settings.scannerCodeType': 'Format:',
+    'settings.scannerType1D': '1D Barcode (EAN / UPC)',
+    'settings.scannerType2D': '2D QR Code',
+    'settings.scannerTestSuccess': 'Successfully received!',
+    'settings.scannerResetTest': 'Reset Test',
+
+    // Scanner UI in Dashboard / BarcodeScannerComponent
+    'scanner.hardwareReady': 'Hardware Scanner Ready',
+    'scanner.hardwareWaiting': 'Waiting for scan from Eyoyo EY-009P...',
+    'scanner.hardwareHint': 'Aim the scanner at the record sleeve barcode or Vinyl Tracker QR code.',
+    'scanner.badgeHardware': 'Eyoyo EY-009P active',
 
     // Dashboard
     'dashboard.all': 'All',

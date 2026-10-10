@@ -1,4 +1,4 @@
-import { Component, AfterViewInit, OnDestroy, inject, signal } from '@angular/core';
+import { Component, AfterViewInit, OnDestroy, inject, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Html5QrcodeScanner } from 'html5-qrcode';
@@ -6,22 +6,48 @@ import { AuthService } from '../../../core/services/auth.service';
 import { ApiService } from '../../../core/services/api.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ScannerService } from '../../../core/services/scanner.service';
+import { TranslatePipe } from '../../../core/pipes/translate.pipe';
 import { ScanResult, DiscogsMatch, SyncResult } from '../../../core/types';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-barcode-scanner',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   template: `
     <div class="flex flex-col items-center p-4 h-full">
       <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">Scan Vinyl Barcode</h2>
 
       @if (isScanning()) {
-        <div
-          id="reader"
-          class="w-full max-w-md bg-white dark:bg-gray-800 rounded-xl overflow-hidden [&_*]:dark:text-gray-200 shadow-sm"
-        ></div>
+        @if (scannerService.scannerMode() === 'hardware') {
+          <!-- Hardware Scanner Status Card -->
+          <div class="w-full max-w-md p-6 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-700 text-center animate-fade-in">
+            <div class="relative inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 mb-4">
+              <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+              </svg>
+              <span class="absolute -top-1 -right-1 flex h-4 w-4">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-4 w-4 bg-emerald-500 border-2 border-white dark:border-slate-800"></span>
+              </span>
+            </div>
+            <h3 class="text-base font-bold text-slate-900 dark:text-slate-100 mb-1">
+              {{ 'scanner.hardwareReady' | translate }}
+            </h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">
+              {{ 'scanner.hardwareHint' | translate }}
+            </p>
+            <div class="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              {{ 'scanner.badgeHardware' | translate }}
+            </div>
+          </div>
+        } @else {
+          <div
+            id="reader"
+            class="w-full max-w-md bg-white dark:bg-gray-800 rounded-xl overflow-hidden [&_*]:dark:text-gray-200 shadow-sm"
+          ></div>
+        }
 
         <!-- Manual Barcode Input Section on Scan Page -->
         <div class="w-full max-w-md mt-6 pt-5 border-t border-gray-200 dark:border-gray-700/80">
@@ -273,8 +299,21 @@ export class BarcodeScannerComponent implements AfterViewInit, OnDestroy {
   private scanner: Html5QrcodeScanner | null = null;
   private timerId: any = null;
 
+  constructor() {
+    effect(() => {
+      const trigger = this.scannerService.scanTrigger();
+      if (trigger && trigger.code) {
+        this.cleanupScanner();
+        this.isScanning.set(false);
+        this.executeBarcodeScan(trigger.code);
+      }
+    });
+  }
+
   ngAfterViewInit(): void {
-    this.timerId = setTimeout(() => this.startScanner(), 100);
+    if (this.scannerService.scannerMode() !== 'hardware') {
+      this.timerId = setTimeout(() => this.startScanner(), 100);
+    }
   }
 
   ngOnDestroy(): void {
@@ -298,9 +337,10 @@ export class BarcodeScannerComponent implements AfterViewInit, OnDestroy {
 
     // Clear DOM container
     const readerElement = document.getElementById('reader');
-    if (readerElement) {
-      readerElement.innerHTML = '';
+    if (!readerElement) {
+      return;
     }
+    readerElement.innerHTML = '';
 
     const scannerInstance = new Html5QrcodeScanner(
       'reader',
@@ -432,6 +472,8 @@ export class BarcodeScannerComponent implements AfterViewInit, OnDestroy {
     this.manualQuery.set('');
     this.isSearchingManual.set(false);
     this.isScanning.set(true);
-    setTimeout(() => this.startScanner(), 100);
+    if (this.scannerService.scannerMode() !== 'hardware') {
+      setTimeout(() => this.startScanner(), 100);
+    }
   }
 }

@@ -278,6 +278,10 @@ export class CollectionComponent implements OnInit, OnDestroy {
     });
   }
 
+  clearSelection(): void {
+    this.selectedItems.set(new Map());
+  }
+
   async handleDownloadSelected(): Promise<void> {
     if (this.selectedCount() === 0) return;
     this.generating.set(true);

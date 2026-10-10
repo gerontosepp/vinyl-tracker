@@ -169,4 +169,10 @@ describe('ScannerService', () => {
   it('should play beep sound without error when soundFeedback is enabled', () => {
     expect(() => service.playBeep()).not.toThrow();
   });
+
+  it('should normalize German keyboard layout substitutions for custom QR codes', () => {
+    expect(service.normalizeScannedCode('discogsßidÖ21024442')).toBe('discogs-id:21024442');
+    expect(service.normalizeScannedCode('discogs-id:21024442')).toBe('discogs-id:21024442');
+    expect(service.normalizeScannedCode('075678645624')).toBe('075678645624');
+  });
 });

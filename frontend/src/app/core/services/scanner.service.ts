@@ -162,18 +162,30 @@ export class ScannerService {
     }, 150);
   }
 
+  normalizeScannedCode(code: string): string {
+    let clean = (code || '').trim();
+    // Handle US scanner HID transmission on German QWERTZ keyboards:
+    // US '-' produces 'ß', US ':' produces 'Ö'
+    if (/^discogs[ß\-_]id[Ö:]/i.test(clean)) {
+      clean = clean.replace(/^discogs[ß\-_]id[Ö:]/i, 'discogs-id:');
+    }
+    return clean;
+  }
+
   processHardwareScan(rawCode: string): void {
     if (!rawCode) return;
 
+    const normalizedCode = this.normalizeScannedCode(rawCode);
+
     const isQr =
-      rawCode.startsWith('discogs-id:') ||
-      rawCode.startsWith('http://') ||
-      rawCode.startsWith('https://') ||
-      rawCode.length > 20;
+      normalizedCode.startsWith('discogs-id:') ||
+      normalizedCode.startsWith('http://') ||
+      normalizedCode.startsWith('https://') ||
+      normalizedCode.length > 20;
     const type: '1d' | '2d' = isQr ? '2d' : '1d';
 
     const eventData: ScannedCodeEvent = {
-      code: rawCode,
+      code: normalizedCode,
       type,
       timestamp: Date.now(),
     };
@@ -191,11 +203,11 @@ export class ScannerService {
     if (currentUrl !== '/' && currentUrl !== '') {
       this.router?.navigate(['/']).then(() => {
         this.openScanner();
-        this.scanTrigger.set({ code: rawCode, timestamp: Date.now() });
+        this.scanTrigger.set({ code: normalizedCode, timestamp: Date.now() });
       });
     } else {
       this.openScanner();
-      this.scanTrigger.set({ code: rawCode, timestamp: Date.now() });
+      this.scanTrigger.set({ code: normalizedCode, timestamp: Date.now() });
     }
   }
 

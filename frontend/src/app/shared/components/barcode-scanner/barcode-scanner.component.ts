@@ -371,12 +371,13 @@ export class BarcodeScannerComponent implements AfterViewInit, OnDestroy {
     const user = this.authService.user();
     if (!user) return;
 
-    this.manualQuery.set(barcode);
+    const normalizedCode = this.scannerService.normalizeScannedCode(barcode);
+    this.manualQuery.set(normalizedCode);
     this.isSearchingManual.set(true);
 
     try {
       const apiResult: ScanResult = await firstValueFrom(
-        this.apiService.scanBarcode(barcode)
+        this.apiService.scanBarcode(normalizedCode)
       );
       this.handleScanResponse(apiResult);
     } catch (error: any) {

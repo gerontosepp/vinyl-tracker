@@ -34,8 +34,10 @@ public class ScanService {
         List<ScanDto.DiscogsMatch> discogsMatches = new java.util.ArrayList<>();
 
         // 1. Check if Custom Code or Standard Barcode
-        if (barcode.startsWith("discogs-id:")) {
-            String idStr = barcode.replace("discogs-id:", "");
+        String cleanBarcode = barcode.replaceAll("\\s+", "");
+        String lower = cleanBarcode.toLowerCase(java.util.Locale.ROOT);
+        if (lower.startsWith("discogs-id:") || lower.startsWith("discogsßidö") || lower.startsWith("discogsßidÖ".toLowerCase())) {
+            String idStr = cleanBarcode.substring(cleanBarcode.indexOf(':') != -1 ? cleanBarcode.indexOf(':') + 1 : (cleanBarcode.indexOf('Ö') != -1 ? cleanBarcode.indexOf('Ö') + 1 : cleanBarcode.indexOf('ö') + 1));
             try {
                 Long releaseId = Long.parseLong(idStr);
                 discogsRelease = discogsApiClient.getRelease(releaseId, user);
@@ -43,7 +45,6 @@ public class ScanService {
                 return new ScanDto.Result(false, "Invalid custom barcode format", null, null);
             }
         } else {
-            String cleanBarcode = barcode.replaceAll("\\s+", "");
             // Standard Barcode -> Search Global DB and filter by Collection Ownership
             DiscogsDto.SearchResponse searchResponse = discogsApiClient.searchDatabaseByBarcode(cleanBarcode, user);
             List<DiscogsDto.SearchResult> results = (searchResponse != null && searchResponse.getResults() != null)

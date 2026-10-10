@@ -168,6 +168,29 @@ class ScanServiceTest {
     }
 
     @Test
+    void processScan_ShouldHandleCustomCode_WithGermanKeyboardSubstitution() {
+        String barcode = "discogsßidÖ12345";
+        String username = "testuser";
+        Long releaseId = 12345L;
+
+        when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
+
+        DiscogsDto.Release mockRelease = new DiscogsDto.Release();
+        mockRelease.setId(releaseId);
+        mockRelease.setTitle("Custom Code Release");
+        mockRelease.setYear(2020);
+
+        when(discogsApiClient.getRelease(releaseId, user)).thenReturn(mockRelease);
+        when(recordRepository.findByDiscogsId(releaseId)).thenReturn(Optional.empty());
+        when(recordRepository.save(any(Record.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        ScanDto.Result result = scanService.processScan(barcode, username);
+
+        assertTrue(result.isSuccess());
+        assertEquals("Now playing: Custom Code Release", result.getMessage());
+    }
+
+    @Test
     void processScan_ShouldReturnFailure_WhenCustomCodeIsInvalid() {
         String username = "testuser";
 

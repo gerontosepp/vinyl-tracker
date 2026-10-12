@@ -204,7 +204,7 @@ public class CollectionQueryService {
         release.setMediaCondition(item.getMediaCondition());
         release.setSleeveCondition(item.getSleeveCondition());
         if (item.getAddedAt() != null) {
-            release.setDateAdded(item.getAddedAt().toString());
+            release.setDateAdded(item.getAddedAt().format(com.antigravity.vinyltracker.config.JacksonConfig.UTC_FORMATTER));
         }
 
         DiscogsDto.Release basicInfo = new DiscogsDto.Release();

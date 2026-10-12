@@ -5,6 +5,7 @@ import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
 import { FormatBadgeComponent } from '../format-badge/format-badge.component';
 import { CollectionRelease, QrCodeItem } from '../../../../core/types';
 import { getFormatType, FormatType } from '../../utils/format-type.util';
+import { getConditionShortCode } from '../../utils/condition.util';
 import { LucideCheckSquare, LucideSquare, LucideExternalLink } from '@lucide/angular';
 
 @Component({
@@ -30,6 +31,8 @@ export class CollectionTableComponent {
   readonly toggleSelection = output<CollectionRelease>();
   readonly toggleSelectAll = output<void>();
   readonly openDetail = output<CollectionRelease>();
+
+  readonly getConditionShortCode = getConditionShortCode;
 
   getFormatType(release: CollectionRelease): FormatType {
     return getFormatType(release);

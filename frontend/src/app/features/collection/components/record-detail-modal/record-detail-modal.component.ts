@@ -8,6 +8,7 @@ import { LucideExternalLink, LucideX, LucideHeadphones, LucideCheck, LucidePlay 
 import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
 import { LocalizedDatePipe } from '../../../../core/pipes/localized-date.pipe';
 import { getErrorMessage } from '../../../../core/utils/error';
+import { getConditionShortCode } from '../../utils/condition.util';
 
 @Component({
   selector: 'app-record-detail-modal',
@@ -28,6 +29,7 @@ export class RecordDetailModalComponent {
   readonly apiService = inject(ApiService);
   readonly toastService = inject(ToastService);
   readonly languageService = inject(LanguageService);
+  readonly getConditionShortCode = getConditionShortCode;
 
   readonly record = input<CollectionRelease | null>(null);
   readonly detail = input<RecordDetailDto | null>(null);

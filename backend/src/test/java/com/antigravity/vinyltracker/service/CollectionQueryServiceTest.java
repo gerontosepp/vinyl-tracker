@@ -47,6 +47,8 @@ class CollectionQueryServiceTest {
 
         com.antigravity.vinyltracker.model.CollectionItem item = new com.antigravity.vinyltracker.model.CollectionItem(
                 user, mockRecord, 10L);
+        item.setMediaCondition("Very Good (VG)");
+        item.setSleeveCondition("Near Mint (NM)");
 
         Page<com.antigravity.vinyltracker.model.CollectionItem> mockPage = new PageImpl<>(List.of(item));
 
@@ -73,6 +75,8 @@ class CollectionQueryServiceTest {
         assertEquals(100L, result.getReleases().get(0).getId());
         assertEquals(5L, result.getReleases().get(0).getListenCount());
         assertEquals("LP", result.getReleases().get(0).getBasicInformation().getFormat());
+        assertEquals("Very Good (VG)", result.getReleases().get(0).getMediaCondition());
+        assertEquals("Near Mint (NM)", result.getReleases().get(0).getSleeveCondition());
     }
 
     @Test

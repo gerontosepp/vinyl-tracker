@@ -33,6 +33,32 @@ public class CollectionSyncService {
     public SyncResultDto syncCollection(AppUser user) {
         log.info("Starting Discogs DB sync for user: {}", user.getUsername());
 
+        Long mediaFieldId = null;
+        Long sleeveFieldId = null;
+        try {
+            DiscogsDto.CollectionFieldsResponse fieldsResponse = discogsApiClient.getCollectionFields(user);
+            if (fieldsResponse != null && fieldsResponse.getFields() != null) {
+                for (DiscogsDto.CollectionField field : fieldsResponse.getFields()) {
+                    if (field.getName() != null) {
+                        String name = field.getName().trim().toLowerCase();
+                        if (name.contains("media") && name.contains("condition")) {
+                            mediaFieldId = field.getId();
+                        } else if (name.contains("sleeve") && name.contains("condition")) {
+                            sleeveFieldId = field.getId();
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Failed to fetch collection fields for user {}: {}", user.getUsername(), e.getMessage());
+        }
+        if (mediaFieldId == null) {
+            mediaFieldId = 1L;
+        }
+        if (sleeveFieldId == null) {
+            sleeveFieldId = 2L;
+        }
+
         int page = 1;
         int perPage = 100;
         int totalPages = 1;
@@ -97,18 +123,44 @@ public class CollectionSyncService {
 
                     LocalDateTime addedAt = parseDiscogsDate(release.getDateAdded());
 
+                    String mediaCondition = null;
+                    String sleeveCondition = null;
+                    if (release.getNotes() != null) {
+                        for (DiscogsDto.CollectionNote note : release.getNotes()) {
+                            if (note.getFieldId() != null && note.getValue() != null && !note.getValue().isBlank()) {
+                                if (note.getFieldId().equals(mediaFieldId)) {
+                                    mediaCondition = note.getValue().trim();
+                                } else if (note.getFieldId().equals(sleeveFieldId)) {
+                                    sleeveCondition = note.getValue().trim();
+                                }
+                            }
+                        }
+                    }
+
                     // Check if CollectionItem linkage exists for user, create if not
                     java.util.Optional<com.antigravity.vinyltracker.model.CollectionItem> existingItem = collectionItemRepository
                             .findByUserAndInstanceId(user, release.getInstanceId());
                     if (existingItem.isEmpty()) {
                         com.antigravity.vinyltracker.model.CollectionItem item = new com.antigravity.vinyltracker.model.CollectionItem(
-                                user, record, release.getInstanceId(), addedAt);
+                                user, record, release.getInstanceId(), addedAt, mediaCondition, sleeveCondition);
                         collectionItemRepository.save(item);
                         addedCount++;
                     } else {
                         com.antigravity.vinyltracker.model.CollectionItem item = existingItem.get();
+                        boolean itemUpdated = false;
                         if (addedAt != null && !addedAt.equals(item.getAddedAt())) {
                             item.setAddedAt(addedAt);
+                            itemUpdated = true;
+                        }
+                        if (!java.util.Objects.equals(mediaCondition, item.getMediaCondition())) {
+                            item.setMediaCondition(mediaCondition);
+                            itemUpdated = true;
+                        }
+                        if (!java.util.Objects.equals(sleeveCondition, item.getSleeveCondition())) {
+                            item.setSleeveCondition(sleeveCondition);
+                            itemUpdated = true;
+                        }
+                        if (itemUpdated) {
                             collectionItemRepository.save(item);
                         }
                     }

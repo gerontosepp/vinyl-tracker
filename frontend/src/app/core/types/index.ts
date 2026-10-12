@@ -141,6 +141,8 @@ export interface RecordDetailDto {
   in_collection: boolean;
   instance_id?: number;
   added_at?: string;
+  media_condition?: string;
+  sleeve_condition?: string;
   listen_count: number;
   last_listened_at?: string;
   lowest_price?: number;
@@ -162,6 +164,8 @@ export interface CollectionRelease {
   rating: number;
   basic_information: DiscogsBasicInfo;
   listen_count?: number;
+  media_condition?: string;
+  sleeve_condition?: string;
 }
 
 export interface CollectionPagination {

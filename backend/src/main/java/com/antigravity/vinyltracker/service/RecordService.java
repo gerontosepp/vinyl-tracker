@@ -137,6 +137,8 @@ public class RecordService {
                 .inCollection(collectionItemOpt.isPresent())
                 .instanceId(collectionItemOpt.map(CollectionItem::getInstanceId).orElse(null))
                 .addedAt(collectionItemOpt.map(CollectionItem::getAddedAt).orElse(null))
+                .mediaCondition(collectionItemOpt.map(CollectionItem::getMediaCondition).orElse(null))
+                .sleeveCondition(collectionItemOpt.map(CollectionItem::getSleeveCondition).orElse(null))
                 .listenCount(listenCount != null ? listenCount : 0L)
                 .lastListenedAt(lastListenedAt)
                 .lowestPrice(lowestPrice)

@@ -171,5 +171,31 @@ describe('RecordDetailModalComponent', () => {
     text = fixture.nativeElement.textContent;
     expect(text).toContain('Oct 8, 2026');
   });
+
+  it('should display media and sleeve conditions when present', () => {
+    const mockRecord = {
+      id: 42,
+      basic_information: {
+        id: 123456,
+        title: 'Abbey Road',
+        year: 1969,
+        artists: [{ name: 'The Beatles' }],
+      },
+    } as any;
+    const detailWithCondition = {
+      ...mockDetail,
+      media_condition: 'Very Good Plus (VG+)',
+      sleeve_condition: 'Near Mint (NM)',
+    };
+    fixture.componentRef.setInput('record', mockRecord);
+    fixture.componentRef.setInput('detail', detailWithCondition);
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('Very Good Plus (VG+)');
+    expect(text).toContain('Near Mint (NM)');
+    expect(text).toContain('VG+');
+    expect(text).toContain('NM');
+  });
 });
 

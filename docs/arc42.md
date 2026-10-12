@@ -223,6 +223,7 @@ The system is deployed as a multi-container Docker application orchestrated by D
 | **Flyway Migrations** | Replaced Hibernate `ddl-auto: update` with Flyway for reliable, versioned schema migrations in production. | Accepted |
 | **Modular Frontend Components** | Decomposed monolithic page components (such as `CollectionComponent`) into focused subcomponents with dedicated HTML templates and clear Angular Signal inputs/outputs to maintain low file complexity (< 350 lines). | Accepted |
 | **BCrypt Self-Contained Salt** | Dropped redundant `salt` column from `app_user` (Flyway `V5`) since BCrypt handles salt generation internally. | Accepted |
+| **Discogs Condition Tracking** | Added `media_condition` and `sleeve_condition` to `collection_item` (Flyway `V8`) to persist Goldmine gradings synchronized from Discogs custom fields for UI display and marketplace pricing (#62). | Accepted |
 | **Node.js 24 CI Runtime** | Aligned GitHub Actions workflow runner and setup-node action to Node 24. | Accepted |
 
 ## 10. Quality Requirements

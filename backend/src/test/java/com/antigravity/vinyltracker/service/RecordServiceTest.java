@@ -87,6 +87,8 @@ class RecordServiceTest {
         release.setTracklist(List.of(track));
 
         CollectionItem item = new CollectionItem(user, record, 9999L);
+        item.setMediaCondition("Near Mint (NM or M-)");
+        item.setSleeveCondition("Very Good Plus (VG+)");
         ListenEvent listen = new ListenEvent(user, record);
         LocalDateTime now = LocalDateTime.now();
         listen.setTimestamp(now);
@@ -115,6 +117,8 @@ class RecordServiceTest {
         assertEquals(BigDecimal.valueOf(15.50), details.getLowestPrice());
         assertEquals(3, details.getNumForSale());
         assertNotNull(details.getAddedAt());
+        assertEquals("Near Mint (NM or M-)", details.getMediaCondition());
+        assertEquals("Very Good Plus (VG+)", details.getSleeveCondition());
         assertEquals(1, details.getListenHistory().size());
         assertEquals(1, details.getTracklist().size());
         assertEquals("Track 1", details.getTracklist().get(0).getTitle());

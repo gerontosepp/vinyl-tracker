@@ -201,6 +201,8 @@ public class CollectionQueryService {
         release.setId(item.getRecord().getDiscogsId());
         release.setInstanceId(item.getInstanceId());
         release.setListenCount(listenCount);
+        release.setMediaCondition(item.getMediaCondition());
+        release.setSleeveCondition(item.getSleeveCondition());
         if (item.getAddedAt() != null) {
             release.setDateAdded(item.getAddedAt().toString());
         }

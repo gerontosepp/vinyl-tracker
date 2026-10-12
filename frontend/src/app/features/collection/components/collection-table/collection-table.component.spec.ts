@@ -123,7 +123,7 @@ describe('CollectionTableComponent', () => {
     expect(component.toggleSelection.emit).not.toHaveBeenCalled();
   });
 
-  it('Column 8: should do nothing when clicking plays cell', () => {
+  it('Column 8: should render condition badges if available', () => {
     spyOn(component.openDetail, 'emit');
     spyOn(component.toggleSelection, 'emit');
     const row = fixture.nativeElement.querySelector('tbody tr');
@@ -134,10 +134,21 @@ describe('CollectionTableComponent', () => {
     expect(component.toggleSelection.emit).not.toHaveBeenCalled();
   });
 
-  it('Column 9: should contain Discogs external link', () => {
+  it('Column 9: should do nothing when clicking plays cell', () => {
+    spyOn(component.openDetail, 'emit');
+    spyOn(component.toggleSelection, 'emit');
     const row = fixture.nativeElement.querySelector('tbody tr');
     const cells = row.querySelectorAll('td');
-    const link = cells[8].querySelector('a');
+
+    cells[8].click();
+    expect(component.openDetail.emit).not.toHaveBeenCalled();
+    expect(component.toggleSelection.emit).not.toHaveBeenCalled();
+  });
+
+  it('Column 10: should contain Discogs external link', () => {
+    const row = fixture.nativeElement.querySelector('tbody tr');
+    const cells = row.querySelectorAll('td');
+    const link = cells[9].querySelector('a');
 
     expect(link).toBeTruthy();
     expect(link.getAttribute('href')).toBe('https://www.discogs.com/release/12345');

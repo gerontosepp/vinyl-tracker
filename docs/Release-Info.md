@@ -7,6 +7,17 @@
 
 ---
 
+## In Entwicklung / Next (v0.6.0)
+
+- **Discogs Zustands-Synchronisation (Media & Sleeve Condition) (`#62`)**:
+  - Automatischer Import der Goldmine-Grading-Zustände (*Media Condition* und *Sleeve Condition*) aus den benutzerdefinierten Feldern der Discogs-Sammlung (`GET /users/{username}/collection/fields`).
+  - Persistierung der Zustände in `collection_item` via Flyway-Migration `V8__add_conditions_to_collection_item.sql`.
+  - Anzeige der Zustände im Record-Detail-Modal mit dedizierten Farb-Karten und Goldmine-Kurzcodes (`VG+`, `NM`, `VG` etc.).
+  - Anzeige kompakter Zustand-Badges in der Sammlungstabelle (neue Spalte „Zustand“) sowie in den Kacheln der Sammlungsübersicht.
+  - Grundlage für zustandsbasierte Discogs-Marktpreis-Ermittlung (`#30`).
+
+---
+
 ## v0.5.0 (2026-10-12) – Aktueller Release (WiP / Beta)
 
 - **Eyoyo EY-009P & Hardware-Scanner Integration (`#45`, `#49`)**:

@@ -7,7 +7,7 @@
 
 ---
 
-## Aktueller Entwicklungsstand (develop / in Vorbereitung auf v1.0.0)
+## v0.5.0 (2026-10-12) – Aktueller Release (WiP / Beta)
 
 - **Eyoyo EY-009P & Hardware-Scanner Integration (`#45`, `#49`)**:
   - Globaler HID Keyboard Wedge Listener im Frontend (`ScannerService`) zur vollautomatischen Erkennung von Barcode- und QR-Code-Scannern ohne Fokusverlust oder manuelle Eingabefelder.
@@ -30,7 +30,7 @@
 
 ---
 
-## v0.4.0 (2026-10-09) – Aktueller Release (WiP / Beta)
+## v0.4.0 (2026-10-09) – Vorgänger-Release (WiP / Beta)
 
 - **Roon Control API Integration (`#44`)**:
   - Direkte Steuerung & Wiedergabe von Alben auf Roon Cores und Zonen direkt aus Vinyl Tracker.

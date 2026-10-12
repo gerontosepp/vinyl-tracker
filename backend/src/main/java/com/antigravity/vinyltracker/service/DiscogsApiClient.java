@@ -129,6 +129,16 @@ public class DiscogsApiClient {
                 .body(DiscogsDto.CollectionResponse.class));
     }
 
+    public DiscogsDto.CollectionFieldsResponse getCollectionFields(AppUser user) {
+        log.info("Fetching collection custom fields for user: {}", user.getUsername());
+        return executeWithRateLimit(() -> restClient.get()
+                .uri("/users/{username}/collection/fields", user.getDiscogsUsername())
+                .header(HttpHeaders.USER_AGENT, "VinylTrackerApp/1.0")
+                .header(HttpHeaders.AUTHORIZATION, "Discogs token=" + getDecryptedToken(user))
+                .retrieve()
+                .body(DiscogsDto.CollectionFieldsResponse.class));
+    }
+
     public void addReleaseToCollection(Long releaseId, AppUser user) {
         log.info("Adding release ID {} to Discogs collection for user {}", releaseId, user.getUsername());
         executeWithRateLimit(() -> restClient.post()

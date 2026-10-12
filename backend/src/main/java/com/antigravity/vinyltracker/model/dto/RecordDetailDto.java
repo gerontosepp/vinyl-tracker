@@ -35,6 +35,10 @@ public class RecordDetailDto {
     private LocalDateTime lastListenedAt;
     @JsonProperty("added_at")
     private LocalDateTime addedAt;
+    @JsonProperty("media_condition")
+    private String mediaCondition;
+    @JsonProperty("sleeve_condition")
+    private String sleeveCondition;
     @JsonProperty("lowest_price")
     private BigDecimal lowestPrice;
     @JsonProperty("num_for_sale")

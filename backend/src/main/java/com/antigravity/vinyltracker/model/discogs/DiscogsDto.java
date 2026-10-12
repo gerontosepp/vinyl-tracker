@@ -238,6 +238,41 @@ public class DiscogsDto {
         private Integer rating;
         @JsonProperty("basic_information")
         private Release basicInformation;
+        @JsonProperty("media_condition")
+        private String mediaCondition;
+        @JsonProperty("sleeve_condition")
+        private String sleeveCondition;
+        private List<CollectionNote> notes;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @Data
+    @lombok.AllArgsConstructor
+    @lombok.NoArgsConstructor
+    public static class CollectionNote {
+        @JsonProperty("field_id")
+        private Long fieldId;
+        private String value;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @Data
+    @lombok.AllArgsConstructor
+    @lombok.NoArgsConstructor
+    public static class CollectionFieldsResponse {
+        private List<CollectionField> fields;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @Data
+    @lombok.AllArgsConstructor
+    @lombok.NoArgsConstructor
+    public static class CollectionField {
+        private Long id;
+        private String name;
+        private String type;
+        private List<String> options;
+        private Integer position;
     }
 
     @Deprecated

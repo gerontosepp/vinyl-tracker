@@ -34,14 +34,26 @@ public class CollectionItem {
     @Column(name = "added_at", nullable = false)
     private LocalDateTime addedAt;
 
+    @Column(name = "media_condition", length = 50)
+    private String mediaCondition;
+
+    @Column(name = "sleeve_condition", length = 50)
+    private String sleeveCondition;
+
     public CollectionItem(AppUser user, Record record, Long instanceId) {
         this(user, record, instanceId, LocalDateTime.now(java.time.ZoneOffset.UTC));
     }
 
     public CollectionItem(AppUser user, Record record, Long instanceId, LocalDateTime addedAt) {
+        this(user, record, instanceId, addedAt, null, null);
+    }
+
+    public CollectionItem(AppUser user, Record record, Long instanceId, LocalDateTime addedAt, String mediaCondition, String sleeveCondition) {
         this.user = user;
         this.record = record;
         this.instanceId = instanceId;
         this.addedAt = addedAt != null ? addedAt : LocalDateTime.now(java.time.ZoneOffset.UTC);
+        this.mediaCondition = mediaCondition;
+        this.sleeveCondition = sleeveCondition;
     }
 }

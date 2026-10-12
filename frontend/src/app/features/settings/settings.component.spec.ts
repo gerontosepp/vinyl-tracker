@@ -171,4 +171,20 @@ describe('SettingsComponent', () => {
     expect(component.isDownloadingQr()).toBeFalse();
     expect(mockToastService.showToast).toHaveBeenCalledWith('Download failed', 'error');
   });
+
+  it('should allow changing scanner mode and sound feedback', () => {
+    component.scannerService.setScannerMode('hybrid');
+    expect(component.scannerService.scannerMode()).toBe('hybrid');
+
+    component.scannerService.setSoundFeedback(false);
+    expect(component.scannerService.soundFeedback()).toBeFalse();
+  });
+
+  it('should display and clear scanner test result', () => {
+    component.scannerService.processHardwareScan('075678645624');
+    expect(component.scannerService.lastScannedCode()?.code).toBe('075678645624');
+
+    component.scannerService.clearLastScannedCode();
+    expect(component.scannerService.lastScannedCode()).toBeNull();
+  });
 });

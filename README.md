@@ -1,4 +1,4 @@
-# Vinyl Tracker v0.4.0
+# Vinyl Tracker v0.5.0
 
 A personal vinyl record tracking application that allows users to scan barcodes, identify records via Discogs, and log listening sessions.
 
@@ -39,6 +39,7 @@ The project follows a modern containerized micro-architecture:
 
 ## Features
 
+- **Eyoyo EY-009P & Hardware Scanner Support**: Seamless, hands-free 1D barcode and 2D QR code scanning via global HID Keyboard Wedge listener. Configurable scanner modes (*Externer Hardware-Scanner*, *Interner Kamera-Scanner*, *Hybrid*), optional audio feedback (beep), live scanner testing area in Settings, and battery-friendly operation (camera stays powered off in hardware mode).
 - **Model Context Protocol (MCP)**: Native Rust MCP server with 15 tools to query your vinyl collection, trigger local Roon playback, get random recommendations, view unplayed records, fetch album tracklists, search Discogs, log listen events, and inspect analytics from AI assistants (Antigravity IDE, Claude Desktop, Cursor).
 - **Roon Control & Local Playback**: Direct integration with the official Roon API (WebSocket MOO/1 protocol). Configure your local Roon Core in Settings, select playback zones, and trigger playback ("Auf Roon abspielen" / Play Now) directly from the record detail modal or via the MCP tool `play_record_on_roon`.
 - **Random Record Recommendations**: Get random vinyl suggestions (`/api/collection/random`) with optional genre filter and "unplayed only" mode.
@@ -50,9 +51,9 @@ The project follows a modern containerized micro-architecture:
 - **Listening History & Just Listening**: Log listening sessions via barcode/QR scan or directly via the **"Höre ich gerade" (Just listening)** button in the album detail view.
 - **Analytics**: View most played records and listening trends.
 - **Live Collection Insights**: Dashboard charts for Discogs collection value and genre breakdown via `/api/analytics/collection/value` and `/api/analytics/collection/genres`.
-- **QR Code Generation**: Generate a PDF with QR codes for your entire collection, sorted by artist.
+- **QR Code Generation & Batch Export**: Generate a PDF with QR codes for your entire collection sorted by artist (via Settings) or selectively print chosen records directly from the Collection view (with quick selection reset via **"Auswahl aufheben"** / Clear selection).
 - **Quick Logging**: Scan generated QR codes to instantly log a listen without searching.
-- **Collection Management & Values**: Search, filter by format category ("Alle", "Platten" [inkl. Einzel-/Doppel-LP], "CDs" [inkl. Einzel-/Doppel-CD]), filter by multi-select **Genre** (z. B. Rock, Jazz mit dynamischer Häufigkeitsanzeige), filter nach **Erscheinungsjahr / Zeiträumen** (einzelne Jahre wie `1970, 1971`, Von-Bis-Bereiche wie `1970-1972` oder Kombinationen daraus), toggle "Played Only", and sort your collection catalog. Displays the market lowest price / value for records in the list, and opens a comprehensive detail popup on album cover/title click (showing full DB attributes, genres, tracklists, formats, labels, notes, and listening history). Force a manual sync with Discogs at any time.
+- **Collection Management & Values**: Search, filter by format category ("Alle", "Platten" [inkl. Einzel-/Doppel-LP], "CDs" [inkl. Einzel-/Doppel-CD]), filter by multi-select **Genre** (z. B. Rock, Jazz mit dynamischer Häufigkeitsanzeige), filter nach **Erscheinungsjahr / Zeiträumen** (einzelne Jahre wie `1970, 1971`, Von-Bis-Bereiche wie `1970-1972` oder Kombinationen daraus), toggle "Played Only", and sort your collection catalog. Displays the market lowest price / value for records in the list. Intuitive table column interactions: clicking cover, title, or artist opens the rich detail modal (tracklists, formats, labels, notes, listening history), column 1 toggles QR print selection, and clicking the Discogs ID opens the external release page in a new tab. All date fields dynamically adapt to the active locale (`de-DE` / `en-US`). Force a manual sync with Discogs at any time.
 - **Data Management**: Reset your entire listening history with a single click from Settings (with confirmation dialog to prevent accidental deletions).
 - **Modern UI**: Fully responsive, mobile-first design with dark mode, glassmorphism, and smooth micro-animations.
 - **Resilient API**: Robust Discogs integration with **Resilience4j** rate-limiting (60 req/min) and automatic retries with exponential backoff.
@@ -120,7 +121,7 @@ The application requires environment variables for configuration (database crede
 2. **Start Production Environment (or Proxmox / LXC)**:
    - **Automated Proxmox Deployment Script** (pulls official public images from GHCR):
      ```bash
-     ./scripts/deploy_proxmox.sh [v0.4.0]
+     ./scripts/deploy_proxmox.sh [v0.5.0]
      ```
    - **Manual Compose with Public Registry Images**:
      ```bash
@@ -158,6 +159,19 @@ The application requires environment variables for configuration (database crede
    - Navigate to **Settings** $\rightarrow$ **Roon Integration**.
    - Enter your Roon Core IP or hostname and Port (default: `9330` for Roon 2.0 / Roon OS).
    - Click **Save Roon Settings**.
+
+### Hardware Scanner Setup (Eyoyo EY-009P)
+Vinyl Tracker supports handheld 2D barcode imagers like the **Eyoyo EY-009P** out of the box via HID keyboard emulation:
+1. **Connection**: Pair the Eyoyo EY-009P via Bluetooth HID, 2.4 GHz USB Dongle, or USB cable.
+2. **Scanner Mode**:
+   - In **Settings $\rightarrow$ Barcode & QR Scanner**, choose **Externer Hardware-Scanner (Eyoyo EY-009P / HID)**.
+   - In this mode, the webcam remains deactivated (saving CPU/battery and avoiding camera popups).
+3. **Hands-free Scanning**:
+   - The application listens globally for high-speed scanner keystrokes (< 50ms) ending with `Enter`.
+   - **No manual focusing of input fields is required**: simply aim the scanner at a vinyl sleeve barcode or QR code and pull the trigger from anywhere on the dashboard.
+   - Normal manual keyboard typing in search fields is distinguished and unaffected.
+4. **Live Diagnostics**:
+   - Use the **Scanner Live-Test** area in Settings to verify scanned codes, format detection (1D Barcode vs 2D QR Code), and test the confirmation beep sound.
 2. **Authorize Extension**:
    - Open your **Roon Remote** app (Desktop or Mobile).
    - Go to **Settings $\rightarrow$ Extensions** (*Einstellungen $\rightarrow$ Erweiterungen*).

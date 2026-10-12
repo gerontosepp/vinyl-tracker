@@ -3,6 +3,7 @@ import { BarcodeScannerComponent } from './barcode-scanner.component';
 import { AuthService } from '../../../core/services/auth.service';
 import { ApiService } from '../../../core/services/api.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { ScannerService } from '../../../core/services/scanner.service';
 import { of, throwError } from 'rxjs';
 import { signal } from '@angular/core';
 import { User, ScanResult, SyncResult } from '../../../core/types';
@@ -164,4 +165,28 @@ describe('BarcodeScannerComponent', () => {
     expect(component.addErrorMessage()).toBeNull();
     expect(component.isScanning()).toBeTrue();
   });
+
+  it('should display hardware scanner status when scannerMode is hardware', () => {
+    const scannerService = TestBed.inject(ScannerService);
+    scannerService.setScannerMode('hardware');
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.textContent).toContain('Eyoyo EY-009P');
+    expect(compiled.querySelector('#reader')).toBeNull();
+  });
+
+  it('should react to scanTrigger from ScannerService', fakeAsync(() => {
+    const scannerService = component.scannerService;
+    spyOn(component, 'executeBarcodeScan').and.callThrough();
+    const mockResult: ScanResult = { success: true, message: 'Scan OK' };
+    apiServiceMock.scanBarcode.and.returnValue(of(mockResult));
+
+    scannerService.scanTrigger.set({ code: '075678645624', timestamp: Date.now() });
+    fixture.detectChanges();
+    tick();
+
+    expect(component.executeBarcodeScan).toHaveBeenCalledWith('075678645624');
+    expect(component.isScanning()).toBeFalse();
+  }));
 });

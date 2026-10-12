@@ -286,4 +286,21 @@ describe('CollectionComponent', () => {
       expect(component.releases()[0].listen_count).toBe(3);
     });
   });
+
+  describe('clearSelection', () => {
+    it('should clear all items in selectedItems', () => {
+      component.selectedItems.set(
+        new Map([
+          [1, { id: 1, title: 'Album 1', artist: 'Artist 1' }],
+          [2, { id: 2, title: 'Album 2', artist: 'Artist 2' }],
+        ])
+      );
+      expect(component.selectedCount()).toBe(2);
+
+      component.clearSelection();
+
+      expect(component.selectedCount()).toBe(0);
+      expect(component.selectedItems().size).toBe(0);
+    });
+  });
 });

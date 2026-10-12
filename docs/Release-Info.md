@@ -7,7 +7,30 @@
 
 ---
 
-## v0.4.0 (2026-10-09) – Aktueller Release (WiP / Beta)
+## v0.5.0 (2026-10-12) – Aktueller Release (WiP / Beta)
+
+- **Eyoyo EY-009P & Hardware-Scanner Integration (`#45`, `#49`)**:
+  - Globaler HID Keyboard Wedge Listener im Frontend (`ScannerService`) zur vollautomatischen Erkennung von Barcode- und QR-Code-Scannern ohne Fokusverlust oder manuelle Eingabefelder.
+  - Drei Betriebsmodi in den Einstellungen wählbar: *Externer Hardware-Scanner*, *Interner Kamera-Scanner* und *Hybrid-Modus*.
+  - Kamera bleibt im Hardware-Modus deaktiviert (spart Akku und vermeidet Browser-Kameradialoge).
+  - Akustisches Feedback (Beep) und dedizierter Scanner-Live-Testbereich in den Einstellungen.
+- **QR-Code-Auswahl: Auswahl aufheben (`#38`, `#54`)**:
+  - Neuer Button „Auswahl aufheben“ (Clear Selection) in der Sammlungs-Toolbar zum schnellen Abwählen aller markierten Datensätze.
+- **Sammlungstabelle: Feinjustierung der Klick-Aktionen (`#52`, `#53`)**:
+  - Intuitive Interaktion je Spalte:
+    - Spalte 1: Checkbox zur Auswahl für den QR-Code-Druck.
+    - Spalten 2, 4, 5 (Cover, Titel, Artist): Öffnet das umfassende Record-Details-Modal.
+    - Spalten 3, 6, 7, 8 (Format, Jahr, Hinzugefügt am, Hören-Button): Neutrale Spalten ohne Modal-Trigger.
+    - Spalte 9: Direkter Discogs-Link zur Release-Seite im neuen Tab.
+- **Dynamische Sprach- und Datumsformatierung (`#37`, `#51`)**:
+  - Einführung der `LocalizedDatePipe` mit dynamischer Angular `LOCALE_ID`-Umschaltung (`de-DE` / `en-US`).
+  - Datumsanzeigen wie „Hinzugefügt am“ passen sich sofort und nahtlos an die in der UI ausgewählte Sprache an.
+- **UI & Navigation Harmonisierung (`#35`, `#50`)**:
+  - Scan-Button in der Desktop-Sidebar an das einheitliche Styling und Farbschema der Hauptnavigation angepasst.
+
+---
+
+## v0.4.0 (2026-10-09) – Vorgänger-Release (WiP / Beta)
 
 - **Roon Control API Integration (`#44`)**:
   - Direkte Steuerung & Wiedergabe von Alben auf Roon Cores und Zonen direkt aus Vinyl Tracker.

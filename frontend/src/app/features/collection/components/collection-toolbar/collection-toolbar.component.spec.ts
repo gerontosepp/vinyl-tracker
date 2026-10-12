@@ -117,4 +117,27 @@ describe('CollectionToolbarComponent', () => {
     component.clearYears();
     expect(component.yearsChange.emit).toHaveBeenCalledWith('');
   });
+
+  it('should emit clearSelection when clear selection button is clicked', () => {
+    spyOn(component.clearSelection, 'emit');
+    fixture.componentRef.setInput('selectedCount', 3);
+    fixture.detectChanges();
+
+    const clearBtn = fixture.nativeElement.querySelector('button[title="Auswahl aufheben"], button[title="Clear Selection"]');
+    expect(clearBtn).toBeTruthy();
+    clearBtn.click();
+    expect(component.clearSelection.emit).toHaveBeenCalled();
+  });
+
+  it('should emit downloadSelected when download button is clicked', () => {
+    spyOn(component.downloadSelected, 'emit');
+    fixture.componentRef.setInput('selectedCount', 3);
+    fixture.detectChanges();
+
+    const downloadBtn = fixture.nativeElement.querySelector('button svg[lucidedownload]')?.closest('button');
+    expect(downloadBtn).toBeTruthy();
+    downloadBtn.click();
+    expect(component.downloadSelected.emit).toHaveBeenCalled();
+  });
 });
+

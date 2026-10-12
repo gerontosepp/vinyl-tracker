@@ -150,8 +150,8 @@
               <div class="text-[11px] text-slate-400">
                 {{
                   detail()?.last_listened_at
-                    ? (detail()?.last_listened_at | date: 'shortDate')
-                    : 'Nie'
+                    ? (detail()?.last_listened_at | localizedDate: 'shortDate')
+                    : ('record.never' | translate)
                 }}
               </div>
             </div>
@@ -180,19 +180,19 @@
               <div
                 class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500"
               >
-                Hinzugefügt am
+                {{ 'record.addedAt' | translate }}
               </div>
               <div
                 class="text-sm font-semibold text-slate-800 dark:text-slate-200 mt-1"
               >
                 {{
                   detail()?.added_at
-                    ? (detail()?.added_at | date: 'mediumDate')
+                    ? (detail()?.added_at | localizedDate: 'mediumDate')
                     : '—'
                 }}
               </div>
               <div class="text-[11px] text-slate-400">
-                {{ detail()?.country || 'Land unbekannt' }}
+                {{ detail()?.country || ('record.unknownCountry' | translate) }}
               </div>
             </div>
           </div>
@@ -202,47 +202,47 @@
             <h3
               class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500"
             >
-              Metadaten
+              {{ 'record.metadata' | translate }}
             </h3>
             <div
               class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs bg-slate-50 dark:bg-slate-900/40 p-3 rounded-xl border border-slate-100 dark:border-slate-700/40"
             >
               <div>
-                <span class="text-slate-400">Künstler:</span>
+                <span class="text-slate-400">{{ 'collection.thArtist' | translate }}:</span>
                 <strong class="text-slate-700 dark:text-slate-200 ml-1">{{
                   detail()?.artist
                 }}</strong>
               </div>
               <div>
-                <span class="text-slate-400">Album:</span>
+                <span class="text-slate-400">{{ 'collection.thTitle' | translate }}:</span>
                 <strong class="text-slate-700 dark:text-slate-200 ml-1">{{
                   detail()?.title
                 }}</strong>
               </div>
               <div>
-                <span class="text-slate-400">Erscheinungsjahr:</span>
+                <span class="text-slate-400">{{ 'record.releaseYear' | translate }}:</span>
                 <strong class="text-slate-700 dark:text-slate-200 ml-1">{{
                   detail()?.year || '—'
                 }}</strong>
               </div>
               <div>
-                <span class="text-slate-400">Veröffentlichung:</span>
+                <span class="text-slate-400">{{ 'record.release' | translate }}:</span>
                 <strong class="text-slate-700 dark:text-slate-200 ml-1">{{
                   detail()?.released || '—'
                 }}</strong>
               </div>
               <div>
-                <span class="text-slate-400">Land:</span>
+                <span class="text-slate-400">{{ 'record.country' | translate }}:</span>
                 <strong class="text-slate-700 dark:text-slate-200 ml-1">{{
                   detail()?.country || '—'
                 }}</strong>
               </div>
               <div>
-                <span class="text-slate-400">Zuletzt gehört:</span>
+                <span class="text-slate-400">{{ 'record.lastListened' | translate }}:</span>
                 <strong class="text-slate-700 dark:text-slate-200 ml-1">{{
                   detail()?.last_listened_at
-                    ? (detail()?.last_listened_at | date: 'medium')
-                    : 'Noch nie'
+                    ? (detail()?.last_listened_at | localizedDate: 'medium')
+                    : ('record.notYet' | translate)
                 }}</strong>
               </div>
             </div>
@@ -388,7 +388,7 @@
                     <span
                       class="w-1.5 h-1.5 rounded-full bg-indigo-500"
                     ></span>
-                    {{ timestamp | date: 'medium' }}
+                    {{ timestamp | localizedDate: 'medium' }}
                   </div>
                 }
               </div>
@@ -401,7 +401,7 @@
               <h3
                 class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500"
               >
-                Notizen
+                {{ 'record.notes' | translate }}
               </h3>
               <p
                 class="text-xs text-slate-600 dark:text-slate-400 italic bg-slate-50 dark:bg-slate-900/30 p-2.5 rounded-lg border border-slate-100 dark:border-slate-700/30"

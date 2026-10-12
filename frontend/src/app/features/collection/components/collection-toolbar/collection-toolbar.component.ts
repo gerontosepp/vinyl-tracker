@@ -69,6 +69,7 @@ export class CollectionToolbarComponent {
   readonly toggleSelectAllPage = output<void>();
   readonly toggleShowPlayedOnly = output<void>();
   readonly downloadSelected = output<void>();
+  readonly clearSelection = output<void>();
   readonly genresChange = output<string[]>();
   readonly yearsChange = output<string>();
   readonly clearAllFilters = output<void>();

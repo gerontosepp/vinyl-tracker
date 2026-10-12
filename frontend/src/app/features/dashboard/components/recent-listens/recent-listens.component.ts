@@ -1,14 +1,14 @@
 import { Component, input, output, inject } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { ApiService } from '../../../../core/services/api.service';
 import { ListenEvent } from '../../../../core/types';
 import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
+import { LocalizedDatePipe } from '../../../../core/pipes/localized-date.pipe';
 import { LucideTrash2 } from '@lucide/angular';
 
 @Component({
   selector: 'app-recent-listens',
   standalone: true,
-  imports: [DatePipe, TranslatePipe, LucideTrash2],
+  imports: [LocalizedDatePipe, TranslatePipe, LucideTrash2],
   template: `
     <div
       [class]="
@@ -83,7 +83,7 @@ import { LucideTrash2 } from '@lucide/angular';
                   class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-600 flex justify-between items-center w-full z-20"
                 >
                   <span class="text-xs font-semibold text-slate-400 dark:text-slate-500">
-                    {{ event.timestamp | date: 'MMM d, y, h:mm a' }}
+                    {{ event.timestamp | localizedDate: 'medium' }}
                   </span>
                 </div>
               </div>

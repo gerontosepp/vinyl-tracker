@@ -15,6 +15,9 @@
   - Anzeige der Zustände im Record-Detail-Modal mit dedizierten Farb-Karten und Goldmine-Kurzcodes (`VG+`, `NM`, `VG` etc.).
   - Anzeige kompakter Zustand-Badges in der Sammlungstabelle (neue Spalte „Zustand“) sowie in den Kacheln der Sammlungsübersicht.
   - Grundlage für zustandsbasierte Discogs-Marktpreis-Ermittlung (`#30`).
+- **Fix: Lokale Zeitzonen-Konvertierung für Hör-Events (`#64`)**:
+  - Konsequente ISO-8601 UTC-Serialisierung (`yyyy-MM-dd'T'HH:mm:ss'Z'`) über Spring `JacksonConfig` und DTO `@JsonFormat`-Definitionen.
+  - Automatisches UTC-Parsing in Angular `LocalizedDatePipe` zur verlässlichen Umrechnung in die lokale Browser-Zeitzone.
 
 ---
 

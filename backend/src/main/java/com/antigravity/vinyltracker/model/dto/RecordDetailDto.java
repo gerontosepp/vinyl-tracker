@@ -32,8 +32,10 @@ public class RecordDetailDto {
     @JsonProperty("listen_count")
     private Long listenCount;
     @JsonProperty("last_listened_at")
+    @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'")
     private LocalDateTime lastListenedAt;
     @JsonProperty("added_at")
+    @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'")
     private LocalDateTime addedAt;
     @JsonProperty("media_condition")
     private String mediaCondition;
@@ -44,6 +46,7 @@ public class RecordDetailDto {
     @JsonProperty("num_for_sale")
     private Integer numForSale;
     @JsonProperty("listen_history")
+    @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'")
     private List<LocalDateTime> listenHistory;
     private List<DiscogsDto.Track> tracklist;
     private String format;

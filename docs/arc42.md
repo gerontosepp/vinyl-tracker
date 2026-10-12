@@ -13,8 +13,8 @@ The **Vinyl Tracker** is a personal web application designed for vinyl enthusias
 - **Analytics**: Users can view statistics about their most played records and listening trends over time.
 - **Collection Insights**: Dashboard provides Discogs collection value estimation and genre distribution from live analytics endpoints.
 - **Multi-User**: Supports multiple users, each with their own collection and Discogs integration.
-- **Mobile Friendly**: Designed as a Progressive Web App (PWA) with fully responsive layouts, fluid scrolling, and safe area support for iOS. Features camera access for barcode scanning.
-- **QR Code Generation**: Ability to export the collection as a printable PDF with QR codes for physical tagging.
+- **Barcode & QR Scanning**: Supports both mobile/desktop camera scanning (`html5-qrcode`) and hands-free handheld hardware scanners (e.g. Eyoyo EY-009P via global HID keyboard wedge listener in `ScannerService`) with configurable modes (Hardware, Camera, Hybrid) and live diagnostic testing.
+- **QR Code Generation & Batch Export**: Ability to export the entire collection as a printable PDF from Settings, or selectively export marked records from the Collection view with quick selection reset.
 
 
 ### 1.2 Quality Goals
@@ -85,7 +85,7 @@ The system consists of three main containers:
 
 | Building Block | Description | Technology |
 | :--- | :--- | :--- |
-| **Frontend** | Single Page Application handling UI, routing, and device integration (Camera). | Angular 19, Tailwind CSS, html5-qrcode |
+| **Frontend** | Single Page Application handling UI, routing, and device integration (Camera & HID Scanner). | Angular 19, Tailwind CSS, html5-qrcode, ScannerService (HID listener) |
 | **Backend** | Core business logic, API endpoints, schedulers, and database interactions. | Java 25, Spring Boot, Spring Data JPA, Lombok |
 | **Database** | Persistent storage for users, records, and listening events. | PostgreSQL 16, Flyway |
 
@@ -122,7 +122,7 @@ The Backend follows a layered architecture:
 
 ### 6.3 Scenario: Generating QR Codes
 1.  **User** clicks "Download QR Codes PDF" in Settings.
-2.  **Frontend** requests `GET /api/collection/qr-codes`.
+2.  **Frontend** requests `GET /api/collection/qr-codes/all`.
 3.  **Backend** fetches User's releases from Discogs.
 4.  **Backend** sorts releases by Artist.
 5.  **Backend** generates QR codes for each release.
@@ -140,6 +140,22 @@ The Backend follows a layered architecture:
 7.  **ListenEventRepository** deletes all `ListenEvent` rows belonging to that user in a single bulk operation.
 8.  **Backend** returns a typed JSON response containing success state, message, and deleted event count.
 9.  **Frontend** displays the result as a success or failure toast message.
+
+### 6.5 Scenario: Hardware Barcode Scanning (Eyoyo EY-009P / HID)
+1.  **User** pairs the Eyoyo EY-009P via Bluetooth or 2.4 GHz USB receiver and selects *Hardware Scanner* mode in Settings.
+2.  **User** aims the scanner at a vinyl sleeve or QR code and pulls the trigger (no input field focus required).
+3.  **Frontend** `ScannerService` listens globally on `window` for rapid keystrokes (< 50ms) terminating with `Enter`.
+4.  **ScannerService** filters out normal typing, plays an optional audio beep, and identifies the payload (1D Barcode vs 2D QR Code).
+5.  **Frontend** automatically routes the decoded barcode to `POST /api/scan` and logs the listening session or opens the Discogs match preview.
+
+### 6.6 Scenario: Batch Printing Selected QR Codes
+1.  **User** navigates to the Collection table view.
+2.  **User** checks the selection checkboxes in column 1 for specific albums to print.
+3.  **Frontend** updates the selection count and displays the "Drucken (N)" and "Auswahl aufheben" buttons in the toolbar.
+4.  **User** clicks "Drucken (N)".
+5.  **Frontend** posts selected item metadata to `POST /api/collection/qr-codes/selected`.
+6.  **Backend** `PdfService` generates a tailored PDF document for only the selected releases.
+7.  **Frontend** streams the binary blob and prompts a file download.
 
 ## 7. Deployment View
 

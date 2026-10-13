@@ -307,7 +307,7 @@ export class CollectionComponent implements OnInit, OnDestroy {
       next: (detail) => {
         this.recordDetail.set(detail);
         this.loadingDetail.set(false);
-        if (detail.lowest_price != null) {
+        if (detail.lowest_price != null || detail.median_price != null) {
           this.releases.update((list) =>
             list.map((r) =>
               r.id === release.id
@@ -315,8 +315,9 @@ export class CollectionComponent implements OnInit, OnDestroy {
                     ...r,
                     basic_information: {
                       ...r.basic_information,
-                      lowest_price: detail.lowest_price,
-                      num_for_sale: detail.num_for_sale,
+                      lowest_price: detail.lowest_price != null ? detail.lowest_price : r.basic_information?.lowest_price,
+                      median_price: detail.median_price != null ? detail.median_price : r.basic_information?.median_price,
+                      num_for_sale: detail.num_for_sale != null ? detail.num_for_sale : r.basic_information?.num_for_sale,
                     },
                   }
                 : r

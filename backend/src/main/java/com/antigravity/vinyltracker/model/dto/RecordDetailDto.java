@@ -43,6 +43,8 @@ public class RecordDetailDto {
     private String sleeveCondition;
     @JsonProperty("lowest_price")
     private BigDecimal lowestPrice;
+    @JsonProperty("median_price")
+    private BigDecimal medianPrice;
     @JsonProperty("num_for_sale")
     private Integer numForSale;
     @JsonProperty("listen_history")

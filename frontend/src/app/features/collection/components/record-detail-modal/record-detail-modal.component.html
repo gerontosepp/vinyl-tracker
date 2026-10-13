@@ -113,25 +113,27 @@
               class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700/50"
             >
               <div
-                class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500"
+                class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 truncate"
               >
-                Wert / Mindestpreis
+                {{ 'collection.estimatedPrice' | translate }}
               </div>
               <div
                 class="text-lg font-bold text-emerald-600 dark:text-emerald-400 mt-0.5"
               >
                 {{
-                  detail()?.lowest_price != null
-                    ? (detail()?.lowest_price
+                  detail()?.median_price != null
+                    ? (detail()?.median_price
                       | currency: 'EUR' : 'symbol' : '1.2-2')
                     : '—'
                 }}
               </div>
-              @if (detail()?.num_for_sale != null) {
-                <div class="text-[11px] text-slate-400">
-                  {{ detail()?.num_for_sale }} auf Discogs
-                </div>
-              }
+              <div class="text-[11px] text-slate-400 truncate">
+                {{
+                  detail()?.media_condition
+                    ? 'Zustand: ' + getConditionShortCode(detail()?.media_condition)
+                    : (record()?.media_condition ? 'Zustand: ' + getConditionShortCode(record()?.media_condition) : 'Standard (VG+)')
+                }}
+              </div>
             </div>
 
             <div

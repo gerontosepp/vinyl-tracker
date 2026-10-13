@@ -12,6 +12,9 @@ import io.github.resilience4j.ratelimiter.RateLimiterRegistry;
 import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryRegistry;
 
+import org.springframework.core.ParameterizedTypeReference;
+
+import java.util.Map;
 import java.util.function.Supplier;
 
 @Service
@@ -147,5 +150,21 @@ public class DiscogsApiClient {
                 .header(HttpHeaders.AUTHORIZATION, "Discogs token=" + getDecryptedToken(user))
                 .retrieve()
                 .toBodilessEntity());
+    }
+
+    @Cacheable(value = "discogsPriceSuggestions", key = "#releaseId")
+    public Map<String, DiscogsDto.PriceSuggestion> getPriceSuggestions(Long releaseId, AppUser user) {
+        log.info("Fetching price suggestions for release ID: {}", releaseId);
+        try {
+            return executeWithRateLimit(() -> restClient.get()
+                    .uri("/marketplace/price_suggestions/{releaseId}", releaseId)
+                    .header(HttpHeaders.USER_AGENT, "VinylTrackerApp/1.0")
+                    .header(HttpHeaders.AUTHORIZATION, "Discogs token=" + getDecryptedToken(user))
+                    .retrieve()
+                    .body(new ParameterizedTypeReference<Map<String, DiscogsDto.PriceSuggestion>>() {}));
+        } catch (Exception e) {
+            log.warn("Could not fetch price suggestions for release ID {}: {}", releaseId, e.getMessage());
+            return Map.of();
+        }
     }
 }

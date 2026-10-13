@@ -89,6 +89,25 @@ public class RecordService {
             }
         }
 
+        BigDecimal medianPrice = recordOpt.map(Record::getMedianPrice).orElse(null);
+        if (medianPrice == null && discogsId != null) {
+            try {
+                var suggestions = discogsApiClient.getPriceSuggestions(discogsId, user);
+                String mediaCond = collectionItemOpt.map(CollectionItem::getMediaCondition).orElse(null);
+                BigDecimal suggested = DiscogsDto.extractSuggestedPrice(suggestions, mediaCond);
+                if (suggested != null) {
+                    medianPrice = suggested;
+                    if (recordOpt.isPresent()) {
+                        Record r = recordOpt.get();
+                        r.setMedianPrice(suggested);
+                        recordRepository.save(r);
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("Could not determine price suggestions for record ID {}: {}", discogsId, e.getMessage());
+            }
+        }
+
         String title = release != null && release.getTitle() != null
                 ? release.getTitle()
                 : (recordOpt.isPresent() ? recordOpt.get().getTitle() : null);
@@ -142,6 +161,7 @@ public class RecordService {
                 .listenCount(listenCount != null ? listenCount : 0L)
                 .lastListenedAt(lastListenedAt)
                 .lowestPrice(lowestPrice)
+                .medianPrice(medianPrice)
                 .numForSale(numForSale)
                 .listenHistory(listenHistory)
                 .tracklist(release != null && release.getTracklist() != null ? release.getTracklist() : List.of())
@@ -195,3 +215,4 @@ public class RecordService {
         return getRecordDetails(record.getId(), username);
     }
 }
+

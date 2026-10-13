@@ -17,6 +17,7 @@ import {
   RoonZone,
   RoonSettings,
   RoonPlayRequest,
+  PriceRefreshResult,
 } from '../types';
 
 @Injectable({
@@ -68,6 +69,11 @@ export class ApiService {
 
   logRecordListen(id: number): Observable<RecordDetailDto> {
     return this.http.post<RecordDetailDto>(`${this.baseUrl}/records/${id}/listen`, {});
+  }
+
+  refreshPrices(onlyMissing: boolean = true): Observable<PriceRefreshResult> {
+    const params = new HttpParams().set('onlyMissing', onlyMissing.toString());
+    return this.http.post<PriceRefreshResult>(`${this.baseUrl}/collection/prices/refresh`, {}, { params });
   }
 
   getGenreBreakdown(): Observable<GenreBreakdownItem[]> {

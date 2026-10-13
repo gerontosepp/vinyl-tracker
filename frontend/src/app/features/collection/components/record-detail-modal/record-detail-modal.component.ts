@@ -1,5 +1,6 @@
 import { Component, input, output, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../../core/services/api.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { LanguageService } from '../../../../core/services/language.service';
@@ -15,6 +16,7 @@ import { getConditionShortCode } from '../../utils/condition.util';
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     TranslatePipe,
     LocalizedDatePipe,
     LucideExternalLink,
@@ -42,6 +44,8 @@ export class RecordDetailModalComponent {
   readonly justListened = signal<boolean>(false);
   readonly isPlayingOnRoon = signal<boolean>(false);
   private justListenedTimeout?: ReturnType<typeof setTimeout>;
+
+
 
   onPlayOnRoon(): void {
     const rec = this.record();

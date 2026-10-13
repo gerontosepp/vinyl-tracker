@@ -15,6 +15,12 @@
   - Anzeige der Zustände im Record-Detail-Modal mit dedizierten Farb-Karten und Goldmine-Kurzcodes (`VG+`, `NM`, `VG` etc.).
   - Anzeige kompakter Zustand-Badges in der Sammlungstabelle (neue Spalte „Zustand“) sowie in den Kacheln der Sammlungsübersicht.
   - Grundlage für zustandsbasierte Discogs-Marktpreis-Ermittlung (`#30`).
+- **Zustandsbasierte Discogs-Marktpreis-Ermittlung (`#30`)**:
+  - Automatische Ermittlung geschätzter Marktpreise in EUR über die Discogs Marketplace Price Suggestions API (`GET /marketplace/price_suggestions/{release_id}`) basierend auf dem Plattenzustand (Media Condition aus `#62`, Fallback auf `Very Good Plus (VG+)`).
+  - Persistierung des geschätzten Werts in `record_cache.median_price` via Flyway-Migration `V9__add_median_price_to_record_cache.sql`.
+  - Automatisches Nachladen beim Öffnen von Album-Details, Scannen von Barcodes sowie Möglichkeit zur Massen-Aktualisierung (`POST /api/collection/prices/refresh`).
+  - Anzeige des geschätzten Werts im Album-Detail-Modal („Geschätzter Wert“), in der Sammlungstabelle (Spalte „Wert“) und als Badge in den Album-Karten.
+  - Entfall der obsoleten Mindestpreis-Anzeige zugunsten einer aufgeräumten 4-Spalten-Statistikleiste.
 - **Fix: Lokale Zeitzonen-Konvertierung für Hör-Events (`#64`)**:
   - Konsequente ISO-8601 UTC-Serialisierung (`yyyy-MM-dd'T'HH:mm:ss'Z'`) über Spring `JacksonConfig` und DTO `@JsonFormat`-Definitionen.
   - Automatisches UTC-Parsing in Angular `LocalizedDatePipe` zur verlässlichen Umrechnung in die lokale Browser-Zeitzone.

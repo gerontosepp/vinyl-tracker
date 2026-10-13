@@ -21,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -183,4 +184,39 @@ class RecordServiceTest {
         assertNotNull(details);
         verify(listenEventRepository).save(any(ListenEvent.class));
     }
+
+    @Test
+    void getRecordDetails_FetchesAndSavesMedianPriceWhenNull() {
+        Record record = new Record();
+        record.setId(2L);
+        record.setDiscogsId(55555L);
+        record.setTitle("Test Title");
+        record.setArtist("Test Artist");
+
+        DiscogsDto.Release release = new DiscogsDto.Release();
+        release.setId(55555L);
+        release.setTitle("Test Title");
+
+        CollectionItem item = new CollectionItem(user, record, 8888L);
+        item.setMediaCondition("Very Good (VG)");
+
+        Map<String, DiscogsDto.PriceSuggestion> suggestions = Map.of(
+                "Very Good (VG)", new DiscogsDto.PriceSuggestion("EUR", 14.50),
+                "Very Good Plus (VG+)", new DiscogsDto.PriceSuggestion("EUR", 20.00)
+        );
+
+        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(user));
+        when(recordRepository.findById(2L)).thenReturn(Optional.of(record));
+        when(discogsApiClient.getRelease(55555L, user)).thenReturn(release);
+        when(collectionItemRepository.findByUserAndRecord(user, record)).thenReturn(Optional.of(item));
+        when(discogsApiClient.getPriceSuggestions(55555L, user)).thenReturn(suggestions);
+
+        RecordDetailDto details = recordService.getRecordDetails(2L, "testuser");
+
+        assertNotNull(details);
+        assertEquals(new BigDecimal("14.50"), details.getMedianPrice());
+        assertEquals(new BigDecimal("14.50"), record.getMedianPrice());
+        verify(recordRepository).save(record);
+    }
 }
+

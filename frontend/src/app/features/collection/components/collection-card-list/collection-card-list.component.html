@@ -66,6 +66,14 @@
               }
             </span>
           }
+          @if (release.basic_information.median_price != null) {
+            <span
+              class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50"
+              title="Geschätzter Wert"
+            >
+              {{ release.basic_information.median_price | currency: 'EUR' : 'symbol' : '1.2-2' }}
+            </span>
+          }
         </p>
         @if (release.basic_information.genres && release.basic_information.genres.length > 0) {
           <div class="flex flex-wrap gap-1 mt-1">

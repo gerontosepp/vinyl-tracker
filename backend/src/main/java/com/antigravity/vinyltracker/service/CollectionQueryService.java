@@ -228,6 +228,7 @@ public class CollectionQueryService {
         }
 
         basicInfo.setLowestPrice(item.getRecord().getLowestPrice());
+        basicInfo.setMedianPrice(item.getRecord().getMedianPrice());
 
         String format = item.getRecord().getFormat() != null ? item.getRecord().getFormat() : "LP";
         basicInfo.setFormat(format);

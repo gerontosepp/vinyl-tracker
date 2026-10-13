@@ -2,6 +2,7 @@ package com.antigravity.vinyltracker.service;
 
 import com.antigravity.vinyltracker.model.AppUser;
 import com.antigravity.vinyltracker.model.discogs.DiscogsDto;
+import com.antigravity.vinyltracker.model.dto.PriceRefreshResultDto;
 import com.antigravity.vinyltracker.model.dto.SyncResultDto;
 import com.antigravity.vinyltracker.repository.CollectionItemRepository;
 import com.antigravity.vinyltracker.repository.RecordRepository;
@@ -145,6 +146,19 @@ public class CollectionSyncService {
                                 user, record, release.getInstanceId(), addedAt, mediaCondition, sleeveCondition);
                         collectionItemRepository.save(item);
                         addedCount++;
+
+                        if (record.getMedianPrice() == null) {
+                            try {
+                                var suggestions = discogsApiClient.getPriceSuggestions(record.getDiscogsId(), user);
+                                java.math.BigDecimal suggested = DiscogsDto.extractSuggestedPrice(suggestions, mediaCondition);
+                                if (suggested != null) {
+                                    record.setMedianPrice(suggested);
+                                    recordRepository.save(record);
+                                }
+                            } catch (Exception e) {
+                                log.debug("Could not determine price suggestion for new record {}: {}", record.getDiscogsId(), e.getMessage());
+                            }
+                        }
                     } else {
                         com.antigravity.vinyltracker.model.CollectionItem item = existingItem.get();
                         boolean itemUpdated = false;
@@ -225,5 +239,41 @@ public class CollectionSyncService {
                 return LocalDateTime.now(ZoneOffset.UTC);
             }
         }
+    }
+
+    @Transactional
+    public PriceRefreshResultDto refreshPrices(AppUser user, boolean onlyMissing) {
+        log.info("Refreshing collection prices for user: {}, onlyMissing: {}", user.getUsername(), onlyMissing);
+        List<com.antigravity.vinyltracker.model.CollectionItem> items = collectionItemRepository.findAllByUser(user);
+        int updatedCount = 0;
+
+        for (com.antigravity.vinyltracker.model.CollectionItem item : items) {
+            com.antigravity.vinyltracker.model.Record record = item.getRecord();
+            if (record == null || record.getDiscogsId() == null) {
+                continue;
+            }
+
+            if (onlyMissing && record.getMedianPrice() != null) {
+                continue;
+            }
+
+            try {
+                var suggestions = discogsApiClient.getPriceSuggestions(record.getDiscogsId(), user);
+                java.math.BigDecimal suggested = DiscogsDto.extractSuggestedPrice(suggestions, item.getMediaCondition());
+                if (suggested != null) {
+                    record.setMedianPrice(suggested);
+                    recordRepository.save(record);
+                    updatedCount++;
+                }
+            } catch (Exception e) {
+                log.warn("Failed to refresh price for record ID {}: {}", record.getDiscogsId(), e.getMessage());
+            }
+        }
+
+        return PriceRefreshResultDto.builder()
+                .updatedCount(updatedCount)
+                .totalCount(items.size())
+                .message(String.format("Successfully refreshed prices: %d of %d items updated.", updatedCount, items.size()))
+                .build();
     }
 }

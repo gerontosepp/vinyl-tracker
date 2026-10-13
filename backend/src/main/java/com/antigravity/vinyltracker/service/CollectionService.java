@@ -60,6 +60,12 @@ public class CollectionService {
         return collectionSyncService.syncCollection(user);
     }
 
+    public com.antigravity.vinyltracker.model.dto.PriceRefreshResultDto refreshCollectionPrices(String username, boolean onlyMissing) {
+        AppUser user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new com.antigravity.vinyltracker.exception.ResourceNotFoundException("User not found: " + username));
+        return collectionSyncService.refreshPrices(user, onlyMissing);
+    }
+
     public byte[] generateSelectedQrCodesPdf(DiscogsDto.QrCodeRequest request) {
         return pdfService.generateQrCodePdf(request.getItems());
     }

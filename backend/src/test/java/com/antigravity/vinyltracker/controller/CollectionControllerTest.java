@@ -268,4 +268,20 @@ class CollectionControllerTest {
                                 .andExpect(jsonPath("$.added").value(1))
                                 .andExpect(jsonPath("$.removed").value(0));
         }
+
+        @Test
+        @WithMockUser(username = "testuser")
+        void refreshPrices_ShouldReturnRefreshResult() throws Exception {
+                com.antigravity.vinyltracker.model.dto.PriceRefreshResultDto refreshResult =
+                        new com.antigravity.vinyltracker.model.dto.PriceRefreshResultDto(5, 10, "5 of 10 updated");
+                when(collectionService.refreshCollectionPrices("testuser", true)).thenReturn(refreshResult);
+
+                mockMvc.perform(post("/api/collection/prices/refresh")
+                                .principal(() -> "testuser")
+                                .param("onlyMissing", "true")
+                                .with(csrf()))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.updatedCount").value(5))
+                                .andExpect(jsonPath("$.totalCount").value(10));
+        }
 }

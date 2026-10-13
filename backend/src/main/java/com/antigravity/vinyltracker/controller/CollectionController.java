@@ -69,6 +69,14 @@ public class CollectionController {
         return ResponseEntity.ok(result);
     }
 
+    @PostMapping("/prices/refresh")
+    public ResponseEntity<com.antigravity.vinyltracker.model.dto.PriceRefreshResultDto> refreshPrices(
+            Principal principal,
+            @RequestParam(defaultValue = "true") boolean onlyMissing) {
+        com.antigravity.vinyltracker.model.dto.PriceRefreshResultDto result = collectionService.refreshCollectionPrices(principal.getName(), onlyMissing);
+        return ResponseEntity.ok(result);
+    }
+
     @PostMapping("/qr-codes/selected")
     public ResponseEntity<byte[]> generateSelectedQrCodes(@jakarta.validation.Valid @RequestBody DiscogsDto.QrCodeRequest request) {
         byte[] pdfBytes = collectionService.generateSelectedQrCodesPdf(request);

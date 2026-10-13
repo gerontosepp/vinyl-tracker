@@ -224,6 +224,7 @@ The system is deployed as a multi-container Docker application orchestrated by D
 | **Modular Frontend Components** | Decomposed monolithic page components (such as `CollectionComponent`) into focused subcomponents with dedicated HTML templates and clear Angular Signal inputs/outputs to maintain low file complexity (< 350 lines). | Accepted |
 | **BCrypt Self-Contained Salt** | Dropped redundant `salt` column from `app_user` (Flyway `V5`) since BCrypt handles salt generation internally. | Accepted |
 | **Discogs Condition Tracking** | Added `media_condition` and `sleeve_condition` to `collection_item` (Flyway `V8`) to persist Goldmine gradings synchronized from Discogs custom fields for UI display and marketplace pricing (#62). | Accepted |
+| **Condition-Based Market Price Caching** | Added `median_price` to `record_cache` (Flyway `V9`) to persist condition-mapped estimated marketplace values in EUR from the Discogs Price Suggestions API, enabling fast collection valuation without manual overrides (#30). | Accepted |
 | **Node.js 24 CI Runtime** | Aligned GitHub Actions workflow runner and setup-node action to Node 24. | Accepted |
 
 ## 10. Quality Requirements
@@ -233,7 +234,7 @@ The system is deployed as a multi-container Docker application orchestrated by D
 - **Dependency Hygiene**: Backend dependencies are checked in CI against Sonatype OSS Index; findings are reported to an audit artifact (`ossindex-audit.json`) with the current configuration set to non-blocking (`fail=false`).
 - **Test Execution Split**: Unit tests run via Surefire during `test`, while integration tests run via Failsafe during `verify`. This improves local feedback speed while keeping full validation in CI.
 - **Responsiveness**: The UI must adapt to mobile screens (< 768px) for usable barcode scanning on phones.
-- **Performance**: API responses should be < 200ms (excluding external Discogs calls). Heavily accessed database relationships (e.g. `user_id` on collections, `discogs_id` on records) are backed by explicit B-tree indexes applied via Flyway to prevent query degradation as dataset sizes grow. The `Record.genres` `@ElementCollection` is fetched `LAZY` with a Hibernate `@BatchSize(50)` to avoid per-row genre queries (N+1) when listing collections and computing analytics. Release pricing (`lowest_price`) and media format (`format`) are cached directly in the `record_cache` table via Flyway migrations `V3` and `V4` to avoid repeated remote marketplace lookups.
+- **Performance**: API responses should be < 200ms (excluding external Discogs calls). Heavily accessed database relationships (e.g. `user_id` on collections, `discogs_id` on records) are backed by explicit B-tree indexes applied via Flyway to prevent query degradation as dataset sizes grow. The `Record.genres` `@ElementCollection` is fetched `LAZY` with a Hibernate `@BatchSize(50)` to avoid per-row genre queries (N+1) when listing collections and computing analytics. Release pricing (`lowest_price`, `median_price`) and media format (`format`) are cached directly in the `record_cache` table via Flyway migrations `V3`, `V4`, and `V9` to avoid repeated remote marketplace lookups.
 
 ## 11. Risks and Technical Debt
 

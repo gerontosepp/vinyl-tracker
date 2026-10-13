@@ -197,5 +197,24 @@ describe('RecordDetailModalComponent', () => {
     expect(text).toContain('VG+');
     expect(text).toContain('NM');
   });
+
+  it('should display estimated value in record detail modal when median_price is present', () => {
+    const mockRecord = {
+      id: 42,
+      basic_information: {
+        id: 123456,
+        title: 'Abbey Road',
+        year: 1969,
+        artists: [{ name: 'The Beatles' }],
+      },
+    } as any;
+    fixture.componentRef.setInput('record', mockRecord);
+    fixture.componentRef.setInput('detail', { ...mockDetail, median_price: 19.99 });
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent;
+    expect(text).toMatch(/19[.,]99/);
+  });
 });
+
 

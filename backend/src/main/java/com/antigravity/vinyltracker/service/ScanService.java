@@ -120,8 +120,28 @@ public class ScanService {
                             artistName,
                             String.valueOf(finalRelease.getYear()),
                             finalRelease.getThumbUrl());
+                    if (finalRelease.getLowestPrice() != null) {
+                        newRecord.setLowestPrice(finalRelease.getLowestPrice());
+                    }
+                    if (finalRelease.getFormats() != null) {
+                        newRecord.setFormat(DiscogsDto.determineFormat(finalRelease.getFormats()));
+                    }
+                    try {
+                        var suggestions = discogsApiClient.getPriceSuggestions(finalRelease.getId(), user);
+                        var collectionItem = collectionItemRepository.findByUserAndRecord_DiscogsId(user, finalRelease.getId());
+                        String mediaCond = collectionItem.map(com.antigravity.vinyltracker.model.CollectionItem::getMediaCondition).orElse(null);
+                        java.math.BigDecimal suggested = DiscogsDto.extractSuggestedPrice(suggestions, mediaCond);
+                        if (suggested != null) {
+                            newRecord.setMedianPrice(suggested);
+                        }
+                    } catch (Exception ignored) {}
                     return recordRepository.save(newRecord);
                 });
+
+        if (record.getLowestPrice() == null && finalRelease.getLowestPrice() != null) {
+            record.setLowestPrice(finalRelease.getLowestPrice());
+            recordRepository.save(record);
+        }
 
         // 3. Save Listen Event
         ListenEvent event = new ListenEvent(user, record);

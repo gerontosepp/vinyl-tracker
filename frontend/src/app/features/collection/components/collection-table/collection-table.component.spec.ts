@@ -156,10 +156,21 @@ describe('CollectionTableComponent', () => {
     expect(component.toggleSelection.emit).not.toHaveBeenCalled();
   });
 
-  it('Column 11: should contain Discogs external link', () => {
+  it('Column 11: should do nothing when clicking last played at cell', () => {
+    spyOn(component.openDetail, 'emit');
+    spyOn(component.toggleSelection, 'emit');
     const row = fixture.nativeElement.querySelector('tbody tr');
     const cells = row.querySelectorAll('td');
-    const link = cells[10].querySelector('a');
+
+    cells[10].click();
+    expect(component.openDetail.emit).not.toHaveBeenCalled();
+    expect(component.toggleSelection.emit).not.toHaveBeenCalled();
+  });
+
+  it('Column 12: should contain Discogs external link', () => {
+    const row = fixture.nativeElement.querySelector('tbody tr');
+    const cells = row.querySelectorAll('td');
+    const link = cells[11].querySelector('a');
 
     expect(link).toBeTruthy();
     expect(link.getAttribute('href')).toBe('https://www.discogs.com/release/12345');

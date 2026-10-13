@@ -428,6 +428,33 @@ class CollectionQueryServiceTest {
     }
 
     @Test
+    void getCollection_ShouldPopulateLastPlayedAt_WhenPlaysExist() {
+        com.antigravity.vinyltracker.model.Record mockRecord = new com.antigravity.vinyltracker.model.Record();
+        mockRecord.setDiscogsId(100L);
+        com.antigravity.vinyltracker.model.CollectionItem item = new com.antigravity.vinyltracker.model.CollectionItem(user, mockRecord, 10L);
+        Page<com.antigravity.vinyltracker.model.CollectionItem> mockPage = new PageImpl<>(List.of(item));
+
+        Mockito.when(collectionItemRepository.findFilteredCollection(
+                        Mockito.eq(user), Mockito.eq("all"), Mockito.eq(false), Mockito.eq(""),
+                        Mockito.eq(false), Mockito.any(), Mockito.eq(false), Mockito.any(),
+                        Mockito.eq(false), Mockito.eq(0), Mockito.any(Pageable.class)))
+                .thenReturn(mockPage);
+
+        Mockito.when(listenEventRepository.countByRecordAndUser(mockRecord, user)).thenReturn(2L);
+        com.antigravity.vinyltracker.model.ListenEvent event = new com.antigravity.vinyltracker.model.ListenEvent(user, mockRecord);
+        java.time.LocalDateTime now = java.time.LocalDateTime.of(2026, 10, 13, 10, 0, 0);
+        event.setTimestamp(now);
+
+        Mockito.when(listenEventRepository.findFirstByRecordAndUserOrderByTimestampDesc(mockRecord, user))
+                .thenReturn(java.util.Optional.of(event));
+
+        DiscogsDto.CollectionResponse result = collectionQueryService.getCollection(user, 1, 50, "artist", "asc", null, null);
+
+        assertNotNull(result);
+        assertEquals("2026-10-13T10:00:00Z", result.getReleases().get(0).getLastPlayedAt());
+    }
+
+    @Test
     void getCollection_WithMinPlays_ShouldPassMinPlaysFilterToRepository() {
         Mockito.when(collectionItemRepository.findFilteredCollection(
                         Mockito.eq(user),

@@ -2,6 +2,7 @@ import { Component, input, output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ApiService } from '../../../../core/services/api.service';
 import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
+import { LocalizedDatePipe } from '../../../../core/pipes/localized-date.pipe';
 import { FormatBadgeComponent } from '../format-badge/format-badge.component';
 import { CollectionRelease, QrCodeItem } from '../../../../core/types';
 import { getFormatType, FormatType } from '../../utils/format-type.util';
@@ -14,6 +15,7 @@ import { LucideCheckSquare, LucideSquare, LucideExternalLink } from '@lucide/ang
   imports: [
     CommonModule,
     TranslatePipe,
+    LocalizedDatePipe,
     FormatBadgeComponent,
     LucideCheckSquare,
     LucideSquare,

@@ -132,7 +132,14 @@ public class CollectionQueryService {
                         playCount = listenEventRepository.countByRecordAndUser(ci.getRecord(), user);
                     }
 
-                    return mapToCollectionRelease(ci, playCount);
+                    String lastPlayedAt = null;
+                    if (playCount != null && playCount > 0) {
+                        lastPlayedAt = listenEventRepository.findFirstByRecordAndUserOrderByTimestampDesc(ci.getRecord(), user)
+                                .map(le -> le.getTimestamp().format(com.antigravity.vinyltracker.config.JacksonConfig.UTC_FORMATTER))
+                                .orElse(null);
+                    }
+
+                    return mapToCollectionRelease(ci, playCount, lastPlayedAt);
                 })
                 .toList();
 
@@ -164,7 +171,13 @@ public class CollectionQueryService {
         int randomIndex = java.util.concurrent.ThreadLocalRandom.current().nextInt(candidates.size());
         com.antigravity.vinyltracker.model.CollectionItem selected = candidates.get(randomIndex);
         Long playCount = listenEventRepository.countByRecordAndUser(selected.getRecord(), user);
-        return mapToCollectionRelease(selected, playCount);
+        String lastPlayedAt = null;
+        if (playCount != null && playCount > 0) {
+            lastPlayedAt = listenEventRepository.findFirstByRecordAndUserOrderByTimestampDesc(selected.getRecord(), user)
+                    .map(le -> le.getTimestamp().format(com.antigravity.vinyltracker.config.JacksonConfig.UTC_FORMATTER))
+                    .orElse(null);
+        }
+        return mapToCollectionRelease(selected, playCount, lastPlayedAt);
     }
 
     public DiscogsDto.CollectionResponse getUnplayedCollection(AppUser user, int page, int perPage) {
@@ -173,7 +186,7 @@ public class CollectionQueryService {
         Page<com.antigravity.vinyltracker.model.CollectionItem> pagedResult = collectionItemRepository.findUnplayedByUser(user, pageable);
 
         List<DiscogsDto.CollectionRelease> releases = pagedResult.getContent().stream()
-                .map(item -> mapToCollectionRelease(item, 0L))
+                .map(item -> mapToCollectionRelease(item, 0L, null))
                 .toList();
 
         DiscogsDto.Pagination pagination = new DiscogsDto.Pagination();
@@ -189,16 +202,29 @@ public class CollectionQueryService {
         List<com.antigravity.vinyltracker.model.CollectionItem> items = collectionItemRepository.findAllByUser(user);
         return items.stream().map(item -> {
             Long playCount = listenEventRepository.countByRecordAndUser(item.getRecord(), user);
-            return mapToCollectionRelease(item, playCount);
+            String lastPlayedAt = null;
+            if (playCount != null && playCount > 0) {
+                lastPlayedAt = listenEventRepository.findFirstByRecordAndUserOrderByTimestampDesc(item.getRecord(), user)
+                        .map(le -> le.getTimestamp().format(com.antigravity.vinyltracker.config.JacksonConfig.UTC_FORMATTER))
+                        .orElse(null);
+            }
+            return mapToCollectionRelease(item, playCount, lastPlayedAt);
         }).toList();
     }
 
     private DiscogsDto.CollectionRelease mapToCollectionRelease(com.antigravity.vinyltracker.model.CollectionItem item,
                                                                 Long listenCount) {
+        return mapToCollectionRelease(item, listenCount, null);
+    }
+
+    private DiscogsDto.CollectionRelease mapToCollectionRelease(com.antigravity.vinyltracker.model.CollectionItem item,
+                                                                Long listenCount,
+                                                                String lastPlayedAt) {
         DiscogsDto.CollectionRelease release = new DiscogsDto.CollectionRelease();
         release.setId(item.getRecord().getDiscogsId());
         release.setInstanceId(item.getInstanceId());
         release.setListenCount(listenCount);
+        release.setLastPlayedAt(lastPlayedAt);
         release.setMediaCondition(item.getMediaCondition());
         release.setSleeveCondition(item.getSleeveCondition());
         if (item.getAddedAt() != null) {

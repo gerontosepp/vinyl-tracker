@@ -244,6 +244,8 @@ public class DiscogsDto {
         private String mediaCondition;
         @JsonProperty("sleeve_condition")
         private String sleeveCondition;
+        @JsonProperty("last_played_at")
+        private String lastPlayedAt;
         private List<CollectionNote> notes;
     }
 

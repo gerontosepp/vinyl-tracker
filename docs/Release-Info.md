@@ -9,6 +9,9 @@
 
 ## In Entwicklung / Next (v0.6.0)
 
+- **Dependency-Aktualisierungen (Backend & Frontend)**:
+  - Backend: Upgrade PostgreSQL Driver (`42.7.13` → `42.7.14`), OpenPDF (`2.0.3` → `2.2.2`), SpringDoc OpenAPI UI (`2.8.5` → `2.8.6`).
+  - Frontend: Upgrade `@lucide/angular` (`1.51.0` → `1.56.0`), `@playwright/test` (`1.63.0` → `1.64.0`), `postcss` (`8.5.28` → `8.5.30`) sowie Aktualisierung transitiver Pakete via `npm update`.
 - **Sammlungsfilter: „Nicht gespielt seit <Datum>“ und „Noch nie gespielt“ (`#61`)**:
   - Neuer Datumsfilter in der Sammlungsansicht (`not_played_since = YYYY-MM-DD`), der Alben anzeigt, die seit dem gewählten Stichtag nicht mehr oder noch nie gehört wurden.
   - Checkbox-Schnellfilter „Noch nie gespielt“ (`unplayed_only = true`), der ausschließlich Alben mit 0 Plays anzeigt.

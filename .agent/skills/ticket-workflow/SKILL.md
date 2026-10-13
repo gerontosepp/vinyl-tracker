@@ -1,155 +1,142 @@
 ---
 name: ticket-workflow
 description: >-
-  Standardisierter End-to-End-Ablauf zur Bearbeitung, Implementierung, Validierung,
-  Dokumentation, Zusammenführung und Schließung von GitHub-Issues und Tickets in Vinyl Tracker.
+  Standardized end-to-end workflow to analyze, implement, test, document,
+  review, merge, and close GitHub issues/tickets in Vinyl Tracker.
 ---
 
 # Vinyl Tracker Ticket Workflow Skill
 
-Dieser Skill beschreibt den vollständigen Standard-Workflow zur Abarbeitung eines GitHub-Issues/Tickets in Vinyl Tracker – von der Ticket-Analyse bis zum Schließen des Tickets.
+This skill defines the complete operational procedure for processing a GitHub issue or ticket from analysis through to user approval, merging, and closure.
 
 ---
 
-## 1. Ticket-Analyse & Vorbereitung
+## 1. Issue Analysis & Requirements
 
-1. **Ticket-Details abrufen**:
+1. **Inspect Issue Details**:
    ```bash
    gh issue view <ISSUE_ID>
    ```
-2. **Anforderungen & Akzeptanzkriterien erfassen**:
-   - Was soll fachlich und technisch erreicht werden?
-   - Welche Komponenten sind betroffen (Backend, Frontend, DB/Flyway, Discogs-API, Roon-API)?
-   - Bei unklaren Anforderungen oder Design-Entscheidungen gezielt Rücksprache mit dem Nutzer halten (z. B. via `ask_question`).
+2. **Clarify Requirements & Acceptance Criteria**:
+   - Identify affected components (`backend`, `frontend`, `db/migration`, `discogs`, `roon`, `mcp`).
+   - If requirements or UX details are ambiguous, clarify with the user (e.g. via `ask_question`).
 
 ---
 
-## 2. Branching & Workspace-Vorbereitung
+## 2. Branching & Workspace Preparation
 
-1. **Basis aktualisieren**:
-   Immer von einem aktuellen `develop`-Branch starten:
+1. **Sync Base Branch**:
+   Always branch off the latest `develop`:
    ```bash
    git checkout develop
    git pull origin develop
    ```
 
-2. **Feature-Branch erstellen**:
-   Namenskonventionen:
-   - Features: `feat/<ISSUE_ID>-<kurzbeschreibung>` (z. B. `feat/66-edit-conditions-discogs-sync`)
-   - Bugfixes: `fix/<ISSUE_ID>-<kurzbeschreibung>`
-   - Refactorings/Chores: `chore/<ISSUE_ID>-<kurzbeschreibung>`
+2. **Create Feature Branch**:
+   Naming conventions:
+   - Features: `feat/<ISSUE_ID>-<short-description>` (e.g. `feat/70-last-played-at-column`)
+   - Bugfixes: `fix/<ISSUE_ID>-<short-description>`
+   - Refactorings / Chores: `chore/<ISSUE_ID>-<short-description>`
 
    ```bash
-   git checkout -b feat/<ISSUE_ID>-<kurzbeschreibung>
+   git checkout -b feat/<ISSUE_ID>-<short-description>
    ```
 
 ---
 
-## 3. Implementierungs-Standards (Rules)
+## 3. Implementation Standards
 
-### Backend (Java 25 & Spring Boot 4.x)
-- **Architektur**: Strikte Schichtenarchitektur (Controller -> Service -> Repository).
-- **Lombok**: Boilerplate via `@Data`, `@RequiredArgsConstructor`, `@Builder`, etc.
-- **DTOs & Serialisierung**: Sprechende DTOs für API-Payloads. JSON-Properties snake_case (`@JsonProperty("media_condition")`).
-- **Datum & Uhrzeit**: Immer ISO-8601 in **UTC** (`LocalDateTime` mit `Z`-Suffix oder `UTC_FORMATTER`).
-- **CORS & HTTP-Methoden**: Bei neuen HTTP-Methoden (z. B. `PATCH`) sicherstellen, dass sie in `AppConfig.java` in `allowedMethods` freigeschaltet sind.
-- **Resilienz & Caching**: Externe API-Aufrufe (Discogs, Roon) mit Rate-Limiter (`@RateLimiter`), Retry und Caching (`@Cacheable`) absichern.
-- **Fehlerbehandlung**: Aussagekräftige structured `ProblemDetail`-Responses bei Fehlern.
-
-### Frontend (Angular 19 & Standalone Components)
-- **Reaktivität**: Angular Signals (`signal()`, `computed()`, `update()`) für State Management.
-- **Styling**: Tailwind CSS Utility-Klassen. Kein manuelles CSS außer für komplexe Animationen.
-- **Lokalisierung**: Mehrsprachigkeit über `LanguageService` / Übersetzungsschlüssel pflegen (`de` & `en`).
-- **Datum & Uhrzeit**: Backend liefert UTC; Frontend wandelt in lokale Zeit um.
-- **Feedback**: API-Aktionen immer mit visuellen Rückmeldungen (Toasts via `ToastService`, Ladeindikatoren) begleiten.
+Apply the mandatory project rules defined in `.agent/rules/`:
+- **Coding Standards** ([`coding_standards.md`](../../rules/coding_standards.md)):
+  - Layered architecture (Controller -> Service -> Repository).
+  - Java 25 & Spring Boot 4.x with Lombok.
+  - Strict UTC date/time handling (`JacksonConfig.UTC_FORMATTER`).
+  - Angular 19 standalone components with Signals and Tailwind CSS.
+  - Multi-language support via `LanguageService` (maintain both `de` and `en` keys).
+  - Structured error details via `ProblemDetail` and user-friendly toasts.
+- **Database Changes**:
+  - Follow the [`database-migrations`](../database-migrations/SKILL.md) skill for Flyway migrations.
 
 ---
 
-## 4. Tests & Quality Gates (Mandatory)
+## 4. Tests & Quality Gate
 
-Vor der Fertigstellung müssen **alle** Tests lokal erfolgreich ausgeführt werden:
+Before requesting user verification, all tests must pass locally:
 
 1. **Backend Tests**:
    ```bash
    JAVA_HOME=/opt/homebrew/opt/openjdk@25 mvn test
    ```
-   - Neue Unit- & Integrationstests für alle geänderten Services und Controller.
-   - Mindestens **> 80%** Testabdeckung (JaCoCo).
-   - Tests dürfen weder fehlschlagen noch auskommentiert/geskippt werden.
+   - Add/update unit and integration tests for all modified logic.
+   - Maintain test coverage **> 80%** (JaCoCo).
 
-2. **Frontend Tests**:
+2. **Frontend Tests & Build**:
    ```bash
    cd frontend
    npm test -- --watch=false
    npm run build
    cd ..
    ```
-   - Alle Karma/Jasmine Unit-Tests müssen bestehen.
-   - Keine TypeScript-Kompilierungsfehler (`tsc`).
+   - Ensure all Karma/Jasmine tests pass and zero TypeScript errors exist.
 
 ---
 
-## 5. Dokumentations-Sync (Live Docs)
+## 5. Live Documentation Sync
 
-Dokumentation **sofort** zusammen mit dem Code aktualisieren:
-
-1. **`README.md`**:
-   - Neue Features, geänderte Abläufe, Konfigurationen oder Endpunkte sofort eintragen.
-2. **`docs/arc42.md`**:
-   - Bei relevanten Architektur-, Schnittstellen- oder Datenmodell-Änderungen das entsprechende Szenario (Kapitel 6) oder Bausteine (Kapitel 5) erweitern.
+Update project documentation immediately alongside code changes (see [`documentation_standards.md`](../../rules/documentation_standards.md)):
+- **`README.md`**: Update if features, configuration, endpoints, or UI behavior changed.
+- **`docs/Release-Info.md`**: Add summary bullet points under `## Unreleased`.
+- **`docs/arc42.md`**: Update if architecture, domain models, or database schemas changed.
 
 ---
 
-## 6. Bereitstellung & Nutzertest
+## 6. Deployment & User Verification
 
-1. **Docker-Container aktualisieren**:
-   Geänderte Container bauen und neu starten:
+1. **Rebuild & Start Docker Containers**:
    ```bash
    docker compose up -d --build backend frontend
    ```
-2. **Nutzer zum Testen einladen**:
-   - Dem Nutzer kurz zusammenfassen, was implementiert wurde.
-   - Test-URL nennen (`https://localhost:5173`).
-   - Nutzer testen lassen und Feedback abwarten (**kein vorzeitiges Mergen ohne Bestätigung!**).
+2. **Invite User to Verify**:
+   - Summarize the implemented changes and test results.
+   - Provide the test URL (`https://localhost:5173`).
+   - Request verification and approval to merge.
+   - **CRITICAL**: Never merge or delete the feature branch without explicit user approval!
 
 ---
 
 ## 7. Commit, Merge & Cleanup
 
-Sobald der Nutzer das Go gibt:
+Once the user approves:
 
 1. **Conventional Commit**:
    ```bash
    git add .
-   git commit -m "feat: <kurze Beschreibung> (#<ISSUE_ID>)
-
-   - Detaillierter Aufzählungspunkt 1
-   - Detaillierter Aufzählungspunkt 2"
+   git commit -m "feat(scope): <short description> (#<ISSUE_ID>)"
    ```
 
-2. **In `develop` mergen**:
+2. **Merge into `develop` with `--no-ff`**:
    ```bash
    git checkout develop
    git pull origin develop
-   git merge feat/<ISSUE_ID>-<kurzbeschreibung> --no-ff -m "Merge branch 'feat/<ISSUE_ID>-<kurzbeschreibung>' into develop"
+   git merge feat/<ISSUE_ID>-<short-description> --no-ff -m "Merge branch 'feat/<ISSUE_ID>-<short-description>' into develop"
    ```
 
-3. **Remote aktualisieren**:
+3. **Push to Remote**:
    ```bash
    git push origin develop
    ```
 
-4. **Feature-Branch aufräumen**:
+4. **Delete Local Feature Branch**:
    ```bash
-   git branch -d feat/<ISSUE_ID>-<kurzbeschreibung>
+   git branch -d feat/<ISSUE_ID>-<short-description>
    ```
 
 ---
 
-## 8. Ticket schließen
+## 8. Close GitHub Issue
 
-Das GitHub-Ticket über das GitHub CLI schließen und eine prägnante Zusammenfassung der Lösung hinterlassen:
+Close the issue via GitHub CLI with a concise summary of the resolution and commit hash:
 
 ```bash
-gh issue close <ISSUE_ID> --comment "Erfolgreich umgesetzt und in develop gemergt: <Zusammenfassung der Lösung>."
+gh issue close <ISSUE_ID> --comment "Implemented and merged into develop: <summary>."
 ```

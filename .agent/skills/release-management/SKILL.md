@@ -14,11 +14,11 @@ This skill defines the exact workflow for releasing a new version of Vinyl Track
 Before bumping any versions, verify that the current branch is clean and all tests pass:
 
 ```bash
-# 1. Backend tests
-cd backend && mvn test && cd ..
+# 1. Backend tests (Java 25)
+JAVA_HOME=/opt/homebrew/opt/openjdk@25 mvn test
 
-# 2. Frontend production build
-cd frontend && npm run build && cd ..
+# 2. Frontend tests & production build
+cd frontend && npm test -- --watch=false && npm run build && cd ..
 
 # 3. Check git status
 git status
@@ -26,7 +26,7 @@ git status
 
 ## 2. Version Bump Checklist
 
-Ensure that the target version follows Semantic Versioning (`MAJOR.MINOR.PATCH`, e.g., `2.1.4`).
+Ensure that the target version follows Semantic Versioning (`MAJOR.MINOR.PATCH`, e.g., `0.6.0`).
 
 The following files **must** be updated synchronously:
 
@@ -43,14 +43,14 @@ The following files **must** be updated synchronously:
 | [`docs/DEPLOYMENT.md`](../../../docs/DEPLOYMENT.md) | Example version string update (if applicable) |
 | [`scripts/deploy_proxmox.sh`](../../../scripts/deploy_proxmox.sh) | Example version string in header comment |
 
-### Option A: Using the Automated Script
-Execute [`release.sh`](../../../scripts/release.sh):
+### Option A: Using the Automated Script (Recommended)
+Execute [`release.sh`](../../../scripts/release.sh), which automatically bumps versions across `package.json`, `pom.xml`, `README.md`, and Angular components:
 ```bash
 ./scripts/release.sh
 ```
 Follow the prompt to enter the new version.
 
-### Option B: Manual Backend Bump
+### Option B: Manual Bump
 ```bash
 cd backend
 mvn versions:set -DnewVersion=<NEW_VERSION> -DgenerateBackupPoms=false

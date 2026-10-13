@@ -100,18 +100,21 @@ public class CollectionQueryService {
         boolean hasYears = !parsedYears.isEmpty();
         Collection<String> yearsParam = hasYears ? parsedYears : List.of("__NONE__");
 
+        boolean hasMinPlays = (minPlays != null && minPlays > 0);
+        int minPlaysParam = hasMinPlays ? minPlays : 0;
+
         Page<?> pagedResult;
         if ("listens".equalsIgnoreCase(sort)) {
             if ("desc".equalsIgnoreCase(sortOrder)) {
                 pagedResult = collectionItemRepository.findFilteredCollectionOrderByPlayCountDesc(
-                        user, categoryNorm, hasSearch, searchLower, hasGenres, genresParam, hasYears, yearsParam, pageable);
+                        user, categoryNorm, hasSearch, searchLower, hasGenres, genresParam, hasYears, yearsParam, hasMinPlays, minPlaysParam, pageable);
             } else {
                 pagedResult = collectionItemRepository.findFilteredCollectionOrderByPlayCountAsc(
-                        user, categoryNorm, hasSearch, searchLower, hasGenres, genresParam, hasYears, yearsParam, pageable);
+                        user, categoryNorm, hasSearch, searchLower, hasGenres, genresParam, hasYears, yearsParam, hasMinPlays, minPlaysParam, pageable);
             }
         } else {
             pagedResult = collectionItemRepository.findFilteredCollection(
-                    user, categoryNorm, hasSearch, searchLower, hasGenres, genresParam, hasYears, yearsParam, pageable);
+                    user, categoryNorm, hasSearch, searchLower, hasGenres, genresParam, hasYears, yearsParam, hasMinPlays, minPlaysParam, pageable);
         }
 
         List<DiscogsDto.CollectionRelease> releases = pagedResult.getContent().stream()
@@ -129,13 +132,8 @@ public class CollectionQueryService {
                         playCount = listenEventRepository.countByRecordAndUser(ci.getRecord(), user);
                     }
 
-                    if (minPlays != null && minPlays > 0 && playCount < minPlays) {
-                        return null; // Will filter out later
-                    }
-
                     return mapToCollectionRelease(ci, playCount);
                 })
-                .filter(java.util.Objects::nonNull)
                 .toList();
 
         DiscogsDto.Pagination pagination = new DiscogsDto.Pagination();

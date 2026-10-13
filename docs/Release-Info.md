@@ -30,6 +30,9 @@
   - Ergänzung der Spalte „Last played at“ direkt nach „Plays“ mit formatiertem Timestamp des letzten Abspielvorgangs (`LocalizedDatePipe`).
 - **Fix: Automatisches Handling abgelaufener JWT-Sessions (`#57`)**:
   - Fängt `401 Unauthorized` und `403 Forbidden` im `authInterceptor` ab, leert Session und Token (`vinyl_auth_token`), zeigt einen erklärenden Toast-Hinweis und leitet zuverlässig auf `/login` weiter (unter Ausschluss öffentlicher Auth-Endpunkte).
+- **Dashboard: Entfernung redundanter „Gescannt:“-Badges (`#59`)**:
+  - Entfernung des unvollständigen Hover-Overlay-Badges („Gescannt:“) über Album-Covern in der Sektion „Kürzlich Gehört“ zugunsten einer ungestörten Cover-Darstellung und der bereits vorhandenen Datumsanzeige am unteren Kartenrand.
+  - Bereinigung der ungenutzten Übersetzungsschlüssel `dashboard.scannedLabel` in `LanguageService`.
 
 ---
 

@@ -34,12 +34,6 @@ import { LucideTrash2 } from '@lucide/angular';
               [style.animationDelay]="(idx % 6) * 75 + 'ms'"
               style="opacity: 0"
             >
-              <!-- Listen Status Badge (Top-Right of Image) -->
-              <div
-                class="absolute top-3 right-3 z-10 bg-slate-900/80 dark:bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-full backdrop-blur-md shadow-sm border border-white/10 font-bold opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                {{ 'dashboard.scannedLabel' | translate }}
-              </div>
 
               <!-- Cover Image -->
               <div

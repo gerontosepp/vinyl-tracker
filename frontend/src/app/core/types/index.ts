@@ -166,6 +166,7 @@ export interface CollectionRelease {
   rating: number;
   basic_information: DiscogsBasicInfo;
   listen_count?: number;
+  last_played_at?: string;
   media_condition?: string;
   sleeve_condition?: string;
 }

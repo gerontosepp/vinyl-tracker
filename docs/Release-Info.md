@@ -24,6 +24,12 @@
 - **Fix: Lokale Zeitzonen-Konvertierung für Hör-Events (`#64`)**:
   - Konsequente ISO-8601 UTC-Serialisierung (`yyyy-MM-dd'T'HH:mm:ss'Z'`) über Spring `JacksonConfig` und DTO `@JsonFormat`-Definitionen.
   - Automatisches UTC-Parsing in Angular `LocalizedDatePipe` zur verlässlichen Umrechnung in die lokale Browser-Zeitzone.
+- **Fix: Filterung von min_plays direkt in SQL-Queries (`#60`)**:
+  - Direkte Ausführung des `min_plays`-Filters in JPQL (`COUNT(le) >= :minPlays`) zur Behebung von Paginierungs- und Gesamtzahl-Fehlern in der Sammlung bei aktivem „Nur Gespielte“-Filter.
+- **Sammlungstabelle: Spalte „Zuletzt gespielt“ (Last played at) (`#70`)**:
+  - Ergänzung der Spalte „Last played at“ direkt nach „Plays“ mit formatiertem Timestamp des letzten Abspielvorgangs (`LocalizedDatePipe`).
+- **Fix: Automatisches Handling abgelaufener JWT-Sessions (`#57`)**:
+  - Fängt `401 Unauthorized` und `403 Forbidden` im `authInterceptor` ab, leert Session und Token (`vinyl_auth_token`), zeigt einen erklärenden Toast-Hinweis und leitet zuverlässig auf `/login` weiter (unter Ausschluss öffentlicher Auth-Endpunkte).
 
 ---
 

@@ -120,7 +120,8 @@ public interface CollectionItemRepository extends JpaRepository<CollectionItem, 
                 "AND (:category = 'all' OR (:category = 'cd' AND UPPER(ci.record.format) LIKE '%CD%') OR (:category = 'vinyl' AND (ci.record.format IS NULL OR UPPER(ci.record.format) NOT LIKE '%CD%'))) " +
                 "AND (:hasSearch = false OR LOWER(ci.record.artist) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(ci.record.title) LIKE LOWER(CONCAT('%', :search, '%'))) " +
                 "AND (:hasGenres = false OR EXISTS (SELECT 1 FROM ci.record.genres g WHERE LOWER(g) IN (:genres))) " +
-                "AND (:hasYears = false OR ci.record.year IN (:years))")
+                "AND (:hasYears = false OR ci.record.year IN (:years)) " +
+                "AND (:hasMinPlays = false OR (SELECT COUNT(le) FROM ListenEvent le WHERE le.record = ci.record AND le.user = ci.user) >= :minPlays)")
         Page<CollectionItem> findFilteredCollection(
                 @Param("user") AppUser user,
                 @Param("category") String category,
@@ -130,6 +131,8 @@ public interface CollectionItemRepository extends JpaRepository<CollectionItem, 
                 @Param("genres") java.util.Collection<String> genres,
                 @Param("hasYears") boolean hasYears,
                 @Param("years") java.util.Collection<String> years,
+                @Param("hasMinPlays") boolean hasMinPlays,
+                @Param("minPlays") int minPlays,
                 Pageable pageable);
 
         @Query(value = "SELECT ci, (SELECT COUNT(le) FROM ListenEvent le WHERE le.record = ci.record AND le.user = ci.user) as playCount " +
@@ -138,6 +141,7 @@ public interface CollectionItemRepository extends JpaRepository<CollectionItem, 
                 "AND (:hasSearch = false OR LOWER(ci.record.artist) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(ci.record.title) LIKE LOWER(CONCAT('%', :search, '%'))) " +
                 "AND (:hasGenres = false OR EXISTS (SELECT 1 FROM ci.record.genres g WHERE LOWER(g) IN (:genres))) " +
                 "AND (:hasYears = false OR ci.record.year IN (:years)) " +
+                "AND (:hasMinPlays = false OR (SELECT COUNT(le) FROM ListenEvent le WHERE le.record = ci.record AND le.user = ci.user) >= :minPlays) " +
                 "ORDER BY playCount DESC, ci.record.artist ASC, ci.record.year ASC")
         Page<Object[]> findFilteredCollectionOrderByPlayCountDesc(
                 @Param("user") AppUser user,
@@ -148,6 +152,8 @@ public interface CollectionItemRepository extends JpaRepository<CollectionItem, 
                 @Param("genres") java.util.Collection<String> genres,
                 @Param("hasYears") boolean hasYears,
                 @Param("years") java.util.Collection<String> years,
+                @Param("hasMinPlays") boolean hasMinPlays,
+                @Param("minPlays") int minPlays,
                 Pageable pageable);
 
         @Query(value = "SELECT ci, (SELECT COUNT(le) FROM ListenEvent le WHERE le.record = ci.record AND le.user = ci.user) as playCount " +
@@ -156,6 +162,7 @@ public interface CollectionItemRepository extends JpaRepository<CollectionItem, 
                 "AND (:hasSearch = false OR LOWER(ci.record.artist) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(ci.record.title) LIKE LOWER(CONCAT('%', :search, '%'))) " +
                 "AND (:hasGenres = false OR EXISTS (SELECT 1 FROM ci.record.genres g WHERE LOWER(g) IN (:genres))) " +
                 "AND (:hasYears = false OR ci.record.year IN (:years)) " +
+                "AND (:hasMinPlays = false OR (SELECT COUNT(le) FROM ListenEvent le WHERE le.record = ci.record AND le.user = ci.user) >= :minPlays) " +
                 "ORDER BY playCount ASC, ci.record.artist ASC, ci.record.year ASC")
         Page<Object[]> findFilteredCollectionOrderByPlayCountAsc(
                 @Param("user") AppUser user,
@@ -166,5 +173,7 @@ public interface CollectionItemRepository extends JpaRepository<CollectionItem, 
                 @Param("genres") java.util.Collection<String> genres,
                 @Param("hasYears") boolean hasYears,
                 @Param("years") java.util.Collection<String> years,
+                @Param("hasMinPlays") boolean hasMinPlays,
+                @Param("minPlays") int minPlays,
                 Pageable pageable);
 }

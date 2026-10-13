@@ -124,7 +124,9 @@ export class ApiService {
     search?: string,
     category?: 'all' | 'vinyl' | 'cd' | string,
     genres?: string[],
-    years?: string
+    years?: string,
+    notPlayedSince?: string,
+    unplayedOnly?: boolean
   ): Observable<CollectionResponse> {
     let params = new HttpParams()
       .set('page', page.toString())
@@ -147,6 +149,12 @@ export class ApiService {
     }
     if (years && years.trim()) {
       params = params.set('years', years.trim());
+    }
+    if (notPlayedSince && notPlayedSince.trim()) {
+      params = params.set('not_played_since', notPlayedSince.trim());
+    }
+    if (unplayedOnly) {
+      params = params.set('unplayed_only', 'true');
     }
     return this.http.get<CollectionResponse>(`${this.baseUrl}/collection`, { params });
   }

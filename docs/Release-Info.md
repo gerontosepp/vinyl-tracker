@@ -9,6 +9,11 @@
 
 ## In Entwicklung / Next (v0.6.0)
 
+- **Sammlungsfilter: „Nicht gespielt seit <Datum>“ und „Noch nie gespielt“ (`#61`)**:
+  - Neuer Datumsfilter in der Sammlungsansicht (`not_played_since = YYYY-MM-DD`), der Alben anzeigt, die seit dem gewählten Stichtag nicht mehr oder noch nie gehört wurden.
+  - Checkbox-Schnellfilter „Noch nie gespielt“ (`unplayed_only = true`), der ausschließlich Alben mit 0 Plays anzeigt.
+  - Serverseitige Filterung direkt in JPQL (`CollectionItemRepository`) inklusive konsistenter Paginierung und Zählung.
+  - Neues Dropdown-Menü in der `CollectionToolbarComponent` inklusive Datums-Picker, Löschen-Button und aktiver Filter-Badges mit gegenseitigem Ausschluss zu „Nur Gespielte“.
 - **Discogs Zustands-Synchronisation (Media & Sleeve Condition) (`#62`)**:
   - Automatischer Import der Goldmine-Grading-Zustände (*Media Condition* und *Sleeve Condition*) aus den benutzerdefinierten Feldern der Discogs-Sammlung (`GET /users/{username}/collection/fields`).
   - Persistierung der Zustände in `collection_item` via Flyway-Migration `V8__add_conditions_to_collection_item.sql`.

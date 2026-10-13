@@ -47,6 +47,8 @@ export class CollectionComponent implements OnInit, OnDestroy {
   readonly debouncedSearch = signal<string>('');
   readonly loadStatus = signal<string>('');
   readonly showPlayedOnly = signal<boolean>(false);
+  readonly notPlayedSince = signal<string>('');
+  readonly unplayedOnly = signal<boolean>(false);
   readonly sort = signal<string>('artist');
   readonly sortOrder = signal<string>('asc');
   readonly category = signal<'all' | 'vinyl' | 'cd'>('all');
@@ -115,7 +117,9 @@ export class CollectionComponent implements OnInit, OnDestroy {
         this.debouncedSearch(),
         this.category(),
         this.selectedGenres(),
-        this.debouncedYears()
+        this.debouncedYears(),
+        this.notPlayedSince() || undefined,
+        this.unplayedOnly()
       )
       .subscribe({
         next: (data) => {
@@ -165,7 +169,40 @@ export class CollectionComponent implements OnInit, OnDestroy {
   }
 
   toggleShowPlayedOnly(): void {
-    this.showPlayedOnly.update((p) => !p);
+    const nextVal = !this.showPlayedOnly();
+    this.showPlayedOnly.set(nextVal);
+    if (nextVal) {
+      this.unplayedOnly.set(false);
+      this.notPlayedSince.set('');
+    }
+    this.page.set(1);
+    this.loadData();
+  }
+
+  onNotPlayedSinceChange(date: string): void {
+    this.notPlayedSince.set(date);
+    if (date) {
+      this.unplayedOnly.set(false);
+      this.showPlayedOnly.set(false);
+    }
+    this.page.set(1);
+    this.loadData();
+  }
+
+  toggleUnplayedOnly(): void {
+    const nextVal = !this.unplayedOnly();
+    this.unplayedOnly.set(nextVal);
+    if (nextVal) {
+      this.notPlayedSince.set('');
+      this.showPlayedOnly.set(false);
+    }
+    this.page.set(1);
+    this.loadData();
+  }
+
+  clearNotPlayedFilters(): void {
+    this.notPlayedSince.set('');
+    this.unplayedOnly.set(false);
     this.page.set(1);
     this.loadData();
   }
@@ -214,6 +251,8 @@ export class CollectionComponent implements OnInit, OnDestroy {
     this.debouncedSearch.set('');
     this.category.set('all');
     this.showPlayedOnly.set(false);
+    this.notPlayedSince.set('');
+    this.unplayedOnly.set(false);
     this.page.set(1);
     this.loadData();
   }

@@ -293,6 +293,106 @@
             >
           }
         </button>
+
+        <!-- Nicht Gespielt Popover / Filter -->
+        <div class="relative">
+          <button
+            type="button"
+            (click)="toggleNotPlayedPopover()"
+            [class]="
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all duration-200 cursor-pointer ' +
+              (unplayedOnly() || (notPlayedSince() && notPlayedSince().trim().length > 0)
+                ? 'bg-indigo-50 dark:bg-indigo-900/40 border-indigo-200 dark:border-indigo-800/50 text-indigo-800 dark:text-indigo-300'
+                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm')
+            "
+          >
+            <svg lucideCalendar [size]="14"></svg>
+            <span class="font-semibold whitespace-nowrap">{{ 'collection.notPlayed' | translate }}</span>
+            @if (unplayedOnly()) {
+              <span
+                class="text-[10px] font-bold bg-indigo-200 dark:bg-indigo-800 text-indigo-800 dark:text-indigo-200 px-1.5 py-0.5 rounded-full"
+                >0 Plays</span
+              >
+            } @else if (notPlayedSince() && notPlayedSince().trim().length > 0) {
+              <span
+                class="text-[10px] font-bold bg-indigo-200 dark:bg-indigo-800 text-indigo-800 dark:text-indigo-200 px-1.5 py-0.5 rounded-full"
+                >{{ notPlayedSince() }}</span
+              >
+            }
+            <svg
+              lucideChevronDown
+              [size]="14"
+              [class]="'transition-transform duration-200 ' + (isNotPlayedPopoverOpen() ? 'rotate-180' : '')"
+            ></svg>
+          </button>
+
+          <!-- Dropdown Popover -->
+          @if (isNotPlayedPopoverOpen()) {
+            <div class="fixed inset-0 z-30" (click)="closeNotPlayedPopover()"></div>
+            <div
+              class="absolute left-0 top-full mt-2 w-72 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 z-40 p-3 flex flex-col gap-3 animate-in fade-in slide-in-from-top-2 duration-150"
+            >
+              <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-700">
+                <span class="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+                  {{ 'collection.notPlayed' | translate }}
+                </span>
+                @if (unplayedOnly() || (notPlayedSince() && notPlayedSince().trim().length > 0)) {
+                  <button
+                    type="button"
+                    (click)="onClearNotPlayed()"
+                    class="text-xs text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium cursor-pointer"
+                  >
+                    {{ 'collection.clearNotPlayed' | translate }}
+                  </button>
+                }
+              </div>
+
+              <!-- Option 1: Noch nie gespielt toggle -->
+              <label
+                (click)="onToggleUnplayedOnly()"
+                class="flex items-center justify-between px-2.5 py-2 rounded-lg text-xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-colors select-none"
+              >
+                <div class="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    [checked]="unplayedOnly()"
+                    (click)="$event.stopPropagation()"
+                    (change)="onToggleUnplayedOnly()"
+                    class="rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 dark:border-slate-600 dark:bg-slate-900 cursor-pointer"
+                  />
+                  <span [class]="unplayedOnly() ? 'font-semibold text-indigo-600 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-300'">
+                    {{ 'collection.unplayedOnly' | translate }}
+                  </span>
+                </div>
+              </label>
+
+              <!-- Option 2: Nicht gespielt seit <Datum> -->
+              <div class="space-y-1.5 px-2.5">
+                <label class="block text-xs font-medium text-slate-700 dark:text-slate-300">
+                  {{ 'collection.notPlayedSince' | translate }}
+                </label>
+                <div class="flex items-center gap-2">
+                  <input
+                    type="date"
+                    [ngModel]="notPlayedSince()"
+                    (ngModelChange)="onNotPlayedSinceSelect($event)"
+                    class="w-full px-2.5 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+                  />
+                  @if (notPlayedSince() && notPlayedSince().trim().length > 0) {
+                    <button
+                      type="button"
+                      (click)="onNotPlayedSinceSelect('')"
+                      class="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                      title="Datum zurücksetzen"
+                    >
+                      <svg lucideX [size]="14"></svg>
+                    </button>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+        </div>
       </div>
     </div>
 
@@ -387,7 +487,7 @@
   </div>
 
   <!-- Active Filter Badges Bar -->
-  @if (selectedGenres().length > 0 || (years() && years().trim().length > 0)) {
+  @if (selectedGenres().length > 0 || (years() && years().trim().length > 0) || unplayedOnly() || (notPlayedSince() && notPlayedSince().trim().length > 0)) {
     <div class="flex flex-wrap items-center gap-2 pt-2.5 mt-2 border-t border-slate-200/50 dark:border-slate-700/60 text-xs">
       <span class="text-slate-400 dark:text-slate-500 text-[11px] font-semibold uppercase tracking-wider mr-1">
         Aktive Filter:
@@ -417,6 +517,36 @@
             type="button"
             (click)="clearYears()"
             class="text-amber-500 hover:text-amber-800 dark:hover:text-amber-100 p-0.5 rounded-full cursor-pointer transition-colors"
+          >
+            <svg lucideX [size]="12"></svg>
+          </button>
+        </span>
+      }
+      @if (unplayedOnly()) {
+        <span
+          class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60 text-xs font-medium shadow-xs"
+        >
+          <svg lucideDisc [size]="12" class="text-indigo-500"></svg>
+          <span>{{ 'collection.unplayedOnly' | translate }}</span>
+          <button
+            type="button"
+            (click)="onToggleUnplayedOnly()"
+            class="text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-100 p-0.5 rounded-full cursor-pointer transition-colors"
+          >
+            <svg lucideX [size]="12"></svg>
+          </button>
+        </span>
+      }
+      @if (notPlayedSince() && notPlayedSince().trim().length > 0) {
+        <span
+          class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-violet-50 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800/60 text-xs font-medium shadow-xs"
+        >
+          <svg lucideCalendar [size]="12" class="text-violet-500"></svg>
+          <span>{{ 'collection.notPlayedSincePrefix' | translate }}{{ notPlayedSince() }}</span>
+          <button
+            type="button"
+            (click)="onNotPlayedSinceSelect('')"
+            class="text-violet-400 hover:text-violet-700 dark:hover:text-violet-100 p-0.5 rounded-full cursor-pointer transition-colors"
           >
             <svg lucideX [size]="12"></svg>
           </button>

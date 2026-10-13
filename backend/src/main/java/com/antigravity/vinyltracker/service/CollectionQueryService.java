@@ -40,9 +40,16 @@ public class CollectionQueryService {
     public DiscogsDto.CollectionResponse getCollection(AppUser user, int page, int perPage, String sort,
                                                        String sortOrder, Integer minPlays, String search,
                                                        String category, List<String> genres, String years) {
+        return getCollection(user, page, perPage, sort, sortOrder, minPlays, search, category, genres, years, null, false);
+    }
 
-        log.info("Fetching collection from local DB for user: {}, category: {}, genres: {}, years: {}",
-                user.getUsername(), category, genres, years);
+    public DiscogsDto.CollectionResponse getCollection(AppUser user, int page, int perPage, String sort,
+                                                       String sortOrder, Integer minPlays, String search,
+                                                       String category, List<String> genres, String years,
+                                                       java.time.LocalDateTime notPlayedSince, boolean unplayedOnly) {
+
+        log.info("Fetching collection from local DB for user: {}, category: {}, genres: {}, years: {}, notPlayedSince: {}, unplayedOnly: {}",
+                user.getUsername(), category, genres, years, notPlayedSince, unplayedOnly);
 
         String categoryNorm = (category == null || category.trim().isEmpty())
                 ? "all"
@@ -103,18 +110,21 @@ public class CollectionQueryService {
         boolean hasMinPlays = (minPlays != null && minPlays > 0);
         int minPlaysParam = hasMinPlays ? minPlays : 0;
 
+        boolean hasNotPlayedSince = notPlayedSince != null;
+        java.time.LocalDateTime notPlayedSinceParam = hasNotPlayedSince ? notPlayedSince : java.time.LocalDateTime.of(1970, 1, 1, 0, 0);
+
         Page<?> pagedResult;
         if ("listens".equalsIgnoreCase(sort)) {
             if ("desc".equalsIgnoreCase(sortOrder)) {
                 pagedResult = collectionItemRepository.findFilteredCollectionOrderByPlayCountDesc(
-                        user, categoryNorm, hasSearch, searchLower, hasGenres, genresParam, hasYears, yearsParam, hasMinPlays, minPlaysParam, pageable);
+                        user, categoryNorm, hasSearch, searchLower, hasGenres, genresParam, hasYears, yearsParam, hasMinPlays, minPlaysParam, unplayedOnly, hasNotPlayedSince, notPlayedSinceParam, pageable);
             } else {
                 pagedResult = collectionItemRepository.findFilteredCollectionOrderByPlayCountAsc(
-                        user, categoryNorm, hasSearch, searchLower, hasGenres, genresParam, hasYears, yearsParam, hasMinPlays, minPlaysParam, pageable);
+                        user, categoryNorm, hasSearch, searchLower, hasGenres, genresParam, hasYears, yearsParam, hasMinPlays, minPlaysParam, unplayedOnly, hasNotPlayedSince, notPlayedSinceParam, pageable);
             }
         } else {
             pagedResult = collectionItemRepository.findFilteredCollection(
-                    user, categoryNorm, hasSearch, searchLower, hasGenres, genresParam, hasYears, yearsParam, hasMinPlays, minPlaysParam, pageable);
+                    user, categoryNorm, hasSearch, searchLower, hasGenres, genresParam, hasYears, yearsParam, hasMinPlays, minPlaysParam, unplayedOnly, hasNotPlayedSince, notPlayedSinceParam, pageable);
         }
 
         List<DiscogsDto.CollectionRelease> releases = pagedResult.getContent().stream()

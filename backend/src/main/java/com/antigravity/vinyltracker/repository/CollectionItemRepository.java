@@ -121,7 +121,9 @@ public interface CollectionItemRepository extends JpaRepository<CollectionItem, 
                 "AND (:hasSearch = false OR LOWER(ci.record.artist) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(ci.record.title) LIKE LOWER(CONCAT('%', :search, '%'))) " +
                 "AND (:hasGenres = false OR EXISTS (SELECT 1 FROM ci.record.genres g WHERE LOWER(g) IN (:genres))) " +
                 "AND (:hasYears = false OR ci.record.year IN (:years)) " +
-                "AND (:hasMinPlays = false OR (SELECT COUNT(le) FROM ListenEvent le WHERE le.record = ci.record AND le.user = ci.user) >= :minPlays)")
+                "AND (:hasMinPlays = false OR (SELECT COUNT(le) FROM ListenEvent le WHERE le.record = ci.record AND le.user = ci.user) >= :minPlays) " +
+                "AND (:unplayedOnly = false OR NOT EXISTS (SELECT le FROM ListenEvent le WHERE le.record = ci.record AND le.user = ci.user)) " +
+                "AND (:hasNotPlayedSince = false OR NOT EXISTS (SELECT le FROM ListenEvent le WHERE le.record = ci.record AND le.user = ci.user AND le.timestamp >= :notPlayedSince))")
         Page<CollectionItem> findFilteredCollection(
                 @Param("user") AppUser user,
                 @Param("category") String category,
@@ -133,6 +135,9 @@ public interface CollectionItemRepository extends JpaRepository<CollectionItem, 
                 @Param("years") java.util.Collection<String> years,
                 @Param("hasMinPlays") boolean hasMinPlays,
                 @Param("minPlays") int minPlays,
+                @Param("unplayedOnly") boolean unplayedOnly,
+                @Param("hasNotPlayedSince") boolean hasNotPlayedSince,
+                @Param("notPlayedSince") java.time.LocalDateTime notPlayedSince,
                 Pageable pageable);
 
         @Query(value = "SELECT ci, (SELECT COUNT(le) FROM ListenEvent le WHERE le.record = ci.record AND le.user = ci.user) as playCount " +
@@ -142,6 +147,8 @@ public interface CollectionItemRepository extends JpaRepository<CollectionItem, 
                 "AND (:hasGenres = false OR EXISTS (SELECT 1 FROM ci.record.genres g WHERE LOWER(g) IN (:genres))) " +
                 "AND (:hasYears = false OR ci.record.year IN (:years)) " +
                 "AND (:hasMinPlays = false OR (SELECT COUNT(le) FROM ListenEvent le WHERE le.record = ci.record AND le.user = ci.user) >= :minPlays) " +
+                "AND (:unplayedOnly = false OR NOT EXISTS (SELECT le FROM ListenEvent le WHERE le.record = ci.record AND le.user = ci.user)) " +
+                "AND (:hasNotPlayedSince = false OR NOT EXISTS (SELECT le FROM ListenEvent le WHERE le.record = ci.record AND le.user = ci.user AND le.timestamp >= :notPlayedSince)) " +
                 "ORDER BY playCount DESC, ci.record.artist ASC, ci.record.year ASC")
         Page<Object[]> findFilteredCollectionOrderByPlayCountDesc(
                 @Param("user") AppUser user,
@@ -154,6 +161,9 @@ public interface CollectionItemRepository extends JpaRepository<CollectionItem, 
                 @Param("years") java.util.Collection<String> years,
                 @Param("hasMinPlays") boolean hasMinPlays,
                 @Param("minPlays") int minPlays,
+                @Param("unplayedOnly") boolean unplayedOnly,
+                @Param("hasNotPlayedSince") boolean hasNotPlayedSince,
+                @Param("notPlayedSince") java.time.LocalDateTime notPlayedSince,
                 Pageable pageable);
 
         @Query(value = "SELECT ci, (SELECT COUNT(le) FROM ListenEvent le WHERE le.record = ci.record AND le.user = ci.user) as playCount " +
@@ -163,6 +173,8 @@ public interface CollectionItemRepository extends JpaRepository<CollectionItem, 
                 "AND (:hasGenres = false OR EXISTS (SELECT 1 FROM ci.record.genres g WHERE LOWER(g) IN (:genres))) " +
                 "AND (:hasYears = false OR ci.record.year IN (:years)) " +
                 "AND (:hasMinPlays = false OR (SELECT COUNT(le) FROM ListenEvent le WHERE le.record = ci.record AND le.user = ci.user) >= :minPlays) " +
+                "AND (:unplayedOnly = false OR NOT EXISTS (SELECT le FROM ListenEvent le WHERE le.record = ci.record AND le.user = ci.user)) " +
+                "AND (:hasNotPlayedSince = false OR NOT EXISTS (SELECT le FROM ListenEvent le WHERE le.record = ci.record AND le.user = ci.user AND le.timestamp >= :notPlayedSince)) " +
                 "ORDER BY playCount ASC, ci.record.artist ASC, ci.record.year ASC")
         Page<Object[]> findFilteredCollectionOrderByPlayCountAsc(
                 @Param("user") AppUser user,
@@ -175,5 +187,8 @@ public interface CollectionItemRepository extends JpaRepository<CollectionItem, 
                 @Param("years") java.util.Collection<String> years,
                 @Param("hasMinPlays") boolean hasMinPlays,
                 @Param("minPlays") int minPlays,
+                @Param("unplayedOnly") boolean unplayedOnly,
+                @Param("hasNotPlayedSince") boolean hasNotPlayedSince,
+                @Param("notPlayedSince") java.time.LocalDateTime notPlayedSince,
                 Pageable pageable);
 }

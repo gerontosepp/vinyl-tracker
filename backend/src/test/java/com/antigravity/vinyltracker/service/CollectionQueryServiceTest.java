@@ -63,6 +63,9 @@ class CollectionQueryServiceTest {
                         Mockito.any(),
                         Mockito.eq(false),
                         Mockito.eq(0),
+                        Mockito.eq(false),
+                        Mockito.eq(false),
+                        Mockito.any(java.time.LocalDateTime.class),
                         Mockito.any(Pageable.class)))
                 .thenReturn(mockPage);
 
@@ -116,6 +119,9 @@ class CollectionQueryServiceTest {
                         Mockito.any(),
                         Mockito.eq(false),
                         Mockito.eq(0),
+                        Mockito.eq(false),
+                        Mockito.eq(false),
+                        Mockito.any(java.time.LocalDateTime.class),
                         Mockito.any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of()));
 
@@ -153,6 +159,9 @@ class CollectionQueryServiceTest {
                         Mockito.any(),
                         Mockito.eq(false),
                         Mockito.eq(0),
+                        Mockito.eq(false),
+                        Mockito.eq(false),
+                        Mockito.any(java.time.LocalDateTime.class),
                         Mockito.any(Pageable.class)))
                 .thenReturn(mockPage);
 
@@ -190,6 +199,9 @@ class CollectionQueryServiceTest {
                         Mockito.any(),
                         Mockito.eq(false),
                         Mockito.eq(0),
+                        Mockito.eq(false),
+                        Mockito.eq(false),
+                        Mockito.any(java.time.LocalDateTime.class),
                         Mockito.any(Pageable.class)))
                 .thenReturn(mockPage);
 
@@ -269,7 +281,8 @@ class CollectionQueryServiceTest {
         Mockito.when(collectionItemRepository.findFilteredCollection(
                         Mockito.eq(user), Mockito.eq("all"), Mockito.eq(false), Mockito.eq(""),
                         Mockito.eq(false), Mockito.any(), Mockito.eq(false), Mockito.any(),
-                        Mockito.eq(false), Mockito.eq(0), captor.capture()))
+                        Mockito.eq(false), Mockito.eq(0),
+                        Mockito.eq(false), Mockito.eq(false), Mockito.any(java.time.LocalDateTime.class), captor.capture()))
                 .thenReturn(new PageImpl<>(List.of()));
 
         collectionQueryService.getCollection(user, 1, 20, "year", "asc", null, null);
@@ -291,7 +304,8 @@ class CollectionQueryServiceTest {
         Mockito.when(collectionItemRepository.findFilteredCollection(
                         Mockito.eq(user), Mockito.eq("all"), Mockito.eq(false), Mockito.eq(""),
                         Mockito.eq(false), Mockito.any(), Mockito.eq(false), Mockito.any(),
-                        Mockito.eq(false), Mockito.eq(0), captor.capture()))
+                        Mockito.eq(false), Mockito.eq(0),
+                        Mockito.eq(false), Mockito.eq(false), Mockito.any(java.time.LocalDateTime.class), captor.capture()))
                 .thenReturn(new PageImpl<>(List.of()));
 
         collectionQueryService.getCollection(user, 1, 20, "artist", "desc", null, null);
@@ -313,7 +327,8 @@ class CollectionQueryServiceTest {
         Mockito.when(collectionItemRepository.findFilteredCollection(
                         Mockito.eq(user), Mockito.eq("all"), Mockito.eq(false), Mockito.eq(""),
                         Mockito.eq(false), Mockito.any(), Mockito.eq(false), Mockito.any(),
-                        Mockito.eq(false), Mockito.eq(0), captor.capture()))
+                        Mockito.eq(false), Mockito.eq(0),
+                        Mockito.eq(false), Mockito.eq(false), Mockito.any(java.time.LocalDateTime.class), captor.capture()))
                 .thenReturn(new PageImpl<>(List.of()));
 
         collectionQueryService.getCollection(user, 1, 20, "format", "asc", null, null);
@@ -336,7 +351,8 @@ class CollectionQueryServiceTest {
         Mockito.when(collectionItemRepository.findFilteredCollection(
                         Mockito.eq(user), Mockito.eq("cd"), Mockito.eq(false), Mockito.eq(""),
                         Mockito.eq(false), Mockito.any(), Mockito.eq(false), Mockito.any(),
-                        Mockito.eq(false), Mockito.eq(0), Mockito.any(Pageable.class)))
+                        Mockito.eq(false), Mockito.eq(0),
+                        Mockito.eq(false), Mockito.eq(false), Mockito.any(java.time.LocalDateTime.class), Mockito.any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of()));
 
         DiscogsDto.CollectionResponse response = collectionQueryService.getCollection(user, 1, 20, "artist", "asc", null, null, "cd");
@@ -348,7 +364,8 @@ class CollectionQueryServiceTest {
         Mockito.when(collectionItemRepository.findFilteredCollection(
                         Mockito.eq(user), Mockito.eq("vinyl"), Mockito.eq(false), Mockito.eq(""),
                         Mockito.eq(false), Mockito.any(), Mockito.eq(false), Mockito.any(),
-                        Mockito.eq(false), Mockito.eq(0), Mockito.any(Pageable.class)))
+                        Mockito.eq(false), Mockito.eq(0),
+                        Mockito.eq(false), Mockito.eq(false), Mockito.any(java.time.LocalDateTime.class), Mockito.any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of()));
 
         DiscogsDto.CollectionResponse response = collectionQueryService.getCollection(user, 1, 20, "artist", "asc", null, null, "vinyl");
@@ -360,7 +377,8 @@ class CollectionQueryServiceTest {
         Mockito.when(collectionItemRepository.findFilteredCollection(
                         Mockito.eq(user), Mockito.eq("cd"), Mockito.eq(true), Mockito.eq("pink"),
                         Mockito.eq(false), Mockito.any(), Mockito.eq(false), Mockito.any(),
-                        Mockito.eq(false), Mockito.eq(0), Mockito.any(Pageable.class)))
+                        Mockito.eq(false), Mockito.eq(0),
+                        Mockito.eq(false), Mockito.eq(false), Mockito.any(java.time.LocalDateTime.class), Mockito.any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of()));
 
         DiscogsDto.CollectionResponse response = collectionQueryService.getCollection(user, 1, 20, "artist", "asc", null, "Pink", "cd");
@@ -372,7 +390,8 @@ class CollectionQueryServiceTest {
         Mockito.when(collectionItemRepository.findFilteredCollectionOrderByPlayCountAsc(
                         Mockito.eq(user), Mockito.eq("vinyl"), Mockito.eq(false), Mockito.eq(""),
                         Mockito.eq(false), Mockito.any(), Mockito.eq(false), Mockito.any(),
-                        Mockito.eq(false), Mockito.eq(0), Mockito.any(Pageable.class)))
+                        Mockito.eq(false), Mockito.eq(0),
+                        Mockito.eq(false), Mockito.eq(false), Mockito.any(java.time.LocalDateTime.class), Mockito.any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of()));
 
         DiscogsDto.CollectionResponse response = collectionQueryService.getCollection(user, 1, 20, "listens", "asc", null, null, "vinyl");
@@ -384,7 +403,8 @@ class CollectionQueryServiceTest {
         Mockito.when(collectionItemRepository.findFilteredCollectionOrderByPlayCountDesc(
                         Mockito.eq(user), Mockito.eq("cd"), Mockito.eq(true), Mockito.eq("pink"),
                         Mockito.eq(false), Mockito.any(), Mockito.eq(false), Mockito.any(),
-                        Mockito.eq(false), Mockito.eq(0), Mockito.any(Pageable.class)))
+                        Mockito.eq(false), Mockito.eq(0),
+                        Mockito.eq(false), Mockito.eq(false), Mockito.any(java.time.LocalDateTime.class), Mockito.any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of()));
 
         DiscogsDto.CollectionResponse response = collectionQueryService.getCollection(user, 1, 20, "listens", "desc", null, "Pink", "cd");
@@ -409,6 +429,9 @@ class CollectionQueryServiceTest {
                         yearsCaptor.capture(),
                         Mockito.eq(false),
                         Mockito.eq(0),
+                        Mockito.eq(false),
+                        Mockito.eq(false),
+                        Mockito.any(java.time.LocalDateTime.class),
                         Mockito.any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of()));
 
@@ -437,7 +460,8 @@ class CollectionQueryServiceTest {
         Mockito.when(collectionItemRepository.findFilteredCollection(
                         Mockito.eq(user), Mockito.eq("all"), Mockito.eq(false), Mockito.eq(""),
                         Mockito.eq(false), Mockito.any(), Mockito.eq(false), Mockito.any(),
-                        Mockito.eq(false), Mockito.eq(0), Mockito.any(Pageable.class)))
+                        Mockito.eq(false), Mockito.eq(0),
+                        Mockito.eq(false), Mockito.eq(false), Mockito.any(java.time.LocalDateTime.class), Mockito.any(Pageable.class)))
                 .thenReturn(mockPage);
 
         Mockito.when(listenEventRepository.countByRecordAndUser(mockRecord, user)).thenReturn(2L);
@@ -467,6 +491,9 @@ class CollectionQueryServiceTest {
                         Mockito.any(),
                         Mockito.eq(true),
                         Mockito.eq(1),
+                        Mockito.eq(false),
+                        Mockito.eq(false),
+                        Mockito.any(java.time.LocalDateTime.class),
                         Mockito.any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of()));
 
@@ -484,6 +511,90 @@ class CollectionQueryServiceTest {
                 Mockito.any(),
                 Mockito.eq(true),
                 Mockito.eq(1),
+                Mockito.eq(false),
+                Mockito.eq(false),
+                Mockito.any(java.time.LocalDateTime.class),
+                Mockito.any(Pageable.class));
+    }
+
+    @Test
+    void getCollection_WithNotPlayedSince_ShouldPassFilterToRepository() {
+        java.time.LocalDateTime since = java.time.LocalDateTime.of(2026, 5, 1, 0, 0);
+        Mockito.when(collectionItemRepository.findFilteredCollection(
+                        Mockito.eq(user),
+                        Mockito.eq("all"),
+                        Mockito.eq(false),
+                        Mockito.eq(""),
+                        Mockito.eq(false),
+                        Mockito.any(),
+                        Mockito.eq(false),
+                        Mockito.any(),
+                        Mockito.eq(false),
+                        Mockito.eq(0),
+                        Mockito.eq(false),
+                        Mockito.eq(true),
+                        Mockito.eq(since),
+                        Mockito.any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        DiscogsDto.CollectionResponse response = collectionQueryService.getCollection(
+                user, 1, 20, "artist", "asc", null, null, "all", null, null, since, false);
+        assertNotNull(response);
+
+        Mockito.verify(collectionItemRepository).findFilteredCollection(
+                Mockito.eq(user),
+                Mockito.eq("all"),
+                Mockito.eq(false),
+                Mockito.eq(""),
+                Mockito.eq(false),
+                Mockito.any(),
+                Mockito.eq(false),
+                Mockito.any(),
+                Mockito.eq(false),
+                Mockito.eq(0),
+                Mockito.eq(false),
+                Mockito.eq(true),
+                Mockito.eq(since),
+                Mockito.any(Pageable.class));
+    }
+
+    @Test
+    void getCollection_WithUnplayedOnly_ShouldPassFilterToRepository() {
+        Mockito.when(collectionItemRepository.findFilteredCollection(
+                        Mockito.eq(user),
+                        Mockito.eq("all"),
+                        Mockito.eq(false),
+                        Mockito.eq(""),
+                        Mockito.eq(false),
+                        Mockito.any(),
+                        Mockito.eq(false),
+                        Mockito.any(),
+                        Mockito.eq(false),
+                        Mockito.eq(0),
+                        Mockito.eq(true),
+                        Mockito.eq(false),
+                        Mockito.any(java.time.LocalDateTime.class),
+                        Mockito.any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        DiscogsDto.CollectionResponse response = collectionQueryService.getCollection(
+                user, 1, 20, "artist", "asc", null, null, "all", null, null, null, true);
+        assertNotNull(response);
+
+        Mockito.verify(collectionItemRepository).findFilteredCollection(
+                Mockito.eq(user),
+                Mockito.eq("all"),
+                Mockito.eq(false),
+                Mockito.eq(""),
+                Mockito.eq(false),
+                Mockito.any(),
+                Mockito.eq(false),
+                Mockito.any(),
+                Mockito.eq(false),
+                Mockito.eq(0),
+                Mockito.eq(true),
+                Mockito.eq(false),
+                Mockito.any(java.time.LocalDateTime.class),
                 Mockito.any(Pageable.class));
     }
 }

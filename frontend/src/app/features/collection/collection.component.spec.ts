@@ -303,4 +303,52 @@ describe('CollectionComponent', () => {
       expect(component.selectedItems().size).toBe(0);
     });
   });
+
+  describe('onConditionUpdated', () => {
+    it('should update recordDetail and releases array with new conditions and median price', () => {
+      const initialRelease = {
+        id: 100,
+        instance_id: 1,
+        date_added: '',
+        rating: 0,
+        media_condition: 'Very Good (VG)',
+        sleeve_condition: 'Good (G)',
+        basic_information: {
+          id: 100,
+          title: 'Test Album',
+          year: 2000,
+          thumb: '',
+          cover_image: '',
+          artists: [],
+          median_price: 15.00,
+        },
+      } as CollectionRelease;
+
+      component.releases.set([initialRelease]);
+      component.selectedRecord.set(initialRelease);
+
+      const updatedDetail = {
+        id: 1,
+        discogs_id: 100,
+        title: 'Test Album',
+        genres: [],
+        in_collection: true,
+        listen_count: 2,
+        media_condition: 'Mint (M)',
+        sleeve_condition: 'Near Mint (NM or M-)',
+        median_price: 32.50,
+        tracklist: [],
+        formats: [],
+        labels: [],
+      };
+
+      component.onConditionUpdated(updatedDetail);
+
+      expect(component.recordDetail()).toEqual(updatedDetail);
+      expect(component.releases()[0].media_condition).toBe('Mint (M)');
+      expect(component.releases()[0].sleeve_condition).toBe('Near Mint (NM or M-)');
+      expect(component.releases()[0].basic_information.median_price).toBe(32.50);
+      expect(component.selectedRecord()?.media_condition).toBe('Mint (M)');
+    });
+  });
 });

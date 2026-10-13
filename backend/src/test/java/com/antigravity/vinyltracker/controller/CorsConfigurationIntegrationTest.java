@@ -38,11 +38,15 @@ class CorsConfigurationIntegrationTest extends AbstractIntegrationTest {
     private int port;
 
     private HttpResponse<Void> sendPreflight(String origin) throws IOException, InterruptedException {
+        return sendPreflight(origin, "GET");
+    }
+
+    private HttpResponse<Void> sendPreflight(String origin, String method) throws IOException, InterruptedException {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:" + port + "/api/proxy/image?url=https://i.discogs.com/test.jpg"))
                 .method("OPTIONS", HttpRequest.BodyPublishers.noBody())
                 .header("Origin", origin)
-                .header("Access-Control-Request-Method", "GET")
+                .header("Access-Control-Request-Method", method)
                 .build();
 
         return HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.discarding());
@@ -56,6 +60,14 @@ class CorsConfigurationIntegrationTest extends AbstractIntegrationTest {
     @Test
     void preflightRequest_ShouldReturnCorsHeaders_ForAllowedOrigin() throws IOException, InterruptedException {
         HttpResponse<Void> response = sendPreflight("https://allowed.example");
+
+        assertTrue(response.statusCode() >= 200 && response.statusCode() < 300);
+        assertEquals("https://allowed.example", response.headers().firstValue("Access-Control-Allow-Origin").orElse(null));
+    }
+
+    @Test
+    void preflightRequest_ShouldReturnCorsHeaders_ForPatchMethod() throws IOException, InterruptedException {
+        HttpResponse<Void> response = sendPreflight("https://allowed.example", "PATCH");
 
         assertTrue(response.statusCode() >= 200 && response.statusCode() < 300);
         assertEquals("https://allowed.example", response.headers().firstValue("Access-Control-Allow-Origin").orElse(null));

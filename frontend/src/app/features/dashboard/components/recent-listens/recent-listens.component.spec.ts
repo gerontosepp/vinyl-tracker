@@ -1,9 +1,15 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { registerLocaleData } from '@angular/common';
+import localeDe from '@angular/common/locales/de';
+import localeEn from '@angular/common/locales/en';
 import { RecentListensComponent } from './recent-listens.component';
 import { ApiService } from '../../../../core/services/api.service';
 import { LanguageService } from '../../../../core/services/language.service';
 import { signal } from '@angular/core';
 import { ListenEvent } from '../../../../core/types';
+
+registerLocaleData(localeDe);
+registerLocaleData(localeEn);
 
 describe('RecentListensComponent', () => {
   let component: RecentListensComponent;

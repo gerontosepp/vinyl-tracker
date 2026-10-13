@@ -181,4 +181,103 @@ class CollectionSyncServiceTest {
         assertEquals("Very Good Plus (VG+)", captor.getValue().getMediaCondition());
         assertEquals("Near Mint (NM)", captor.getValue().getSleeveCondition());
     }
+
+    @Test
+    void syncCollection_ShouldUpdatePriceForExistingItemWhenMedianPriceIsNull() {
+        DiscogsDto.CollectionResponse mockResponse = new DiscogsDto.CollectionResponse();
+        DiscogsDto.Pagination pagination = new DiscogsDto.Pagination();
+        pagination.setPage(1);
+        pagination.setPages(1);
+        pagination.setPerPage(100);
+        pagination.setItems(1);
+        mockResponse.setPagination(pagination);
+
+        DiscogsDto.CollectionRelease release = new DiscogsDto.CollectionRelease();
+        release.setId(12345L);
+        release.setInstanceId(67890L);
+        DiscogsDto.Release releaseInfo = new DiscogsDto.Release();
+        releaseInfo.setId(12345L);
+        releaseInfo.setTitle("Test Album");
+        release.setBasicInformation(releaseInfo);
+        mockResponse.setReleases(List.of(release));
+
+        Mockito.when(discogsApiClient.getCollectionReleases(user, 1, 100))
+                .thenReturn(mockResponse);
+
+        com.antigravity.vinyltracker.model.Record record = new com.antigravity.vinyltracker.model.Record();
+        record.setDiscogsId(12345L);
+        record.setMedianPrice(null); // Price is missing
+        Mockito.when(recordRepository.findByDiscogsId(12345L))
+                .thenReturn(Optional.of(record));
+
+        com.antigravity.vinyltracker.model.CollectionItem existingItem = new com.antigravity.vinyltracker.model.CollectionItem(
+                user, record, 67890L, java.time.LocalDateTime.of(2020, 1, 1, 0, 0), "Near Mint (NM or M-)", "VG+");
+        Mockito.when(collectionItemRepository.findByUserAndInstanceId(user, 67890L))
+                .thenReturn(Optional.of(existingItem));
+        Mockito.when(collectionItemRepository.findAllByUser(user))
+                .thenReturn(List.of(existingItem));
+
+        java.util.Map<String, DiscogsDto.PriceSuggestion> suggestions = java.util.Map.of(
+                "Near Mint (NM or M-)", new DiscogsDto.PriceSuggestion("EUR", 25.50)
+        );
+        Mockito.when(discogsApiClient.getPriceSuggestions(12345L, user)).thenReturn(suggestions);
+
+        com.antigravity.vinyltracker.model.dto.SyncResultDto result = collectionSyncService.syncCollection(user);
+
+        assertNotNull(result);
+        assertEquals(java.math.BigDecimal.valueOf(25.50).setScale(2, java.math.RoundingMode.HALF_UP), record.getMedianPrice());
+        Mockito.verify(recordRepository, Mockito.atLeastOnce()).save(record);
+    }
+
+    @Test
+    void syncCollection_ShouldUpdatePriceForExistingItemWhenConditionChanged() {
+        DiscogsDto.CollectionResponse mockResponse = new DiscogsDto.CollectionResponse();
+        DiscogsDto.Pagination pagination = new DiscogsDto.Pagination();
+        pagination.setPage(1);
+        pagination.setPages(1);
+        pagination.setPerPage(100);
+        pagination.setItems(1);
+        mockResponse.setPagination(pagination);
+
+        DiscogsDto.CollectionRelease release = new DiscogsDto.CollectionRelease();
+        release.setId(12345L);
+        release.setInstanceId(67890L);
+        // Field ID 1 is default media condition
+        DiscogsDto.CollectionNote note = new DiscogsDto.CollectionNote(1L, "Mint (M)");
+        release.setNotes(List.of(note));
+        DiscogsDto.Release releaseInfo = new DiscogsDto.Release();
+        releaseInfo.setId(12345L);
+        releaseInfo.setTitle("Test Album");
+        release.setBasicInformation(releaseInfo);
+        mockResponse.setReleases(List.of(release));
+
+        Mockito.when(discogsApiClient.getCollectionReleases(user, 1, 100))
+                .thenReturn(mockResponse);
+
+        com.antigravity.vinyltracker.model.Record record = new com.antigravity.vinyltracker.model.Record();
+        record.setDiscogsId(12345L);
+        record.setMedianPrice(java.math.BigDecimal.valueOf(15.00));
+        Mockito.when(recordRepository.findByDiscogsId(12345L))
+                .thenReturn(Optional.of(record));
+
+        com.antigravity.vinyltracker.model.CollectionItem existingItem = new com.antigravity.vinyltracker.model.CollectionItem(
+                user, record, 67890L, java.time.LocalDateTime.of(2020, 1, 1, 0, 0), "Very Good (VG)", "VG");
+        Mockito.when(collectionItemRepository.findByUserAndInstanceId(user, 67890L))
+                .thenReturn(Optional.of(existingItem));
+        Mockito.when(collectionItemRepository.findAllByUser(user))
+                .thenReturn(List.of(existingItem));
+
+        java.util.Map<String, DiscogsDto.PriceSuggestion> suggestions = java.util.Map.of(
+                "Mint (M)", new DiscogsDto.PriceSuggestion("EUR", 35.00)
+        );
+        Mockito.when(discogsApiClient.getPriceSuggestions(12345L, user)).thenReturn(suggestions);
+
+        com.antigravity.vinyltracker.model.dto.SyncResultDto result = collectionSyncService.syncCollection(user);
+
+        assertNotNull(result);
+        assertEquals(java.math.BigDecimal.valueOf(35.00).setScale(2, java.math.RoundingMode.HALF_UP), record.getMedianPrice());
+        assertEquals("Mint (M)", existingItem.getMediaCondition());
+        Mockito.verify(recordRepository, Mockito.atLeastOnce()).save(record);
+        Mockito.verify(collectionItemRepository).save(existingItem);
+    }
 }

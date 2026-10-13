@@ -1,12 +1,15 @@
 package com.antigravity.vinyltracker.controller;
 
 import com.antigravity.vinyltracker.model.dto.RecordDetailDto;
+import com.antigravity.vinyltracker.model.dto.UpdateConditionRequestDto;
 import com.antigravity.vinyltracker.service.RecordService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -28,6 +31,15 @@ public class RecordController {
     @PostMapping("/{id}/listen")
     public ResponseEntity<RecordDetailDto> logListen(@PathVariable Long id, Principal principal) {
         RecordDetailDto details = recordService.logListen(id, principal.getName());
+        return ResponseEntity.ok(details);
+    }
+
+    @PatchMapping("/{id}/condition")
+    public ResponseEntity<RecordDetailDto> updateCondition(
+            @PathVariable Long id,
+            @RequestBody UpdateConditionRequestDto request,
+            Principal principal) {
+        RecordDetailDto details = recordService.updateCondition(id, request, principal.getName());
         return ResponseEntity.ok(details);
     }
 }

@@ -4,6 +4,7 @@ import com.antigravity.vinyltracker.exception.DiscogsTokenException;
 import com.antigravity.vinyltracker.model.AppUser;
 import com.antigravity.vinyltracker.model.discogs.DiscogsDto;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.cache.annotation.Cacheable;
@@ -132,6 +133,7 @@ public class DiscogsApiClient {
                 .body(DiscogsDto.CollectionResponse.class));
     }
 
+    @Cacheable(value = "discogsCollectionFields", key = "#user.username")
     public DiscogsDto.CollectionFieldsResponse getCollectionFields(AppUser user) {
         log.info("Fetching collection custom fields for user: {}", user.getUsername());
         return executeWithRateLimit(() -> restClient.get()
@@ -140,6 +142,20 @@ public class DiscogsApiClient {
                 .header(HttpHeaders.AUTHORIZATION, "Discogs token=" + getDecryptedToken(user))
                 .retrieve()
                 .body(DiscogsDto.CollectionFieldsResponse.class));
+    }
+
+    public void updateInstanceField(AppUser user, Long releaseId, Long instanceId, Long fieldId, String value) {
+        log.info("Updating Discogs field ID {} for release {} instance {} to '{}' for user {}",
+                fieldId, releaseId, instanceId, value, user.getUsername());
+        executeWithRateLimit(() -> restClient.post()
+                .uri("/users/{username}/collection/folders/0/releases/{releaseId}/instances/{instanceId}/fields/{fieldId}",
+                        user.getDiscogsUsername(), releaseId, instanceId, fieldId)
+                .header(HttpHeaders.USER_AGENT, "VinylTrackerApp/1.0")
+                .header(HttpHeaders.AUTHORIZATION, "Discogs token=" + getDecryptedToken(user))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of("value", value != null ? value : ""))
+                .retrieve()
+                .toBodilessEntity());
     }
 
     public void addReleaseToCollection(Long releaseId, AppUser user) {

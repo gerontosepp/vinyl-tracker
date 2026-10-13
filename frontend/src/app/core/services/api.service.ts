@@ -67,6 +67,13 @@ export class ApiService {
     return this.http.get<RecordDetailDto>(`${this.baseUrl}/records/${id}`);
   }
 
+  updateRecordCondition(
+    id: number,
+    conditions: { media_condition?: string; sleeve_condition?: string }
+  ): Observable<RecordDetailDto> {
+    return this.http.patch<RecordDetailDto>(`${this.baseUrl}/records/${id}/condition`, conditions);
+  }
+
   logRecordListen(id: number): Observable<RecordDetailDto> {
     return this.http.post<RecordDetailDto>(`${this.baseUrl}/records/${id}/listen`, {});
   }

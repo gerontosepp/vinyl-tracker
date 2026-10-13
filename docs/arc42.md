@@ -157,6 +157,16 @@ The Backend follows a layered architecture:
 6.  **Backend** `PdfService` generates a tailored PDF document for only the selected releases.
 7.  **Frontend** streams the binary blob and prompts a file download.
 
+### 6.7 Scenario: Editing Media & Sleeve Condition with Discogs Sync
+1.  **User** opens the record detail modal for an album in their collection.
+2.  **User** selects a Goldmine grading (e.g. *Mint (M)*, *Near Mint (NM or M-)*, *Very Good Plus (VG+)*) from the Media Condition or Sleeve Condition dropdown.
+3.  **Frontend** sends `PATCH /api/records/{id}/condition` with the selected values.
+4.  **Backend** `RecordService` persists the updated condition in the `collection_item` table.
+5.  If Media Condition changed, **RecordService** recalculates the estimated market price from Discogs price suggestions and updates `record_cache.median_price`.
+6.  **Backend** `DiscogsApiClient` synchronizes the custom fields to the user's Discogs collection instance (`POST /users/{username}/collection/folders/0/releases/{release_id}/instances/{instance_id}/fields/{field_id}`).
+7.  **Backend** returns the updated `RecordDetailDto`.
+8.  **Frontend** updates the modal, live condition badges, estimated value, and collection view reactively.
+
 ## 7. Deployment View
 
 The system is deployed as a multi-container Docker application orchestrated by Docker Compose.

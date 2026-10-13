@@ -350,6 +350,40 @@ export class CollectionComponent implements OnInit, OnDestroy {
     );
   }
 
+  onConditionUpdated(updated: RecordDetailDto): void {
+    this.recordDetail.set(updated);
+    if (this.selectedRecord()) {
+      this.selectedRecord.update((rec) =>
+        rec
+          ? {
+              ...rec,
+              media_condition: updated.media_condition,
+              sleeve_condition: updated.sleeve_condition,
+              basic_information: {
+                ...rec.basic_information,
+                median_price: updated.median_price != null ? updated.median_price : rec.basic_information?.median_price,
+              },
+            }
+          : null
+      );
+    }
+    this.releases.update((list) =>
+      list.map((r) =>
+        r.id === updated.discogs_id || (updated.id != null && r.id === updated.id)
+          ? {
+              ...r,
+              media_condition: updated.media_condition,
+              sleeve_condition: updated.sleeve_condition,
+              basic_information: {
+                ...r.basic_information,
+                median_price: updated.median_price != null ? updated.median_price : r.basic_information?.median_price,
+              },
+            }
+          : r
+      )
+    );
+  }
+
   getFormatType(release: CollectionRelease): FormatType {
     return getFormatType(release);
   }

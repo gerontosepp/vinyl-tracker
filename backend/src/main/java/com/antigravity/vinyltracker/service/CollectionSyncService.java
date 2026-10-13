@@ -147,21 +147,11 @@ public class CollectionSyncService {
                         collectionItemRepository.save(item);
                         addedCount++;
 
-                        if (record.getMedianPrice() == null) {
-                            try {
-                                var suggestions = discogsApiClient.getPriceSuggestions(record.getDiscogsId(), user);
-                                java.math.BigDecimal suggested = DiscogsDto.extractSuggestedPrice(suggestions, mediaCondition);
-                                if (suggested != null) {
-                                    record.setMedianPrice(suggested);
-                                    recordRepository.save(record);
-                                }
-                            } catch (Exception e) {
-                                log.debug("Could not determine price suggestion for new record {}: {}", record.getDiscogsId(), e.getMessage());
-                            }
-                        }
+                        updateRecordPriceIfMissingOrConditionChanged(record, mediaCondition, false, user);
                     } else {
                         com.antigravity.vinyltracker.model.CollectionItem item = existingItem.get();
                         boolean itemUpdated = false;
+                        boolean conditionChanged = false;
                         if (addedAt != null && !addedAt.equals(item.getAddedAt())) {
                             item.setAddedAt(addedAt);
                             itemUpdated = true;
@@ -169,6 +159,7 @@ public class CollectionSyncService {
                         if (!java.util.Objects.equals(mediaCondition, item.getMediaCondition())) {
                             item.setMediaCondition(mediaCondition);
                             itemUpdated = true;
+                            conditionChanged = true;
                         }
                         if (!java.util.Objects.equals(sleeveCondition, item.getSleeveCondition())) {
                             item.setSleeveCondition(sleeveCondition);
@@ -177,6 +168,8 @@ public class CollectionSyncService {
                         if (itemUpdated) {
                             collectionItemRepository.save(item);
                         }
+
+                        updateRecordPriceIfMissingOrConditionChanged(record, mediaCondition, conditionChanged, user);
                     }
                 }
 
@@ -275,5 +268,24 @@ public class CollectionSyncService {
                 .totalCount(items.size())
                 .message(String.format("Successfully refreshed prices: %d of %d items updated.", updatedCount, items.size()))
                 .build();
+    }
+
+    private void updateRecordPriceIfMissingOrConditionChanged(
+            com.antigravity.vinyltracker.model.Record record,
+            String mediaCondition,
+            boolean conditionChanged,
+            AppUser user) {
+        if (record.getMedianPrice() == null || conditionChanged) {
+            try {
+                var suggestions = discogsApiClient.getPriceSuggestions(record.getDiscogsId(), user);
+                java.math.BigDecimal suggested = DiscogsDto.extractSuggestedPrice(suggestions, mediaCondition);
+                if (suggested != null && !suggested.equals(record.getMedianPrice())) {
+                    record.setMedianPrice(suggested);
+                    recordRepository.save(record);
+                }
+            } catch (Exception e) {
+                log.debug("Could not determine price suggestion for record {}: {}", record.getDiscogsId(), e.getMessage());
+            }
+        }
     }
 }

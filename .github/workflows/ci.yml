@@ -138,6 +138,9 @@ jobs:
       run: npm run test -- --watch=false --code-coverage --browsers=ChromeHeadlessCI
 
     - name: Install Playwright Browsers
+      env:
+        PLAYWRIGHT_DOWNLOAD_CONNECTION_TIMEOUT: "180000"
+        NODE_OPTIONS: "--dns-result-order=ipv4first"
       run: npx playwright install --with-deps chromium
 
     - name: Ensure Development Certificates

@@ -9,6 +9,14 @@
 
 ## Unreleased
 
+- **Rust Backend Migration: Phase 1 – Scaffolding, Axum Server & Datenbank-Migrationen (`#83`)**:
+  - Initialisierung des neuen Rust-Backends unter [`backend-rs/`](file:///Users/opolm/develop/AntiGrafity/backend-rs) mit Cargo, Axum 0.8, Tokio, Tower-HTTP und SQLx.
+  - Asynchroner PostgreSQL-Verbindungspool (`sqlx::PgPool`) mit Timeouts, Connection-Limits und Ping-Healthcheck.
+  - Vollständige Einbindung der 9 SQL-Migrationsdateien (V1–V9) via `refinery` mit automatischer Erkennung und Synchronisation bestehender Flyway-Schema-Historien (`flyway_schema_history`) sowie Schema-Baseline-Erkennung.
+  - Bereitstellung der Standard Actuator-Endpunkte: `GET /actuator/health` (Status 200 mit DB-Status) und `GET /actuator/info` (Version und Metadaten) sowie striktes 403-Blocking sensitiver Endpunkte (`/metrics`, `/env`, `/configprops`).
+  - Standardisiertes Fehler-Handling nach RFC 7807 (`ProblemDetail`) für alle HTTP- und Datenbank-Fehler.
+  - Multi-Origin CORS-Middleware und strukturierte Logging-Pipeline mit `tracing`.
+  - Multi-Stage Dockerfile und Docker Compose Setup (`docker/docker-compose.rust.yml`) für lokales Testen.
 ---
 
 ## v0.7.0 (2026-10-14) – Aktueller Release (WiP / Beta)

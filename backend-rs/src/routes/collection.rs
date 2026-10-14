@@ -132,6 +132,36 @@ pub async fn refresh_prices_handler(
     Ok((StatusCode::OK, Json(res)))
 }
 
+pub async fn generate_selected_qr_codes_handler(
+    _user: CurrentUser,
+    Json(request): Json<crate::models::analytics::QrCodeRequest>,
+) -> Result<impl IntoResponse, AppError> {
+    let pdf_bytes = crate::services::qr_pdf_service::QrPdfService::generate_qr_codes_pdf(&request.items)?;
+    Ok((
+        StatusCode::OK,
+        [
+            (axum::http::header::CONTENT_TYPE, "application/pdf"),
+            (axum::http::header::CONTENT_DISPOSITION, "attachment; filename=collection_qr_codes.pdf"),
+        ],
+        pdf_bytes,
+    ))
+}
+
+pub async fn generate_all_qr_codes_handler(
+    State(state): State<AppState>,
+    CurrentUser(user): CurrentUser,
+) -> Result<impl IntoResponse, AppError> {
+    let pdf_bytes = crate::services::qr_pdf_service::QrPdfService::generate_all_qr_codes_pdf(&state.pool, user.id).await?;
+    Ok((
+        StatusCode::OK,
+        [
+            (axum::http::header::CONTENT_TYPE, "application/pdf"),
+            (axum::http::header::CONTENT_DISPOSITION, "attachment; filename=collection_qr_codes.pdf"),
+        ],
+        pdf_bytes,
+    ))
+}
+
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/", get(get_collection_handler))
@@ -140,4 +170,6 @@ pub fn router() -> Router<AppState> {
         .route("/sync", post(sync_collection_handler))
         .route("/releases/{release_id}", post(add_release_handler))
         .route("/prices/refresh", post(refresh_prices_handler))
+        .route("/qr-codes/selected", post(generate_selected_qr_codes_handler))
+        .route("/qr-codes/all", get(generate_all_qr_codes_handler))
 }

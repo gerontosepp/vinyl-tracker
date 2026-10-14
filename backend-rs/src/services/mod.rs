@@ -1,8 +1,10 @@
+pub mod analytics_service;
 pub mod collection_query;
 pub mod collection_sync;
 pub mod crypto_service;
 pub mod image_proxy;
 pub mod marketplace;
+pub mod qr_pdf_service;
 pub mod record_service;
 pub mod scan_service;
 pub mod user_service;

@@ -9,44 +9,31 @@ description: >-
 
 This skill defines the routine for discovering, upgrading, and testing dependencies in the Vinyl Tracker repository.
 
-## 1. Backend Dependency Upgrades
+## 1. Backend Dependency Upgrades (Rust)
 
 ### Checking Available Updates
-Run the Maven versions plugin from the `backend/` directory:
+Run cargo outdated or cargo update check from the `backend/` directory:
 ```bash
 cd backend
-mvn versions:display-dependency-updates
-mvn versions:display-parent-updates
-mvn versions:display-property-updates
+cargo outdated  # if cargo-outdated is installed, or:
+cargo update --dry-run
 cd ..
 ```
 
 ### Known Project Constraints & Compatibility Rules
-1. **Lombok Alignment**:
-   Always ensure the version in `<annotationProcessorPaths>` inside `maven-compiler-plugin` matches the version in `<dependencies>`:
-   ```xml
-   <!-- Both must use the same version, e.g. 1.18.46 -->
-   <dependency>
-       <groupId>org.projectlombok</groupId>
-       <artifactId>lombok</artifactId>
-       <version>1.18.46</version>
-       <optional>true</optional>
-   </dependency>
-   ```
-2. **Resilience4j Compatibility**:
-   Keep `resilience4j-spring-boot3` at version `2.2.0`. Version `2.4.0+` has known runtime compatibility conflicts with the project's Spring Boot configuration.
-3. **Java Version**:
-   The project targets Java 25 (`<java.version>25</java.version>`). Verify that all upgraded libraries support Java 25 bytecode.
-4. **Testcontainers**:
-   Maintain Testcontainers 1.21.x compatibility (`testcontainers.version`).
+1. **Rust Edition**:
+   The project targets Rust 2024 edition (`edition = "2024"`).
+2. **Axum & Tower**:
+   Ensure compatibility between `axum` (0.8) and `tower-http` (0.6).
+3. **Database Drivers**:
+   `sqlx` (0.8) with `tokio-postgres` and `refinery` (0.8) for database schema migrations.
 
 ### Backend Validation
-After updating [`backend/pom.xml`](../../../backend/pom.xml):
+After updating [`backend/Cargo.toml`](../../../backend/Cargo.toml):
 ```bash
 cd backend
-mvn clean test
-# Full verification including integration tests and JaCoCo >80% coverage check:
-mvn verify
+cargo test
+cargo clippy -- -D warnings
 cd ..
 ```
 

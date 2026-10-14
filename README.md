@@ -1,8 +1,8 @@
-# Vinyl Tracker v0.7.0
+# Vinyl Tracker v0.8.0
 
 A personal vinyl record tracking application that allows users to scan barcodes, identify records via Discogs, and log listening sessions.
 
-Release history: [Release-Info](docs/Release-Info.md)
+Release history: [Release-Info](docs/Release-Info.md) | Architecture: [arc42](docs/arc42.md) | [Rust-Migration Lastenheft](docs/rust-migration-lastenheft.md)
 
 ## Architecture
 
@@ -17,11 +17,11 @@ The project follows a modern containerized micro-architecture:
   - Secure Context support via local SSL.
 
 ### Backend
-- **Framework**: Spring Boot 4.1.0
-- **Language**: Java 25
-- **Database Access**: Spring Data JPA with Hibernate and **Flyway** for schema migrations.
-- **API**: RESTful endpoints with **JWT (JSON Web Token)** authentication.
-- **Integration**: Discogs API for record metadata.
+- **Framework / Runtime**: Axum 0.8, Tokio 1.x, Tower-HTTP
+- **Language**: Rust (2024 edition)
+- **Database Access**: PostgreSQL via `sqlx` with automatic migrations (`refinery`, Flyway-compatible)
+- **Features**: JWT-Auth (HMAC-SHA256, BCrypt, Argon2/PBKDF2), Discogs REST Client with rate-limiting (`governor`) & caching (`moka`), SSRF-protected image proxy, Roon MOO WebSocket Engine & SOOD discovery, native vector-based QR-Code & PDF generation (`fast_qr`, `printpdf`).
+- **Location**: `backend/` directory.
 
 ### Database
 - **System**: PostgreSQL 16
@@ -30,7 +30,7 @@ The project follows a modern containerized micro-architecture:
 ### MCP Server (AI Integration)
 - **Language**: Rust
 - **Framework**: `rmcp` (v3.5) official MCP SDK
-- **Communication**: REST client against the Spring Boot backend over stdio JSON-RPC.
+- **Communication**: REST client against the Backend over stdio JSON-RPC.
 - **Location**: `mcp/` directory.
 
 ### Infrastructure
@@ -129,7 +129,7 @@ The application requires environment variables for configuration (database crede
      ```bash
      docker compose -f docker/docker-compose.registry.yml up -d
      ```
-   - **Manual Compose with Local Source Build**:
+   - **Production Compose Build**:
      ```bash
      docker compose -f docker/docker-compose.prod.yml up --build -d
      ```
@@ -137,14 +137,9 @@ The application requires environment variables for configuration (database crede
 
    👉 **[See Detailed Deployment Guide](docs/DEPLOYMENT.md)** for server setup, public images, and HTTPS requirements.
 
-   > [!IMPORTANT]
-   > For the **first deployment** against an existing database, ensure `SPRING_FLYWAY_BASELINE_ON_MIGRATE=true` is set (this is already the default in `docker/docker-compose.prod.yml`) to correctly baseline your schema.
-
 2. **Access the App**:
    - **Frontend**: [https://localhost:5173](https://localhost:5173) (or `https://<YOUR_IP>:5173`)
    - **Backend API**: [http://localhost:8080](http://localhost:8080)
-   - **API Docs (Swagger UI)**: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html) (OpenAPI spec at `/v3/api-docs`).
-     > Interactive API docs are enabled in development only. They are disabled in production via `SPRINGDOC_API_DOCS_ENABLED=false` and `SPRINGDOC_SWAGGER_UI_ENABLED=false` (set in `docker/docker-compose.prod.yml`).
 
 ## User Guide
 
@@ -219,74 +214,36 @@ Architecture hardening: User endpoints use validated request DTOs, frontend erro
 ### Backend
 Located in `/backend`.
 
-**Run Unit Tests (fast local feedback):**
+**Run Unit & Integration Tests:**
+```bash
+cargo test --manifest-path backend/Cargo.toml
+```
+
+**Run Linter (Clippy):**
+```bash
+cargo clippy --manifest-path backend/Cargo.toml -- -D warnings
+```
+
+**Run Backend Locally in Development Mode:**
 ```bash
 cd backend
-mvn test
-```
-
-**Run Full Validation (unit + integration + coverage checks):**
-```bash
-cd backend
-mvn verify
-```
-*Note: `mvn test` executes unit tests via Surefire. `mvn verify` additionally executes integration tests via Failsafe and enforces >80% code coverage via JaCoCo.*
-
-**Test JVM Fork Shutdown Timeouts:**
-- Unit tests (Surefire): `test.unit.forkedProcessExitTimeoutInSeconds` (default `30`)
-- Integration tests (Failsafe): `test.integration.forkedProcessExitTimeoutInSeconds` (default `120`)
-
-You can override them at runtime, for example:
-```bash
-mvn verify -Dtest.integration.forkedProcessExitTimeoutInSeconds=120
-```
-
-**Run Online Dependency Vulnerability Scan:**
-```bash
-cd backend
-export OSSINDEX_USERNAME=<your-ossindex-username>
-export OSSINDEX_TOKEN=<your-ossindex-token>
-mvn -Psecurity-online verify
-```
-*The `security-online` Maven profile queries Sonatype OSS Index and writes a report to `backend/target/ossindex-audit.json`. The current configuration is non-blocking (`fail=false`), so findings are reported but do not fail the build.*
-
-**Local Maven Authentication Setup:**
-Create `~/.m2/settings.xml` with an `ossindex` server entry so Maven can use the credentials from your shell environment:
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"
-                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                    xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0 https://maven.apache.org/xsd/settings-1.2.0.xsd">
-    <servers>
-        <server>
-            <id>ossindex</id>
-            <username>${env.OSSINDEX_USERNAME}</username>
-            <password>${env.OSSINDEX_TOKEN}</password>
-        </server>
-    </servers>
-</settings>
+cargo run
 ```
 
 ### CI/CD
 The project includes GitHub Actions workflows:
 - **CI Pipeline** (`.github/workflows/ci.yml`):
-  - Automatically builds and tests the Backend (Java 25/Maven).
+  - Automatically builds, tests and checks the Backend (Rust 2024 / Cargo).
   - Builds and tests the Frontend (Node 24/Angular, Karma headless with strict >80% coverage check via `karma.conf.js`).
   - Runs Playwright end-to-end tests for all critical user workflows.
   - Builds and tests the MCP Server (Rust/Cargo, `rmcp`).
-  - Enforces >80% test coverage for both Frontend (Karma) and Backend (JaCoCo).
-  - Runs the backend online dependency vulnerability audit through the `security-online` Maven profile.
-  - Runs on push and pull requests for `main`, `master`, and `develop`, plus release tags `v*.*.*` (which triggers building and pushing Docker images to GHCR).
-  - **Self-Hosted Runner Support**: Optimized for local execution on Proxmox/Docker hosts (`[self-hosted, linux]`) with mounted Docker socket for Testcontainers and Playwright, eliminating queue bottlenecks.
+  - Enforces linting and tests across all components.
+  - Runs on push and pull requests for `main`, `master`, and `develop`, plus release tags `v*.*.*` (which triggers building and pushing multi-arch Docker images to GHCR).
+  - **Self-Hosted Runner Support**: Optimized for local execution on Proxmox/Docker hosts (`[self-hosted, linux]`) with mounted Docker socket for integration tests and Playwright, eliminating queue bottlenecks.
   - **Hybrid Multi-Platform Releases**: Daily CI runs locally on Proxmox, while release builds automatically provision GitHub-hosted Apple Silicon runners (`macos-latest`) to produce native macOS MCP server binaries.
 - **Auto Release** (`.github/workflows/release.yml`):
   - Automatically creates a GitHub Release (with tag `v<version>` from `frontend/package.json` and auto-generated release notes) when a Pull Request to `main` is successfully merged.
   - Creating a release triggers the CI Pipeline's tag build, automatically publishing the new Docker images.
-
-Required GitHub Actions secrets for the backend security audit:
-- `OSSINDEX_USERNAME`
-- `OSSINDEX_TOKEN`
 
 ## Model Context Protocol (MCP) Server
 

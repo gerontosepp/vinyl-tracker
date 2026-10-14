@@ -4,11 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Vinyl Tracker — a personal vinyl record tracking app. Users scan barcodes / QR codes, identify records via the Discogs API, log listening sessions, and view analytics. Docker Compose orchestrates a Spring Boot backend, an Angular PWA frontend, and PostgreSQL.
+Vinyl Tracker — a personal vinyl record tracking app. Users scan barcodes / QR codes, identify records via the Discogs API, log listening sessions, play on Roon, and view analytics. Docker Compose orchestrates a high-performance Rust backend (Axum / Tokio / SQLx), an Angular PWA frontend, and PostgreSQL.
 
 ## Repository layout
 
-- `backend/` — Spring Boot 4 / Java 25 REST API (the active backend).
+- `backend/` — Rust (edition 2024), Axum 0.8, Tokio 1.x, SQLx 0.8 REST API (the active backend).
 - `frontend/` — **Angular 19 PWA (the active frontend)** — this is what Docker Compose builds and deploys, dev and prod.
 - `docker/` — production & registry Docker Compose configurations (`docker-compose.prod.yml`, `docker-compose.registry.yml`).
 - `scripts/` — operational automation scripts (`deploy_proxmox.sh`, `push-images.sh`, `release.sh`, `update_docker.sh`).
@@ -23,19 +23,17 @@ Vinyl Tracker — a personal vinyl record tracking app. Users scan barcodes / QR
 docker compose up --build -d                                 # dev: hot-reload frontend, waits for postgres healthcheck
 docker compose -f docker/docker-compose.prod.yml up --build -d # prod: optimized build, port 80
 ```
-Dev URLs: frontend `https://localhost:5173`, backend `http://localhost:8080`, Swagger UI `http://localhost:8080/swagger-ui.html`.
+Dev URLs: frontend `https://localhost:5173`, backend `http://localhost:8080`.
 
 First-time setup requires an `.env` (`cp .env.example .env`) and local SSL certs via `mkcert` (see README for details). `JWT_SECRET` must be ≥32 chars or the backend fails fast at startup.
 
 ### Backend (`cd backend`)
 ```bash
-mvn test        # unit tests only (Surefire)
-mvn verify      # unit + integration tests (Failsafe) + JaCoCo >80% coverage enforcement
-mvn -Psecurity-online verify   # + Sonatype OSS Index dependency scan (needs OSSINDEX_USERNAME/TOKEN; non-blocking)
+cargo test                   # unit + integration tests
+cargo test --test <name>     # run a specific integration test file
+cargo clippy -- -D warnings  # linter (strictly enforced in CI)
+cargo build --release        # build optimized release binary
 ```
-Run a single test: `mvn test -Dtest=ScanServiceTest` or a method `mvn test -Dtest=ScanServiceTest#methodName`.
-
-**Test naming matters — it selects the runner:** `*IntegrationTest.java` / `*IT.java` run under Failsafe (integration, needs `mvn verify`); everything else `*Test.java` runs under Surefire (`mvn test`). Integration tests use Testcontainers (real PostgreSQL) via `AbstractIntegrationTest`.
 
 ### Frontend (`cd frontend`, Angular)
 ```bash
@@ -48,19 +46,18 @@ Run a single Playwright test: `npx playwright test <file> -g "<title>"`.
 
 ## Backend architecture
 
-Strict layered architecture under `com.antigravity.vinyltracker` — **do not skip layers**:
-- **controller/** — HTTP routing + validated request DTOs only; delegates to services. No business logic.
-- **service/** — all business logic.
-- **repository/** — Spring Data JPA data access only.
-- **model/** — JPA entities; `model/dto/` request/response DTOs; `model/discogs/` Discogs API mapping.
+Strict layered architecture:
+- **routes/** — Axum routers and HTTP handlers only; validates request DTOs and delegates to services.
+- **services/** — all business logic (Discogs sync/client, scanning, analytics, Roon MOO websocket client, QR code PDF generator).
+- **models/** — DTOs, domain models, and SQL representations with Serde snake_case serialization.
 
 Key cross-cutting pieces:
-- **Auth** (`security/`): stateless JWT. `JwtAuthenticationFilter` reads the token from an HttpOnly cookie (`AuthCookieService`, cookie name `vinyl_token`) **or** a Bearer header (fallback). `SecurityConfig` defines the public endpoints (login/register/reset-password/logout, `/api/proxy/**`, actuator health/info, swagger). Passwords are BCrypt.
-- **Discogs integration** (`service/DiscogsApiClient`): wrapped with Resilience4j rate limiting (60 req/min) + retry with exponential backoff, and Caffeine caching (`CacheConfig`, 24h TTL). Per-user Discogs tokens are encrypted at rest via `TokenEncryptionService` (keyed by `VINYL_ENCRYPTION_PASSWORD`/`_SALT`).
-- **Image proxy** (`controller/ImageProxyController` + `ImageProxyUrlValidator`): `/api/proxy/image` only fetches from the `image-proxy.allowed-hosts` allowlist (SSRF guard).
-- **Errors**: `GlobalExceptionHandler` returns RFC 7807 `ProblemDetail` JSON for all validation/runtime failures.
-- **DB schema**: Flyway migrations in `backend/src/main/resources/db/migration/` (`V#__*.sql`). JPA runs with `ddl-auto=validate` — **schema changes must be a new Flyway migration**, never entity-driven DDL. Prod uses `SPRING_FLYWAY_BASELINE_ON_MIGRATE=true` for first deploy against an existing DB.
-- **Logging**: `RequestLoggingInterceptor` tracks request latency/errors.
+- **Auth**: stateless JWT via `jsonwebtoken`. `auth_middleware` extracts token from HttpOnly cookie `vinyl_token` or `Bearer` header. Passwords hashed with BCrypt.
+- **Discogs integration**: async `reqwest` client with exponential backoff and rate limiting. Per-user Discogs tokens encrypted via AES-256-GCM.
+- **Image proxy**: `/api/proxy/image` with host allowlist and 24h in-memory caching.
+- **Errors**: `AppError` returns RFC 7807 `ProblemDetail` JSON.
+- **DB schema**: Refinery migrations in `backend/migrations/` (`V#__*.sql`) executed on startup.
+- **Logging**: `tracing` + `tracing-subscriber` structured logs.
 
 ## Frontend architecture (Angular)
 

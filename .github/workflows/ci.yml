@@ -13,6 +13,7 @@ on:
 
 jobs:
   backend-build:
+    name: Backend Build, Test & Docker Publish (Linux)
     runs-on: [self-hosted, linux]
     permissions:
       contents: read
@@ -25,35 +26,104 @@ jobs:
     - uses: actions/checkout@v6
       with:
         fetch-depth: 0
-    
-    - name: Set up JDK 25
-      uses: actions/setup-java@v5
-      with:
-        java-version: '25'
-        distribution: 'temurin'
-        cache: 'maven'
-        server-id: ossindex
-        server-username: OSSINDEX_USERNAME
-        server-password: OSSINDEX_TOKEN
-      env:
-        OSSINDEX_USERNAME: ${{ secrets.OSSINDEX_USERNAME }}
-        OSSINDEX_TOKEN: ${{ secrets.OSSINDEX_TOKEN }}
-        
-    - name: Set up Maven
-      uses: stCarolas/setup-maven@v5
-      with:
-        maven-version: '3.9.9'
-        
-    - name: Check Docker
-      run: docker info
 
-    - name: Build and Test with Maven
-      # The jacoco-check goal is bound to the verify phase, so 'mvn verify' will trigger the coverage check and fail if < 80%
+    - name: Set up Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: clippy, rustfmt
+
+    - name: Rust Cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: "./backend -> ./backend/target"
+
+    - name: Run Cargo Check
+      run: cargo check
+
+    - name: Run Clippy Linter
+      run: cargo clippy -- -D warnings
+
+    - name: Start PostgreSQL Test Container
+      run: |
+        docker rm -f test-postgres-rs 2>/dev/null || true
+        docker run -d --name test-postgres-rs \
+          -e POSTGRES_DB=vinyl_tracker \
+          -e POSTGRES_USER=vinyl_user \
+          -e POSTGRES_PASSWORD=vinyl_password \
+          -p 54329:5432 \
+          postgres:17-alpine
+
+        # Wait until PostgreSQL process is ready
+        for i in {1..30}; do
+          if docker exec test-postgres-rs pg_isready -U vinyl_user -d vinyl_tracker; then
+            echo "PostgreSQL is accepting connections!"
+            break
+          fi
+          echo "Waiting for PostgreSQL... ($i/30)"
+          sleep 1
+        done
+
+        # If runner container is in a custom docker network, connect test-postgres-rs to it
+        RUNNER_ID=$(cat /etc/hostname 2>/dev/null || hostname)
+        RUNNER_NET=$(docker inspect -f '{{range $k, $v := .NetworkSettings.Networks}}{{println $k}}{{end}}' "$RUNNER_ID" 2>/dev/null | head -n 1 || echo "")
+        if [ -n "$RUNNER_NET" ] && [ "$RUNNER_NET" != "bridge" ] && [ "$RUNNER_NET" != "host" ] && [ "$RUNNER_NET" != "none" ]; then
+          echo "Connecting test-postgres-rs to runner network: $RUNNER_NET"
+          docker network connect "$RUNNER_NET" test-postgres-rs 2>/dev/null || true
+        fi
+
+        # Extract container IP & gateway
+        RUNNER_NET_IP=""
+        if [ -n "$RUNNER_NET" ] && [ "$RUNNER_NET" != "bridge" ] && [ "$RUNNER_NET" != "host" ] && [ "$RUNNER_NET" != "none" ]; then
+          RUNNER_NET_IP=$(docker inspect -f '{{range $k, $v := .NetworkSettings.Networks}}{{if eq $k "'$RUNNER_NET'"}}{{$v.IPAddress}}{{end}}{{end}}' test-postgres-rs 2>/dev/null || echo "")
+        fi
+        PG_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}' test-postgres-rs | awk '{print $1}')
+        HOST_GATEWAY=$(ip route 2>/dev/null | awk '/default/ {print $3}' || echo "172.17.0.1")
+
+        echo "Discovering working PostgreSQL connection endpoint..."
+        echo "Runner Network IP: $RUNNER_NET_IP"
+        echo "Container IP: $PG_IP"
+        echo "Host Gateway: $HOST_GATEWAY"
+
+        TARGETS=()
+        [ -n "$RUNNER_NET_IP" ] && TARGETS+=("$RUNNER_NET_IP:5432")
+        [ -n "$PG_IP" ] && TARGETS+=("$PG_IP:5432")
+        TARGETS+=("test-postgres-rs:5432" "$HOST_GATEWAY:54329" "127.0.0.1:54329" "localhost:54329")
+
+        SELECTED_URL=""
+        for target in "${TARGETS[@]}"; do
+          host="${target%:*}"
+          port="${target#*:}"
+          if (exec 3<>/dev/tcp/$host/$port) 2>/dev/null; then
+            exec 3<&-
+            exec 3>&-
+            echo "VERIFIED: Reachable at $host:$port"
+            SELECTED_URL="postgres://vinyl_user:vinyl_password@$host:$port/vinyl_tracker"
+            break
+          else
+            echo "Could not connect to $host:$port"
+          fi
+        done
+
+        if [ -z "$SELECTED_URL" ]; then
+          echo "ERROR: Failed to establish a TCP connection to PostgreSQL!"
+          exit 1
+        fi
+
+        echo "DATABASE_URL=$SELECTED_URL" >> $GITHUB_ENV
+        echo "Configured DATABASE_URL in GITHUB_ENV: $SELECTED_URL"
+
+    - name: Run Backend Integration & Unit Tests
       env:
-        DOCKER_HOST: unix:///var/run/docker.sock
-        OSSINDEX_USERNAME: ${{ secrets.OSSINDEX_USERNAME }}
-        OSSINDEX_TOKEN: ${{ secrets.OSSINDEX_TOKEN }}
-      run: mvn clean verify -Psecurity-online -Dtest.integration.forkedProcessExitTimeoutInSeconds=120 -Dorg.slf4j.simpleLogger.log.org.testcontainers=debug
+        JWT_SECRET: superSecretDevelopmentKeyDoNotUseInProduction123!
+        VINYL_ENCRYPTION_PASSWORD: changeit-for-production-use-23948239048
+        VINYL_ENCRYPTION_SALT: 5c074494c45680a7
+      run: |
+        echo "Running tests with DATABASE_URL: $DATABASE_URL"
+        cargo test --verbose
+
+    - name: Stop PostgreSQL Test Container
+      if: always()
+      run: docker rm -f test-postgres-rs || true
 
     - name: Extract project version
       if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
@@ -99,9 +169,11 @@ jobs:
         push: true
         provenance: false
         tags: ${{ steps.meta.outputs.tags }}
-        labels:  ${{ steps.meta.outputs.labels }}
+        labels: ${{ steps.meta.outputs.labels }}
+
 
   frontend-build:
+    needs: [backend-build]
     runs-on: [self-hosted, linux]
     permissions:
       contents: read

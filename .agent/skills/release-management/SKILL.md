@@ -14,8 +14,9 @@ This skill defines the exact workflow for releasing a new version of Vinyl Track
 Before bumping any versions, verify that the current branch is clean and all tests pass:
 
 ```bash
-# 1. Backend tests (Java 25)
-JAVA_HOME=/opt/homebrew/opt/openjdk@25 mvn test
+# 1. Backend tests & linter (Rust)
+cargo test --manifest-path backend/Cargo.toml
+cargo clippy --manifest-path backend/Cargo.toml -- -D warnings
 
 # 2. Frontend tests & production build
 cd frontend && npm test -- --watch=false && npm run build && cd ..
@@ -37,14 +38,14 @@ The following files **must** be updated synchronously:
 | [`top-menu-bar.component.ts`](../../../frontend/src/app/shared/components/layout/top-menu-bar/top-menu-bar.component.ts) | `readonly appVersion = '<NEW_VERSION>';` |
 | [`login.component.ts`](../../../frontend/src/app/features/auth/login/login.component.ts) | `v<NEW_VERSION>` badge |
 | [`register.component.ts`](../../../frontend/src/app/features/auth/register/register.component.ts) | `v<NEW_VERSION>` badge |
-| [`backend/pom.xml`](../../../backend/pom.xml) | `<version><NEW_VERSION></version>` |
+| [`backend/Cargo.toml`](../../../backend/Cargo.toml) | `version = "<NEW_VERSION>"` |
 | [`README.md`](../../../README.md) | Header line 1 `# Vinyl Tracker v<NEW_VERSION>` and deploy examples |
 | [`docs/Release-Info.md`](../../../docs/Release-Info.md) | New section `## v<NEW_VERSION> (YYYY-MM-DD)` with change summary |
 | [`docs/DEPLOYMENT.md`](../../../docs/DEPLOYMENT.md) | Example version string update (if applicable) |
 | [`scripts/deploy_proxmox.sh`](../../../scripts/deploy_proxmox.sh) | Example version string in header comment |
 
 ### Option A: Using the Automated Script (Recommended)
-Execute [`release.sh`](../../../scripts/release.sh), which automatically bumps versions across `package.json`, `pom.xml`, `README.md`, and Angular components:
+Execute [`release.sh`](../../../scripts/release.sh), which automatically bumps versions across `package.json`, `backend/Cargo.toml`, `README.md`, and Angular components:
 ```bash
 ./scripts/release.sh
 ```
@@ -52,9 +53,9 @@ Follow the prompt to enter the new version.
 
 ### Option B: Manual Bump
 ```bash
-cd backend
-mvn versions:set -DnewVersion=<NEW_VERSION> -DgenerateBackupPoms=false
-cd ..
+# Update backend version
+sed -i '' 's/^version = ".*"/version = "<NEW_VERSION>"/' backend/Cargo.toml
+cargo check --manifest-path backend/Cargo.toml
 ```
 
 ## 3. Documentation Sync
@@ -71,8 +72,9 @@ Always add a new release entry at the top of [`docs/Release-Info.md`](../../../d
 
 Re-verify the build artifacts after updating the versions:
 ```bash
-# Verify backend packaging
-cd backend && mvn package -DskipTests && cd ..
+# Verify backend compilation & tests
+cargo test --manifest-path backend/Cargo.toml
+cargo clippy --manifest-path backend/Cargo.toml -- -D warnings
 
 # Verify frontend build
 cd frontend && npm run build && cd ..
@@ -85,7 +87,7 @@ docker compose build
 
 1. **Commit Changes**:
    ```bash
-   git add frontend/package.json frontend/package-lock.json backend/pom.xml README.md \
+   git add frontend/package.json frontend/package-lock.json backend/Cargo.toml backend/Cargo.lock README.md \
        frontend/src/app/shared/components/layout/top-menu-bar/top-menu-bar.component.ts \
        frontend/src/app/features/auth/login/login.component.ts \
        frontend/src/app/features/auth/register/register.component.ts \

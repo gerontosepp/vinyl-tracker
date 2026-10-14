@@ -30,14 +30,15 @@ The **Vinyl Tracker** is a personal web application designed for vinyl enthusias
 ## 2. Architecture Constraints
 
 - **Technology Stack**:
-    - **Backend**: Java 25+ (Spring Boot 4.0+).
-    - **Frontend**: Angular 19 (TypeScript).
+    - **Primary Backend**: Rust (Axum 0.8, Tokio, Tower-HTTP, SQLx).
+    - **Legacy Backend**: Java 25+ (Spring Boot 4.0+).
+    - **Frontend**: Angular 19 (TypeScript, Signals, Tailwind CSS).
     - **MCP Server**: Rust (`rmcp` v3.5 SDK, stdio JSON-RPC).
     - **Database**: PostgreSQL 16.
-    - **Caching & Resilience**: Caffeine, Resilience4j.
-    - **Migrations**: Flyway.
-    - **API Documentation**: springdoc-openapi (Swagger UI).
-    - **Containerization**: Docker & Docker Compose.
+    - **Caching & Resilience**: `moka`, `governor` (Rust); Caffeine, Resilience4j (Java legacy).
+    - **Migrations**: `refinery` (Rust, Flyway-compatible) & Flyway (Java legacy).
+    - **API Documentation**: RFC 7807 Problem Details; springdoc-openapi (Swagger UI on legacy).
+    - **Containerization**: Docker & Docker Compose (`cargo-chef` multi-stage build).
 - **License**: MIT License (Open Source).
 - **Deployment**: Self-hosted via Docker Compose.
 - **Browser Constraints**: Requires HTTPS (or localhost) for webcam access (Barcode scanning).

@@ -15,12 +15,7 @@ Die Zielmaschine benötigt Zugriff auf die Docker Images. Sie haben zwei Möglic
 ### Option A: Automatisiert via CI/CD (Empfohlen)
 Dieses Projekt ist mit GitHub Actions so konfiguriert, dass es automatisch Images baut und in die **GitHub Container Registry (GHCR)** pusht, sobald Änderungen in den `main`-Branch gemergt werden oder ein Release-Tag erstellt wird.
 
-Voraussetzung für den Backend-Build in CI ist zusätzlich ein Online-Dependency-Scan via Sonatype OSS Index. Dafür müssen im GitHub-Repository diese **Actions Secrets** gesetzt sein:
-- `OSSINDEX_USERNAME`
-- `OSSINDEX_TOKEN`
-
-Zusätzlich wird der Backend-Job mit `mvn clean verify -Psecurity-online` ausgeführt. Dabei laufen Unit-Tests (Surefire) und Integrationstests (Failsafe). In CI wird für den Integrations-Shutdown explizit ein robuster Timeout gesetzt:
-- `-Dtest.integration.forkedProcessExitTimeoutInSeconds=120`
+Die GitHub Actions CI Pipeline führt automatisch Tests und Linting für das Rust-Backend (`cargo test`, `cargo clippy`) sowie die Unit- und E2E-Tests für das Frontend aus. Anschließend werden Multi-Arch Docker-Images gebaut und publiziert.
 
 1.  Mergen Sie Ihre fertigen Features aus `develop` in den `main` Branch (oder erstellen Sie ein Release-Tag).
 2.  Die GitHub Actions "CI Pipeline" baut und testet das Projekt vollautomatisch.

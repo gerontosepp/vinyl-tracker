@@ -378,4 +378,83 @@ impl DiscogsClient {
 
         Ok(add_res)
     }
+
+    pub async fn is_release_in_collection(
+        &self,
+        username: &str,
+        release_id: i64,
+        token: &str,
+    ) -> Result<bool, AppError> {
+        self.wait_for_rate_limit().await;
+
+        let url = format!("{}/users/{username}/collection/releases/{release_id}", self.base_url);
+        let headers = self.auth_headers(token)?;
+
+        let res = self
+            .http
+            .get(&url)
+            .headers(headers)
+            .send()
+            .await
+            .map_err(|e| AppError::Internal(format!("Check release in collection request error: {e}")))?;
+
+        if !res.status().is_success() {
+            return Ok(false);
+        }
+
+        let folder_res: DiscogsCollectionFolderResponse = res
+            .json()
+            .await
+            .unwrap_or(DiscogsCollectionFolderResponse {
+                pagination: crate::models::discogs::DiscogsPagination {
+                    page: 1,
+                    pages: 0,
+                    per_page: 0,
+                    items: 0,
+                },
+                releases: Vec::new(),
+            });
+
+        Ok(!folder_res.releases.is_empty())
+    }
+
+    pub async fn update_instance_field(
+        &self,
+        username: &str,
+        release_id: i64,
+        instance_id: i64,
+        field_id: i64,
+        value: &str,
+        token: &str,
+    ) -> Result<(), AppError> {
+        self.wait_for_rate_limit().await;
+
+        let url = format!(
+            "{}/users/{username}/collection/folders/0/releases/{release_id}/instances/{instance_id}/fields/{field_id}",
+            self.base_url
+        );
+        let headers = self.auth_headers(token)?;
+
+        let body = serde_json::json!({ "value": value });
+
+        let res = self
+            .http
+            .post(&url)
+            .headers(headers)
+            .json(&body)
+            .send()
+            .await
+            .map_err(|e| AppError::Internal(format!("Update instance field request error: {e}")))?;
+
+        if !res.status().is_success() {
+            tracing::warn!(
+                "Discogs update instance field returned status {} for release {} instance {}",
+                res.status(),
+                release_id,
+                instance_id
+            );
+        }
+
+        Ok(())
+    }
 }

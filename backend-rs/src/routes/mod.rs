@@ -2,6 +2,8 @@ pub mod actuator;
 pub mod collection;
 pub mod discogs;
 pub mod proxy;
+pub mod records;
+pub mod scan;
 pub mod users;
 
 use axum::{
@@ -75,6 +77,10 @@ pub fn create_app(state: AppState) -> Router {
         .nest("/api/users", users::router())
         // Collection endpoints (nested under /api/collection)
         .nest("/api/collection", collection::router())
+        // Record details and listen endpoints (nested under /api/records)
+        .nest("/api/records", records::router())
+        // Barcode and QR code scanning endpoints (nested under /api/scan)
+        .nest("/api/scan", scan::router())
         // Discogs search endpoint (nested under /api/discogs)
         .nest("/api/discogs", discogs::router())
         // Image Proxy endpoint (nested under /api/proxy)

@@ -36,7 +36,16 @@
   - Manuelle Release-Hinzufügung (`POST /api/collection/releases/{id}`) und Hintergrund-Aktualisierung der Marktpreise (`POST /api/collection/prices/refresh`).
   - Multi-Facetten Katalog-Querying-Engine ([`backend-rs/src/services/collection_query.rs`](file:///Users/opolm/develop/AntiGrafity/backend-rs/src/services/collection_query.rs)) unter `GET /api/collection` mit dynamischem SQL-Where-Builder, Paginierung (`page`, `per_page`), Multi-Sortierung (`artist`, `year`, `format`, `listens`, `added_at`) und reichhaltigen Filtern: Kategorie (`all`, `vinyl`, `cd`), Freitextsuche (Künstler/Titel), Genres, Dekaden/Jahresbereiche (z. B. `1970-1979`, `1980s`), `not_played_since`, `unplayed_only` und `min_plays`.
   - Zusätzliche Endpunkte: Zufallsauswahl `GET /api/collection/random` (mit optionalem Genre-Filter und `unplayed_only`) sowie `GET /api/collection/unplayed` für ungespielte Alben.
-  - Integrationstests ([`backend-rs/tests/collection_tests.rs`](file:///Users/opolm/develop/AntiGrafity/backend-rs/tests/collection_tests.rs)) für Authentifizierung, Paginierung, Sortierung, komplexe Filter-Kombinationen und Sync-Fehlerbehandlung.
+- **Rust Backend Migration: Phase 5 – Barcode- & QR-Scanning Pipeline & Abspiel-Historie (`#87`)**:
+  - Implementierung der Barcode- und QR-Code-Scanning-Pipeline ([`backend-rs/src/services/scan_service.rs`](file:///Users/opolm/develop/AntiGrafity/backend-rs/src/services/scan_service.rs)) unter `POST /api/scan`:
+    - Erkennung von Custom QR-Code-Präfixen (`VT:<discogs_id>`, `discogs-id:<id>`) inklusive automatischer Korrektur deutscher Tastaturlayout-Fehler von Hardware-Scannern (`discogsßidö<id>`, `discogsßidÖ<id>`).
+    - Standard EAN-13 / UPC-A Barcode-Suche mit mehrstufiger Heuristik (12-stellig vs. 13-stellig mit führender Null und Freitext-Fallback), Prüfung auf Sammlungsbesitz (lokale DB und Discogs API) sowie transparentes Caching und Eintragen von Abspiel-Events.
+    - Idempotente Lösch-Endpunkte: `DELETE /api/scan/{id}` für einzelne Events und `DELETE /api/scan/all` zum Zurücksetzen aller Abspiel-Einträge.
+  - Release-Details & Abspiel-Tracking ([`backend-rs/src/services/record_service.rs`](file:///Users/opolm/develop/AntiGrafity/backend-rs/src/services/record_service.rs)) unter `/api/records`:
+    - `GET /api/records/{id}`: Vollständige Detailansicht mit Sammlungsstatus, Historie, Tracklist, Formaten, Labels und Preisschätzungen.
+    - `POST /api/records/{id}/listen`: Manuelles Protokollieren eines Abspiel-Events mit UTC-Zeitstempel.
+    - `PATCH /api/records/{id}/condition`: Aktualisierung von Medien- und Cover-Zuständen mit automatischer Neuberechnung des Marktwerts und Discogs-Feld-Synchronisation.
+  - Umfassende Integrationstests ([`backend-rs/tests/scan_and_record_tests.rs`](file:///Users/opolm/develop/AntiGrafity/backend-rs/tests/scan_and_record_tests.rs)).
 ---
 
 ## v0.7.0 (2026-10-14) – Aktueller Release (WiP / Beta)

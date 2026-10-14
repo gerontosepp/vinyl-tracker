@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.antigravity</groupId>
 	<artifactId>vinyl-tracker-backend</artifactId>
-	<version>0.5.0</version>
+	<version>0.6.0</version>
 	<name>vinyl-tracker-backend</name>
 	<description>Vinyl Tracker Backend</description>
 	<properties>
@@ -69,7 +69,7 @@
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
-			<version>42.7.13</version>
+			<version>42.7.14</version>
 			<scope>runtime</scope>
 		</dependency>
 
@@ -146,7 +146,7 @@
 		<dependency>
 			<groupId>com.github.librepdf</groupId>
 			<artifactId>openpdf</artifactId>
-			<version>2.0.3</version>
+			<version>2.2.2</version>
 		</dependency>
 
 		<!-- QR Code Generation -->
@@ -164,7 +164,7 @@
 		<dependency>
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-			<version>2.8.5</version>
+			<version>2.8.6</version>
 		</dependency>
 		<!-- Logstash Logback Encoder for JSON logging -->
 		<dependency>

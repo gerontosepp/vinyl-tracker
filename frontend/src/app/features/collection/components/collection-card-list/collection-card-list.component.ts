@@ -4,6 +4,7 @@ import { ApiService } from '../../../../core/services/api.service';
 import { FormatBadgeComponent } from '../format-badge/format-badge.component';
 import { CollectionRelease, QrCodeItem } from '../../../../core/types';
 import { getFormatType, FormatType } from '../../utils/format-type.util';
+import { getConditionShortCode } from '../../utils/condition.util';
 
 @Component({
   selector: 'app-collection-card-list',
@@ -22,6 +23,8 @@ export class CollectionCardListComponent {
 
   readonly toggleSelection = output<CollectionRelease>();
   readonly openDetail = output<CollectionRelease>();
+
+  readonly getConditionShortCode = getConditionShortCode;
 
   getFormatType(release: CollectionRelease): FormatType {
     return getFormatType(release);

@@ -40,9 +40,16 @@ public class CollectionQueryService {
     public DiscogsDto.CollectionResponse getCollection(AppUser user, int page, int perPage, String sort,
                                                        String sortOrder, Integer minPlays, String search,
                                                        String category, List<String> genres, String years) {
+        return getCollection(user, page, perPage, sort, sortOrder, minPlays, search, category, genres, years, null, false);
+    }
 
-        log.info("Fetching collection from local DB for user: {}, category: {}, genres: {}, years: {}",
-                user.getUsername(), category, genres, years);
+    public DiscogsDto.CollectionResponse getCollection(AppUser user, int page, int perPage, String sort,
+                                                       String sortOrder, Integer minPlays, String search,
+                                                       String category, List<String> genres, String years,
+                                                       java.time.LocalDateTime notPlayedSince, boolean unplayedOnly) {
+
+        log.info("Fetching collection from local DB for user: {}, category: {}, genres: {}, years: {}, notPlayedSince: {}, unplayedOnly: {}",
+                user.getUsername(), category, genres, years, notPlayedSince, unplayedOnly);
 
         String categoryNorm = (category == null || category.trim().isEmpty())
                 ? "all"
@@ -100,18 +107,24 @@ public class CollectionQueryService {
         boolean hasYears = !parsedYears.isEmpty();
         Collection<String> yearsParam = hasYears ? parsedYears : List.of("__NONE__");
 
+        boolean hasMinPlays = (minPlays != null && minPlays > 0);
+        int minPlaysParam = hasMinPlays ? minPlays : 0;
+
+        boolean hasNotPlayedSince = notPlayedSince != null;
+        java.time.LocalDateTime notPlayedSinceParam = hasNotPlayedSince ? notPlayedSince : java.time.LocalDateTime.of(1970, 1, 1, 0, 0);
+
         Page<?> pagedResult;
         if ("listens".equalsIgnoreCase(sort)) {
             if ("desc".equalsIgnoreCase(sortOrder)) {
                 pagedResult = collectionItemRepository.findFilteredCollectionOrderByPlayCountDesc(
-                        user, categoryNorm, hasSearch, searchLower, hasGenres, genresParam, hasYears, yearsParam, pageable);
+                        user, categoryNorm, hasSearch, searchLower, hasGenres, genresParam, hasYears, yearsParam, hasMinPlays, minPlaysParam, unplayedOnly, hasNotPlayedSince, notPlayedSinceParam, pageable);
             } else {
                 pagedResult = collectionItemRepository.findFilteredCollectionOrderByPlayCountAsc(
-                        user, categoryNorm, hasSearch, searchLower, hasGenres, genresParam, hasYears, yearsParam, pageable);
+                        user, categoryNorm, hasSearch, searchLower, hasGenres, genresParam, hasYears, yearsParam, hasMinPlays, minPlaysParam, unplayedOnly, hasNotPlayedSince, notPlayedSinceParam, pageable);
             }
         } else {
             pagedResult = collectionItemRepository.findFilteredCollection(
-                    user, categoryNorm, hasSearch, searchLower, hasGenres, genresParam, hasYears, yearsParam, pageable);
+                    user, categoryNorm, hasSearch, searchLower, hasGenres, genresParam, hasYears, yearsParam, hasMinPlays, minPlaysParam, unplayedOnly, hasNotPlayedSince, notPlayedSinceParam, pageable);
         }
 
         List<DiscogsDto.CollectionRelease> releases = pagedResult.getContent().stream()
@@ -129,13 +142,15 @@ public class CollectionQueryService {
                         playCount = listenEventRepository.countByRecordAndUser(ci.getRecord(), user);
                     }
 
-                    if (minPlays != null && minPlays > 0 && playCount < minPlays) {
-                        return null; // Will filter out later
+                    String lastPlayedAt = null;
+                    if (playCount != null && playCount > 0) {
+                        lastPlayedAt = listenEventRepository.findFirstByRecordAndUserOrderByTimestampDesc(ci.getRecord(), user)
+                                .map(le -> le.getTimestamp().format(com.antigravity.vinyltracker.config.JacksonConfig.UTC_FORMATTER))
+                                .orElse(null);
                     }
 
-                    return mapToCollectionRelease(ci, playCount);
+                    return mapToCollectionRelease(ci, playCount, lastPlayedAt);
                 })
-                .filter(java.util.Objects::nonNull)
                 .toList();
 
         DiscogsDto.Pagination pagination = new DiscogsDto.Pagination();
@@ -166,7 +181,13 @@ public class CollectionQueryService {
         int randomIndex = java.util.concurrent.ThreadLocalRandom.current().nextInt(candidates.size());
         com.antigravity.vinyltracker.model.CollectionItem selected = candidates.get(randomIndex);
         Long playCount = listenEventRepository.countByRecordAndUser(selected.getRecord(), user);
-        return mapToCollectionRelease(selected, playCount);
+        String lastPlayedAt = null;
+        if (playCount != null && playCount > 0) {
+            lastPlayedAt = listenEventRepository.findFirstByRecordAndUserOrderByTimestampDesc(selected.getRecord(), user)
+                    .map(le -> le.getTimestamp().format(com.antigravity.vinyltracker.config.JacksonConfig.UTC_FORMATTER))
+                    .orElse(null);
+        }
+        return mapToCollectionRelease(selected, playCount, lastPlayedAt);
     }
 
     public DiscogsDto.CollectionResponse getUnplayedCollection(AppUser user, int page, int perPage) {
@@ -175,7 +196,7 @@ public class CollectionQueryService {
         Page<com.antigravity.vinyltracker.model.CollectionItem> pagedResult = collectionItemRepository.findUnplayedByUser(user, pageable);
 
         List<DiscogsDto.CollectionRelease> releases = pagedResult.getContent().stream()
-                .map(item -> mapToCollectionRelease(item, 0L))
+                .map(item -> mapToCollectionRelease(item, 0L, null))
                 .toList();
 
         DiscogsDto.Pagination pagination = new DiscogsDto.Pagination();
@@ -191,18 +212,33 @@ public class CollectionQueryService {
         List<com.antigravity.vinyltracker.model.CollectionItem> items = collectionItemRepository.findAllByUser(user);
         return items.stream().map(item -> {
             Long playCount = listenEventRepository.countByRecordAndUser(item.getRecord(), user);
-            return mapToCollectionRelease(item, playCount);
+            String lastPlayedAt = null;
+            if (playCount != null && playCount > 0) {
+                lastPlayedAt = listenEventRepository.findFirstByRecordAndUserOrderByTimestampDesc(item.getRecord(), user)
+                        .map(le -> le.getTimestamp().format(com.antigravity.vinyltracker.config.JacksonConfig.UTC_FORMATTER))
+                        .orElse(null);
+            }
+            return mapToCollectionRelease(item, playCount, lastPlayedAt);
         }).toList();
     }
 
     private DiscogsDto.CollectionRelease mapToCollectionRelease(com.antigravity.vinyltracker.model.CollectionItem item,
                                                                 Long listenCount) {
+        return mapToCollectionRelease(item, listenCount, null);
+    }
+
+    private DiscogsDto.CollectionRelease mapToCollectionRelease(com.antigravity.vinyltracker.model.CollectionItem item,
+                                                                Long listenCount,
+                                                                String lastPlayedAt) {
         DiscogsDto.CollectionRelease release = new DiscogsDto.CollectionRelease();
         release.setId(item.getRecord().getDiscogsId());
         release.setInstanceId(item.getInstanceId());
         release.setListenCount(listenCount);
+        release.setLastPlayedAt(lastPlayedAt);
+        release.setMediaCondition(item.getMediaCondition());
+        release.setSleeveCondition(item.getSleeveCondition());
         if (item.getAddedAt() != null) {
-            release.setDateAdded(item.getAddedAt().toString());
+            release.setDateAdded(item.getAddedAt().format(com.antigravity.vinyltracker.config.JacksonConfig.UTC_FORMATTER));
         }
 
         DiscogsDto.Release basicInfo = new DiscogsDto.Release();
@@ -226,6 +262,7 @@ public class CollectionQueryService {
         }
 
         basicInfo.setLowestPrice(item.getRecord().getLowestPrice());
+        basicInfo.setMedianPrice(item.getRecord().getMedianPrice());
 
         String format = item.getRecord().getFormat() != null ? item.getRecord().getFormat() : "LP";
         basicInfo.setFormat(format);

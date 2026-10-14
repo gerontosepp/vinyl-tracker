@@ -62,4 +62,11 @@ describe('LocalizedDatePipe', () => {
     const formatted = pipe.transform(testDate, 'mediumDate', undefined, 'de');
     expect(formatted).toBe('08.10.2026');
   });
+
+  it('should normalize naive ISO UTC string by appending Z and converting to local time', () => {
+    const naiveUtcString = '2026-10-12T22:42:22';
+    const expected = pipe.transform('2026-10-12T22:42:22Z', 'medium');
+    const result = pipe.transform(naiveUtcString, 'medium');
+    expect(result).toBe(expected);
+  });
 });

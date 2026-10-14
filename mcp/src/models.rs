@@ -123,6 +123,8 @@ pub struct BasicInformation {
     pub genres: Vec<String>,
     #[serde(alias = "lowestPrice", alias = "lowest_price")]
     pub lowest_price: Option<f64>,
+    #[serde(alias = "medianPrice", alias = "median_price")]
+    pub median_price: Option<f64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -248,6 +250,8 @@ pub struct RecordDetailDto {
     pub added_at: Option<String>,
     #[serde(alias = "lowestPrice", alias = "lowest_price")]
     pub lowest_price: Option<f64>,
+    #[serde(alias = "medianPrice", alias = "median_price")]
+    pub median_price: Option<f64>,
     #[serde(alias = "numForSale", alias = "num_for_sale")]
     pub num_for_sale: Option<i32>,
     #[serde(default, alias = "listenHistory", alias = "listen_history")]

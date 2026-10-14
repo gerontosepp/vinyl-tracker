@@ -17,6 +17,7 @@ import {
   RoonZone,
   RoonSettings,
   RoonPlayRequest,
+  PriceRefreshResult,
 } from '../types';
 
 @Injectable({
@@ -66,8 +67,20 @@ export class ApiService {
     return this.http.get<RecordDetailDto>(`${this.baseUrl}/records/${id}`);
   }
 
+  updateRecordCondition(
+    id: number,
+    conditions: { media_condition?: string; sleeve_condition?: string }
+  ): Observable<RecordDetailDto> {
+    return this.http.patch<RecordDetailDto>(`${this.baseUrl}/records/${id}/condition`, conditions);
+  }
+
   logRecordListen(id: number): Observable<RecordDetailDto> {
     return this.http.post<RecordDetailDto>(`${this.baseUrl}/records/${id}/listen`, {});
+  }
+
+  refreshPrices(onlyMissing: boolean = true): Observable<PriceRefreshResult> {
+    const params = new HttpParams().set('onlyMissing', onlyMissing.toString());
+    return this.http.post<PriceRefreshResult>(`${this.baseUrl}/collection/prices/refresh`, {}, { params });
   }
 
   getGenreBreakdown(): Observable<GenreBreakdownItem[]> {
@@ -111,7 +124,9 @@ export class ApiService {
     search?: string,
     category?: 'all' | 'vinyl' | 'cd' | string,
     genres?: string[],
-    years?: string
+    years?: string,
+    notPlayedSince?: string,
+    unplayedOnly?: boolean
   ): Observable<CollectionResponse> {
     let params = new HttpParams()
       .set('page', page.toString())
@@ -134,6 +149,12 @@ export class ApiService {
     }
     if (years && years.trim()) {
       params = params.set('years', years.trim());
+    }
+    if (notPlayedSince && notPlayedSince.trim()) {
+      params = params.set('not_played_since', notPlayedSince.trim());
+    }
+    if (unplayedOnly) {
+      params = params.set('unplayed_only', 'true');
     }
     return this.http.get<CollectionResponse>(`${this.baseUrl}/collection`, { params });
   }

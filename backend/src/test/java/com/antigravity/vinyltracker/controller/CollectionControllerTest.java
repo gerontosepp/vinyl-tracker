@@ -53,7 +53,7 @@ class CollectionControllerTest {
                 mockResponse.setReleases(List.of(release));
 
                 when(collectionService.getCollection(eq("testuser"), anyInt(), anyInt(), anyString(), anyString(),
-                                any(), any(), any(), any(), any()))
+                                any(), any(), any(), any(), any(), any(), anyBoolean()))
                                 .thenReturn(mockResponse);
 
                 Principal mockPrincipal = () -> "testuser";
@@ -74,7 +74,7 @@ class CollectionControllerTest {
                 mockResponse.setReleases(List.of(release));
 
                 when(collectionService.getCollection(eq("testuser"), eq(1), eq(50), eq("artist"), eq("asc"),
-                                any(), any(), eq("cd"), any(), any()))
+                                any(), any(), eq("cd"), any(), any(), any(), anyBoolean()))
                                 .thenReturn(mockResponse);
 
                 mockMvc.perform(get("/api/collection")
@@ -93,7 +93,7 @@ class CollectionControllerTest {
                 mockResponse.setReleases(List.of(release));
 
                 when(collectionService.getCollection(eq("testuser"), eq(1), eq(50), eq("artist"), eq("asc"),
-                                any(), any(), eq("cd"), eq(List.of("Jazz", "Rock")), eq("1970-1972, 1975")))
+                                any(), any(), eq("cd"), eq(List.of("Jazz", "Rock")), eq("1970-1972, 1975"), any(), anyBoolean()))
                                 .thenReturn(mockResponse);
 
                 mockMvc.perform(get("/api/collection")
@@ -106,10 +106,30 @@ class CollectionControllerTest {
         }
 
         @Test
+        @WithMockUser(username = "testuser")
+        void getCollection_WithNotPlayedSinceAndUnplayedOnly_ShouldPassToService() throws Exception {
+                DiscogsDto.CollectionResponse mockResponse = new DiscogsDto.CollectionResponse();
+                DiscogsDto.CollectionRelease release = new DiscogsDto.CollectionRelease();
+                release.setId(103L);
+                mockResponse.setReleases(List.of(release));
+
+                when(collectionService.getCollection(eq("testuser"), eq(1), eq(50), eq("artist"), eq("asc"),
+                                any(), any(), eq("all"), any(), any(), eq(java.time.LocalDate.of(2026, 5, 1).atStartOfDay()), eq(true)))
+                                .thenReturn(mockResponse);
+
+                mockMvc.perform(get("/api/collection")
+                                .param("not_played_since", "2026-05-01")
+                                .param("unplayed_only", "true")
+                                .contentType(MediaType.APPLICATION_JSON))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.releases[0].id").value(103));
+        }
+
+        @Test
         @WithMockUser
         void getCollection_ShouldThrowException_WhenUserNotFound() throws Exception {
                 when(collectionService.getCollection(anyString(), anyInt(), anyInt(), anyString(), anyString(), any(),
-                                any(), any(), any(), any()))
+                                any(), any(), any(), any(), any(), anyBoolean()))
                                 .thenThrow(new RuntimeException("User not found"));
 
                 try {
@@ -267,5 +287,21 @@ class CollectionControllerTest {
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.added").value(1))
                                 .andExpect(jsonPath("$.removed").value(0));
+        }
+
+        @Test
+        @WithMockUser(username = "testuser")
+        void refreshPrices_ShouldReturnRefreshResult() throws Exception {
+                com.antigravity.vinyltracker.model.dto.PriceRefreshResultDto refreshResult =
+                        new com.antigravity.vinyltracker.model.dto.PriceRefreshResultDto(5, 10, "5 of 10 updated");
+                when(collectionService.refreshCollectionPrices("testuser", true)).thenReturn(refreshResult);
+
+                mockMvc.perform(post("/api/collection/prices/refresh")
+                                .principal(() -> "testuser")
+                                .param("onlyMissing", "true")
+                                .with(csrf()))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.updatedCount").value(5))
+                                .andExpect(jsonPath("$.totalCount").value(10));
         }
 }

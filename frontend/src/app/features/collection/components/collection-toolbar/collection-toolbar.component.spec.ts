@@ -139,5 +139,31 @@ describe('CollectionToolbarComponent', () => {
     downloadBtn.click();
     expect(component.downloadSelected.emit).toHaveBeenCalled();
   });
+
+  it('should toggle and close notPlayed popover', () => {
+    expect(component.isNotPlayedPopoverOpen()).toBeFalse();
+    component.toggleNotPlayedPopover();
+    expect(component.isNotPlayedPopoverOpen()).toBeTrue();
+    component.closeNotPlayedPopover();
+    expect(component.isNotPlayedPopoverOpen()).toBeFalse();
+  });
+
+  it('should emit notPlayedSinceChange on onNotPlayedSinceSelect', () => {
+    spyOn(component.notPlayedSinceChange, 'emit');
+    component.onNotPlayedSinceSelect('2025-06-01');
+    expect(component.notPlayedSinceChange.emit).toHaveBeenCalledWith('2025-06-01');
+  });
+
+  it('should emit toggleUnplayedOnly on onToggleUnplayedOnly', () => {
+    spyOn(component.toggleUnplayedOnly, 'emit');
+    component.onToggleUnplayedOnly();
+    expect(component.toggleUnplayedOnly.emit).toHaveBeenCalled();
+  });
+
+  it('should emit clearNotPlayedFilters on onClearNotPlayed', () => {
+    spyOn(component.clearNotPlayedFilters, 'emit');
+    component.onClearNotPlayed();
+    expect(component.clearNotPlayedFilters.emit).toHaveBeenCalled();
+  });
 });
 

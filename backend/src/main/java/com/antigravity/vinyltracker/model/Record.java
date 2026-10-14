@@ -31,6 +31,9 @@ public class Record {
     @Column(name = "lowest_price")
     private BigDecimal lowestPrice;
 
+    @Column(name = "median_price")
+    private BigDecimal medianPrice;
+
     @Column(name = "format")
     private String format;
 

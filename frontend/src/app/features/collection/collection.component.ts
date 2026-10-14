@@ -47,6 +47,8 @@ export class CollectionComponent implements OnInit, OnDestroy {
   readonly debouncedSearch = signal<string>('');
   readonly loadStatus = signal<string>('');
   readonly showPlayedOnly = signal<boolean>(false);
+  readonly notPlayedSince = signal<string>('');
+  readonly unplayedOnly = signal<boolean>(false);
   readonly sort = signal<string>('artist');
   readonly sortOrder = signal<string>('asc');
   readonly category = signal<'all' | 'vinyl' | 'cd'>('all');
@@ -115,7 +117,9 @@ export class CollectionComponent implements OnInit, OnDestroy {
         this.debouncedSearch(),
         this.category(),
         this.selectedGenres(),
-        this.debouncedYears()
+        this.debouncedYears(),
+        this.notPlayedSince() || undefined,
+        this.unplayedOnly()
       )
       .subscribe({
         next: (data) => {
@@ -165,7 +169,40 @@ export class CollectionComponent implements OnInit, OnDestroy {
   }
 
   toggleShowPlayedOnly(): void {
-    this.showPlayedOnly.update((p) => !p);
+    const nextVal = !this.showPlayedOnly();
+    this.showPlayedOnly.set(nextVal);
+    if (nextVal) {
+      this.unplayedOnly.set(false);
+      this.notPlayedSince.set('');
+    }
+    this.page.set(1);
+    this.loadData();
+  }
+
+  onNotPlayedSinceChange(date: string): void {
+    this.notPlayedSince.set(date);
+    if (date) {
+      this.unplayedOnly.set(false);
+      this.showPlayedOnly.set(false);
+    }
+    this.page.set(1);
+    this.loadData();
+  }
+
+  toggleUnplayedOnly(): void {
+    const nextVal = !this.unplayedOnly();
+    this.unplayedOnly.set(nextVal);
+    if (nextVal) {
+      this.notPlayedSince.set('');
+      this.showPlayedOnly.set(false);
+    }
+    this.page.set(1);
+    this.loadData();
+  }
+
+  clearNotPlayedFilters(): void {
+    this.notPlayedSince.set('');
+    this.unplayedOnly.set(false);
     this.page.set(1);
     this.loadData();
   }
@@ -214,6 +251,8 @@ export class CollectionComponent implements OnInit, OnDestroy {
     this.debouncedSearch.set('');
     this.category.set('all');
     this.showPlayedOnly.set(false);
+    this.notPlayedSince.set('');
+    this.unplayedOnly.set(false);
     this.page.set(1);
     this.loadData();
   }
@@ -307,7 +346,7 @@ export class CollectionComponent implements OnInit, OnDestroy {
       next: (detail) => {
         this.recordDetail.set(detail);
         this.loadingDetail.set(false);
-        if (detail.lowest_price != null) {
+        if (detail.lowest_price != null || detail.median_price != null) {
           this.releases.update((list) =>
             list.map((r) =>
               r.id === release.id
@@ -315,8 +354,9 @@ export class CollectionComponent implements OnInit, OnDestroy {
                     ...r,
                     basic_information: {
                       ...r.basic_information,
-                      lowest_price: detail.lowest_price,
-                      num_for_sale: detail.num_for_sale,
+                      lowest_price: detail.lowest_price != null ? detail.lowest_price : r.basic_information?.lowest_price,
+                      median_price: detail.median_price != null ? detail.median_price : r.basic_information?.median_price,
+                      num_for_sale: detail.num_for_sale != null ? detail.num_for_sale : r.basic_information?.num_for_sale,
                     },
                   }
                 : r
@@ -344,6 +384,40 @@ export class CollectionComponent implements OnInit, OnDestroy {
       list.map((r) =>
         r.id === updated.discogs_id || (updated.id != null && r.id === updated.id)
           ? { ...r, listen_count: updated.listen_count }
+          : r
+      )
+    );
+  }
+
+  onConditionUpdated(updated: RecordDetailDto): void {
+    this.recordDetail.set(updated);
+    if (this.selectedRecord()) {
+      this.selectedRecord.update((rec) =>
+        rec
+          ? {
+              ...rec,
+              media_condition: updated.media_condition,
+              sleeve_condition: updated.sleeve_condition,
+              basic_information: {
+                ...rec.basic_information,
+                median_price: updated.median_price != null ? updated.median_price : rec.basic_information?.median_price,
+              },
+            }
+          : null
+      );
+    }
+    this.releases.update((list) =>
+      list.map((r) =>
+        r.id === updated.discogs_id || (updated.id != null && r.id === updated.id)
+          ? {
+              ...r,
+              media_condition: updated.media_condition,
+              sleeve_condition: updated.sleeve_condition,
+              basic_information: {
+                ...r.basic_information,
+                median_price: updated.median_price != null ? updated.median_price : r.basic_information?.median_price,
+              },
+            }
           : r
       )
     );

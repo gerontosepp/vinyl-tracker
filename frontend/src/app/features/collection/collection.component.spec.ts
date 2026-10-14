@@ -164,7 +164,9 @@ describe('CollectionComponent', () => {
         '',
         'all',
         [],
-        ''
+        '',
+        undefined,
+        false
       );
     });
   });
@@ -185,7 +187,9 @@ describe('CollectionComponent', () => {
         '',
         'cd',
         [],
-        ''
+        '',
+        undefined,
+        false
       );
     });
 
@@ -223,7 +227,9 @@ describe('CollectionComponent', () => {
         '',
         'all',
         ['Rock', 'Jazz'],
-        ''
+        '',
+        undefined,
+        false
       );
     });
 
@@ -236,6 +242,8 @@ describe('CollectionComponent', () => {
       component.debouncedSearch.set('Pink');
       component.category.set('cd');
       component.showPlayedOnly.set(true);
+      component.notPlayedSince.set('2025-01-01');
+      component.unplayedOnly.set(true);
 
       component.clearAllFilters();
 
@@ -245,6 +253,109 @@ describe('CollectionComponent', () => {
       expect(component.search()).toBe('');
       expect(component.category()).toBe('all');
       expect(component.showPlayedOnly()).toBeFalse();
+      expect(component.notPlayedSince()).toBe('');
+      expect(component.unplayedOnly()).toBeFalse();
+    });
+  });
+
+  describe('notPlayed filters and mutual exclusivity', () => {
+    it('should update notPlayedSince, reset unplayedOnly and showPlayedOnly, and reload data', () => {
+      mockAuthService.user = signal({ username: 'testuser' });
+      component.showPlayedOnly.set(true);
+      component.unplayedOnly.set(true);
+      component.onNotPlayedSinceChange('2025-06-01');
+
+      expect(component.notPlayedSince()).toBe('2025-06-01');
+      expect(component.unplayedOnly()).toBeFalse();
+      expect(component.showPlayedOnly()).toBeFalse();
+      expect(component.page()).toBe(1);
+      expect(mockApiService.getCollection).toHaveBeenCalledWith(
+        1,
+        component.perPage(),
+        0,
+        'artist',
+        'asc',
+        '',
+        'all',
+        [],
+        '',
+        '2025-06-01',
+        false
+      );
+    });
+
+    it('should toggle unplayedOnly, reset notPlayedSince and showPlayedOnly, and reload data', () => {
+      mockAuthService.user = signal({ username: 'testuser' });
+      component.showPlayedOnly.set(true);
+      component.notPlayedSince.set('2025-06-01');
+      component.toggleUnplayedOnly();
+
+      expect(component.unplayedOnly()).toBeTrue();
+      expect(component.notPlayedSince()).toBe('');
+      expect(component.showPlayedOnly()).toBeFalse();
+      expect(component.page()).toBe(1);
+      expect(mockApiService.getCollection).toHaveBeenCalledWith(
+        1,
+        component.perPage(),
+        0,
+        'artist',
+        'asc',
+        '',
+        'all',
+        [],
+        '',
+        undefined,
+        true
+      );
+    });
+
+    it('should clear unplayed filters on clearNotPlayedFilters', () => {
+      mockAuthService.user = signal({ username: 'testuser' });
+      component.notPlayedSince.set('2025-06-01');
+      component.unplayedOnly.set(true);
+      component.clearNotPlayedFilters();
+
+      expect(component.notPlayedSince()).toBe('');
+      expect(component.unplayedOnly()).toBeFalse();
+      expect(mockApiService.getCollection).toHaveBeenCalledWith(
+        1,
+        component.perPage(),
+        0,
+        'artist',
+        'asc',
+        '',
+        'all',
+        [],
+        '',
+        undefined,
+        false
+      );
+    });
+
+    it('should reset unplayed filters when showPlayedOnly is activated', () => {
+      mockAuthService.user = signal({ username: 'testuser' });
+      component.notPlayedSince.set('2025-06-01');
+      component.unplayedOnly.set(true);
+      component.showPlayedOnly.set(false);
+
+      component.toggleShowPlayedOnly();
+
+      expect(component.showPlayedOnly()).toBeTrue();
+      expect(component.notPlayedSince()).toBe('');
+      expect(component.unplayedOnly()).toBeFalse();
+      expect(mockApiService.getCollection).toHaveBeenCalledWith(
+        1,
+        component.perPage(),
+        1,
+        'artist',
+        'asc',
+        '',
+        'all',
+        [],
+        '',
+        undefined,
+        false
+      );
     });
   });
 
@@ -301,6 +412,54 @@ describe('CollectionComponent', () => {
 
       expect(component.selectedCount()).toBe(0);
       expect(component.selectedItems().size).toBe(0);
+    });
+  });
+
+  describe('onConditionUpdated', () => {
+    it('should update recordDetail and releases array with new conditions and median price', () => {
+      const initialRelease = {
+        id: 100,
+        instance_id: 1,
+        date_added: '',
+        rating: 0,
+        media_condition: 'Very Good (VG)',
+        sleeve_condition: 'Good (G)',
+        basic_information: {
+          id: 100,
+          title: 'Test Album',
+          year: 2000,
+          thumb: '',
+          cover_image: '',
+          artists: [],
+          median_price: 15.00,
+        },
+      } as CollectionRelease;
+
+      component.releases.set([initialRelease]);
+      component.selectedRecord.set(initialRelease);
+
+      const updatedDetail = {
+        id: 1,
+        discogs_id: 100,
+        title: 'Test Album',
+        genres: [],
+        in_collection: true,
+        listen_count: 2,
+        media_condition: 'Mint (M)',
+        sleeve_condition: 'Near Mint (NM or M-)',
+        median_price: 32.50,
+        tracklist: [],
+        formats: [],
+        labels: [],
+      };
+
+      component.onConditionUpdated(updatedDetail);
+
+      expect(component.recordDetail()).toEqual(updatedDetail);
+      expect(component.releases()[0].media_condition).toBe('Mint (M)');
+      expect(component.releases()[0].sleeve_condition).toBe('Near Mint (NM or M-)');
+      expect(component.releases()[0].basic_information.median_price).toBe(32.50);
+      expect(component.selectedRecord()?.media_condition).toBe('Mint (M)');
     });
   });
 });

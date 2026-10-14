@@ -13,9 +13,12 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -95,4 +98,41 @@ class RecordControllerTest {
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.listen_count").value(6));
     }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void updateCondition_Success() throws Exception {
+        RecordDetailDto detail = RecordDetailDto.builder()
+                .id(1L)
+                .discogsId(999L)
+                .title("Dark Side of the Moon")
+                .artist("Pink Floyd")
+                .inCollection(true)
+                .mediaCondition("Mint (M)")
+                .sleeveCondition("Near Mint (NM or M-)")
+                .medianPrice(java.math.BigDecimal.valueOf(25.00))
+                .build();
+
+        when(recordService.updateCondition(eq(1L), any(com.antigravity.vinyltracker.model.dto.UpdateConditionRequestDto.class), eq("testuser")))
+                .thenReturn(detail);
+
+        String jsonPayload = """
+                {
+                    "media_condition": "Mint (M)",
+                    "sleeve_condition": "Near Mint (NM or M-)"
+                }
+                """;
+
+        mockMvc.perform(patch("/api/records/1/condition")
+                        .with(csrf())
+                        .principal(() -> "testuser")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonPayload))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.media_condition").value("Mint (M)"))
+                .andExpect(jsonPath("$.sleeve_condition").value("Near Mint (NM or M-)"))
+                .andExpect(jsonPath("$.median_price").value(25.00));
+    }
 }
+

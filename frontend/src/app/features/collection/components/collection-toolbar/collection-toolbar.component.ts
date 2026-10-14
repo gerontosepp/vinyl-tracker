@@ -51,6 +51,8 @@ export class CollectionToolbarComponent {
   readonly selectedCount = input<number>(0);
   readonly isAllPageSelected = input<boolean>(false);
   readonly showPlayedOnly = input<boolean>(false);
+  readonly notPlayedSince = input<string>('');
+  readonly unplayedOnly = input<boolean>(false);
   readonly generating = input<boolean>(false);
   readonly loadStatus = input<string>('');
   readonly loading = input<boolean>(false);
@@ -68,6 +70,9 @@ export class CollectionToolbarComponent {
   readonly nextPage = output<void>();
   readonly toggleSelectAllPage = output<void>();
   readonly toggleShowPlayedOnly = output<void>();
+  readonly notPlayedSinceChange = output<string>();
+  readonly toggleUnplayedOnly = output<void>();
+  readonly clearNotPlayedFilters = output<void>();
   readonly downloadSelected = output<void>();
   readonly clearSelection = output<void>();
   readonly genresChange = output<string[]>();
@@ -75,6 +80,7 @@ export class CollectionToolbarComponent {
   readonly clearAllFilters = output<void>();
 
   readonly isGenreDropdownOpen = signal<boolean>(false);
+  readonly isNotPlayedPopoverOpen = signal<boolean>(false);
   readonly genreSearchTerm = signal<string>('');
 
   readonly filteredGenres = computed(() => {
@@ -127,5 +133,25 @@ export class CollectionToolbarComponent {
 
   clearYears(): void {
     this.yearsChange.emit('');
+  }
+
+  toggleNotPlayedPopover(): void {
+    this.isNotPlayedPopoverOpen.update((open) => !open);
+  }
+
+  closeNotPlayedPopover(): void {
+    this.isNotPlayedPopoverOpen.set(false);
+  }
+
+  onNotPlayedSinceSelect(value: string): void {
+    this.notPlayedSinceChange.emit(value);
+  }
+
+  onToggleUnplayedOnly(): void {
+    this.toggleUnplayedOnly.emit();
+  }
+
+  onClearNotPlayed(): void {
+    this.clearNotPlayedFilters.emit();
   }
 }

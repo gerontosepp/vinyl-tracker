@@ -92,14 +92,18 @@ export class AuthService {
     }
   }
 
+  clearSession(): void {
+    this.user.set(null);
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+  }
+
   async logout(): Promise<void> {
     try {
       await firstValueFrom(this.apiService.logoutUser());
     } catch (error) {
       console.error('Logout failed:', getErrorMessage(error, 'Unknown logout error'));
     } finally {
-      this.user.set(null);
-      localStorage.removeItem(AUTH_TOKEN_KEY);
+      this.clearSession();
     }
   }
 

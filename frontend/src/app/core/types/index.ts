@@ -105,6 +105,7 @@ export interface DiscogsBasicInfo {
   genres?: string[];
   styles?: string[];
   lowest_price?: number;
+  median_price?: number;
   num_for_sale?: number;
   format?: string;
   formats?: RecordFormat[];
@@ -141,9 +142,12 @@ export interface RecordDetailDto {
   in_collection: boolean;
   instance_id?: number;
   added_at?: string;
+  media_condition?: string;
+  sleeve_condition?: string;
   listen_count: number;
   last_listened_at?: string;
   lowest_price?: number;
+  median_price?: number;
   num_for_sale?: number;
   listen_history?: string[];
   tracklist: RecordTrack[];
@@ -162,6 +166,9 @@ export interface CollectionRelease {
   rating: number;
   basic_information: DiscogsBasicInfo;
   listen_count?: number;
+  last_played_at?: string;
+  media_condition?: string;
+  sleeve_condition?: string;
 }
 
 export interface CollectionPagination {
@@ -204,4 +211,10 @@ export interface CollectionValueResponse {
 export interface GenreBreakdownItem {
   name: string;
   value: number;
+}
+
+export interface PriceRefreshResult {
+  updatedCount: number;
+  totalCount: number;
+  message: string;
 }

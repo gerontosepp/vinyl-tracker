@@ -27,11 +27,25 @@ public class CollectionController {
             @RequestParam(required = false) String search,
             @RequestParam(required = false, defaultValue = "all") String category,
             @RequestParam(required = false) List<String> genres,
-            @RequestParam(required = false) String years) {
+            @RequestParam(required = false) String years,
+            @RequestParam(required = false) String not_played_since,
+            @RequestParam(required = false, defaultValue = "false") boolean unplayed_only) {
+
+        java.time.LocalDateTime parsedNotPlayedSince = null;
+        if (not_played_since != null && !not_played_since.isBlank()) {
+            try {
+                if (not_played_since.contains("T")) {
+                    parsedNotPlayedSince = java.time.LocalDateTime.parse(not_played_since.replace("Z", ""));
+                } else {
+                    parsedNotPlayedSince = java.time.LocalDate.parse(not_played_since).atStartOfDay();
+                }
+            } catch (Exception ignored) {
+            }
+        }
 
         return ResponseEntity
                 .ok(collectionService.getCollection(principal.getName(), page, per_page, sort, sort_order, min_plays,
-                        search, category, genres, years));
+                        search, category, genres, years, parsedNotPlayedSince, unplayed_only));
     }
 
     @GetMapping("/random")
@@ -66,6 +80,14 @@ public class CollectionController {
             Principal principal,
             @PathVariable Long releaseId) {
         com.antigravity.vinyltracker.model.dto.SyncResultDto result = collectionService.addReleaseAndSync(principal.getName(), releaseId);
+        return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("/prices/refresh")
+    public ResponseEntity<com.antigravity.vinyltracker.model.dto.PriceRefreshResultDto> refreshPrices(
+            Principal principal,
+            @RequestParam(defaultValue = "true") boolean onlyMissing) {
+        com.antigravity.vinyltracker.model.dto.PriceRefreshResultDto result = collectionService.refreshCollectionPrices(principal.getName(), onlyMissing);
         return ResponseEntity.ok(result);
     }
 

@@ -1,5 +1,6 @@
-import { Component, input, output, inject, signal } from '@angular/core';
+import { Component, input, output, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../../core/services/api.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { LanguageService } from '../../../../core/services/language.service';
@@ -8,12 +9,14 @@ import { LucideExternalLink, LucideX, LucideHeadphones, LucideCheck, LucidePlay 
 import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
 import { LocalizedDatePipe } from '../../../../core/pipes/localized-date.pipe';
 import { getErrorMessage } from '../../../../core/utils/error';
+import { getConditionShortCode, MEDIA_CONDITION_OPTIONS, SLEEVE_CONDITION_OPTIONS } from '../../utils/condition.util';
 
 @Component({
   selector: 'app-record-detail-modal',
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     TranslatePipe,
     LocalizedDatePipe,
     LucideExternalLink,
@@ -28,6 +31,9 @@ export class RecordDetailModalComponent {
   readonly apiService = inject(ApiService);
   readonly toastService = inject(ToastService);
   readonly languageService = inject(LanguageService);
+  readonly getConditionShortCode = getConditionShortCode;
+  readonly mediaConditionOptions = MEDIA_CONDITION_OPTIONS;
+  readonly sleeveConditionOptions = SLEEVE_CONDITION_OPTIONS;
 
   readonly record = input<CollectionRelease | null>(null);
   readonly detail = input<RecordDetailDto | null>(null);
@@ -35,11 +41,17 @@ export class RecordDetailModalComponent {
 
   readonly close = output<void>();
   readonly listenLogged = output<RecordDetailDto>();
+  readonly conditionUpdated = output<RecordDetailDto>();
 
   readonly isLoggingListen = signal<boolean>(false);
   readonly justListened = signal<boolean>(false);
   readonly isPlayingOnRoon = signal<boolean>(false);
+  readonly isUpdatingCondition = signal<boolean>(false);
+  readonly currentMediaCondition = computed(() => this.detail()?.media_condition || this.record()?.media_condition || '');
+  readonly currentSleeveCondition = computed(() => this.detail()?.sleeve_condition || this.record()?.sleeve_condition || '');
   private justListenedTimeout?: ReturnType<typeof setTimeout>;
+
+
 
   onPlayOnRoon(): void {
     const rec = this.record();
@@ -85,6 +97,58 @@ export class RecordDetailModalComponent {
       error: (err) => {
         this.isLoggingListen.set(false);
         this.toastService.showToast(getErrorMessage(err, 'Fehler beim Erfassen des Hör-Events'), 'error');
+      },
+    });
+  }
+
+  onMediaConditionChange(newValue: string): void {
+    const current = this.detail()?.media_condition || this.record()?.media_condition || '';
+    if (!newValue || newValue === current || this.isUpdatingCondition()) return;
+
+    const rec = this.record();
+    const det = this.detail();
+    const targetId = det?.id ?? det?.discogs_id ?? rec?.id;
+    if (!targetId) return;
+
+    this.isUpdatingCondition.set(true);
+    this.apiService.updateRecordCondition(targetId, { media_condition: newValue }).subscribe({
+      next: (updatedDetail) => {
+        this.isUpdatingCondition.set(false);
+        this.toastService.showToast(
+          this.languageService.translate('collection.conditionUpdated') || 'Zustand erfolgreich aktualisiert 💿',
+          'success'
+        );
+        this.conditionUpdated.emit(updatedDetail);
+      },
+      error: (err) => {
+        this.isUpdatingCondition.set(false);
+        this.toastService.showToast(getErrorMessage(err, 'Fehler beim Aktualisieren des Zustands'), 'error');
+      },
+    });
+  }
+
+  onSleeveConditionChange(newValue: string): void {
+    const current = this.detail()?.sleeve_condition || this.record()?.sleeve_condition || '';
+    if (!newValue || newValue === current || this.isUpdatingCondition()) return;
+
+    const rec = this.record();
+    const det = this.detail();
+    const targetId = det?.id ?? det?.discogs_id ?? rec?.id;
+    if (!targetId) return;
+
+    this.isUpdatingCondition.set(true);
+    this.apiService.updateRecordCondition(targetId, { sleeve_condition: newValue }).subscribe({
+      next: (updatedDetail) => {
+        this.isUpdatingCondition.set(false);
+        this.toastService.showToast(
+          this.languageService.translate('collection.conditionUpdated') || 'Zustand erfolgreich aktualisiert 💿',
+          'success'
+        );
+        this.conditionUpdated.emit(updatedDetail);
+      },
+      error: (err) => {
+        this.isUpdatingCondition.set(false);
+        this.toastService.showToast(getErrorMessage(err, 'Fehler beim Aktualisieren des Zustands'), 'error');
       },
     });
   }

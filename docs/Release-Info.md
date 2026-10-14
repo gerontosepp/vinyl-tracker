@@ -7,7 +7,46 @@
 
 ---
 
-## v0.5.0 (2026-10-12) – Aktueller Release (WiP / Beta)
+## v0.6.0 (2026-10-14) – Aktueller Release (WiP / Beta)
+
+- **Fix: Singleton-Container-Lifecycle für Integrationstests**:
+  - Behebt Verbindungsabbrüche (`Connection refused`) in der CI-Pipeline durch statische Initialisierung des PostgreSQL-Containers in `AbstractIntegrationTest`, sodass Spring Boot den gecachten ApplicationContext über die gesamte Testsuite hinweg verlässlich weiterverwenden kann.
+- **Dependency-Aktualisierungen (Backend & Frontend)**:
+  - Backend: Upgrade PostgreSQL Driver (`42.7.13` → `42.7.14`), OpenPDF (`2.0.3` → `2.2.2`), SpringDoc OpenAPI UI (`2.8.5` → `2.8.6`).
+  - Frontend: Upgrade `@lucide/angular` (`1.51.0` → `1.56.0`), `@playwright/test` (`1.63.0` → `1.64.0`), `postcss` (`8.5.28` → `8.5.30`) sowie Aktualisierung transitiver Pakete via `npm update`.
+- **Sammlungsfilter: „Nicht gespielt seit <Datum>“ und „Noch nie gespielt“ (`#61`)**:
+  - Neuer Datumsfilter in der Sammlungsansicht (`not_played_since = YYYY-MM-DD`), der Alben anzeigt, die seit dem gewählten Stichtag nicht mehr oder noch nie gehört wurden.
+  - Checkbox-Schnellfilter „Noch nie gespielt“ (`unplayed_only = true`), der ausschließlich Alben mit 0 Plays anzeigt.
+  - Serverseitige Filterung direkt in JPQL (`CollectionItemRepository`) inklusive konsistenter Paginierung und Zählung.
+  - Neues Dropdown-Menü in der `CollectionToolbarComponent` inklusive Datums-Picker, Löschen-Button und aktiver Filter-Badges mit gegenseitigem Ausschluss zu „Nur Gespielte“.
+- **Discogs Zustands-Synchronisation (Media & Sleeve Condition) (`#62`)**:
+  - Automatischer Import der Goldmine-Grading-Zustände (*Media Condition* und *Sleeve Condition*) aus den benutzerdefinierten Feldern der Discogs-Sammlung (`GET /users/{username}/collection/fields`).
+  - Persistierung der Zustände in `collection_item` via Flyway-Migration `V8__add_conditions_to_collection_item.sql`.
+  - Anzeige der Zustände im Record-Detail-Modal mit dedizierten Farb-Karten und Goldmine-Kurzcodes (`VG+`, `NM`, `VG` etc.).
+  - Anzeige kompakter Zustand-Badges in der Sammlungstabelle (neue Spalte „Zustand“) sowie in den Kacheln der Sammlungsübersicht.
+  - Grundlage für zustandsbasierte Discogs-Marktpreis-Ermittlung (`#30`).
+- **Zustandsbasierte Discogs-Marktpreis-Ermittlung (`#30`)**:
+  - Automatische Ermittlung geschätzter Marktpreise in EUR über die Discogs Marketplace Price Suggestions API (`GET /marketplace/price_suggestions/{release_id}`) basierend auf dem Plattenzustand (Media Condition aus `#62`, Fallback auf `Very Good Plus (VG+)`).
+  - Persistierung des geschätzten Werts in `record_cache.median_price` via Flyway-Migration `V9__add_median_price_to_record_cache.sql`.
+  - Automatisches Nachladen beim Öffnen von Album-Details, Scannen von Barcodes sowie Möglichkeit zur Massen-Aktualisierung (`POST /api/collection/prices/refresh`).
+  - Anzeige des geschätzten Werts im Album-Detail-Modal („Geschätzter Wert“), in der Sammlungstabelle (Spalte „Wert“) und als Badge in den Album-Karten.
+  - Entfall der obsoleten Mindestpreis-Anzeige zugunsten einer aufgeräumten 4-Spalten-Statistikleiste.
+- **Fix: Lokale Zeitzonen-Konvertierung für Hör-Events (`#64`)**:
+  - Konsequente ISO-8601 UTC-Serialisierung (`yyyy-MM-dd'T'HH:mm:ss'Z'`) über Spring `JacksonConfig` und DTO `@JsonFormat`-Definitionen.
+  - Automatisches UTC-Parsing in Angular `LocalizedDatePipe` zur verlässlichen Umrechnung in die lokale Browser-Zeitzone.
+- **Fix: Filterung von min_plays direkt in SQL-Queries (`#60`)**:
+  - Direkte Ausführung des `min_plays`-Filters in JPQL (`COUNT(le) >= :minPlays`) zur Behebung von Paginierungs- und Gesamtzahl-Fehlern in der Sammlung bei aktivem „Nur Gespielte“-Filter.
+- **Sammlungstabelle: Spalte „Zuletzt gespielt“ (Last played at) (`#70`)**:
+  - Ergänzung der Spalte „Last played at“ direkt nach „Plays“ mit formatiertem Timestamp des letzten Abspielvorgangs (`LocalizedDatePipe`).
+- **Fix: Automatisches Handling abgelaufener JWT-Sessions (`#57`)**:
+  - Fängt `401 Unauthorized` und `403 Forbidden` im `authInterceptor` ab, leert Session und Token (`vinyl_auth_token`), zeigt einen erklärenden Toast-Hinweis und leitet zuverlässig auf `/login` weiter (unter Ausschluss öffentlicher Auth-Endpunkte).
+- **Dashboard: Entfernung redundanter „Gescannt:“-Badges (`#59`)**:
+  - Entfernung des unvollständigen Hover-Overlay-Badges („Gescannt:“) über Album-Covern in der Sektion „Kürzlich Gehört“ zugunsten einer ungestörten Cover-Darstellung und der bereits vorhandenen Datumsanzeige am unteren Kartenrand.
+  - Bereinigung der ungenutzten Übersetzungsschlüssel `dashboard.scannedLabel` in `LanguageService`.
+
+---
+
+## v0.5.0 (2026-10-12)
 
 - **Eyoyo EY-009P & Hardware-Scanner Integration (`#45`, `#49`)**:
   - Globaler HID Keyboard Wedge Listener im Frontend (`ScannerService`) zur vollautomatischen Erkennung von Barcode- und QR-Code-Scannern ohne Fokusverlust oder manuelle Eingabefelder.

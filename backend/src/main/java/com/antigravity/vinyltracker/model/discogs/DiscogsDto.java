@@ -36,6 +36,8 @@ public class DiscogsDto {
         private String format;
         @JsonProperty("lowest_price")
         private BigDecimal lowestPrice;
+        @JsonProperty("median_price")
+        private BigDecimal medianPrice;
         @JsonProperty("num_for_sale")
         private Integer numForSale;
     }
@@ -238,6 +240,120 @@ public class DiscogsDto {
         private Integer rating;
         @JsonProperty("basic_information")
         private Release basicInformation;
+        @JsonProperty("media_condition")
+        private String mediaCondition;
+        @JsonProperty("sleeve_condition")
+        private String sleeveCondition;
+        @JsonProperty("last_played_at")
+        private String lastPlayedAt;
+        private List<CollectionNote> notes;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @Data
+    @lombok.AllArgsConstructor
+    @lombok.NoArgsConstructor
+    public static class CollectionNote {
+        @JsonProperty("field_id")
+        private Long fieldId;
+        private String value;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @Data
+    @lombok.AllArgsConstructor
+    @lombok.NoArgsConstructor
+    public static class CollectionFieldsResponse {
+        private List<CollectionField> fields;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @Data
+    @lombok.AllArgsConstructor
+    @lombok.NoArgsConstructor
+    public static class CollectionField {
+        private Long id;
+        private String name;
+        private String type;
+        private List<String> options;
+        private Integer position;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @Data
+    @lombok.AllArgsConstructor
+    @lombok.NoArgsConstructor
+    public static class PriceSuggestion {
+        private String currency;
+        private Double value;
+    }
+
+    public static BigDecimal extractSuggestedPrice(Map<String, PriceSuggestion> suggestions, String mediaCondition) {
+        if (suggestions == null || suggestions.isEmpty()) {
+            return null;
+        }
+
+        PriceSuggestion match = null;
+
+        if (mediaCondition != null && !mediaCondition.isBlank()) {
+            String trimmed = mediaCondition.trim();
+            match = suggestions.get(trimmed);
+
+            if (match == null) {
+                String normalized = trimmed.toLowerCase();
+                for (Map.Entry<String, PriceSuggestion> entry : suggestions.entrySet()) {
+                    String keyLower = entry.getKey().toLowerCase();
+                    if (keyLower.contains(normalized) || normalized.contains(keyLower)) {
+                        match = entry.getValue();
+                        break;
+                    }
+                }
+            }
+
+            if (match == null) {
+                String shortCode = trimmed;
+                int parenStart = trimmed.indexOf('(');
+                int parenEnd = trimmed.indexOf(')');
+                if (parenStart != -1 && parenEnd > parenStart) {
+                    shortCode = trimmed.substring(parenStart + 1, parenEnd).split("\\s+")[0].trim();
+                }
+
+                String targetKey = switch (shortCode.toUpperCase()) {
+                    case "M", "MINT" -> "Mint (M)";
+                    case "NM", "M-", "NEAR MINT" -> "Near Mint (NM or M-)";
+                    case "VG+", "VERY GOOD PLUS" -> "Very Good Plus (VG+)";
+                    case "VG", "VERY GOOD" -> "Very Good (VG)";
+                    case "G+", "GOOD PLUS" -> "Good Plus (G+)";
+                    case "G", "GOOD" -> "Good (G)";
+                    case "F", "FAIR" -> "Fair (F)";
+                    case "P", "POOR" -> "Poor (P)";
+                    default -> null;
+                };
+
+                if (targetKey != null) {
+                    match = suggestions.get(targetKey);
+                }
+            }
+        }
+
+        if (match == null || match.getValue() == null) {
+            match = suggestions.get("Very Good Plus (VG+)");
+        }
+
+        if ((match == null || match.getValue() == null) && !suggestions.isEmpty()) {
+            for (PriceSuggestion s : suggestions.values()) {
+                if (s != null && s.getValue() != null) {
+                    match = s;
+                    break;
+                }
+            }
+        }
+
+        if (match != null && match.getValue() != null && match.getValue() > 0) {
+            return BigDecimal.valueOf(match.getValue()).setScale(2, java.math.RoundingMode.HALF_UP);
+        }
+
+        return null;
     }
 
     @Deprecated

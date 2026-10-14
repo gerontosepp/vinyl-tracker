@@ -7,6 +7,7 @@ import com.antigravity.vinyltracker.model.ListenEvent;
 import com.antigravity.vinyltracker.model.Record;
 import com.antigravity.vinyltracker.model.discogs.DiscogsDto;
 import com.antigravity.vinyltracker.model.dto.RecordDetailDto;
+import com.antigravity.vinyltracker.model.dto.UpdateConditionRequestDto;
 import com.antigravity.vinyltracker.repository.AppUserRepository;
 import com.antigravity.vinyltracker.repository.CollectionItemRepository;
 import com.antigravity.vinyltracker.repository.ListenEventRepository;
@@ -89,6 +90,25 @@ public class RecordService {
             }
         }
 
+        BigDecimal medianPrice = recordOpt.map(Record::getMedianPrice).orElse(null);
+        if (medianPrice == null && discogsId != null) {
+            try {
+                var suggestions = discogsApiClient.getPriceSuggestions(discogsId, user);
+                String mediaCond = collectionItemOpt.map(CollectionItem::getMediaCondition).orElse(null);
+                BigDecimal suggested = DiscogsDto.extractSuggestedPrice(suggestions, mediaCond);
+                if (suggested != null) {
+                    medianPrice = suggested;
+                    if (recordOpt.isPresent()) {
+                        Record r = recordOpt.get();
+                        r.setMedianPrice(suggested);
+                        recordRepository.save(r);
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("Could not determine price suggestions for record ID {}: {}", discogsId, e.getMessage());
+            }
+        }
+
         String title = release != null && release.getTitle() != null
                 ? release.getTitle()
                 : (recordOpt.isPresent() ? recordOpt.get().getTitle() : null);
@@ -137,9 +157,12 @@ public class RecordService {
                 .inCollection(collectionItemOpt.isPresent())
                 .instanceId(collectionItemOpt.map(CollectionItem::getInstanceId).orElse(null))
                 .addedAt(collectionItemOpt.map(CollectionItem::getAddedAt).orElse(null))
+                .mediaCondition(collectionItemOpt.map(CollectionItem::getMediaCondition).orElse(null))
+                .sleeveCondition(collectionItemOpt.map(CollectionItem::getSleeveCondition).orElse(null))
                 .listenCount(listenCount != null ? listenCount : 0L)
                 .lastListenedAt(lastListenedAt)
                 .lowestPrice(lowestPrice)
+                .medianPrice(medianPrice)
                 .numForSale(numForSale)
                 .listenHistory(listenHistory)
                 .tracklist(release != null && release.getTracklist() != null ? release.getTracklist() : List.of())
@@ -192,4 +215,116 @@ public class RecordService {
 
         return getRecordDetails(record.getId(), username);
     }
+
+    @Transactional
+    public RecordDetailDto updateCondition(Long id, UpdateConditionRequestDto request, String username) {
+        log.info("Updating condition for record id: {} by user: {}", id, username);
+        AppUser user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
+
+        Optional<Record> recordOpt = recordRepository.findById(id)
+                .or(() -> recordRepository.findByDiscogsId(id));
+
+        if (recordOpt.isEmpty()) {
+            throw new ResourceNotFoundException("Record not found with ID: " + id);
+        }
+        Record record = recordOpt.get();
+
+        Optional<CollectionItem> collectionItemOpt = collectionItemRepository.findByUserAndRecord(user, record);
+        if (collectionItemOpt.isEmpty()) {
+            collectionItemOpt = collectionItemRepository.findByUserAndRecord_DiscogsId(user, record.getDiscogsId());
+        }
+
+        if (collectionItemOpt.isEmpty()) {
+            throw new ResourceNotFoundException("Record is not in your collection (ID: " + id + ")");
+        }
+        CollectionItem item = collectionItemOpt.get();
+
+        String newMedia = request.getMediaCondition() != null
+                ? (request.getMediaCondition().isBlank() ? null : request.getMediaCondition().trim())
+                : null;
+        String newSleeve = request.getSleeveCondition() != null
+                ? (request.getSleeveCondition().isBlank() ? null : request.getSleeveCondition().trim())
+                : null;
+
+        boolean mediaChanged = request.getMediaCondition() != null && !java.util.Objects.equals(newMedia, item.getMediaCondition());
+        boolean sleeveChanged = request.getSleeveCondition() != null && !java.util.Objects.equals(newSleeve, item.getSleeveCondition());
+
+        if (request.getMediaCondition() != null) {
+            item.setMediaCondition(newMedia);
+        }
+        if (request.getSleeveCondition() != null) {
+            item.setSleeveCondition(newSleeve);
+        }
+        collectionItemRepository.save(item);
+
+        if (mediaChanged || record.getMedianPrice() == null) {
+            try {
+                var suggestions = discogsApiClient.getPriceSuggestions(record.getDiscogsId(), user);
+                BigDecimal newSuggested = DiscogsDto.extractSuggestedPrice(suggestions, item.getMediaCondition());
+                if (newSuggested != null) {
+                    record.setMedianPrice(newSuggested);
+                    recordRepository.save(record);
+                }
+            } catch (Exception e) {
+                log.warn("Could not recalculate price suggestions for record ID {}: {}", record.getDiscogsId(), e.getMessage());
+            }
+        }
+
+        if (user.getDiscogsToken() != null && !user.getDiscogsToken().isBlank() && item.getInstanceId() != null) {
+            syncConditionToDiscogs(user, record.getDiscogsId(), item.getInstanceId(),
+                    mediaChanged ? item.getMediaCondition() : null,
+                    sleeveChanged ? item.getSleeveCondition() : null);
+        }
+
+        return getRecordDetails(record.getId(), username);
+    }
+
+    private void syncConditionToDiscogs(AppUser user, Long releaseId, Long instanceId, String mediaCondition, String sleeveCondition) {
+        if (mediaCondition == null && sleeveCondition == null) {
+            return;
+        }
+
+        Long mediaFieldId = null;
+        Long sleeveFieldId = null;
+        try {
+            DiscogsDto.CollectionFieldsResponse fieldsResponse = discogsApiClient.getCollectionFields(user);
+            if (fieldsResponse != null && fieldsResponse.getFields() != null) {
+                for (DiscogsDto.CollectionField field : fieldsResponse.getFields()) {
+                    if (field.getName() != null) {
+                        String name = field.getName().trim().toLowerCase();
+                        if (name.contains("media") && name.contains("condition")) {
+                            mediaFieldId = field.getId();
+                        } else if (name.contains("sleeve") && name.contains("condition")) {
+                            sleeveFieldId = field.getId();
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Could not retrieve collection custom fields for user {}: {}", user.getUsername(), e.getMessage());
+        }
+        if (mediaFieldId == null) {
+            mediaFieldId = 1L;
+        }
+        if (sleeveFieldId == null) {
+            sleeveFieldId = 2L;
+        }
+
+        if (mediaCondition != null) {
+            try {
+                discogsApiClient.updateInstanceField(user, releaseId, instanceId, mediaFieldId, mediaCondition);
+            } catch (Exception e) {
+                log.warn("Could not sync media condition to Discogs for release {}: {}", releaseId, e.getMessage());
+            }
+        }
+        if (sleeveCondition != null) {
+            try {
+                discogsApiClient.updateInstanceField(user, releaseId, instanceId, sleeveFieldId, sleeveCondition);
+            } catch (Exception e) {
+                log.warn("Could not sync sleeve condition to Discogs for release {}: {}", releaseId, e.getMessage());
+            }
+        }
+    }
 }
+

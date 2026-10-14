@@ -45,6 +45,9 @@ describe('RecordDetailModalComponent', () => {
       playOnRoon: jasmine.createSpy('playOnRoon').and.returnValue(
         of({ success: true, message: 'Playback started' })
       ),
+      updateRecordCondition: jasmine.createSpy('updateRecordCondition').and.returnValue(
+        of({ ...mockDetail, media_condition: 'Mint (M)', median_price: 29.99 })
+      ),
     };
 
     mockToastService = {
@@ -171,5 +174,104 @@ describe('RecordDetailModalComponent', () => {
     text = fixture.nativeElement.textContent;
     expect(text).toContain('Oct 8, 2026');
   });
+
+  it('should display media and sleeve conditions when present', () => {
+    const mockRecord = {
+      id: 42,
+      basic_information: {
+        id: 123456,
+        title: 'Abbey Road',
+        year: 1969,
+        artists: [{ name: 'The Beatles' }],
+      },
+    } as any;
+    const detailWithCondition = {
+      ...mockDetail,
+      media_condition: 'Very Good Plus (VG+)',
+      sleeve_condition: 'Near Mint (NM)',
+    };
+    fixture.componentRef.setInput('record', mockRecord);
+    fixture.componentRef.setInput('detail', detailWithCondition);
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('Very Good Plus (VG+)');
+    expect(text).toContain('Near Mint (NM)');
+    expect(text).toContain('VG+');
+    expect(text).toContain('NM');
+  });
+
+  it('should display estimated value in record detail modal when median_price is present', () => {
+    const mockRecord = {
+      id: 42,
+      basic_information: {
+        id: 123456,
+        title: 'Abbey Road',
+        year: 1969,
+        artists: [{ name: 'The Beatles' }],
+      },
+    } as any;
+    fixture.componentRef.setInput('record', mockRecord);
+    fixture.componentRef.setInput('detail', { ...mockDetail, median_price: 19.99 });
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent;
+    expect(text).toMatch(/19[.,]99/);
+  });
+
+  it('should call updateRecordCondition and emit conditionUpdated when media condition is changed', () => {
+    fixture.componentRef.setInput('detail', { ...mockDetail, media_condition: 'Very Good Plus (VG+)' });
+    fixture.detectChanges();
+
+    spyOn(component.conditionUpdated, 'emit');
+
+    component.onMediaConditionChange('Mint (M)');
+
+    expect(mockApiService.updateRecordCondition).toHaveBeenCalledWith(42, { media_condition: 'Mint (M)' });
+    expect(component.isUpdatingCondition()).toBeFalse();
+    expect(mockToastService.showToast).toHaveBeenCalledWith(
+      jasmine.any(String),
+      'success'
+    );
+    expect(component.conditionUpdated.emit).toHaveBeenCalledWith(
+      jasmine.objectContaining({ media_condition: 'Mint (M)', median_price: 29.99 })
+    );
+  });
+
+  it('should call updateRecordCondition and emit conditionUpdated when sleeve condition is changed', () => {
+    fixture.componentRef.setInput('detail', { ...mockDetail, sleeve_condition: 'Good (G)' });
+    fixture.detectChanges();
+
+    mockApiService.updateRecordCondition.and.returnValue(
+      of({ ...mockDetail, sleeve_condition: 'Near Mint (NM or M-)' })
+    );
+    spyOn(component.conditionUpdated, 'emit');
+
+    component.onSleeveConditionChange('Near Mint (NM or M-)');
+
+    expect(mockApiService.updateRecordCondition).toHaveBeenCalledWith(42, { sleeve_condition: 'Near Mint (NM or M-)' });
+    expect(component.isUpdatingCondition()).toBeFalse();
+    expect(component.conditionUpdated.emit).toHaveBeenCalledWith(
+      jasmine.objectContaining({ sleeve_condition: 'Near Mint (NM or M-)' })
+    );
+  });
+
+  it('should handle error when updating condition fails', () => {
+    fixture.componentRef.setInput('detail', mockDetail);
+    fixture.detectChanges();
+
+    mockApiService.updateRecordCondition.and.returnValue(
+      throwError(() => new Error('Discogs update failed'))
+    );
+
+    component.onMediaConditionChange('Mint (M)');
+
+    expect(component.isUpdatingCondition()).toBeFalse();
+    expect(mockToastService.showToast).toHaveBeenCalledWith(
+      jasmine.stringContaining('Discogs update failed'),
+      'error'
+    );
+  });
 });
+
 

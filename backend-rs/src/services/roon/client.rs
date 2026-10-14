@@ -65,8 +65,9 @@ impl RoonClient {
         tokio::spawn(async move {
             while let Some(msg) = outgoing_rx.recv().await {
                 let wire = msg.to_wire_string();
-                if let Err(e) = ws_sink.send(Message::Text(wire.into())).await {
-                    tracing::debug!("Error sending message to Roon WebSocket: {e}");
+                tracing::debug!("Roon WS sending frame: verb={}, name={}", msg.verb, msg.name_or_status);
+                if let Err(e) = ws_sink.send(Message::Binary(wire.into_bytes().into())).await {
+                    tracing::warn!("Error sending message to Roon WebSocket: {e}");
                     break;
                 }
             }
@@ -161,8 +162,18 @@ impl RoonClient {
     ) {
         let msg = match MooMessage::parse(text) {
             Some(m) => m,
-            None => return,
+            None => {
+                tracing::debug!("Roon received unparseable message: {text}");
+                return;
+            }
         };
+
+        tracing::info!(
+            "Roon WS incoming: verb={}, status={}, req_id={:?}",
+            msg.verb,
+            msg.name_or_status,
+            msg.request_id()
+        );
 
         // 1. Handle Ping -> send Pong
         if msg.verb == "REQUEST" && msg.name_or_status == "com.roonlabs.ping:1/ping" {
@@ -275,13 +286,17 @@ impl RoonClient {
             pending.insert(req_id.clone(), tx);
         }
 
+        tracing::info!("Roon WS sending request: name={name}, req_id={req_id}");
         self.outgoing_tx
             .send(msg)
             .await
             .map_err(|e| AppError::Internal(format!("Failed to queue Roon request: {e}")))?;
 
-        match tokio::time::timeout(Duration::from_secs(5), rx).await {
-            Ok(Ok(response)) => Ok(response),
+        match tokio::time::timeout(Duration::from_secs(10), rx).await {
+            Ok(Ok(response)) => {
+                tracing::info!("Roon WS response received for {name}: status={}", response.name_or_status);
+                Ok(response)
+            }
             Ok(Err(_)) => {
                 let mut pending = self.pending_requests.lock().await;
                 pending.remove(&req_id);
@@ -337,23 +352,37 @@ impl RoonClient {
         Ok(())
     }
 
+    fn clean_artist(artist: &str) -> String {
+        let trimmed = artist.trim();
+        if let (Some(idx), true) = (trimmed.rfind(" ("), trimmed.ends_with(')')) {
+            let inner = &trimmed[idx + 2..trimmed.len() - 1];
+            if inner.chars().all(|c| c.is_ascii_digit()) {
+                return trimmed[..idx].trim().to_string();
+            }
+        }
+        trimmed.to_string()
+    }
+
     pub async fn play_album(
         &self,
         zone_id: &str,
         artist: &str,
         title: &str,
     ) -> Result<bool, AppError> {
-        let clean_artist = artist.trim();
+        let clean_artist = Self::clean_artist(artist);
         let clean_title = title.trim();
-        let query = format!("{clean_artist} {clean_title}");
+        let query = format!("{clean_artist} {clean_title}").trim().to_string();
+        tracing::info!("Searching and playing album on Roon: query='{query}', zone_id='{zone_id}'");
 
         // Step 1: Browse search
-        let browse_search = json!({
+        let mut browse_search = json!({
             "hierarchy": "search",
             "input": query,
-            "pop_all": true,
-            "zone_or_output_id": zone_id
+            "pop_all": true
         });
+        if !zone_id.trim().is_empty() {
+            browse_search["zone_or_output_id"] = json!(zone_id);
+        }
 
         self.send_request("com.roonlabs.browse:1/browse", Some(browse_search)).await?;
 
@@ -384,36 +413,114 @@ impl RoonClient {
             return Err(AppError::NotFound(format!("No results found in Roon for: {query}")));
         }
 
-        // Navigate items to find play action
-        for item in items {
-            let item_title = item.get("title").and_then(|t| t.as_str()).unwrap_or("");
-            let hint = item.get("hint").and_then(|h| h.as_str()).unwrap_or("");
-            let item_key = item.get("item_key").and_then(|k| k.as_str());
+        // Navigate items up to depth 6 to find direct play action or album list
+        let mut current_items = items.clone();
+        for _depth in 0..6 {
+            if current_items.is_empty() {
+                break;
+            }
 
-            let is_play_action = hint.eq_ignore_ascii_case("action")
-                && (item_title.to_lowercase().contains("play") || item_title.to_lowercase().contains("play now"));
-            if let (true, Some(key)) = (is_play_action, item_key) {
-                let browse_action = json!({
+            // 1. Direct Play Action? (hint="action" and title contains "play now" or "play")
+            let mut play_key = None;
+            for item in &current_items {
+                let item_title = item.get("title").and_then(|t| t.as_str()).unwrap_or("");
+                let hint = item.get("hint").and_then(|h| h.as_str()).unwrap_or("");
+                let item_key = item.get("item_key").and_then(|k| k.as_str());
+
+                let is_play_action = hint.eq_ignore_ascii_case("action")
+                    && (item_title.to_lowercase().contains("play now") || item_title.to_lowercase().contains("play"));
+                if let (true, Some(key)) = (is_play_action, item_key) {
+                    play_key = Some(key.to_string());
+                    break;
+                }
+            }
+
+            if let Some(key) = play_key {
+                let mut browse_action = json!({
                     "hierarchy": "search",
-                    "item_key": key,
-                    "zone_or_output_id": zone_id
+                    "item_key": key
                 });
+                if !zone_id.trim().is_empty() {
+                    browse_action["zone_or_output_id"] = json!(zone_id);
+                }
                 self.send_request("com.roonlabs.browse:1/browse", Some(browse_action)).await?;
+                tracing::info!("Successfully executed Roon playback action for zone: {zone_id}");
                 return Ok(true);
+            }
+
+            // 2. "Play Album" or "Play" action list?
+            let mut target_key = None;
+            for item in &current_items {
+                let item_title = item.get("title").and_then(|t| t.as_str()).unwrap_or("");
+                let is_play_category = item_title.to_lowercase().contains("play album") || item_title.to_lowercase().starts_with("play");
+                if let (true, Some(key)) = (is_play_category, item.get("item_key").and_then(|k| k.as_str())) {
+                    target_key = Some(key.to_string());
+                    break;
+                }
+            }
+
+            // 3. Album match or Albums section
+            if target_key.is_none() {
+                for item in &current_items {
+                    let item_title = item.get("title").and_then(|t| t.as_str()).unwrap_or("");
+                    if !clean_title.is_empty() && item_title.eq_ignore_ascii_case(clean_title) {
+                        target_key = item.get("item_key").and_then(|k| k.as_str()).map(|k| k.to_string());
+                        break;
+                    }
+                }
+            }
+
+            if target_key.is_none() {
+                for item in &current_items {
+                    let item_title = item.get("title").and_then(|t| t.as_str()).unwrap_or("");
+                    if item_title.eq_ignore_ascii_case("Albums") {
+                        target_key = item.get("item_key").and_then(|k| k.as_str()).map(|k| k.to_string());
+                        break;
+                    }
+                }
+            }
+
+            // Fallback to first item with item_key
+            if target_key.is_none() {
+                for item in &current_items {
+                    if let Some(key) = item.get("item_key").and_then(|k| k.as_str()) {
+                        target_key = Some(key.to_string());
+                        break;
+                    }
+                }
+            }
+
+            if let Some(key) = target_key {
+                let mut browse_into = json!({
+                    "hierarchy": "search",
+                    "item_key": key
+                });
+                if !zone_id.trim().is_empty() {
+                    browse_into["zone_or_output_id"] = json!(zone_id);
+                }
+                self.send_request("com.roonlabs.browse:1/browse", Some(browse_into)).await?;
+
+                let load_req = json!({
+                    "hierarchy": "search",
+                    "offset": 0,
+                    "set_display_offset": 0,
+                    "count": 20
+                });
+                let load_resp = self.send_request("com.roonlabs.browse:1/load", Some(load_req)).await?;
+                let body_str = load_resp.body.unwrap_or_default();
+                let body_val: Value = serde_json::from_str(&body_str).unwrap_or(Value::Null);
+                current_items = body_val
+                    .get("list")
+                    .and_then(|l| l.get("items"))
+                    .or_else(|| body_val.get("items"))
+                    .and_then(|i| i.as_array())
+                    .cloned()
+                    .unwrap_or_default();
+            } else {
+                break;
             }
         }
 
-        // Fallback: browse into first item
-        if let Some(first_key) = items[0].get("item_key").and_then(|k| k.as_str()) {
-            let browse_into = json!({
-                "hierarchy": "search",
-                "item_key": first_key,
-                "zone_or_output_id": zone_id
-            });
-            self.send_request("com.roonlabs.browse:1/browse", Some(browse_into)).await?;
-            return Ok(true);
-        }
-
-        Ok(true)
+        Err(AppError::NotFound(format!("Could not find a playable action in Roon for: {query}")))
     }
 }

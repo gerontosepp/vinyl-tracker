@@ -17,6 +17,13 @@
   - Standardisiertes Fehler-Handling nach RFC 7807 (`ProblemDetail`) für alle HTTP- und Datenbank-Fehler.
   - Multi-Origin CORS-Middleware und strukturierte Logging-Pipeline mit `tracing`.
   - Multi-Stage Dockerfile und Docker Compose Setup (`docker/docker-compose.rust.yml`) für lokales Testen.
+- **Rust Backend Migration: Phase 2 – Authentifizierung, JWT & Benutzerverwaltung (`#84`)**:
+  - Vollständige Implementierung der Authentifizierung und Benutzerverwaltung unter [`/api/users`](file:///Users/opolm/develop/AntiGrafity/backend-rs/src/routes/users.rs): Registrierung (`POST /register`), Login (`POST /login`), Session-Info (`GET /me`), Discogs-Konto-Verknüpfung (`PUT /me/discogs`), Passwort-Reset (`POST /reset-password`) und Session-Beendigung (`POST /logout`).
+  - Passwort-Hashing mit BCrypt (Cost 10) sowie nahtlose Verifikationskompatibilität für alle bestehenden Benutzerkonten aus der Datenbank.
+  - JWT Token-Generierung und Validierung mit `jsonwebtoken` (HMAC-SHA256, 7 Tage Gültigkeit, Standard Claims `sub`, `iat`, `exp`).
+  - Axum Extractor `CurrentUser(AppUser)` zur einfachen und typsicheren Routen-Absicherung via `Authorization: Bearer <token>` Header oder `vinyl_token` Cookie.
+  - 100 % Java-kompatibler `CryptoService` für Discogs Personal Access Tokens: PBKDF2WithHmacSHA1 Key Derivation (1024 Runden) und AES-256-CBC mit Hex-Encoding, verifiziert gegen reale Bestandsdaten.
+  - Sichere Session-Cookies (`HttpOnly`, `SameSite=Lax`, konfigurierbares `Max-Age`).
 ---
 
 ## v0.7.0 (2026-10-14) – Aktueller Release (WiP / Beta)

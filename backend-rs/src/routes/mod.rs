@@ -1,4 +1,5 @@
 pub mod actuator;
+pub mod users;
 
 use axum::{
     http::{
@@ -67,6 +68,8 @@ pub fn create_app(state: AppState) -> Router {
     Router::new()
         // Actuator endpoints (nested under /actuator)
         .nest("/actuator", actuator::router())
+        // User & Auth endpoints (nested under /api/users)
+        .nest("/api/users", users::router())
         // API root / ping
         .route("/api/ping", get(|| async { "pong" }))
         .fallback(fallback_handler)

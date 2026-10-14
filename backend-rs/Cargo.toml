@@ -48,6 +48,8 @@ url = "2.5"
 # Error Handling
 thiserror = "2.0"
 anyhow = "1.0"
+fast_qr = { version = "0.14.0", features = ["svg"] }
+printpdf = "0.12.8"
 
 [dev-dependencies]
 http-body-util = "0.1"

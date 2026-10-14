@@ -52,6 +52,17 @@
   - Automatische Marktwert-Berechnung (`extract_suggested_price`) über Discogs Marketplace Price Suggestions mit gestufter Fallback-Strategie (`Very Good Plus (VG+)` als Standard-Referenz oder nächsthöherer Zustandswert).
   - Automatisches Updaten des `median_price` in `record_cache` bei Zustandsänderungen via `PATCH /api/records/{id}/condition`.
   - Dedizierte Test-Suite ([`backend-rs/tests/record_detail_tests.rs`](file:///Users/opolm/develop/AntiGrafity/backend-rs/tests/record_detail_tests.rs)).
+- **Rust Backend Migration: Phase 7 – Dashboard-Statistiken & PDF-Etikettendruck mit QR-Codes (`#89`)**:
+  - Implementierung der Analytics- & Aggregationsdienste ([`backend-rs/src/services/analytics_service.rs`](file:///Users/opolm/develop/AntiGrafity/backend-rs/src/services/analytics_service.rs)) unter `/api/analytics`:
+    - `GET /api/analytics/recent`: Chronologisch sortierte Abspielhistorie mit optionaler Datumsbereichs-Filterung (`from`, `to`).
+    - `GET /api/analytics/top`: Ermittlung der 10 am häufigsten gespielten Alben (inkl. `recordTitle`-Rückwärtskompatibilität für das Frontend).
+    - `GET /api/analytics/collection/value`: Gesamter Sammlerwert (Minimum, Median, Maximum) in EUR via Discogs-API mit robuster Währungs- und Zahlenwert-Normalisierung.
+    - `GET /api/analytics/collection/genres`: Aufteilung und Aggregation der Sammlung nach Genres in absteigender Reihenfolge.
+  - Vektor-basierte QR-Code- und PDF-Etikettendruck-Pipeline ([`backend-rs/src/services/qr_pdf_service.rs`](file:///Users/opolm/develop/AntiGrafity/backend-rs/src/services/qr_pdf_service.rs)):
+    - Erzeugung gestochen scharfer, voll skalierbarer Vektor-QR-Codes mit `fast_qr` im Standardformat `VT:<discogs_id>`.
+    - Hochperformante, ressourceneffiziente A4-Raster-PDF-Generierung via `printpdf` (3-spaltiges Etiketten-Layout mit Titel, Artist, QR-Code und ID).
+    - `POST /api/collection/qr-codes/selected` für gezielte Etiketten-Auswahl und `GET /api/collection/qr-codes/all` für die gesamte Sammlung.
+  - Umfassende Integrationstests ([`backend-rs/tests/analytics_and_qr_tests.rs`](file:///Users/opolm/develop/AntiGrafity/backend-rs/tests/analytics_and_qr_tests.rs)).
 ---
 
 ## v0.7.0 (2026-10-14) – Aktueller Release (WiP / Beta)

@@ -1,4 +1,5 @@
 pub mod actuator;
+pub mod analytics;
 pub mod collection;
 pub mod discogs;
 pub mod proxy;
@@ -85,6 +86,8 @@ pub fn create_app(state: AppState) -> Router {
         .nest("/api/discogs", discogs::router())
         // Image Proxy endpoint (nested under /api/proxy)
         .nest("/api/proxy", proxy::router())
+        // Analytics & Dashboard endpoints (nested under /api/analytics)
+        .nest("/api/analytics", analytics::router())
         // API root / ping
         .route("/api/ping", get(|| async { "pong" }))
         .fallback(fallback_handler)

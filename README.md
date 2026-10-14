@@ -17,11 +17,14 @@ The project follows a modern containerized micro-architecture:
   - Secure Context support via local SSL.
 
 ### Backend
-- **Framework**: Spring Boot 4.1.0
-- **Language**: Java 25
-- **Database Access**: Spring Data JPA with Hibernate and **Flyway** for schema migrations.
-- **API**: RESTful endpoints with **JWT (JSON Web Token)** authentication.
-- **Integration**: Discogs API for record metadata.
+- **Primary Backend (Rust - `backend-rs/`)**:
+  - **Framework / Runtime**: Axum 0.8, Tokio, Tower-HTTP
+  - **Language**: Rust
+  - **Database Access**: PostgreSQL via `sqlx` with automatic migrations (`refinery`, Flyway-compatible)
+  - **Features**: JWT-Auth (HMAC-SHA256, BCrypt), Discogs REST Client with rate-limiting (`governor`) & caching (`moka`), SSRF-protected image proxy, Roon MOO WebSocket Engine & SOOD discovery, vector-based QR-Code & PDF generation (`fast_qr`, `printpdf`).
+- **Legacy Backend (Java - `backend/`)**:
+  - **Framework**: Spring Boot 4.1.0, Java 25
+  - **Database Access**: Spring Data JPA with Hibernate and Flyway migrations.
 
 ### Database
 - **System**: PostgreSQL 16

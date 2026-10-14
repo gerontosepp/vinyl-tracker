@@ -7,14 +7,18 @@
 
 ---
 
-## Unreleased
+## v0.6.1 (2026-10-14) – Aktueller Release (WiP / Beta)
 
 - **Fix: Erhöhung der Proxy-Timeouts & Fail-Fast bei Discogs-Sync**:
   - Setzt `proxy_connect_timeout 60s`, `proxy_send_timeout 300s` und `proxy_read_timeout 300s` im internen Frontend-Nginx zur Vermeidung von 504 Gateway Timeouts bei umfangreichen Sammlungs-Synchronisationen.
   - Konfiguriert explizite HTTP-Timeouts (10s Connect, 25s Read) für Spring `RestClient` und reduziert den Discogs RateLimiter `timeoutDuration` auf 10s, sodass Album-Detailabfragen während laufender Sync-Vorgänge sofort auf lokale Datenbank-Einträge zurückgreifen statt zu blockieren.
   - Ergänzt `crossorigin="use-credentials"` am Web-Manifest-Link in `index.html` zur Vermeidung von 401-Fehlern hinter Nginx Proxy Manager Access Lists.
+- **Fix: Deaktivierung von OCI Provenance Attestations im Docker-Build**:
+  - Setzt `provenance: false` in `.github/workflows/ci.yml` für Multi-Arch Builds (`linux/amd64`, `linux/arm64`), um `content at https://ghcr.io/.../manifests/sha256:... not found`-Fehler beim Docker-Pull von GHCR zuverlässig zu verhindern.
 
-## v0.6.0 (2026-10-14) – Aktueller Release (WiP / Beta)
+---
+
+## v0.6.0 (2026-10-14)
 
 - **Fix: Singleton-Container-Lifecycle für Integrationstests**:
   - Behebt Verbindungsabbrüche (`Connection refused`) in der CI-Pipeline durch statische Initialisierung des PostgreSQL-Containers in `AbstractIntegrationTest`, sodass Spring Boot den gecachten ApplicationContext über die gesamte Testsuite hinweg verlässlich weiterverwenden kann.

@@ -8,7 +8,7 @@ set -e
 #   ./scripts/deploy_proxmox.sh [VERSION_TAG] [REGISTRY_PREFIX]
 # Examples:
 #   ./scripts/deploy_proxmox.sh                     # Deploy latest version from default GHCR
-#   ./scripts/deploy_proxmox.sh v0.6.0              # Deploy specific version v0.6.0
+#   ./scripts/deploy_proxmox.sh v0.6.1              # Deploy specific version v0.6.1
 #   ./scripts/deploy_proxmox.sh latest myuser/      # Custom registry prefix
 # ==============================================================================
 

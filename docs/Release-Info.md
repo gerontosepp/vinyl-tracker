@@ -46,6 +46,12 @@
     - `POST /api/records/{id}/listen`: Manuelles Protokollieren eines Abspiel-Events mit UTC-Zeitstempel.
     - `PATCH /api/records/{id}/condition`: Aktualisierung von Medien- und Cover-Zuständen mit automatischer Neuberechnung des Marktwerts und Discogs-Feld-Synchronisation.
   - Umfassende Integrationstests ([`backend-rs/tests/scan_and_record_tests.rs`](file:///Users/opolm/develop/AntiGrafity/backend-rs/tests/scan_and_record_tests.rs)).
+- **Rust Backend Migration: Phase 6 – Album-Details, Zustandsbewertung & automatische Preisfindung (`#88`)**:
+  - Implementierung des dedizierten Marketplace- & Grading-Service ([`backend-rs/src/services/marketplace.rs`](file:///Users/opolm/develop/AntiGrafity/backend-rs/src/services/marketplace.rs)) mit vollständiger Validierung und Normalisierung nach internationalem Goldmine Standard (`Mint (M)`, `Near Mint (NM or M-)`, `Very Good Plus (VG+)`, `Very Good (VG)`, `Good Plus (G+)`, `Good (G)`, `Fair (F)`, `Poor (P)`).
+  - Robuste Erkennung von Shorthands (`M`, `NM`, `M-`, `VG+`, `VG`, `G+`, `G`, `F`, `P`) sowie strikte Fehlerbehandlung mit RFC 7807 `ProblemDetail` (HTTP 400 Bad Request) bei ungültigen Zustandswerten.
+  - Automatische Marktwert-Berechnung (`extract_suggested_price`) über Discogs Marketplace Price Suggestions mit gestufter Fallback-Strategie (`Very Good Plus (VG+)` als Standard-Referenz oder nächsthöherer Zustandswert).
+  - Automatisches Updaten des `median_price` in `record_cache` bei Zustandsänderungen via `PATCH /api/records/{id}/condition`.
+  - Dedizierte Test-Suite ([`backend-rs/tests/record_detail_tests.rs`](file:///Users/opolm/develop/AntiGrafity/backend-rs/tests/record_detail_tests.rs)).
 ---
 
 ## v0.7.0 (2026-10-14) – Aktueller Release (WiP / Beta)

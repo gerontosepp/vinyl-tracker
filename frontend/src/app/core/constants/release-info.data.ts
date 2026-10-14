@@ -9,7 +9,87 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "tag": "In Entwicklung",
     "isCurrent": false,
     "isUnreleased": true,
-    "items": []
+    "items": [
+      {
+        "title": "Rust Backend Migration: Phase 1 – Scaffolding, Axum Server & Datenbank-Migrationen (`#83`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "Initialisierung des neuen Rust-Backends unter [`backend-rs/`](file:///Users/opolm/develop/AntiGrafity/backend-rs) mit Cargo, Axum 0.8, Tokio, Tower-HTTP und SQLx.",
+          "Asynchroner PostgreSQL-Verbindungspool (`sqlx::PgPool`) mit Timeouts, Connection-Limits und Ping-Healthcheck.",
+          "Vollständige Einbindung der 9 SQL-Migrationsdateien (V1–V9) via `refinery` mit automatischer Erkennung und Synchronisation bestehender Flyway-Schema-Historien (`flyway_schema_history`) sowie Schema-Baseline-Erkennung.",
+          "Bereitstellung der Standard Actuator-Endpunkte: `GET /actuator/health` (Status 200 mit DB-Status) und `GET /actuator/info` (Version und Metadaten) sowie striktes 403-Blocking sensitiver Endpunkte (`/metrics`, `/env`, `/configprops`).",
+          "Standardisiertes Fehler-Handling nach RFC 7807 (`ProblemDetail`) für alle HTTP- und Datenbank-Fehler.",
+          "Multi-Origin CORS-Middleware und strukturierte Logging-Pipeline mit `tracing`.",
+          "Multi-Stage Dockerfile und Docker Compose Setup (`docker/docker-compose.rust.yml`) für lokales Testen."
+        ]
+      },
+      {
+        "title": "Rust Backend Migration: Phase 2 – Authentifizierung, JWT & Benutzerverwaltung (`#84`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "Vollständige Implementierung der Authentifizierung und Benutzerverwaltung unter [`/api/users`](file:///Users/opolm/develop/AntiGrafity/backend-rs/src/routes/users.rs): Registrierung (`POST /register`), Login (`POST /login`), Session-Info (`GET /me`), Discogs-Konto-Verknüpfung (`PUT /me/discogs`), Passwort-Reset (`POST /reset-password`) und Session-Beendigung (`POST /logout`).",
+          "Passwort-Hashing mit BCrypt (Cost 10) sowie nahtlose Verifikationskompatibilität für alle bestehenden Benutzerkonten aus der Datenbank.",
+          "JWT Token-Generierung und Validierung mit `jsonwebtoken` (HMAC-SHA256, 7 Tage Gültigkeit, Standard Claims `sub`, `iat`, `exp`).",
+          "Axum Extractor `CurrentUser(AppUser)` zur einfachen und typsicheren Routen-Absicherung via `Authorization: Bearer <token>` Header oder `vinyl_token` Cookie.",
+          "100 % Java-kompatibler `CryptoService` für Discogs Personal Access Tokens: PBKDF2WithHmacSHA1 Key Derivation (1024 Runden) und AES-256-CBC mit Hex-Encoding, verifiziert gegen reale Bestandsdaten.",
+          "Sichere Session-Cookies (`HttpOnly`, `SameSite=Lax`, konfigurierbares `Max-Age`)."
+        ]
+      },
+      {
+        "title": "Rust Backend Migration: Phase 3 – Discogs API Client, Rate-Limiting, Caching & Bild-Proxy (`#85`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "Asynchroner Discogs REST API Client ([`backend-rs/src/clients/discogs.rs`](file:///Users/opolm/develop/AntiGrafity/backend-rs/src/clients/discogs.rs)) mit Reqwest, Authentifizierung via Discogs Personal Access Token und automatischem User-Agent.",
+          "Striktes Rate-Limiting nach Discogs API-Vorgaben (60 Requests pro Minute) über `governor` mit asynchronem Backpressure (`.until_ready().await`).",
+          "In-Memory-Caching via `moka` für Discogs-Suchergebnisse (1 Stunde TTL) und Release-Preisschätzungen (12 Stunden TTL).",
+          "Umfassender Bild-Proxy-Dienst ([`backend-rs/src/services/image_proxy.rs`](file:///Users/opolm/develop/AntiGrafity/backend-rs/src/services/image_proxy.rs)) unter `GET /api/proxy/image` mit 24-stündigem In-Memory-Bild-Cache.",
+          "Robuster SSRF-Schutz (Server-Side Request Forgery): Erzwingen von HTTPS, Whitelist erlaubter Hosts (`i.discogs.com`, `s.discogs.com`, `img.discogs.com`), asynchrone DNS-Auflösung vor HTTP-Anfragen sowie strikte Blockierung von Loopback- (127.0.0.1, ::1), RFC 1918 Privat- (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16), Link-Local- (169.254.0.0/16, fe80::/10) und Unique-Local-Adressen (fc00::/7).",
+          "Discogs-Such-Endpunkt `GET /api/discogs/search` abgesichert über `CurrentUser(AppUser)` mit automatischer Entschlüsselung des benutzerspezifischen Tokens."
+        ]
+      },
+      {
+        "title": "Rust Backend Migration: Phase 4 – Sammlungs-Synchronisation & Katalog-Querying (`#86`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "Vollständige Discogs-Sammlungs-Synchronisation ([`backend-rs/src/services/collection_sync.rs`](file:///Users/opolm/develop/AntiGrafity/backend-rs/src/services/collection_sync.rs)) unter `POST /api/collection/sync`: Paginierte Abfrage aller Releases aus Folder 0, Batch-Upsert in `record_cache`, `record_genres` und `collection_item`, Erkennung und Bereinigung remote entfernter Releases sowie dynamische Auswertung von Custom Fields für Medien- und Cover-Zustände (`media_condition`, `sleeve_condition`).",
+          "Manuelle Release-Hinzufügung (`POST /api/collection/releases/{id}`) und Hintergrund-Aktualisierung der Marktpreise (`POST /api/collection/prices/refresh`).",
+          "Multi-Facetten Katalog-Querying-Engine ([`backend-rs/src/services/collection_query.rs`](file:///Users/opolm/develop/AntiGrafity/backend-rs/src/services/collection_query.rs)) unter `GET /api/collection` mit dynamischem SQL-Where-Builder, Paginierung (`page`, `per_page`), Multi-Sortierung (`artist`, `year`, `format`, `listens`, `added_at`) und reichhaltigen Filtern: Kategorie (`all`, `vinyl`, `cd`), Freitextsuche (Künstler/Titel), Genres, Dekaden/Jahresbereiche (z. B. `1970-1979`, `1980s`), `not_played_since`, `unplayed_only` und `min_plays`.",
+          "Zusätzliche Endpunkte: Zufallsauswahl `GET /api/collection/random` (mit optionalem Genre-Filter und `unplayed_only`) sowie `GET /api/collection/unplayed` für ungespielte Alben."
+        ]
+      },
+      {
+        "title": "Rust Backend Migration: Phase 5 – Barcode- & QR-Scanning Pipeline & Abspiel-Historie (`#87`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "Implementierung der Barcode- und QR-Code-Scanning-Pipeline ([`backend-rs/src/services/scan_service.rs`](file:///Users/opolm/develop/AntiGrafity/backend-rs/src/services/scan_service.rs)) unter `POST /api/scan`:",
+          "Erkennung von Custom QR-Code-Präfixen (`VT:<discogs_id>`, `discogs-id:<id>`) inklusive automatischer Korrektur deutscher Tastaturlayout-Fehler von Hardware-Scannern (`discogsßidö<id>`, `discogsßidÖ<id>`).",
+          "Standard EAN-13 / UPC-A Barcode-Suche mit mehrstufiger Heuristik (12-stellig vs. 13-stellig mit führender Null und Freitext-Fallback), Prüfung auf Sammlungsbesitz (lokale DB und Discogs API) sowie transparentes Caching und Eintragen von Abspiel-Events.",
+          "Idempotente Lösch-Endpunkte: `DELETE /api/scan/{id}` für einzelne Events und `DELETE /api/scan/all` zum Zurücksetzen aller Abspiel-Einträge.",
+          "Release-Details & Abspiel-Tracking ([`backend-rs/src/services/record_service.rs`](file:///Users/opolm/develop/AntiGrafity/backend-rs/src/services/record_service.rs)) unter `/api/records`:",
+          "`GET /api/records/{id}`: Vollständige Detailansicht mit Sammlungsstatus, Historie, Tracklist, Formaten, Labels und Preisschätzungen.",
+          "`POST /api/records/{id}/listen`: Manuelles Protokollieren eines Abspiel-Events mit UTC-Zeitstempel.",
+          "`PATCH /api/records/{id}/condition`: Aktualisierung von Medien- und Cover-Zuständen mit automatischer Neuberechnung des Marktwerts und Discogs-Feld-Synchronisation.",
+          "Umfassende Integrationstests ([`backend-rs/tests/scan_and_record_tests.rs`](file:///Users/opolm/develop/AntiGrafity/backend-rs/tests/scan_and_record_tests.rs))."
+        ]
+      },
+      {
+        "title": "Rust Backend Migration: Phase 6 – Album-Details, Zustandsbewertung & automatische Preisfindung (`#88`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "Implementierung des dedizierten Marketplace- & Grading-Service ([`backend-rs/src/services/marketplace.rs`](file:///Users/opolm/develop/AntiGrafity/backend-rs/src/services/marketplace.rs)) mit vollständiger Validierung und Normalisierung nach internationalem Goldmine Standard (`Mint (M)`, `Near Mint (NM or M-)`, `Very Good Plus (VG+)`, `Very Good (VG)`, `Good Plus (G+)`, `Good (G)`, `Fair (F)`, `Poor (P)`).",
+          "Robuste Erkennung von Shorthands (`M`, `NM`, `M-`, `VG+`, `VG`, `G+`, `G`, `F`, `P`) sowie strikte Fehlerbehandlung mit RFC 7807 `ProblemDetail` (HTTP 400 Bad Request) bei ungültigen Zustandswerten.",
+          "Automatische Marktwert-Berechnung (`extract_suggested_price`) über Discogs Marketplace Price Suggestions mit gestufter Fallback-Strategie (`Very Good Plus (VG+)` als Standard-Referenz oder nächsthöherer Zustandswert).",
+          "Automatisches Updaten des `median_price` in `record_cache` bei Zustandsänderungen via `PATCH /api/records/{id}/condition`.",
+          "Dedizierte Test-Suite ([`backend-rs/tests/record_detail_tests.rs`](file:///Users/opolm/develop/AntiGrafity/backend-rs/tests/record_detail_tests.rs))."
+        ]
+      }
+    ]
   },
   {
     "version": "v0.7.0",

@@ -45,7 +45,7 @@ The following files **must** be updated synchronously:
 | [`scripts/deploy_proxmox.sh`](../../../scripts/deploy_proxmox.sh) | Example version string in header comment |
 
 ### Option A: Using the Automated Script (Recommended)
-Execute [`release.sh`](../../../scripts/release.sh), which automatically bumps versions across `package.json`, `pom.xml`, `README.md`, and Angular components:
+Execute [`release.sh`](../../../scripts/release.sh), which automatically bumps versions across `package.json`, `backend/Cargo.toml`, `README.md`, and Angular components:
 ```bash
 ./scripts/release.sh
 ```
@@ -53,9 +53,9 @@ Follow the prompt to enter the new version.
 
 ### Option B: Manual Bump
 ```bash
-cd backend
-mvn versions:set -DnewVersion=<NEW_VERSION> -DgenerateBackupPoms=false
-cd ..
+# Update backend version
+sed -i '' 's/^version = ".*"/version = "<NEW_VERSION>"/' backend/Cargo.toml
+cargo check --manifest-path backend/Cargo.toml
 ```
 
 ## 3. Documentation Sync
@@ -72,8 +72,9 @@ Always add a new release entry at the top of [`docs/Release-Info.md`](../../../d
 
 Re-verify the build artifacts after updating the versions:
 ```bash
-# Verify backend packaging
-cd backend && mvn package -DskipTests && cd ..
+# Verify backend compilation & tests
+cargo test --manifest-path backend/Cargo.toml
+cargo clippy --manifest-path backend/Cargo.toml -- -D warnings
 
 # Verify frontend build
 cd frontend && npm run build && cd ..
@@ -86,7 +87,7 @@ docker compose build
 
 1. **Commit Changes**:
    ```bash
-   git add frontend/package.json frontend/package-lock.json backend/pom.xml README.md \
+   git add frontend/package.json frontend/package-lock.json backend/Cargo.toml backend/Cargo.lock README.md \
        frontend/src/app/shared/components/layout/top-menu-bar/top-menu-bar.component.ts \
        frontend/src/app/features/auth/login/login.component.ts \
        frontend/src/app/features/auth/register/register.component.ts \

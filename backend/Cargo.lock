@@ -262,7 +262,7 @@ checksum = "343e24eeae9f09f61afeafcc7112e8d62f965bf0c6b30cedb5f89cc0b200380f"
 
 [[package]]
 name = "backend-rs"
-version = "0.1.0"
+version = "0.7.0"
 dependencies = [
  "aes 0.8.4",
  "anyhow",

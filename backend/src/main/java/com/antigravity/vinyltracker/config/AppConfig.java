@@ -20,7 +20,11 @@ public class AppConfig {
 
     @Bean
     public RestClient.Builder restClientBuilder() {
-        return RestClient.builder();
+        org.springframework.http.client.SimpleClientHttpRequestFactory requestFactory =
+                new org.springframework.http.client.SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(java.time.Duration.ofSeconds(10));
+        requestFactory.setReadTimeout(java.time.Duration.ofSeconds(25));
+        return RestClient.builder().requestFactory(requestFactory);
     }
 
     @Bean

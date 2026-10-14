@@ -7,6 +7,13 @@
 
 ---
 
+## Unreleased
+
+- **Fix: Erhöhung der Proxy-Timeouts & Fail-Fast bei Discogs-Sync**:
+  - Setzt `proxy_connect_timeout 60s`, `proxy_send_timeout 300s` und `proxy_read_timeout 300s` im internen Frontend-Nginx zur Vermeidung von 504 Gateway Timeouts bei umfangreichen Sammlungs-Synchronisationen.
+  - Konfiguriert explizite HTTP-Timeouts (10s Connect, 25s Read) für Spring `RestClient` und reduziert den Discogs RateLimiter `timeoutDuration` auf 10s, sodass Album-Detailabfragen während laufender Sync-Vorgänge sofort auf lokale Datenbank-Einträge zurückgreifen statt zu blockieren.
+  - Ergänzt `crossorigin="use-credentials"` am Web-Manifest-Link in `index.html` zur Vermeidung von 401-Fehlern hinter Nginx Proxy Manager Access Lists.
+
 ## v0.6.0 (2026-10-14) – Aktueller Release (WiP / Beta)
 
 - **Fix: Singleton-Container-Lifecycle für Integrationstests**:

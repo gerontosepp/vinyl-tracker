@@ -9,6 +9,15 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "tag": "In Entwicklung",
     "isCurrent": false,
     "isUnreleased": true,
+    "items": []
+  },
+  {
+    "version": "v0.8.0",
+    "rawHeader": "v0.8.0 (2026-10-15) – Rust Backend & Architektur-Upgrade",
+    "date": "2026-10-15",
+    "tag": "Rust Backend & Architektur-Upgrade",
+    "isCurrent": true,
+    "isUnreleased": false,
     "items": [
       {
         "title": "Vollständige Migration auf Rust-Backend & Ablösung von Java (`#82`, `#90`)",
@@ -28,10 +37,9 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
   },
   {
     "version": "v0.7.0",
-    "rawHeader": "v0.7.0 (2026-10-14) – Aktueller Release (WiP / Beta)",
+    "rawHeader": "v0.7.0 (2026-10-14)",
     "date": "2026-10-14",
-    "tag": "Aktueller Release (WiP / Beta)",
-    "isCurrent": true,
+    "isCurrent": false,
     "isUnreleased": false,
     "items": [
       {

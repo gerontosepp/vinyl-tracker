@@ -40,7 +40,7 @@ describe('ReleaseNotesComponent', () => {
     expect(title?.textContent).toContain('settings.changesTitle');
 
     const badge = el.querySelector('.bg-emerald-100');
-    expect(badge?.textContent).toContain(releaseInfoService.currentRelease()?.version || 'v0.7.0');
+    expect(badge?.textContent).toContain(releaseInfoService.currentRelease()?.version || 'v0.8.0');
   });
 
   it('should render releases list', () => {

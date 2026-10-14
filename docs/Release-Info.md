@@ -9,6 +9,10 @@
 
 ## Unreleased
 
+---
+
+## v0.8.0 (2026-10-15) – Rust Backend & Architektur-Upgrade
+
 - **Vollständige Migration auf Rust-Backend & Ablösung von Java (`#82`, `#90`)**:
   - Vollständiger Ruhestand des bisherigen Spring Boot / Java Backends zugunsten einer hochperformanten, ressourcensparenden Rust-Architektur (Edition 2024, Axum 0.8, Tokio 1.x, SQLx 0.8).
   - **Authentifizierung & Sicherheit (`#84`)**: Nahtloser Login bestehender Accounts, BCrypt-Passwort-Hashing, stateless JWT und sichere AES-256-Verschlüsselung sensibler Discogs-Tokens.
@@ -17,9 +21,10 @@
   - **PDF-Etikettendruck (`#89`)**: Gestochen scharfe Vektor-QR-Codes und ressourceneffizienter A4-Etikettendruck via `printpdf`.
   - **Roon Audio-Integration (`#90`)**: Automatische Erkennung des Roon Core im Netzwerk (SOOD) und direkte Album-Wiedergabe auf ausgewählten Audio-Zonen via WebSocket.
   - **DevOps & Container**: Schlankes Multi-Stage Docker-Image (< 40 MB) mit `cargo-chef`, optimierte CI/CD-Pipeline und Refinery-Datenbankmigrationen mit Flyway-Kompatibilität.
+
 ---
 
-## v0.7.0 (2026-10-14) – Aktueller Release (WiP / Beta)
+## v0.7.0 (2026-10-14)
 
 - **Dashboard & Statistik: Wert der Sammlung in Euro (€) & einheitliche Formatierung (`#32`)**:
   - Umstellung der Sammlungsbewertung auf Discogs API-Ebene via `curr_abbr=EUR` in `DiscogsApiClient.java`.

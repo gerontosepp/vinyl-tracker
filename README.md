@@ -133,6 +133,10 @@ The application requires environment variables for configuration (database crede
      ```bash
      docker compose -f docker/docker-compose.prod.yml up --build -d
      ```
+   - **Development with Rust Backend (`backend-rs`)**:
+     ```bash
+     docker compose -f docker/docker-compose.rust.yml up --build -d
+     ```
    *Optimized build, no hot-reloading, runs on port 80.*
 
    👉 **[See Detailed Deployment Guide](docs/DEPLOYMENT.md)** for server setup, public images, and HTTPS requirements.

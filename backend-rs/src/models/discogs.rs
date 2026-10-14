@@ -17,6 +17,7 @@ pub struct DiscogsRelease {
     pub styles: Option<Vec<String>>,
     pub lowest_price: Option<f64>,
     pub median_price: Option<f64>,
+    pub num_for_sale: Option<i32>,
     pub notes: Option<String>,
     pub country: Option<String>,
     pub released: Option<String>,
@@ -70,6 +71,7 @@ pub struct DiscogsSearchResult {
     pub style: Option<Vec<String>>,
     pub barcode: Option<Vec<String>>,
     pub catno: Option<String>,
+    pub country: Option<String>,
     #[serde(rename = "type")]
     pub type_name: Option<String>,
 }

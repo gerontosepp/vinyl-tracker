@@ -72,15 +72,25 @@ jobs:
         fi
 
         # Extract container IP & gateway
+        RUNNER_NET_IP=""
+        if [ -n "$RUNNER_NET" ] && [ "$RUNNER_NET" != "bridge" ] && [ "$RUNNER_NET" != "host" ] && [ "$RUNNER_NET" != "none" ]; then
+          RUNNER_NET_IP=$(docker inspect -f '{{range $k, $v := .NetworkSettings.Networks}}{{if eq $k "'$RUNNER_NET'"}}{{$v.IPAddress}}{{end}}{{end}}' test-postgres-rs 2>/dev/null || echo "")
+        fi
         PG_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}' test-postgres-rs | awk '{print $1}')
         HOST_GATEWAY=$(ip route 2>/dev/null | awk '/default/ {print $3}' || echo "172.17.0.1")
 
         echo "Discovering working PostgreSQL connection endpoint..."
+        echo "Runner Network IP: $RUNNER_NET_IP"
         echo "Container IP: $PG_IP"
         echo "Host Gateway: $HOST_GATEWAY"
 
+        TARGETS=()
+        [ -n "$RUNNER_NET_IP" ] && TARGETS+=("$RUNNER_NET_IP:5432")
+        [ -n "$PG_IP" ] && TARGETS+=("$PG_IP:5432")
+        TARGETS+=("test-postgres-rs:5432" "$HOST_GATEWAY:54329" "127.0.0.1:54329" "localhost:54329")
+
         SELECTED_URL=""
-        for target in "$PG_IP:5432" "test-postgres-rs:5432" "$HOST_GATEWAY:54329" "127.0.0.1:54329" "localhost:54329"; do
+        for target in "${TARGETS[@]}"; do
           host="${target%:*}"
           port="${target#*:}"
           if (exec 3<>/dev/tcp/$host/$port) 2>/dev/null; then
@@ -163,6 +173,7 @@ jobs:
 
 
   frontend-build:
+    needs: [backend-build]
     runs-on: [self-hosted, linux]
     permissions:
       contents: read

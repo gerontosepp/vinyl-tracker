@@ -18,7 +18,7 @@ pub async fn init_pool(config: &Config) -> Result<PgPool, AppError> {
         .idle_timeout(Duration::from_secs(config.database_idle_timeout_secs))
         .connect(&config.database_url)
         .await
-        .map_err(|e| AppError::Database(e))?;
+        .map_err(AppError::Database)?;
 
     // Verify connectivity with a quick ping
     sqlx::query("SELECT 1")

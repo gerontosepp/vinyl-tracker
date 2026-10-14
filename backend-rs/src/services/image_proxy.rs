@@ -58,10 +58,8 @@ impl ImageProxyService {
             return Err(AppError::BadRequest("Userinfo is not allowed in image URLs".to_string()));
         }
 
-        if let Some(port) = parsed.port() {
-            if port != 443 {
-                return Err(AppError::BadRequest("Non-standard ports are not allowed".to_string()));
-            }
+        if matches!(parsed.port(), Some(port) if port != 443) {
+            return Err(AppError::BadRequest("Non-standard ports are not allowed".to_string()));
         }
 
         let host_str = parsed

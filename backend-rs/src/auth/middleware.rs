@@ -22,7 +22,7 @@ where
         let app_state = AppState::from_ref(state);
 
         // 1. Try Authorization header: Bearer <token>
-        let mut token_opt = parts
+        let token_opt = parts
             .headers
             .get(axum::http::header::AUTHORIZATION)
             .and_then(|h| h.to_str().ok())
@@ -36,19 +36,21 @@ where
             .map(|s| s.trim().to_string());
 
         // 2. Fallback to Cookie: vinyl_token=<token>
-        if token_opt.is_none() {
-            if let Some(cookie_hdr) = parts.headers.get(axum::http::header::COOKIE).and_then(|h| h.to_str().ok()) {
-                for pair in cookie_hdr.split(';') {
-                    let mut parts = pair.trim().splitn(2, '=');
-                    if let (Some(k), Some(v)) = (parts.next(), parts.next()) {
-                        if k == "vinyl_token" {
-                            token_opt = Some(v.to_string());
-                            break;
+        let token_opt = token_opt.or_else(|| {
+            parts
+                .headers
+                .get(axum::http::header::COOKIE)
+                .and_then(|h| h.to_str().ok())
+                .and_then(|cookie_hdr| {
+                    cookie_hdr.split(';').find_map(|pair| {
+                        let mut item = pair.trim().splitn(2, '=');
+                        match (item.next(), item.next()) {
+                            (Some("vinyl_token"), Some(v)) => Some(v.to_string()),
+                            _ => None,
                         }
-                    }
-                }
-            }
-        }
+                    })
+                })
+        });
 
         let token = token_opt.ok_or_else(|| {
             AppError::Unauthorized("Missing authentication credentials".to_string())

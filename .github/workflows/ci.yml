@@ -101,6 +101,68 @@ jobs:
         tags: ${{ steps.meta.outputs.tags }}
         labels:  ${{ steps.meta.outputs.labels }}
 
+  backend-rs-build:
+    name: Rust Backend Build & Test (Linux)
+    runs-on: [self-hosted, linux]
+    defaults:
+      run:
+        working-directory: ./backend-rs
+
+    steps:
+    - uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+
+    - name: Set up Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: clippy, rustfmt
+
+    - name: Rust Cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: "./backend-rs -> ./backend-rs/target"
+
+    - name: Run Cargo Check
+      run: cargo check
+
+    - name: Run Clippy Linter
+      run: cargo clippy -- -D warnings
+
+    - name: Start PostgreSQL Test Container
+      run: |
+        docker rm -f test-postgres-rs 2>/dev/null || true
+        docker run -d --name test-postgres-rs \
+          -e POSTGRES_DB=vinyl_tracker \
+          -e POSTGRES_USER=vinyl_user \
+          -e POSTGRES_PASSWORD=vinyl_password \
+          -p 54329:5432 \
+          postgres:17-alpine
+        for i in {1..30}; do
+          if docker exec test-postgres-rs pg_isready -U vinyl_user -d vinyl_tracker; then
+            echo "PostgreSQL is ready!"
+            break
+          fi
+          echo "Waiting for PostgreSQL... ($i/30)"
+          sleep 1
+        done
+
+    - name: Run Backend Integration & Unit Tests
+      env:
+        POSTGRES_HOST: 127.0.0.1
+        POSTGRES_PORT: "54329"
+        POSTGRES_DB: vinyl_tracker
+        POSTGRES_USER: vinyl_user
+        POSTGRES_PASSWORD: vinyl_password
+        JWT_SECRET: superSecretDevelopmentKeyDoNotUseInProduction123!
+        VINYL_ENCRYPTION_PASSWORD: changeit-for-production-use-23948239048
+        VINYL_ENCRYPTION_SALT: 5c074494c45680a7
+      run: cargo test --verbose
+
+    - name: Stop PostgreSQL Test Container
+      if: always()
+      run: docker rm -f test-postgres-rs || true
+
   frontend-build:
     runs-on: [self-hosted, linux]
     permissions:

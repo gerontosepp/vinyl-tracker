@@ -21,14 +21,14 @@ import { ReleaseNotesComponent } from './components/release-notes/release-notes.
   imports: [FormsModule, LayoutComponent, TranslatePipe, LucideDownload, LucideLogOut, ReleaseNotesComponent],
   template: `
     <app-layout>
-      <div class="max-w-7xl mx-auto space-y-6">
-        <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight mb-2 px-2">
+      <div class="w-full space-y-6">
+        <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight mb-2 px-1">
           {{ 'settings.title' | translate }}
         </h1>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+        <div class="flex flex-col lg:flex-row items-start gap-8 xl:gap-12 w-full">
           <!-- LEFT COLUMN - CONFIG & PROFILE -->
-          <div class="col-span-1 lg:col-span-7 space-y-6">
+          <div class="w-full lg:w-[480px] xl:w-[540px] shrink-0 space-y-6">
             <!-- User Profile Card -->
             <div
               class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-600 p-8 text-center transition-colors"
@@ -465,7 +465,7 @@ import { ReleaseNotesComponent } from './components/release-notes/release-notes.
           </div>
 
           <!-- RIGHT COLUMN - RELEASE NOTES & CHANGES -->
-          <div class="col-span-1 lg:col-span-5 space-y-6 self-start">
+          <div class="flex-1 w-full min-w-0 space-y-6 self-start">
             <app-release-notes />
           </div>
         </div>

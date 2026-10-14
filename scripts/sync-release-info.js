@@ -17,7 +17,7 @@ if (!fs.existsSync(RELEASE_INFO_PATH)) {
 
 const currentVersion = fs.existsSync(PACKAGE_JSON_PATH)
   ? JSON.parse(fs.readFileSync(PACKAGE_JSON_PATH, 'utf8')).version
-  : '0.6.1';
+  : '0.7.0';
 
 const content = fs.readFileSync(RELEASE_INFO_PATH, 'utf8');
 const sections = content.split(/\n(?=## )/);

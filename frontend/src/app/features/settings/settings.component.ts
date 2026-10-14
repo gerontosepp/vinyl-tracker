@@ -74,7 +74,7 @@ import { ReleaseNotesComponent } from './components/release-notes/release-notes.
               <span
                 class="text-[10px] font-mono font-extrabold px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300"
               >
-                v0.6.1
+                v0.7.0
               </span>
             </button>
           </div>

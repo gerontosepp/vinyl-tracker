@@ -9,26 +9,16 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "tag": "In Entwicklung",
     "isCurrent": false,
     "isUnreleased": true,
+    "items": []
+  },
+  {
+    "version": "v0.7.0",
+    "rawHeader": "v0.7.0 (2026-10-14) – Aktueller Release (WiP / Beta)",
+    "date": "2026-10-14",
+    "tag": "Aktueller Release (WiP / Beta)",
+    "isCurrent": true,
+    "isUnreleased": false,
     "items": [
-      {
-        "title": "DevOps / Runner-Tooling: Dozzle SSH-Tunnel & Launcher Script (`scripts/open_dozzle.sh`)",
-        "type": "chore",
-        "typeLabel": "DevOps / Tooling",
-        "details": [
-          "Ermöglicht den schnellen Verbindungsaufbau zum Dozzle Log-Viewer auf dem CI-Runner-Server (`root@2.31.34.79:8888`).",
-          "Öffnet das Dashboard automatisch in einem separaten, minimalistischen Browser-Fenster im App-Modus (Chrome/Brave/Edge `--app`).",
-          "Verhindert Port-Kollisionen bei bereits aktiven Verbindungen und bietet `--stop`- bzw. `--restart`-Optionen."
-        ]
-      },
-      {
-        "title": "Docker Build-Optimierung & Multi-Arch Beschleunigung (`#72`)",
-        "type": "chore",
-        "typeLabel": "DevOps / Tooling",
-        "details": [
-          "Umstellung im [`frontend/Dockerfile`](file:///Users/opolm/develop/AntiGrafity/frontend/Dockerfile) von `npm install` auf `npm ci --legacy-peer-deps` für deterministische, reproduzierbare und performante Paketinstallationen ohne Lockfile-Abweichungen.",
-          "Beschleunigung von Multi-Arch-Builds via `FROM --platform=$BUILDPLATFORM node:20-alpine AS build`: Die rechenintensive Angular-Kompilierung läuft nun nativ auf dem Host-Runner, wodurch die langsame QEMU-Software-Emulation entfällt und die Build-Zeiten in der CI-Pipeline drastisch verkürzt werden."
-        ]
-      },
       {
         "title": "Dashboard & Statistik: Wert der Sammlung in Euro (€) & einheitliche Formatierung (`#32`)",
         "type": "feat",
@@ -49,15 +39,33 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
           "Automatisierte Daten-Synchronisation via `scripts/sync-release-info.js` zur statischen Bereitstellung (`release-info.data.ts`) ohne Netzwerk-Latenz.",
           "Vollständige Lokalisierung in Deutsch und Englisch via `LanguageService`."
         ]
+      },
+      {
+        "title": "Docker Build-Optimierung & Multi-Arch Beschleunigung (`#72`)",
+        "type": "chore",
+        "typeLabel": "DevOps / Tooling",
+        "details": [
+          "Umstellung im [`frontend/Dockerfile`](file:///Users/opolm/develop/AntiGrafity/frontend/Dockerfile) von `npm install` auf `npm ci --legacy-peer-deps` für deterministische, reproduzierbare und performante Paketinstallationen ohne Lockfile-Abweichungen.",
+          "Beschleunigung von Multi-Arch-Builds via `FROM --platform=$BUILDPLATFORM node:20-alpine AS build`: Die rechenintensive Angular-Kompilierung läuft nun nativ auf dem Host-Runner, wodurch die langsame QEMU-Software-Emulation entfällt und die Build-Zeiten in der CI-Pipeline drastisch verkürzt werden."
+        ]
+      },
+      {
+        "title": "DevOps / Runner-Tooling: Dozzle SSH-Tunnel & Launcher Script (`scripts/open_dozzle.sh`)",
+        "type": "chore",
+        "typeLabel": "DevOps / Tooling",
+        "details": [
+          "Ermöglicht den schnellen Verbindungsaufbau zum Dozzle Log-Viewer auf dem CI-Runner-Server (`root@2.31.34.79:8888`).",
+          "Öffnet das Dashboard automatisch in einem separaten, minimalistischen Browser-Fenster im App-Modus (Chrome/Brave/Edge `--app`).",
+          "Verhindert Port-Kollisionen bei bereits aktiven Verbindungen und bietet `--stop`- bzw. `--restart`-Optionen."
+        ]
       }
     ]
   },
   {
     "version": "v0.6.1",
-    "rawHeader": "v0.6.1 (2026-10-14) – Aktueller Release (WiP / Beta)",
+    "rawHeader": "v0.6.1 (2026-10-14)",
     "date": "2026-10-14",
-    "tag": "Aktueller Release (WiP / Beta)",
-    "isCurrent": true,
+    "isCurrent": false,
     "isUnreleased": false,
     "items": [
       {

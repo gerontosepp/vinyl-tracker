@@ -18,27 +18,27 @@ describe('ReleaseInfoService', () => {
   it('should load initial releases', () => {
     const list = service.releases();
     expect(list.length).toBeGreaterThan(0);
-    const v061 = list.find((r) => r.version === 'v0.6.1');
-    expect(v061).toBeDefined();
-    expect(v061?.isCurrent).toBeTrue();
+    const v070 = list.find((r) => r.version === 'v0.7.0');
+    expect(v070).toBeDefined();
+    expect(v070?.isCurrent).toBeTrue();
   });
 
   it('should return current release', () => {
     const current = service.currentRelease();
     expect(current).toBeDefined();
-    expect(current?.version).toBe('v0.6.1');
+    expect(current?.version).toBe('v0.7.0');
   });
 
   it('should manage expanded versions', () => {
-    expect(service.isExpanded('v0.6.1')).toBeTrue();
+    expect(service.isExpanded('v0.7.0')).toBeTrue();
 
     // Toggle off
-    service.toggleExpand('v0.6.1');
-    expect(service.isExpanded('v0.6.1')).toBeFalse();
+    service.toggleExpand('v0.7.0');
+    expect(service.isExpanded('v0.7.0')).toBeFalse();
 
     // Toggle back on
-    service.toggleExpand('v0.6.1');
-    expect(service.isExpanded('v0.6.1')).toBeTrue();
+    service.toggleExpand('v0.7.0');
+    expect(service.isExpanded('v0.7.0')).toBeTrue();
   });
 
   it('should expand and collapse all releases', () => {

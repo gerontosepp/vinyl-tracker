@@ -1,4 +1,4 @@
-# Vinyl Tracker v0.6.1
+# Vinyl Tracker v0.7.0
 
 A personal vinyl record tracking application that allows users to scan barcodes, identify records via Discogs, and log listening sessions.
 
@@ -123,7 +123,7 @@ The application requires environment variables for configuration (database crede
 2. **Start Production Environment (or Proxmox / LXC)**:
    - **Automated Proxmox Deployment Script** (pulls official public images from GHCR):
      ```bash
-     ./scripts/deploy_proxmox.sh [v0.6.1]
+     ./scripts/deploy_proxmox.sh [v0.7.0]
      ```
    - **Manual Compose with Public Registry Images**:
      ```bash

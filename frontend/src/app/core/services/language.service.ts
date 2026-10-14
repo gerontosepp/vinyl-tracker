@@ -96,6 +96,8 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'settings.scannerResetTest': 'Test zurücksetzen',
 
     // Changes / Release Notes
+    'settings.tabSettings': 'Einstellungen',
+    'settings.tabChanges': 'Versionshinweise',
     'settings.changesTitle': 'Änderungen & Versionshinweise',
     'settings.changesDesc': 'Übersicht der Neuerungen, Optimierungen und Fehlerbehebungen in Vinyl Tracker (Quelle: Release-Info).',
     'settings.changesCurrentBadge': 'Aktuell',
@@ -313,6 +315,8 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'settings.scannerResetTest': 'Reset Test',
 
     // Changes / Release Notes
+    'settings.tabSettings': 'Settings',
+    'settings.tabChanges': 'Release Notes',
     'settings.changesTitle': 'Release Notes & Changes',
     'settings.changesDesc': 'Overview of new features, optimizations, and bug fixes in Vinyl Tracker (Source: Release-Info).',
     'settings.changesCurrentBadge': 'Current',

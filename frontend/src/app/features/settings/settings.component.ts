@@ -12,51 +12,119 @@ import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { ScannerService } from '../../core/services/scanner.service';
 import { getErrorMessage } from '../../core/utils/error';
 import { RoonStatus } from '../../core/types';
-import { LucideDownload, LucideLogOut } from '@lucide/angular';
+import { LucideDownload, LucideLogOut, LucideSettings, LucideHistory } from '@lucide/angular';
 import { ReleaseNotesComponent } from './components/release-notes/release-notes.component';
 
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [FormsModule, LayoutComponent, TranslatePipe, LucideDownload, LucideLogOut, ReleaseNotesComponent],
+  imports: [
+    FormsModule,
+    LayoutComponent,
+    TranslatePipe,
+    LucideDownload,
+    LucideLogOut,
+    LucideSettings,
+    LucideHistory,
+    ReleaseNotesComponent,
+  ],
   template: `
     <app-layout>
-      <div class="w-full space-y-6">
-        <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight mb-2 px-1">
-          {{ 'settings.title' | translate }}
-        </h1>
+      <div class="max-w-6xl mx-auto space-y-6">
+        <!-- HEADER & TAB NAVIGATION -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2 px-2">
+          <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+            {{ 'settings.title' | translate }}
+          </h1>
 
-        <div class="flex flex-col lg:flex-row items-start gap-8 xl:gap-12 w-full">
-          <!-- LEFT COLUMN - CONFIG & PROFILE -->
-          <div class="w-full lg:w-[480px] xl:w-[540px] shrink-0 space-y-6">
-            <!-- User Profile Card -->
-            <div
-              class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-600 p-8 text-center transition-colors"
+          <!-- Segmented Tab Navigation -->
+          <div
+            class="inline-flex items-center p-1 bg-slate-200/70 dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs self-start sm:self-auto"
+          >
+            <button
+              type="button"
+              (click)="activeTab.set('settings')"
+              class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer select-none"
+              [class.bg-white]="activeTab() === 'settings'"
+              [class.dark:bg-slate-700]="activeTab() === 'settings'"
+              [class.text-indigo-600]="activeTab() === 'settings'"
+              [class.dark:text-indigo-400]="activeTab() === 'settings'"
+              [class.shadow-xs]="activeTab() === 'settings'"
+              [class.text-slate-600]="activeTab() !== 'settings'"
+              [class.dark:text-slate-400]="activeTab() !== 'settings'"
             >
-              <div class="relative inline-block mb-4">
-                <div
-                  class="w-24 h-24 bg-indigo-100 dark:bg-indigo-900/50 rounded-full flex items-center justify-center border-4 border-slate-50 dark:border-slate-900 shadow-inner overflow-hidden relative z-10"
-                >
-                  <span class="text-3xl font-black text-indigo-600 dark:text-indigo-400">
-                    {{ authService.user()?.username?.charAt(0)?.toUpperCase() }}
-                  </span>
+              <svg lucideSettings [size]="16"></svg>
+              {{ 'settings.tabSettings' | translate }}
+            </button>
+
+            <button
+              type="button"
+              (click)="activeTab.set('changes')"
+              class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer select-none"
+              [class.bg-white]="activeTab() === 'changes'"
+              [class.dark:bg-slate-700]="activeTab() === 'changes'"
+              [class.text-indigo-600]="activeTab() === 'changes'"
+              [class.dark:text-indigo-400]="activeTab() === 'changes'"
+              [class.shadow-xs]="activeTab() === 'changes'"
+              [class.text-slate-600]="activeTab() !== 'changes'"
+              [class.dark:text-slate-400]="activeTab() !== 'changes'"
+            >
+              <svg lucideHistory [size]="16"></svg>
+              {{ 'settings.tabChanges' | translate }}
+              <span
+                class="text-[10px] font-mono font-extrabold px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300"
+              >
+                v0.6.1
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <!-- TAB 1: EINSTELLUNGEN -->
+        @if (activeTab() === 'settings') {
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-fade-in">
+            <!-- LEFT COLUMN - USER PROFILE -->
+            <div class="col-span-1 lg:col-span-5 space-y-6">
+              <div
+                class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-600 p-8 text-center transition-colors"
+              >
+                <div class="relative inline-block mb-4">
+                  <div
+                    class="w-24 h-24 bg-indigo-100 dark:bg-indigo-900/50 rounded-full flex items-center justify-center border-4 border-slate-50 dark:border-slate-900 shadow-inner overflow-hidden relative z-10"
+                  >
+                    <span class="text-3xl font-black text-indigo-600 dark:text-indigo-400">
+                      {{ authService.user()?.username?.charAt(0)?.toUpperCase() }}
+                    </span>
+                  </div>
+                  <div
+                    class="absolute inset-0 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-full blur-md opacity-20 -z-10 animate-pulse"
+                  ></div>
                 </div>
-                <div
-                  class="absolute inset-0 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-full blur-md opacity-20 -z-10 animate-pulse"
-                ></div>
+                <h2 class="text-xl font-bold text-slate-900 dark:text-slate-100">
+                  {{ authService.user()?.username }}
+                </h2>
+                <p class="text-slate-500 dark:text-slate-400 font-medium text-sm mt-1">
+                  {{ authService.user()?.username }}&#64;vinyltracker.app
+                </p>
+
+                <div class="mt-8 pt-6 border-t border-slate-100 dark:border-slate-600">
+                  <button
+                    (click)="logout()"
+                    class="w-full py-2.5 px-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl font-bold hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <svg lucideLogOut [size]="16"></svg>
+                    {{ 'nav.logout' | translate }}
+                  </button>
+                </div>
               </div>
-              <h2 class="text-xl font-bold text-slate-900 dark:text-slate-100">
-                {{ authService.user()?.username }}
-              </h2>
-              <p class="text-slate-500 dark:text-slate-400 font-medium text-sm mt-1">
-                {{ authService.user()?.username }}&#64;vinyltracker.app
-              </p>
             </div>
 
-            <!-- Appearance & Language -->
-            <div
-              class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-600 p-6 transition-colors space-y-6"
-            >
+            <!-- RIGHT COLUMN - SYSTEM SETTINGS -->
+            <div class="col-span-1 lg:col-span-7 space-y-6">
+              <!-- Appearance & Language -->
+              <div
+                class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-600 p-6 transition-colors space-y-6"
+              >
               <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">
                 {{ 'settings.appearance' | translate }}
               </h3>
@@ -450,25 +518,16 @@ import { ReleaseNotesComponent } from './components/release-notes/release-notes.
               </div>
             </div>
 
-            <!-- Logout Section -->
-            <div
-              class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-600 p-6 transition-colors"
-            >
-              <button
-                (click)="logout()"
-                class="w-full py-3 px-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/40 rounded-xl font-bold hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors cursor-pointer flex items-center justify-center gap-2"
-              >
-                <svg lucideLogOut [size]="18"></svg>
-                {{ 'nav.logout' | translate }}
-              </button>
             </div>
           </div>
+        }
 
-          <!-- RIGHT COLUMN - RELEASE NOTES & CHANGES -->
-          <div class="flex-1 w-full min-w-0 space-y-6 self-start">
+        <!-- TAB 2: VERSIONS-HINWEISE / CHANGES -->
+        @if (activeTab() === 'changes') {
+          <div class="max-w-4xl mx-auto space-y-6 animate-fade-in">
             <app-release-notes />
           </div>
-        </div>
+        }
       </div>
 
       <!-- Confirm Dialog for Reset Listens -->
@@ -517,6 +576,7 @@ export class SettingsComponent {
   token = '';
   password = '';
   readonly showResetConfirm = signal<boolean>(false);
+  readonly activeTab = signal<'settings' | 'changes'>('settings');
 
   // Roon Integration
   roonHost = this.authService.user()?.roonHost || '';

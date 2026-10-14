@@ -138,26 +138,64 @@ jobs:
           -e POSTGRES_PASSWORD=vinyl_password \
           -p 54329:5432 \
           postgres:17-alpine
+
+        # Wait until PostgreSQL process is ready
         for i in {1..30}; do
           if docker exec test-postgres-rs pg_isready -U vinyl_user -d vinyl_tracker; then
-            echo "PostgreSQL is ready!"
+            echo "PostgreSQL is accepting connections!"
             break
           fi
           echo "Waiting for PostgreSQL... ($i/30)"
           sleep 1
         done
 
+        # If runner container is in a custom docker network, connect test-postgres-rs to it
+        RUNNER_ID=$(cat /etc/hostname 2>/dev/null || hostname)
+        RUNNER_NET=$(docker inspect -f '{{range $k, $v := .NetworkSettings.Networks}}{{println $k}}{{end}}' "$RUNNER_ID" 2>/dev/null | head -n 1 || echo "")
+        if [ -n "$RUNNER_NET" ] && [ "$RUNNER_NET" != "bridge" ] && [ "$RUNNER_NET" != "host" ] && [ "$RUNNER_NET" != "none" ]; then
+          echo "Connecting test-postgres-rs to runner network: $RUNNER_NET"
+          docker network connect "$RUNNER_NET" test-postgres-rs 2>/dev/null || true
+        fi
+
+        # Extract container IP & gateway
+        PG_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}' test-postgres-rs | awk '{print $1}')
+        HOST_GATEWAY=$(ip route 2>/dev/null | awk '/default/ {print $3}' || echo "172.17.0.1")
+
+        echo "Discovering working PostgreSQL connection endpoint..."
+        echo "Container IP: $PG_IP"
+        echo "Host Gateway: $HOST_GATEWAY"
+
+        SELECTED_URL=""
+        for target in "$PG_IP:5432" "test-postgres-rs:5432" "$HOST_GATEWAY:54329" "127.0.0.1:54329" "localhost:54329"; do
+          host="${target%:*}"
+          port="${target#*:}"
+          if (exec 3<>/dev/tcp/$host/$port) 2>/dev/null; then
+            exec 3<&-
+            exec 3>&-
+            echo "VERIFIED: Reachable at $host:$port"
+            SELECTED_URL="postgres://vinyl_user:vinyl_password@$host:$port/vinyl_tracker"
+            break
+          else
+            echo "Could not connect to $host:$port"
+          fi
+        done
+
+        if [ -z "$SELECTED_URL" ]; then
+          echo "ERROR: Failed to establish a TCP connection to PostgreSQL!"
+          exit 1
+        fi
+
+        echo "DATABASE_URL=$SELECTED_URL" >> $GITHUB_ENV
+        echo "Configured DATABASE_URL in GITHUB_ENV: $SELECTED_URL"
+
     - name: Run Backend Integration & Unit Tests
       env:
-        POSTGRES_HOST: 127.0.0.1
-        POSTGRES_PORT: "54329"
-        POSTGRES_DB: vinyl_tracker
-        POSTGRES_USER: vinyl_user
-        POSTGRES_PASSWORD: vinyl_password
         JWT_SECRET: superSecretDevelopmentKeyDoNotUseInProduction123!
         VINYL_ENCRYPTION_PASSWORD: changeit-for-production-use-23948239048
         VINYL_ENCRYPTION_SALT: 5c074494c45680a7
-      run: cargo test --verbose
+      run: |
+        echo "Running tests with DATABASE_URL: $DATABASE_URL"
+        cargo test --verbose
 
     - name: Stop PostgreSQL Test Container
       if: always()

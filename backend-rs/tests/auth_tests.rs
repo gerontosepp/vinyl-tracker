@@ -15,6 +15,7 @@ use backend_rs::{
 async fn setup_app() -> (axum::Router, AppState) {
     dotenvy::dotenv().ok();
     let config = Config::from_env();
+    let _ = backend_rs::db::migrations::run_migrations(&config.database_url).await;
     let pool = init_pool(&config)
         .await
         .expect("PostgreSQL must be accessible for integration tests");

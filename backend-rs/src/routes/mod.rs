@@ -1,4 +1,6 @@
 pub mod actuator;
+pub mod discogs;
+pub mod proxy;
 pub mod users;
 
 use axum::{
@@ -70,6 +72,10 @@ pub fn create_app(state: AppState) -> Router {
         .nest("/actuator", actuator::router())
         // User & Auth endpoints (nested under /api/users)
         .nest("/api/users", users::router())
+        // Discogs search endpoint (nested under /api/discogs)
+        .nest("/api/discogs", discogs::router())
+        // Image Proxy endpoint (nested under /api/proxy)
+        .nest("/api/proxy", proxy::router())
         // API root / ping
         .route("/api/ping", get(|| async { "pong" }))
         .fallback(fallback_handler)

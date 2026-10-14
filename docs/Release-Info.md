@@ -24,6 +24,14 @@
   - Axum Extractor `CurrentUser(AppUser)` zur einfachen und typsicheren Routen-Absicherung via `Authorization: Bearer <token>` Header oder `vinyl_token` Cookie.
   - 100 % Java-kompatibler `CryptoService` für Discogs Personal Access Tokens: PBKDF2WithHmacSHA1 Key Derivation (1024 Runden) und AES-256-CBC mit Hex-Encoding, verifiziert gegen reale Bestandsdaten.
   - Sichere Session-Cookies (`HttpOnly`, `SameSite=Lax`, konfigurierbares `Max-Age`).
+- **Rust Backend Migration: Phase 3 – Discogs API Client, Rate-Limiting, Caching & Bild-Proxy (`#85`)**:
+  - Asynchroner Discogs REST API Client ([`backend-rs/src/clients/discogs.rs`](file:///Users/opolm/develop/AntiGrafity/backend-rs/src/clients/discogs.rs)) mit Reqwest, Authentifizierung via Discogs Personal Access Token und automatischem User-Agent.
+  - Striktes Rate-Limiting nach Discogs API-Vorgaben (60 Requests pro Minute) über `governor` mit asynchronem Backpressure (`.until_ready().await`).
+  - In-Memory-Caching via `moka` für Discogs-Suchergebnisse (1 Stunde TTL) und Release-Preisschätzungen (12 Stunden TTL).
+  - Umfassender Bild-Proxy-Dienst ([`backend-rs/src/services/image_proxy.rs`](file:///Users/opolm/develop/AntiGrafity/backend-rs/src/services/image_proxy.rs)) unter `GET /api/proxy/image` mit 24-stündigem In-Memory-Bild-Cache.
+  - Robuster SSRF-Schutz (Server-Side Request Forgery): Erzwingen von HTTPS, Whitelist erlaubter Hosts (`i.discogs.com`, `s.discogs.com`, `img.discogs.com`), asynchrone DNS-Auflösung vor HTTP-Anfragen sowie strikte Blockierung von Loopback- (127.0.0.1, ::1), RFC 1918 Privat- (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16), Link-Local- (169.254.0.0/16, fe80::/10) und Unique-Local-Adressen (fc00::/7).
+  - Discogs-Such-Endpunkt `GET /api/discogs/search` abgesichert über `CurrentUser(AppUser)` mit automatischer Entschlüsselung des benutzerspezifischen Tokens.
+  - Vollständige Suite von Unit- und Integrationstests ([`backend-rs/tests/discogs_and_proxy_tests.rs`](file:///Users/opolm/develop/AntiGrafity/backend-rs/tests/discogs_and_proxy_tests.rs)).
 ---
 
 ## v0.7.0 (2026-10-14) – Aktueller Release (WiP / Beta)

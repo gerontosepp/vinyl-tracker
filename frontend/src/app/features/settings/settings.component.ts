@@ -12,23 +12,24 @@ import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { ScannerService } from '../../core/services/scanner.service';
 import { getErrorMessage } from '../../core/utils/error';
 import { RoonStatus } from '../../core/types';
-import { LucideDownload } from '@lucide/angular';
+import { LucideDownload, LucideLogOut } from '@lucide/angular';
 import { ReleaseNotesComponent } from './components/release-notes/release-notes.component';
 
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [FormsModule, LayoutComponent, TranslatePipe, LucideDownload, ReleaseNotesComponent],
+  imports: [FormsModule, LayoutComponent, TranslatePipe, LucideDownload, LucideLogOut, ReleaseNotesComponent],
   template: `
     <app-layout>
-      <div class="max-w-6xl mx-auto space-y-6">
+      <div class="max-w-7xl mx-auto space-y-6">
         <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight mb-2 px-2">
           {{ 'settings.title' | translate }}
         </h1>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <!-- LEFT COLUMN - USER PROFILE -->
-          <div class="col-span-1 lg:col-span-5 space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+          <!-- LEFT COLUMN - CONFIG & PROFILE -->
+          <div class="col-span-1 lg:col-span-7 space-y-6">
+            <!-- User Profile Card -->
             <div
               class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-600 p-8 text-center transition-colors"
             >
@@ -50,23 +51,8 @@ import { ReleaseNotesComponent } from './components/release-notes/release-notes.
               <p class="text-slate-500 dark:text-slate-400 font-medium text-sm mt-1">
                 {{ authService.user()?.username }}&#64;vinyltracker.app
               </p>
-
-              <div class="mt-8 pt-6 border-t border-slate-100 dark:border-slate-600">
-                <button
-                  (click)="logout()"
-                  class="w-full py-2.5 px-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl font-bold hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors cursor-pointer"
-                >
-                  {{ 'nav.logout' | translate }}
-                </button>
-              </div>
             </div>
 
-            <!-- Release Notes & Changes Section -->
-            <app-release-notes />
-          </div>
-
-          <!-- RIGHT COLUMN - SYSTEM SETTINGS -->
-          <div class="col-span-1 lg:col-span-7 space-y-6">
             <!-- Appearance & Language -->
             <div
               class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-600 p-6 transition-colors space-y-6"
@@ -463,6 +449,24 @@ import { ReleaseNotesComponent } from './components/release-notes/release-notes.
                 }
               </div>
             </div>
+
+            <!-- Logout Section -->
+            <div
+              class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-600 p-6 transition-colors"
+            >
+              <button
+                (click)="logout()"
+                class="w-full py-3 px-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/40 rounded-xl font-bold hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors cursor-pointer flex items-center justify-center gap-2"
+              >
+                <svg lucideLogOut [size]="18"></svg>
+                {{ 'nav.logout' | translate }}
+              </button>
+            </div>
+          </div>
+
+          <!-- RIGHT COLUMN - RELEASE NOTES & CHANGES -->
+          <div class="col-span-1 lg:col-span-5 space-y-6 self-start">
+            <app-release-notes />
           </div>
         </div>
       </div>

@@ -14,6 +14,8 @@ pub struct Config {
     pub encryption_password: Option<String>,
     pub encryption_salt: Option<String>,
     pub discogs_user_agent: String,
+    pub discogs_api_base_url: String,
+    pub image_proxy_allowed_hosts: String,
     pub cors_allowed_origins: Vec<String>,
     pub cors_allow_credentials: bool,
 }
@@ -70,6 +72,12 @@ impl Config {
         let discogs_user_agent = env::var("DISCOGS_USER_AGENT")
             .unwrap_or_else(|_| "VinylTracker/1.0 (+https://github.com/gerontosepp/vinyl-tracker)".to_string());
 
+        let discogs_api_base_url = env::var("DISCOGS_API_BASE_URL")
+            .unwrap_or_else(|_| "https://api.discogs.com".to_string());
+
+        let image_proxy_allowed_hosts = env::var("IMAGE_PROXY_ALLOWED_HOSTS")
+            .unwrap_or_else(|_| "i.discogs.com,s.discogs.com,api.discogs.com".to_string());
+
         let cors_origins_raw = env::var("CORS_ALLOWED_ORIGINS").unwrap_or_else(|_| {
             "http://localhost:5173,https://localhost:5173,http://localhost:3000,http://127.0.0.1:5173".to_string()
         });
@@ -97,6 +105,8 @@ impl Config {
             encryption_password,
             encryption_salt,
             discogs_user_agent,
+            discogs_api_base_url,
+            image_proxy_allowed_hosts,
             cors_allowed_origins,
             cors_allow_credentials,
         }

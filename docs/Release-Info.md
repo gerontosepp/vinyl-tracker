@@ -16,6 +16,10 @@
 - **Docker Build-Optimierung & Multi-Arch Beschleunigung (`#72`)**:
   - Umstellung im [`frontend/Dockerfile`](file:///Users/opolm/develop/AntiGrafity/frontend/Dockerfile) von `npm install` auf `npm ci --legacy-peer-deps` für deterministische, reproduzierbare und performante Paketinstallationen ohne Lockfile-Abweichungen.
   - Beschleunigung von Multi-Arch-Builds via `FROM --platform=$BUILDPLATFORM node:20-alpine AS build`: Die rechenintensive Angular-Kompilierung läuft nun nativ auf dem Host-Runner, wodurch die langsame QEMU-Software-Emulation entfällt und die Build-Zeiten in der CI-Pipeline drastisch verkürzt werden.
+- **Dashboard & Statistik: Wert der Sammlung in Euro (€) & einheitliche Formatierung (`#32`)**:
+  - Umstellung der Sammlungsbewertung auf Discogs API-Ebene via `curr_abbr=EUR` in `DiscogsApiClient.java`.
+  - Robuste Währungsnormalisierung und Unterstützung europäischer sowie US-amerikanischer Zahlenformate im Backend-Parser `DiscogsDto.ValueData`.
+  - Dashboard- und Statistik-Widget: Anzeige aller Werte (Median, Minimum, Maximum) in Euro (€) mit Währungssymbol nach der Zahl (z. B. `Min: 6.405 € / Max: 23.112 €`) unter Berücksichtigung lokalisierter Tausendertrennzeichen.
 - **Profil & Einstellungen: Neuer Abschnitt „Changes / Release-Notes“ (`#79`)**:
   - Neuer Bereich in den Einstellungen mit strukturierter Anzeige der Release-Historie, Features, Fixes und Meilensteine basierend auf `docs/Release-Info.md`.
   - Interaktives Accordion mit automatischer Hervorhebung der aktuellen App-Version, Live-Volltextsuche über alle Versionen und Änderungen hinweg sowie „Alle ausklappen / Alle einklappen“-Steuerung.

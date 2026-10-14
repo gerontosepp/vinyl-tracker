@@ -116,15 +116,15 @@ class DiscogsApiClientTest {
     @Test
     void getCollectionValue_ShouldReturnValueResponse() throws Exception {
         DiscogsDto.ValueResponse mockResponse = new DiscogsDto.ValueResponse();
-        mockResponse.setMedian(new DiscogsDto.ValueData("USD", 300.00));
+        mockResponse.setMedian(new DiscogsDto.ValueData("EUR", 300.00));
 
-        server.expect(requestTo("https://api.discogs.com/users/testdiscogs/collection/value"))
+        server.expect(requestTo("https://api.discogs.com/users/testdiscogs/collection/value?curr_abbr=EUR"))
                 .andRespond(withSuccess(objectMapper.writeValueAsString(mockResponse), MediaType.APPLICATION_JSON));
 
         DiscogsDto.ValueResponse result = discogsApiClient.getCollectionValue(user);
 
         assertNotNull(result);
-        assertEquals("USD", result.getMedian().getCurrency());
+        assertEquals("EUR", result.getMedian().getCurrency());
         assertEquals(300.00, result.getMedian().getValue());
     }
 

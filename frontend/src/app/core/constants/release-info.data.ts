@@ -30,6 +30,16 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
         ]
       },
       {
+        "title": "Dashboard & Statistik: Wert der Sammlung in Euro (€) & einheitliche Formatierung (`#32`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "Umstellung der Sammlungsbewertung auf Discogs API-Ebene via `curr_abbr=EUR` in `DiscogsApiClient.java`.",
+          "Robuste Währungsnormalisierung und Unterstützung europäischer sowie US-amerikanischer Zahlenformate im Backend-Parser `DiscogsDto.ValueData`.",
+          "Dashboard- und Statistik-Widget: Anzeige aller Werte (Median, Minimum, Maximum) in Euro (€) mit Währungssymbol nach der Zahl (z. B. `Min: 6.405 € / Max: 23.112 €`) unter Berücksichtigung lokalisierter Tausendertrennzeichen."
+        ]
+      },
+      {
         "title": "Profil & Einstellungen: Neuer Abschnitt „Changes / Release-Notes“ (`#79`)",
         "type": "feat",
         "typeLabel": "Feature",

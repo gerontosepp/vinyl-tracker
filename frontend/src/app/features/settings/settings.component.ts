@@ -60,6 +60,9 @@ import { ReleaseNotesComponent } from './components/release-notes/release-notes.
                 </button>
               </div>
             </div>
+
+            <!-- Release Notes & Changes Section -->
+            <app-release-notes />
           </div>
 
           <!-- RIGHT COLUMN - SYSTEM SETTINGS -->
@@ -460,9 +463,6 @@ import { ReleaseNotesComponent } from './components/release-notes/release-notes.
                 }
               </div>
             </div>
-
-            <!-- Release Notes & Changes Section -->
-            <app-release-notes />
           </div>
         </div>
       </div>

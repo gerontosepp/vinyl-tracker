@@ -5,11 +5,14 @@ use crate::{
     clients::discogs::DiscogsClient,
     error::AppError,
     models::{
-        discogs::{determine_format, DiscogsFormat, DiscogsLabel, DiscogsPriceSuggestion, DiscogsRelease, DiscogsTrack},
+        discogs::{determine_format, DiscogsFormat, DiscogsLabel, DiscogsRelease, DiscogsTrack},
         record::{RecordDetailDto, UpdateConditionRequestDto},
         user::AppUser,
     },
-    services::crypto_service::CryptoService,
+    services::{
+        crypto_service::CryptoService,
+        marketplace::{extract_suggested_price, validate_goldmine_condition},
+    },
 };
 
 pub struct RecordService;
@@ -420,8 +423,14 @@ impl RecordService {
         let has_media_req = req.media_condition.is_some();
         let has_sleeve_req = req.sleeve_condition.is_some();
 
-        let new_media = req.media_condition.filter(|s| !s.trim().is_empty());
-        let new_sleeve = req.sleeve_condition.filter(|s| !s.trim().is_empty());
+        let new_media = match req.media_condition.filter(|s| !s.trim().is_empty()) {
+            Some(ref raw) => Some(validate_goldmine_condition(raw)?.to_string()),
+            None => None,
+        };
+        let new_sleeve = match req.sleeve_condition.filter(|s| !s.trim().is_empty()) {
+            Some(ref raw) => Some(validate_goldmine_condition(raw)?.to_string()),
+            None => None,
+        };
 
         let media_changed = has_media_req && new_media != old_media;
         let sleeve_changed = has_sleeve_req && new_sleeve != old_sleeve;
@@ -489,26 +498,4 @@ impl RecordService {
         // Return updated record details
         Self::get_record_details(pool, discogs_client, crypto, user, record_id).await
     }
-}
-
-fn extract_suggested_price(
-    suggestions: &std::collections::HashMap<String, DiscogsPriceSuggestion>,
-    condition: Option<&str>,
-) -> Option<f64> {
-    if suggestions.is_empty() {
-        return None;
-    }
-
-    if let Some(sug) = condition.and_then(|c| suggestions.get(c)) {
-        return Some(sug.value);
-    }
-
-    // Default fallbacks in order of typical median conditions
-    for key in ["Very Good Plus (VG+)", "Very Good (VG)", "Near Mint (NM or M-)", "Good Plus (G+)"] {
-        if let Some(sug) = suggestions.get(key) {
-            return Some(sug.value);
-        }
-    }
-
-    suggestions.values().next().map(|s| s.value)
 }

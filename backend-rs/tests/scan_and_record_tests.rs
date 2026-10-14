@@ -186,7 +186,7 @@ async fn test_record_details_listen_and_condition_lifecycle() {
     let bytes = res.into_body().collect().await.unwrap().to_bytes();
     let patched: RecordDetailDto = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(patched.media_condition.as_deref(), Some("Mint (M)"));
-    assert_eq!(patched.sleeve_condition.as_deref(), Some("Near Mint (NM)"));
+    assert_eq!(patched.sleeve_condition.as_deref(), Some("Near Mint (NM or M-)"));
 }
 
 #[tokio::test]

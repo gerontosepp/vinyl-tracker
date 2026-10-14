@@ -123,16 +123,15 @@ import { Subscription, firstValueFrom, forkJoin, of, catchError } from 'rxjs';
                 @if (collectionValue(); as val) {
                   <div class="text-2xl font-black text-slate-900 dark:text-slate-100">
                     @if (val.median) {
-                      {{ val.median.currency === 'EUR' ? '€' : '$' }}
-                      {{ val.median.value | number: '1.2-2' }}
+                      {{ val.median.value | number: '1.2-2' }} {{ getCurrencySymbol(val.median.currency) }}
                     } @else {
                       N/A
                     }
                   </div>
                   @if (val.minimum && val.maximum) {
                     <div class="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-2">
-                      Min: {{ val.minimum.value | number: '1.0-0' }} / Max:
-                      {{ val.maximum.value | number: '1.0-0' }}
+                      Min: {{ val.minimum.value | number: '1.0-0' }} {{ getCurrencySymbol(val.minimum.currency) }} / Max:
+                      {{ val.maximum.value | number: '1.0-0' }} {{ getCurrencySymbol(val.maximum.currency) }}
                     </div>
                   }
                 } @else {
@@ -361,6 +360,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
 
     return `conic-gradient(${segments.join(', ')})`;
+  }
+
+  getCurrencySymbol(currency?: string): string {
+    if (currency === 'USD' || currency === '$') {
+      return '$';
+    }
+    return '€';
   }
 
   getGenreColor(idx: number): string {

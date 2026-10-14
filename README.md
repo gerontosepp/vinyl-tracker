@@ -1,4 +1,4 @@
-# Vinyl Tracker v0.6.1
+# Vinyl Tracker v0.7.0
 
 A personal vinyl record tracking application that allows users to scan barcodes, identify records via Discogs, and log listening sessions.
 
@@ -51,11 +51,12 @@ The project follows a modern containerized micro-architecture:
 - **Multi-User Support**: Individual user accounts with personal Discogs collection integration.
 - **Listening History & Just Listening**: Log listening sessions via barcode/QR scan or directly via the **"Höre ich gerade" (Just listening)** button in the album detail view.
 - **Analytics**: View most played records and listening trends.
-- **Live Collection Insights**: Dashboard charts for Discogs collection value and genre breakdown via `/api/analytics/collection/value` and `/api/analytics/collection/genres`.
+- **Live Collection Insights**: Dashboard charts for Discogs collection value (in EUR `€` via `/api/analytics/collection/value?curr_abbr=EUR` with median, min, max) and genre breakdown via `/api/analytics/collection/genres`.
 - **QR Code Generation & Batch Export**: Generate a PDF with QR codes for your entire collection sorted by artist (via Settings) or selectively print chosen records directly from the Collection view (with quick selection reset via **"Auswahl aufheben"** / Clear selection).
 - **Quick Logging**: Scan generated QR codes to instantly log a listen without searching.
 - **Collection Management & Values**: Search, filter by format category ("Alle", "Platten" [inkl. Einzel-/Doppel-LP], "CDs" [inkl. Einzel-/Doppel-CD]), filter by multi-select **Genre** (z. B. Rock, Jazz mit dynamischer Häufigkeitsanzeige), filter nach **Erscheinungsjahr / Zeiträumen** (einzelne Jahre wie `1970, 1971`, Von-Bis-Bereiche wie `1970-1972` oder Kombinationen daraus), toggle **"Played Only"** oder **"Nicht gespielt..."** (Stichtagsfilterung nach Datum oder Schnellfilter „Noch nie gespielt“), and sort your collection catalog. Displays the estimated market value and play count alongside the **"Last played at" / "Zuletzt gespielt"** timestamp for records in the list. Intuitive table column interactions: clicking cover, title, or artist opens the rich detail modal (tracklists, formats, labels, notes, listening history), column 1 toggles QR print selection, and clicking the Discogs ID opens the external release page in a new tab. All date fields dynamically adapt to the active locale (`de-DE` / `en-US`). Force a manual sync with Discogs at any time (automatically populates missing market values and recalculates prices when conditions change).
 - **Data Management**: Reset your entire listening history with a single click from Settings (with confirmation dialog to prevent accidental deletions).
+- **In-App Release Notes & Changes**: Transparent in-app changelog in Profile & Settings displaying release highlights, bug fixes, and milestones directly from `docs/Release-Info.md` with interactive version accordions and live search.
 - **Modern UI**: Fully responsive, mobile-first design with dark mode, glassmorphism, and smooth micro-animations.
 - **Resilient API**: Robust Discogs integration with **Resilience4j** rate-limiting (60 req/min) and automatic retries with exponential backoff.
 - **Performance Caching**: Optimized release metadata retrieval using **Caffeine** local caching.
@@ -122,7 +123,7 @@ The application requires environment variables for configuration (database crede
 2. **Start Production Environment (or Proxmox / LXC)**:
    - **Automated Proxmox Deployment Script** (pulls official public images from GHCR):
      ```bash
-     ./scripts/deploy_proxmox.sh [v0.6.1]
+     ./scripts/deploy_proxmox.sh [v0.7.0]
      ```
    - **Manual Compose with Public Registry Images**:
      ```bash

@@ -25,8 +25,8 @@ Zusätzlich wird der Backend-Job mit `mvn clean verify -Psecurity-online` ausgef
 1.  Mergen Sie Ihre fertigen Features aus `develop` in den `main` Branch (oder erstellen Sie ein Release-Tag).
 2.  Die GitHub Actions "CI Pipeline" baut und testet das Projekt vollautomatisch.
 3.  Die Images stehen öffentlich (**Public**) unter folgenden Adressen bereit:
-    - `ghcr.io/gerontosepp/vinyl-tracker-backend:latest` (oder z.B. `:v0.6.1`)
-    - `ghcr.io/gerontosepp/vinyl-tracker-frontend:latest` (oder z.B. `:v0.6.1`)
+    - `ghcr.io/gerontosepp/vinyl-tracker-backend:latest` (oder z.B. `:v0.7.0`)
+    - `ghcr.io/gerontosepp/vinyl-tracker-frontend:latest` (oder z.B. `:v0.7.0`)
 
 > [!NOTE]
 > Die Docker-Images sind in der GitHub Container Registry öffentlich zugänglich (**Public**). Sie können auf jedem Server direkt ohne Authentifizierung (`docker login` oder Personal Access Token) heruntergeladen werden.
@@ -72,7 +72,7 @@ wget https://raw.githubusercontent.com/gerontosepp/vinyl-tracker/main/.env.examp
     - **Offizielle Images (Default)**:
       ```bash
       REGISTRY_PREFIX=ghcr.io/gerontosepp/
-      IMAGE_TAG=latest # oder z.B. v0.6.1
+      IMAGE_TAG=latest # oder z.B. v0.7.0
       ```
     - **Für manuelle / eigene Builds (Option B)**:
       ```bash
@@ -98,7 +98,7 @@ Nutzen Sie das bereitgestellte Skript `./scripts/deploy_proxmox.sh` für die aut
 ./scripts/deploy_proxmox.sh
 
 # Ein spezifisches Release installieren:
-./scripts/deploy_proxmox.sh v0.6.1
+./scripts/deploy_proxmox.sh v0.7.0
 ```
 
 ### Option B: Manuelles Docker Compose
@@ -226,3 +226,14 @@ volumes:
    docker compose -f docker/docker-compose.runner.yml logs -f
    ```
 3. Sobald `Listening for Jobs` in den Logs erscheint, ist der Runner aktiv und nimmt Jobs entgegen. Beide Runner bearbeiten Jobs vollkommen unabhängig und parallel.
+
+### Live-Logüberwachung mit Dozzle
+Wenn auf dem Runner-Server Dozzle (auf Port 8888) läuft, kann mit folgendem Skript ein SSH-Tunnel aufgebaut und das Dozzle-Dashboard direkt in einem minimalen App-Browserfenster gestartet werden:
+
+```bash
+# Tunnel aufbauen und Dozzle öffnen:
+./scripts/open_dozzle.sh
+
+# Tunnel beenden:
+./scripts/open_dozzle.sh --stop
+```

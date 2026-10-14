@@ -282,4 +282,29 @@ describe('DashboardComponent', () => {
     expect(component.getGenreColor(5)).toBe(component.GENRE_COLORS[5]);
     expect(component.getGenreColor(10)).toBe(component.GENRE_COLORS[5]);
   });
+
+  it('should return correct currency symbols with Euro default', () => {
+    expect(component.getCurrencySymbol('EUR')).toBe('€');
+    expect(component.getCurrencySymbol('€')).toBe('€');
+    expect(component.getCurrencySymbol('USD')).toBe('$');
+    expect(component.getCurrencySymbol('$')).toBe('$');
+    expect(component.getCurrencySymbol(undefined)).toBe('€');
+  });
+
+  it('should render collection value with Euro symbol in median and min/max subtext', () => {
+    component.collectionValue.set({
+      minimum: { currency: 'EUR', value: 6405 },
+      median: { currency: 'EUR', value: 11973.16 },
+      maximum: { currency: 'EUR', value: 23112 },
+    });
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const text = compiled.textContent || '';
+    expect(text).toContain('€');
+    expect(text).toContain('Min:');
+    expect(text).toContain('Max:');
+    expect(text).toContain('6,405 €');
+    expect(text).toContain('23,112 €');
+  });
 });

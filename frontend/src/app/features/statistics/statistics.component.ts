@@ -55,16 +55,15 @@ type CollectionValueTrendPoint = {
                     class="text-3xl font-black text-slate-900 dark:text-slate-100 flex items-baseline gap-3"
                   >
                     @if (val.median) {
-                      {{ val.median.currency === 'EUR' ? '€' : '$' }}
-                      {{ val.median.value | number: '1.2-2' }}
+                      {{ val.median.value | number: '1.2-2' }} {{ getCurrencySymbol(val.median.currency) }}
                     } @else {
                       N/A
                     }
 
                     @if (val.minimum && val.maximum) {
                       <span class="text-sm font-medium text-slate-500 dark:text-slate-400">
-                        Min: {{ val.minimum.value | number: '1.0-0' }} / Max:
-                        {{ val.maximum.value | number: '1.0-0' }}
+                        Min: {{ val.minimum.value | number: '1.0-0' }} {{ getCurrencySymbol(val.minimum.currency) }} / Max:
+                        {{ val.maximum.value | number: '1.0-0' }} {{ getCurrencySymbol(val.maximum.currency) }}
                       </span>
                     }
                   </div>
@@ -450,7 +449,7 @@ export class StatisticsComponent implements OnInit, OnDestroy {
       minimum: minValue,
       median: medianValue,
       maximum: maxValue,
-      currency: value.median?.currency || value.minimum?.currency || value.maximum?.currency || '$',
+      currency: value.median?.currency || value.minimum?.currency || value.maximum?.currency || 'EUR',
     };
 
     this.collectionValueHistory.update((prev) => {
@@ -508,5 +507,12 @@ export class StatisticsComponent implements OnInit, OnDestroy {
     if (!data.length) return '';
     const area = this.getAreaPoints(data, key, width, height, maxVal);
     return `0,${height} ${area} ${width},${height}`;
+  }
+
+  getCurrencySymbol(currency?: string): string {
+    if (currency === 'USD' || currency === '$') {
+      return '$';
+    }
+    return '€';
   }
 }

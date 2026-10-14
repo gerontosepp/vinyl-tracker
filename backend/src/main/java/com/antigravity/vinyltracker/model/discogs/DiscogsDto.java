@@ -382,16 +382,32 @@ public class DiscogsDto {
         private String currency;
         private Double value;
 
-        private static final Pattern NUMBER_PATTERN = Pattern.compile("(-?\\d[\\d,]*(?:\\.\\d+)?)");
+        private static String normalizeCurrency(String rawCurrency) {
+            if (rawCurrency == null || rawCurrency.isBlank()) {
+                return "EUR";
+            }
+            String trimmed = rawCurrency.trim();
+            if ("€".equals(trimmed) || "EUR".equalsIgnoreCase(trimmed)) {
+                return "EUR";
+            }
+            if ("$".equals(trimmed) || "USD".equalsIgnoreCase(trimmed)) {
+                return "USD";
+            }
+            return trimmed;
+        }
+
+        public String getCurrency() {
+            return currency != null && !currency.isBlank() ? currency : "EUR";
+        }
 
         @JsonCreator
         public static ValueData fromJson(Object node) {
             if (node == null) {
-                return new ValueData(null, 0.0);
+                return new ValueData("EUR", 0.0);
             }
 
             if (node instanceof Map<?, ?> map) {
-                String currency = map.get("currency") != null ? String.valueOf(map.get("currency")) : null;
+                String currency = normalizeCurrency(map.get("currency") != null ? String.valueOf(map.get("currency")) : "EUR");
                 Double value = 0.0;
                 Object rawValue = map.get("value");
                 if (rawValue instanceof Number number) {
@@ -408,23 +424,48 @@ public class DiscogsDto {
 
             if (node instanceof String textNode) {
                 String text = textNode.trim();
-                Matcher matcher = NUMBER_PATTERN.matcher(text);
-
-                if (!matcher.find()) {
-                    return new ValueData(text.isEmpty() ? null : text, 0.0);
+                if (text.isEmpty()) {
+                    return new ValueData("EUR", 0.0);
                 }
 
-                String rawNumber = matcher.group(1);
-                double parsedValue = Double.parseDouble(rawNumber.replace(",", ""));
-                String currency = text.replace(rawNumber, "").trim();
-                return new ValueData(currency.isEmpty() ? null : currency, parsedValue);
+                String currency = "EUR";
+                if (text.contains("€") || text.toUpperCase().contains("EUR")) {
+                    currency = "EUR";
+                } else if (text.contains("$") || text.toUpperCase().contains("USD")) {
+                    currency = "USD";
+                }
+
+                String cleaned = text.replaceAll("[^0-9.,-]", "").trim();
+                double parsedValue = 0.0;
+                if (!cleaned.isEmpty()) {
+                    try {
+                        int lastComma = cleaned.lastIndexOf(',');
+                        int lastDot = cleaned.lastIndexOf('.');
+                        if (lastComma > lastDot) {
+                            // European format: 11.973,16 -> 11973.16
+                            String normalized = cleaned.replace(".", "").replace(',', '.');
+                            parsedValue = Double.parseDouble(normalized);
+                        } else if (lastDot > lastComma) {
+                            // US format: 11,973.16 -> 11973.16
+                            String normalized = cleaned.replace(",", "");
+                            parsedValue = Double.parseDouble(normalized);
+                        } else {
+                            String normalized = cleaned.replace(',', '.');
+                            parsedValue = Double.parseDouble(normalized);
+                        }
+                    } catch (NumberFormatException ignored) {
+                        parsedValue = 0.0;
+                    }
+                }
+
+                return new ValueData(currency, parsedValue);
             }
 
             if (node instanceof Number numberNode) {
-                return new ValueData(null, numberNode.doubleValue());
+                return new ValueData("EUR", numberNode.doubleValue());
             }
 
-            return new ValueData(null, 0.0);
+            return new ValueData("EUR", 0.0);
         }
     }
 

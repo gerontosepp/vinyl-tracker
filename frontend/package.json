@@ -1,6 +1,6 @@
 {
   "name": "frontend",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
@@ -10,7 +10,8 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "pretest:e2e": "node scripts/ensure-certs.js",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "sync:releases": "node ../scripts/sync-release-info.js"
   },
   "private": true,
   "dependencies": {

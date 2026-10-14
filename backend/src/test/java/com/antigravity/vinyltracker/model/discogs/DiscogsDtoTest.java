@@ -63,4 +63,52 @@ class DiscogsDtoTest {
         DiscogsDto.Format cdEntry2 = new DiscogsDto.Format("CD", "1", List.of("Bonus CD"), "");
         assertThat(DiscogsDto.determineFormat(List.of(cdEntry1, cdEntry2))).isEqualTo("Double CD");
     }
+
+    @Test
+    void testValueData_ParsingEuropeanNumberAndEuroSymbol() {
+        DiscogsDto.ValueData data = DiscogsDto.ValueData.fromJson("11.973,16 €");
+        assertThat(data.getCurrency()).isEqualTo("EUR");
+        assertThat(data.getValue()).isEqualTo(11973.16);
+    }
+
+    @Test
+    void testValueData_ParsingUsNumberAndDollar() {
+        DiscogsDto.ValueData data = DiscogsDto.ValueData.fromJson("$11,973.16");
+        assertThat(data.getCurrency()).isEqualTo("USD");
+        assertThat(data.getValue()).isEqualTo(11973.16);
+    }
+
+    @Test
+    void testValueData_ParsingEuroPrefixUsNumber() {
+        DiscogsDto.ValueData data = DiscogsDto.ValueData.fromJson("€1,234.56");
+        assertThat(data.getCurrency()).isEqualTo("EUR");
+        assertThat(data.getValue()).isEqualTo(1234.56);
+    }
+
+    @Test
+    void testValueData_ParsingMapWithEuro() {
+        java.util.Map<String, Object> map = java.util.Map.of("currency", "EUR", "value", 2500.0);
+        DiscogsDto.ValueData data = DiscogsDto.ValueData.fromJson(map);
+        assertThat(data.getCurrency()).isEqualTo("EUR");
+        assertThat(data.getValue()).isEqualTo(2500.0);
+    }
+
+    @Test
+    void testValueData_ParsingMapWithEuroSymbol() {
+        java.util.Map<String, Object> map = java.util.Map.of("currency", "€", "value", "6405");
+        DiscogsDto.ValueData data = DiscogsDto.ValueData.fromJson(map);
+        assertThat(data.getCurrency()).isEqualTo("EUR");
+        assertThat(data.getValue()).isEqualTo(6405.0);
+    }
+
+    @Test
+    void testValueData_ParsingNullOrEmpty_DefaultsToEur() {
+        DiscogsDto.ValueData nullData = DiscogsDto.ValueData.fromJson(null);
+        assertThat(nullData.getCurrency()).isEqualTo("EUR");
+        assertThat(nullData.getValue()).isEqualTo(0.0);
+
+        DiscogsDto.ValueData emptyData = DiscogsDto.ValueData.fromJson("   ");
+        assertThat(emptyData.getCurrency()).isEqualTo("EUR");
+        assertThat(emptyData.getValue()).isEqualTo(0.0);
+    }
 }

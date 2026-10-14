@@ -95,6 +95,22 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'settings.scannerTestSuccess': 'Erfolgreich empfangen!',
     'settings.scannerResetTest': 'Test zurücksetzen',
 
+    // Changes / Release Notes
+    'settings.tabSettings': 'Einstellungen',
+    'settings.tabChanges': 'Versionshinweise',
+    'settings.changesTitle': 'Änderungen & Versionshinweise',
+    'settings.changesDesc': 'Übersicht der Neuerungen, Optimierungen und Fehlerbehebungen in Vinyl Tracker (Quelle: Release-Info).',
+    'settings.changesCurrentBadge': 'Aktuell',
+    'settings.changesUnreleasedBadge': 'In Entwicklung',
+    'settings.changesExpandAll': 'Alle ausklappen',
+    'settings.changesCollapseAll': 'Alle einklappen',
+    'settings.changesSearchPlaceholder': 'Änderungen oder Version durchsuchen...',
+    'settings.changesNoResults': 'Keine passenden Änderungen gefunden.',
+    'settings.changesTotalVersions': 'Versionen',
+    'settings.changesItemsCount': 'Änderungen',
+    'settings.changesShowDetails': 'Details anzeigen',
+    'settings.changesHideDetails': 'Details verbergen',
+
     // Scanner UI in Dashboard / BarcodeScannerComponent
     'scanner.hardwareReady': 'Hardware-Scanner bereit',
     'scanner.hardwareWaiting': 'Warte auf Scan vom Eyoyo EY-009P...',
@@ -297,6 +313,22 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'settings.scannerType2D': '2D QR Code',
     'settings.scannerTestSuccess': 'Successfully received!',
     'settings.scannerResetTest': 'Reset Test',
+
+    // Changes / Release Notes
+    'settings.tabSettings': 'Settings',
+    'settings.tabChanges': 'Release Notes',
+    'settings.changesTitle': 'Release Notes & Changes',
+    'settings.changesDesc': 'Overview of new features, optimizations, and bug fixes in Vinyl Tracker (Source: Release-Info).',
+    'settings.changesCurrentBadge': 'Current',
+    'settings.changesUnreleasedBadge': 'In Development',
+    'settings.changesExpandAll': 'Expand All',
+    'settings.changesCollapseAll': 'Collapse All',
+    'settings.changesSearchPlaceholder': 'Search changes or versions...',
+    'settings.changesNoResults': 'No matching changes found.',
+    'settings.changesTotalVersions': 'Versions',
+    'settings.changesItemsCount': 'Changes',
+    'settings.changesShowDetails': 'Show details',
+    'settings.changesHideDetails': 'Hide details',
 
     // Scanner UI in Dashboard / BarcodeScannerComponent
     'scanner.hardwareReady': 'Hardware Scanner Ready',

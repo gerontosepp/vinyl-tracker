@@ -115,7 +115,7 @@ public class DiscogsApiClient {
     public DiscogsDto.ValueResponse getCollectionValue(AppUser user) {
         log.info("Fetching collection value for user: {}", user.getUsername());
         return executeWithRateLimit(() -> restClient.get()
-                .uri("/users/{username}/collection/value", user.getDiscogsUsername())
+                .uri("/users/{username}/collection/value?curr_abbr=EUR", user.getDiscogsUsername())
                 .header(HttpHeaders.USER_AGENT, "VinylTrackerApp/1.0")
                 .header(HttpHeaders.AUTHORIZATION, "Discogs token=" + getDecryptedToken(user))
                 .retrieve()

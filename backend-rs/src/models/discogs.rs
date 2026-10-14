@@ -93,6 +93,58 @@ pub struct DiscogsValueResponse {
     pub maximum: Option<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DiscogsCollectionFieldsResponse {
+    pub fields: Option<Vec<DiscogsCollectionField>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DiscogsCollectionField {
+    pub id: i64,
+    pub name: Option<String>,
+    #[serde(rename = "type")]
+    pub field_type: Option<String>,
+    pub options: Option<Vec<String>>,
+    pub position: Option<i32>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DiscogsFolderBasicInfo {
+    pub id: i64,
+    pub title: String,
+    pub year: Option<i32>,
+    pub thumb: Option<String>,
+    pub cover_image: Option<String>,
+    pub formats: Option<Vec<DiscogsFormat>>,
+    pub labels: Option<Vec<DiscogsLabel>>,
+    pub artists: Option<Vec<DiscogsArtist>>,
+    pub genres: Option<Vec<String>>,
+    pub styles: Option<Vec<String>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DiscogsFolderReleaseItem {
+    pub id: i64,
+    pub instance_id: i64,
+    pub date_added: Option<String>,
+    pub rating: Option<i32>,
+    pub basic_information: DiscogsFolderBasicInfo,
+    pub notes: Option<Vec<crate::models::collection::CollectionNote>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DiscogsCollectionFolderResponse {
+    pub pagination: DiscogsPagination,
+    pub releases: Vec<DiscogsFolderReleaseItem>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DiscogsAddReleaseResponse {
+    pub instance_id: i64,
+    pub resource_url: Option<String>,
+}
+
+
 /// Determines the canonical format label from Discogs format descriptions.
 /// Matches the Java logic in `DiscogsDto.determineFormat`.
 pub fn determine_format(formats: Option<&[DiscogsFormat]>) -> String {

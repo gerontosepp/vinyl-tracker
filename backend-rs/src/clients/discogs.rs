@@ -10,7 +10,9 @@ use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, USER_AGENT};
 use crate::{
     error::AppError,
     models::discogs::{
-        DiscogsPriceSuggestion, DiscogsRelease, DiscogsSearchResponse, DiscogsValueResponse,
+        DiscogsAddReleaseResponse, DiscogsCollectionFieldsResponse,
+        DiscogsCollectionFolderResponse, DiscogsPriceSuggestion, DiscogsRelease,
+        DiscogsSearchResponse, DiscogsValueResponse,
     },
 };
 
@@ -268,13 +270,46 @@ impl DiscogsClient {
         Ok(val_res)
     }
 
+    pub async fn get_collection_fields(
+        &self,
+        username: &str,
+        token: &str,
+    ) -> Result<DiscogsCollectionFieldsResponse, AppError> {
+        self.wait_for_rate_limit().await;
+
+        let url = format!("{}/users/{username}/collection/fields", self.base_url);
+        let headers = self.auth_headers(token)?;
+
+        let res = self
+            .http
+            .get(&url)
+            .headers(headers)
+            .send()
+            .await
+            .map_err(|e| AppError::Internal(format!("Collection fields request error: {e}")))?;
+
+        if !res.status().is_success() {
+            return Err(AppError::Internal(format!(
+                "Discogs collection fields returned status {}",
+                res.status()
+            )));
+        }
+
+        let fields_res: DiscogsCollectionFieldsResponse = res
+            .json()
+            .await
+            .map_err(|e| AppError::Internal(format!("Failed to parse collection fields JSON: {e}")))?;
+
+        Ok(fields_res)
+    }
+
     pub async fn get_collection_releases(
         &self,
         username: &str,
         token: &str,
         page: u32,
         per_page: u32,
-    ) -> Result<serde_json::Value, AppError> {
+    ) -> Result<DiscogsCollectionFolderResponse, AppError> {
         self.wait_for_rate_limit().await;
 
         let url = format!("{}/users/{username}/collection/folders/0/releases", self.base_url);
@@ -301,11 +336,46 @@ impl DiscogsClient {
             )));
         }
 
-        let json: serde_json::Value = res
+        let folder_res: DiscogsCollectionFolderResponse = res
             .json()
             .await
-            .map_err(|e| AppError::Internal(format!("Failed to parse collection JSON: {e}")))?;
+            .map_err(|e| AppError::Internal(format!("Failed to parse collection releases JSON: {e}")))?;
 
-        Ok(json)
+        Ok(folder_res)
+    }
+
+    pub async fn add_release_to_folder(
+        &self,
+        username: &str,
+        folder_id: i64,
+        release_id: i64,
+        token: &str,
+    ) -> Result<DiscogsAddReleaseResponse, AppError> {
+        self.wait_for_rate_limit().await;
+
+        let url = format!("{}/users/{username}/collection/folders/{folder_id}/releases/{release_id}", self.base_url);
+        let headers = self.auth_headers(token)?;
+
+        let res = self
+            .http
+            .post(&url)
+            .headers(headers)
+            .send()
+            .await
+            .map_err(|e| AppError::Internal(format!("Add release to folder request error: {e}")))?;
+
+        if !res.status().is_success() {
+            return Err(AppError::Internal(format!(
+                "Discogs add release to folder returned status {}",
+                res.status()
+            )));
+        }
+
+        let add_res: DiscogsAddReleaseResponse = res
+            .json()
+            .await
+            .map_err(|e| AppError::Internal(format!("Failed to parse add release JSON: {e}")))?;
+
+        Ok(add_res)
     }
 }

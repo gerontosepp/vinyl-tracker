@@ -233,7 +233,25 @@ async fn test_existing_database_discogs_token_decryption() {
 
 #[tokio::test]
 async fn test_legacy_user_login() {
-    let (app, _) = setup_app().await;
+    let (app, state) = setup_app().await;
+
+    // Ensure max_mustermann exists in database
+    let user_exists: Option<(i64,)> = sqlx::query_as(
+        "SELECT id FROM app_user WHERE username = 'max_mustermann'"
+    )
+    .fetch_optional(&state.pool)
+    .await
+    .unwrap();
+
+    if user_exists.is_none() {
+        let hashed = bcrypt::hash("secret", 10).expect("Must hash password");
+        sqlx::query("INSERT INTO app_user (username, password) VALUES ($1, $2)")
+            .bind("max_mustermann")
+            .bind(&hashed)
+            .execute(&state.pool)
+            .await
+            .expect("Must insert legacy test user");
+    }
 
     let login_payload = json!({
         "username": "max_mustermann",

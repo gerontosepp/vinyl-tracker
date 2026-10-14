@@ -1,55 +1,48 @@
 ---
 name: database-migrations
 description: >-
-  Guide and best practices for creating and applying Flyway database migrations,
-  updating JPA entities, and maintaining PostgreSQL schema consistency in Vinyl Tracker.
+  Guide and best practices for creating and applying Refinery database migrations,
+  updating SQLx models, and maintaining PostgreSQL schema consistency in Vinyl Tracker.
 ---
 
 # Vinyl Tracker Database Migrations Skill
 
-This skill defines the process for evolving the PostgreSQL schema using Flyway migrations alongside Spring Data JPA entities.
+This skill defines the process for evolving the PostgreSQL schema using Refinery migrations alongside SQLx models.
 
 ## 1. Migration File Conventions
 
-Flyway scripts are stored in:
-`backend/src/main/resources/db/migration/`
+Refinery scripts are stored in:
+`backend/migrations/`
 
 Naming convention:
 `V<VERSION>__<DESCRIPTION>.sql` (Note the double underscore `__`)
 
-*Example*: `V3__add_album_notes.sql`
+*Example*: `V10__add_new_feature.sql`
 
 ### Best Practices for Migration Scripts
 - **PostgreSQL Compatibility**: Use valid PostgreSQL syntax.
 - **Idempotency & Safety**: Use `IF NOT EXISTS` where applicable for indexes and tables.
 - **Explicit Constraints**: Always provide explicit names for foreign keys and indexes (e.g. `idx_<table_name>_<column_name>`).
 - **UTC Timestamps**: Use `TIMESTAMP WITHOUT TIME ZONE` or `TIMESTAMPTZ` consistent with the existing schema and store timestamps in UTC.
-- **Never Modify Applied Migrations**: Once committed, previous migration scripts (`V1`, `V2`, etc.) must never be edited; create a new incremental version script instead.
+- **Never Modify Applied Migrations**: Once committed, previous migration scripts (`V1`..`V9`) must never be edited; create a new incremental version script instead.
 
-## 2. JPA Entity & Schema Synchronization
+## 2. SQLx Models & Schema Synchronization
 
 When changing the schema:
-1. **Flyway Migration First**: Write the SQL migration script in `src/main/resources/db/migration/`.
-2. **Update JPA Entities**: Modify or create entities under `com.antigravity.vinyltracker.model`.
-   - Use Lombok (`@Getter`, `@Setter`, `@NoArgsConstructor`, etc.).
-   - Follow strict UTC rules: Use `LocalDateTime` representing UTC for all date/time fields.
-3. **Update DTOs & Mappings**: Keep `com.antigravity.vinyltracker.model.dto` synchronized.
-4. **Update Repositories**: Adjust query methods and `@Query` annotations in `com.antigravity.vinyltracker.repository`.
+1. **Refinery Migration First**: Write the SQL migration script in `backend/migrations/`.
+2. **Update SQLx Models**: Modify or create domain models under `backend/src/models/`.
+   - Follow strict UTC rules: Use `chrono::DateTime<Utc>` or `chrono::NaiveDateTime` for all date/time fields.
+3. **Update Queries / Services**: Adjust SQLx queries in `backend/src/services/` or `backend/src/routes/`.
 
-## 3. Flyway Configuration Rules
+## 3. Migration Execution
 
-In `application.properties` / `application-prod.properties` / `docker-compose*.yml`:
-- **Development**: Flyway is enabled by default. Hibernate `ddl-auto` is set to `validate` or `none` when Flyway manages schema.
-- **Production & Registry Deployments**: `SPRING_FLYWAY_BASELINE_ON_MIGRATE=true` ensures seamless migrations against existing databases without errors.
+- **Automatic Startup Migration**: `backend/src/db/migrations.rs` automatically applies pending migrations on server startup. It detects both existing Flyway schemas and clean databases seamlessly.
 
 ## 4. Verification & Testing
 
-Verify migrations against an in-memory or Testcontainers PostgreSQL instance:
+Verify migrations using cargo test against PostgreSQL:
 ```bash
-cd backend
-# Runs integration tests against PostgreSQL via Testcontainers:
-mvn verify -Dtest=*IntegrationTest,*IT
-cd ..
+cargo test --manifest-path backend/Cargo.toml --test migration_tests
 ```
 
 ## 5. Documentation

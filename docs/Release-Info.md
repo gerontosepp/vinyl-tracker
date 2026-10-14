@@ -9,7 +9,12 @@
 
 ## Unreleased
 
-- **Rust Backend Migration: Phase 1 – Scaffolding, Axum Server & Datenbank-Migrationen (`#83`)**:
+- **Ablösung des Java-Backends durch Rust-Backend (`#90`)**:
+  - Vollständiger Ruhestand und Entfernung des bisherigen Spring Boot / Java 25 Backends (`backend/`).
+  - Das performante Rust-Backend (`backend-rs`) wurde zum primären und alleinigen `backend/` des Repositories befördert.
+  - CI/CD-Pipeline (`.github/workflows/ci.yml`), Docker Compose (`docker-compose.yml`, `docker/docker-compose.prod.yml`, `docker/docker-compose.registry.yml`) sowie alle Agent-Rules und Skills wurden vollständig auf Rust (2024 edition), Cargo und Refinery umgestellt.
+  - Behebung des QR-Code-PDF-Drucks via nativem `printpdf` Vektor- und Bild-Rendering sowie Korrektur des Roon-WebSocket-Clients auf binäre MOO-Frames mit hierarchischer Suchnavigation.
+
   - Initialisierung des neuen Rust-Backends unter [`backend-rs/`](file:///Users/opolm/develop/AntiGrafity/backend-rs) mit Cargo, Axum 0.8, Tokio, Tower-HTTP und SQLx.
   - Asynchroner PostgreSQL-Verbindungspool (`sqlx::PgPool`) mit Timeouts, Connection-Limits und Ping-Healthcheck.
   - Vollständige Einbindung der 9 SQL-Migrationsdateien (V1–V9) via `refinery` mit automatischer Erkennung und Synchronisation bestehender Flyway-Schema-Historien (`flyway_schema_history`) sowie Schema-Baseline-Erkennung.

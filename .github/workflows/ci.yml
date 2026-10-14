@@ -13,6 +13,7 @@ on:
 
 jobs:
   backend-build:
+    name: Backend Build, Test & Docker Publish (Linux)
     runs-on: [self-hosted, linux]
     permissions:
       contents: read
@@ -20,93 +21,6 @@ jobs:
     defaults:
       run:
         working-directory: ./backend
-
-    steps:
-    - uses: actions/checkout@v6
-      with:
-        fetch-depth: 0
-    
-    - name: Set up JDK 25
-      uses: actions/setup-java@v5
-      with:
-        java-version: '25'
-        distribution: 'temurin'
-        cache: 'maven'
-        server-id: ossindex
-        server-username: OSSINDEX_USERNAME
-        server-password: OSSINDEX_TOKEN
-      env:
-        OSSINDEX_USERNAME: ${{ secrets.OSSINDEX_USERNAME }}
-        OSSINDEX_TOKEN: ${{ secrets.OSSINDEX_TOKEN }}
-        
-    - name: Set up Maven
-      uses: stCarolas/setup-maven@v5
-      with:
-        maven-version: '3.9.9'
-        
-    - name: Check Docker
-      run: docker info
-
-    - name: Build and Test with Maven
-      # The jacoco-check goal is bound to the verify phase, so 'mvn verify' will trigger the coverage check and fail if < 80%
-      env:
-        DOCKER_HOST: unix:///var/run/docker.sock
-        OSSINDEX_USERNAME: ${{ secrets.OSSINDEX_USERNAME }}
-        OSSINDEX_TOKEN: ${{ secrets.OSSINDEX_TOKEN }}
-      run: mvn clean verify -Psecurity-online -Dtest.integration.forkedProcessExitTimeoutInSeconds=120 -Dorg.slf4j.simpleLogger.log.org.testcontainers=debug
-
-    - name: Extract project version
-      if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
-      id: project_version
-      run: |
-        VERSION=$(jq -r .version ../frontend/package.json)
-        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-        echo "Project version is $VERSION"
-
-    - name: Set up QEMU
-      if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
-      uses: docker/setup-qemu-action@v3
-
-    - name: Set up Docker Buildx
-      if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
-      uses: docker/setup-buildx-action@v3
-
-    - name: Login to GitHub Container Registry
-      if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
-      uses: docker/login-action@v3
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Extract metadata (tags, labels) for Docker
-      if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
-      id: meta
-      uses: docker/metadata-action@v5
-      with:
-        images: ghcr.io/${{ github.repository_owner }}/vinyl-tracker-backend
-        tags: |
-          type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') }}
-          type=raw,value=v${{ steps.project_version.outputs.VERSION }},enable=${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') }}
-          type=semver,pattern={{version}}
-
-    - name: Build and Push Backend Image
-      if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
-      uses: docker/build-push-action@v5
-      with:
-        context: ./backend
-        platforms: linux/amd64,linux/arm64
-        push: true
-        provenance: false
-        tags: ${{ steps.meta.outputs.tags }}
-        labels:  ${{ steps.meta.outputs.labels }}
-
-  backend-rs-build:
-    name: Rust Backend Build & Test (Linux)
-    runs-on: [self-hosted, linux]
-    defaults:
-      run:
-        working-directory: ./backend-rs
 
     steps:
     - uses: actions/checkout@v6
@@ -121,7 +35,7 @@ jobs:
     - name: Rust Cache
       uses: Swatinem/rust-cache@v2
       with:
-        workspaces: "./backend-rs -> ./backend-rs/target"
+        workspaces: "./backend -> ./backend/target"
 
     - name: Run Cargo Check
       run: cargo check
@@ -200,6 +114,53 @@ jobs:
     - name: Stop PostgreSQL Test Container
       if: always()
       run: docker rm -f test-postgres-rs || true
+
+    - name: Extract project version
+      if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+      id: project_version
+      run: |
+        VERSION=$(jq -r .version ../frontend/package.json)
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        echo "Project version is $VERSION"
+
+    - name: Set up QEMU
+      if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+      uses: docker/setup-qemu-action@v3
+
+    - name: Set up Docker Buildx
+      if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+      uses: docker/setup-buildx-action@v3
+
+    - name: Login to GitHub Container Registry
+      if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata (tags, labels) for Docker
+      if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ghcr.io/${{ github.repository_owner }}/vinyl-tracker-backend
+        tags: |
+          type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') }}
+          type=raw,value=v${{ steps.project_version.outputs.VERSION }},enable=${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') }}
+          type=semver,pattern={{version}}
+
+    - name: Build and Push Backend Image
+      if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+      uses: docker/build-push-action@v5
+      with:
+        context: ./backend
+        platforms: linux/amd64,linux/arm64
+        push: true
+        provenance: false
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+
 
   frontend-build:
     runs-on: [self-hosted, linux]

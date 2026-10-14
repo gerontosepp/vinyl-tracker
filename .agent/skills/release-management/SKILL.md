@@ -14,8 +14,9 @@ This skill defines the exact workflow for releasing a new version of Vinyl Track
 Before bumping any versions, verify that the current branch is clean and all tests pass:
 
 ```bash
-# 1. Backend tests (Java 25)
-JAVA_HOME=/opt/homebrew/opt/openjdk@25 mvn test
+# 1. Backend tests & linter (Rust)
+cargo test --manifest-path backend/Cargo.toml
+cargo clippy --manifest-path backend/Cargo.toml -- -D warnings
 
 # 2. Frontend tests & production build
 cd frontend && npm test -- --watch=false && npm run build && cd ..
@@ -37,7 +38,7 @@ The following files **must** be updated synchronously:
 | [`top-menu-bar.component.ts`](../../../frontend/src/app/shared/components/layout/top-menu-bar/top-menu-bar.component.ts) | `readonly appVersion = '<NEW_VERSION>';` |
 | [`login.component.ts`](../../../frontend/src/app/features/auth/login/login.component.ts) | `v<NEW_VERSION>` badge |
 | [`register.component.ts`](../../../frontend/src/app/features/auth/register/register.component.ts) | `v<NEW_VERSION>` badge |
-| [`backend/pom.xml`](../../../backend/pom.xml) | `<version><NEW_VERSION></version>` |
+| [`backend/Cargo.toml`](../../../backend/Cargo.toml) | `version = "<NEW_VERSION>"` |
 | [`README.md`](../../../README.md) | Header line 1 `# Vinyl Tracker v<NEW_VERSION>` and deploy examples |
 | [`docs/Release-Info.md`](../../../docs/Release-Info.md) | New section `## v<NEW_VERSION> (YYYY-MM-DD)` with change summary |
 | [`docs/DEPLOYMENT.md`](../../../docs/DEPLOYMENT.md) | Example version string update (if applicable) |

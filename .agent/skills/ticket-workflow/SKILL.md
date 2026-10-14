@@ -48,14 +48,14 @@ This skill defines the complete operational procedure for processing a GitHub is
 
 Apply the mandatory project rules defined in `.agent/rules/`:
 - **Coding Standards** ([`coding_standards.md`](../../rules/coding_standards.md)):
-  - Layered architecture (Controller -> Service -> Repository).
-  - Java 25 & Spring Boot 4.x with Lombok.
-  - Strict UTC date/time handling (`JacksonConfig.UTC_FORMATTER`).
+  - Layered architecture (Routes -> Services -> Models / SQLx queries).
+  - Rust 2024 edition, Axum 0.8, Tokio 1.x & SQLx 0.8.
+  - Strict UTC date/time handling (`chrono::DateTime<Utc>`).
   - Angular 19 standalone components with Signals and Tailwind CSS.
   - Multi-language support via `LanguageService` (maintain both `de` and `en` keys).
-  - Structured error details via `ProblemDetail` and user-friendly toasts.
+  - Structured error details via `ProblemDetail` (RFC 7807) and user-friendly toasts.
 - **Database Changes**:
-  - Follow the [`database-migrations`](../database-migrations/SKILL.md) skill for Flyway migrations.
+  - Follow the [`database-migrations`](../database-migrations/SKILL.md) skill for Refinery migrations.
 
 ---
 
@@ -63,12 +63,12 @@ Apply the mandatory project rules defined in `.agent/rules/`:
 
 Before requesting user verification, all tests must pass locally:
 
-1. **Backend Tests**:
+1. **Backend Tests & Linter**:
    ```bash
-   JAVA_HOME=/opt/homebrew/opt/openjdk@25 mvn test
+   cargo test --manifest-path backend/Cargo.toml
+   cargo clippy --manifest-path backend/Cargo.toml -- -D warnings
    ```
    - Add/update unit and integration tests for all modified logic.
-   - Maintain test coverage **> 80%** (JaCoCo).
 
 2. **Frontend Tests & Build**:
    ```bash

@@ -7,7 +7,7 @@
 
 ---
 
-## In Entwicklung / Next (v0.6.0)
+## v0.6.0 (2026-10-14)
 
 - **Fix: Singleton-Container-Lifecycle für Integrationstests**:
   - Behebt Verbindungsabbrüche (`Connection refused`) in der CI-Pipeline durch statische Initialisierung des PostgreSQL-Containers in `AbstractIntegrationTest`, sodass Spring Boot den gecachten ApplicationContext über die gesamte Testsuite hinweg verlässlich weiterverwenden kann.

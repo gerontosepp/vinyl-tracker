@@ -7,7 +7,7 @@
 
 ---
 
-## v0.6.0 (2026-10-14)
+## v0.6.0 (2026-10-14) – Aktueller Release (WiP / Beta)
 
 - **Fix: Singleton-Container-Lifecycle für Integrationstests**:
   - Behebt Verbindungsabbrüche (`Connection refused`) in der CI-Pipeline durch statische Initialisierung des PostgreSQL-Containers in `AbstractIntegrationTest`, sodass Spring Boot den gecachten ApplicationContext über die gesamte Testsuite hinweg verlässlich weiterverwenden kann.
@@ -46,7 +46,7 @@
 
 ---
 
-## v0.5.0 (2026-10-12) – Aktueller Release (WiP / Beta)
+## v0.5.0 (2026-10-12)
 
 - **Eyoyo EY-009P & Hardware-Scanner Integration (`#45`, `#49`)**:
   - Globaler HID Keyboard Wedge Listener im Frontend (`ScannerService`) zur vollautomatischen Erkennung von Barcode- und QR-Code-Scannern ohne Fokusverlust oder manuelle Eingabefelder.

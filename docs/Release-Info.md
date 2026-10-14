@@ -13,6 +13,9 @@
   - Ermöglicht den schnellen Verbindungsaufbau zum Dozzle Log-Viewer auf dem CI-Runner-Server (`root@2.31.34.79:8888`).
   - Öffnet das Dashboard automatisch in einem separaten, minimalistischen Browser-Fenster im App-Modus (Chrome/Brave/Edge `--app`).
   - Verhindert Port-Kollisionen bei bereits aktiven Verbindungen und bietet `--stop`- bzw. `--restart`-Optionen.
+- **Docker Build-Optimierung & Multi-Arch Beschleunigung (`#72`)**:
+  - Umstellung im [`frontend/Dockerfile`](file:///Users/opolm/develop/AntiGrafity/frontend/Dockerfile) von `npm install` auf `npm ci --legacy-peer-deps` für deterministische, reproduzierbare und performante Paketinstallationen ohne Lockfile-Abweichungen.
+  - Beschleunigung von Multi-Arch-Builds via `FROM --platform=$BUILDPLATFORM node:20-alpine AS build`: Die rechenintensive Angular-Kompilierung läuft nun nativ auf dem Host-Runner, wodurch die langsame QEMU-Software-Emulation entfällt und die Build-Zeiten in der CI-Pipeline drastisch verkürzt werden.
 
 ---
 

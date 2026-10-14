@@ -187,4 +187,10 @@ describe('SettingsComponent', () => {
     component.scannerService.clearLastScannedCode();
     expect(component.scannerService.lastScannedCode()).toBeNull();
   });
+
+  it('should render the release notes / changes section', () => {
+    const el: HTMLElement = fixture.nativeElement;
+    const releaseNotes = el.querySelector('app-release-notes');
+    expect(releaseNotes).toBeTruthy();
+  });
 });

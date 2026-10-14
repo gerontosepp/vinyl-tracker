@@ -13,11 +13,12 @@ import { ScannerService } from '../../core/services/scanner.service';
 import { getErrorMessage } from '../../core/utils/error';
 import { RoonStatus } from '../../core/types';
 import { LucideDownload } from '@lucide/angular';
+import { ReleaseNotesComponent } from './components/release-notes/release-notes.component';
 
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [FormsModule, LayoutComponent, TranslatePipe, LucideDownload],
+  imports: [FormsModule, LayoutComponent, TranslatePipe, LucideDownload, ReleaseNotesComponent],
   template: `
     <app-layout>
       <div class="max-w-6xl mx-auto space-y-6">
@@ -459,6 +460,9 @@ import { LucideDownload } from '@lucide/angular';
                 }
               </div>
             </div>
+
+            <!-- Release Notes & Changes Section -->
+            <app-release-notes />
           </div>
         </div>
       </div>

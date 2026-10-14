@@ -49,17 +49,19 @@ jobs:
 
     - name: Start PostgreSQL Test Container
       run: |
-        docker rm -f test-postgres-rs 2>/dev/null || true
-        docker run -d --name test-postgres-rs \
+        PG_CONTAINER="test-postgres-rs-${{ github.run_id }}-${{ github.run_attempt }}"
+        echo "PG_CONTAINER=$PG_CONTAINER" >> $GITHUB_ENV
+        docker rm -f "$PG_CONTAINER" 2>/dev/null || true
+        docker run -d --name "$PG_CONTAINER" \
           -e POSTGRES_DB=vinyl_tracker \
           -e POSTGRES_USER=vinyl_user \
           -e POSTGRES_PASSWORD=vinyl_password \
-          -p 54329:5432 \
+          -p 127.0.0.1::5432 \
           postgres:17-alpine
 
         # Wait until PostgreSQL process is ready
         for i in {1..30}; do
-          if docker exec test-postgres-rs pg_isready -U vinyl_user -d vinyl_tracker; then
+          if docker exec "$PG_CONTAINER" pg_isready -U vinyl_user -d vinyl_tracker; then
             echo "PostgreSQL is accepting connections!"
             break
           fi
@@ -67,31 +69,36 @@ jobs:
           sleep 1
         done
 
-        # If runner container is in a custom docker network, connect test-postgres-rs to it
+        # If runner container is in a custom docker network, connect test container to it
         RUNNER_ID=$(cat /etc/hostname 2>/dev/null || hostname)
         RUNNER_NET=$(docker inspect -f '{{range $k, $v := .NetworkSettings.Networks}}{{println $k}}{{end}}' "$RUNNER_ID" 2>/dev/null | head -n 1 || echo "")
         if [ -n "$RUNNER_NET" ] && [ "$RUNNER_NET" != "bridge" ] && [ "$RUNNER_NET" != "host" ] && [ "$RUNNER_NET" != "none" ]; then
-          echo "Connecting test-postgres-rs to runner network: $RUNNER_NET"
-          docker network connect "$RUNNER_NET" test-postgres-rs 2>/dev/null || true
+          echo "Connecting $PG_CONTAINER to runner network: $RUNNER_NET"
+          docker network connect "$RUNNER_NET" "$PG_CONTAINER" 2>/dev/null || true
         fi
 
         # Extract container IP & gateway
         RUNNER_NET_IP=""
         if [ -n "$RUNNER_NET" ] && [ "$RUNNER_NET" != "bridge" ] && [ "$RUNNER_NET" != "host" ] && [ "$RUNNER_NET" != "none" ]; then
-          RUNNER_NET_IP=$(docker inspect -f '{{range $k, $v := .NetworkSettings.Networks}}{{if eq $k "'$RUNNER_NET'"}}{{$v.IPAddress}}{{end}}{{end}}' test-postgres-rs 2>/dev/null || echo "")
+          RUNNER_NET_IP=$(docker inspect -f '{{range $k, $v := .NetworkSettings.Networks}}{{if eq $k "'$RUNNER_NET'"}}{{$v.IPAddress}}{{end}}{{end}}' "$PG_CONTAINER" 2>/dev/null || echo "")
         fi
-        PG_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}' test-postgres-rs | awk '{print $1}')
+        PG_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}' "$PG_CONTAINER" | awk '{print $1}')
         HOST_GATEWAY=$(ip route 2>/dev/null | awk '/default/ {print $3}' || echo "172.17.0.1")
+        MAPPED_PORT=$(docker port "$PG_CONTAINER" 5432 2>/dev/null | head -n 1 | awk -F: '{print $NF}' || echo "")
 
         echo "Discovering working PostgreSQL connection endpoint..."
         echo "Runner Network IP: $RUNNER_NET_IP"
         echo "Container IP: $PG_IP"
         echo "Host Gateway: $HOST_GATEWAY"
+        echo "Mapped Port: $MAPPED_PORT"
 
         TARGETS=()
         [ -n "$RUNNER_NET_IP" ] && TARGETS+=("$RUNNER_NET_IP:5432")
         [ -n "$PG_IP" ] && TARGETS+=("$PG_IP:5432")
-        TARGETS+=("test-postgres-rs:5432" "$HOST_GATEWAY:54329" "127.0.0.1:54329" "localhost:54329")
+        TARGETS+=("$PG_CONTAINER:5432")
+        if [ -n "$MAPPED_PORT" ]; then
+          TARGETS+=("$HOST_GATEWAY:$MAPPED_PORT" "127.0.0.1:$MAPPED_PORT" "localhost:$MAPPED_PORT")
+        fi
 
         SELECTED_URL=""
         for target in "${TARGETS[@]}"; do
@@ -128,7 +135,7 @@ jobs:
 
     - name: Stop PostgreSQL Test Container
       if: always()
-      run: docker rm -f test-postgres-rs || true
+      run: docker rm -f "$PG_CONTAINER" || true
 
     - name: Extract project version
       if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')

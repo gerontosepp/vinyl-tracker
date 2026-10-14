@@ -11,6 +11,10 @@ on:
     branches: [ "main", "master", "develop" ]
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   backend-build:
     name: Backend Build, Test & Docker Publish (Linux)
@@ -114,6 +118,7 @@ jobs:
 
     - name: Run Backend Integration & Unit Tests
       env:
+        CARGO_BUILD_JOBS: 2
         JWT_SECRET: superSecretDevelopmentKeyDoNotUseInProduction123!
         VINYL_ENCRYPTION_PASSWORD: changeit-for-production-use-23948239048
         VINYL_ENCRYPTION_SALT: 5c074494c45680a7

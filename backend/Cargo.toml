@@ -55,3 +55,6 @@ tokio-tungstenite = "0.30.0"
 [dev-dependencies]
 http-body-util = "0.1"
 lopdf = "0.44"
+
+[profile.test]
+debug = 1

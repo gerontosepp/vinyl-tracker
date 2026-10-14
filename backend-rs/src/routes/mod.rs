@@ -1,4 +1,5 @@
 pub mod actuator;
+pub mod collection;
 pub mod discogs;
 pub mod proxy;
 pub mod users;
@@ -72,6 +73,8 @@ pub fn create_app(state: AppState) -> Router {
         .nest("/actuator", actuator::router())
         // User & Auth endpoints (nested under /api/users)
         .nest("/api/users", users::router())
+        // Collection endpoints (nested under /api/collection)
+        .nest("/api/collection", collection::router())
         // Discogs search endpoint (nested under /api/discogs)
         .nest("/api/discogs", discogs::router())
         // Image Proxy endpoint (nested under /api/proxy)

@@ -1,26 +1,29 @@
-# Build stage
-FROM rust:bookworm AS builder
+# Stage 1: Chef base
+FROM lukemathwalker/cargo-chef:latest-rust-bookworm AS chef
 WORKDIR /app
 
-# Copy dependency manifests
-COPY Cargo.toml Cargo.lock* ./
-COPY migrations ./migrations
-COPY src ./src
+# Stage 2: Recipe planner
+FROM chef AS planner
+COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
 
-# Build release binary
-RUN cargo build --release
+# Stage 3: Builder with cached dependency compilation
+FROM chef AS builder
+COPY --from=planner /app/recipe.json recipe.json
+RUN cargo chef cook --release --recipe-path recipe.json
+COPY . .
+RUN cargo build --release --bin backend-rs
 
-# Minimal runner stage
+# Stage 4: Minimal runner image
 FROM debian:bookworm-slim AS runner
 WORKDIR /app
 
-# Install runtime dependencies (ca-certificates for HTTPS/TLS, curl for healthchecks)
+# Install runtime dependencies (ca-certificates for HTTPS/TLS, curl for container healthchecks)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy compiled binary and migrations
 COPY --from=builder /app/target/release/backend-rs /app/backend-rs
 COPY migrations /app/migrations
 

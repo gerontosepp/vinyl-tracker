@@ -302,32 +302,33 @@ async fn test_live_discogs_search_if_token_available() {
     .unwrap();
 
     if let Some((username, Some(enc_token))) = row {
-        if state.crypto.decrypt(&enc_token).is_some() {
-            let jwt = backend_rs::auth::jwt::generate_token(&username, &state.config.jwt_secret, 3600).unwrap();
-
-            let res = app
-                .oneshot(
-                    Request::builder()
-                        .uri("/api/discogs/search?q=Dark+Side+Of+The+Moon&per_page=5")
-                        .header(header::AUTHORIZATION, format!("Bearer {jwt}"))
-                        .body(Body::empty())
-                        .unwrap(),
-                )
-                .await
-                .unwrap();
-
-            assert_eq!(res.status(), StatusCode::OK);
-            let bytes = res.into_body().collect().await.unwrap().to_bytes();
-            let json: Value = serde_json::from_slice(&bytes).unwrap();
-            let results = json["results"].as_array().expect("results must be an array");
-            println!("\n=== LIVE DISCOGS API RESPONSE ===");
-            println!("Found {} results for query 'Dark Side Of The Moon':", results.len());
-            for (idx, r) in results.iter().take(3).enumerate() {
-                println!("  {}. ID: {} | Title: {} | Year: {}", idx + 1, r["id"], r["title"], r["year"]);
-            }
-            println!("=================================\n");
-            assert!(!results.is_empty(), "Live search should return results from Discogs API");
+        if state.crypto.decrypt(&enc_token).is_none() {
+            return;
         }
+        let jwt = backend_rs::auth::jwt::generate_token(&username, &state.config.jwt_secret, 3600).unwrap();
+
+        let res = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/discogs/search?q=Dark+Side+Of+The+Moon&per_page=5")
+                    .header(header::AUTHORIZATION, format!("Bearer {jwt}"))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(res.status(), StatusCode::OK);
+        let bytes = res.into_body().collect().await.unwrap().to_bytes();
+        let json: Value = serde_json::from_slice(&bytes).unwrap();
+        let results = json["results"].as_array().expect("results must be an array");
+        println!("\n=== LIVE DISCOGS API RESPONSE ===");
+        println!("Found {} results for query 'Dark Side Of The Moon':", results.len());
+        for (idx, r) in results.iter().take(3).enumerate() {
+            println!("  {}. ID: {} | Title: {} | Year: {}", idx + 1, r["id"], r["title"], r["year"]);
+        }
+        println!("=================================\n");
+        assert!(!results.is_empty(), "Live search should return results from Discogs API");
     }
 }
 

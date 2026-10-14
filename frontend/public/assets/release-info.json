@@ -101,6 +101,22 @@
           "`POST /api/collection/qr-codes/selected` für gezielte Etiketten-Auswahl und `GET /api/collection/qr-codes/all` für die gesamte Sammlung.",
           "Umfassende Integrationstests ([`backend-rs/tests/analytics_and_qr_tests.rs`](file:///Users/opolm/develop/AntiGrafity/backend-rs/tests/analytics_and_qr_tests.rs))."
         ]
+      },
+      {
+        "title": "Rust Backend Migration: Phase 8 – Roon Audio-Integration, End-to-End Validierung & Docker-Cutover (`#90`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "Implementierung der Roon Audio-Integration ([`backend-rs/src/services/roon/`](file:///Users/opolm/develop/AntiGrafity/backend-rs/src/services/roon/)):",
+          "Automatisches Auffinden des Roon Core im lokalen Netzwerk via SOOD (Simple Object Oriented Discovery über UDP Broadcast Port 9003).",
+          "Asynchroner WebSocket-Client für Roons MOO-Wire-Protokoll (`tokio-tungstenite`) mit Ping/Pong-Handling, Registrierungs-Handshake, Token-Persistierung und Zonen-Subscriptions (`com.roonlabs.transport:2`).",
+          "Browse- & Playback-Engine zum Suchen und direkten Abspielen von Alben auf ausgewählten Audio-Zonen.",
+          "REST-Endpunkte unter `/api/roon`: `GET /api/roon/status` (Verbindungs- und Pairing-Status), `GET /api/roon/zones` (aktive Ausgabezonen), `POST /api/roon/settings` (Core- und Zonenkonfiguration) und `POST /api/roon/play` (Album-Wiedergabe).",
+          "Produktionsfertiges Multi-Stage Dockerfile mit `cargo-chef` für optimales Layer-Caching und schlankes Runner-Image (< 40 MB).",
+          "Vollständiger Docker-Cutover: Aktualisierung der `docker-compose.yml` zur Verwendung des nativen Rust-Backends.",
+          "End-to-End Validierung aller 56 Rust-Tests und Frontend Angular 19 Production Build.",
+          "**Erfolgreicher Abschluss der gesamten Rust Backend Migration (Epic `#82`)**."
+        ]
       }
     ]
   },

@@ -3,7 +3,9 @@ use sqlx::PgPool;
 use crate::{
     clients::discogs::DiscogsClient,
     config::Config,
-    services::{crypto_service::CryptoService, image_proxy::ImageProxyService},
+    services::{
+        crypto_service::CryptoService, image_proxy::ImageProxyService, roon::RoonService,
+    },
 };
 
 #[derive(Clone)]
@@ -13,6 +15,7 @@ pub struct AppState {
     pub crypto: Arc<CryptoService>,
     pub discogs_client: Arc<DiscogsClient>,
     pub image_proxy: Arc<ImageProxyService>,
+    pub roon: Arc<RoonService>,
 }
 
 impl AppState {
@@ -39,12 +42,15 @@ impl AppState {
             config.discogs_user_agent.clone(),
         );
 
+        let roon = RoonService::new();
+
         Self {
             pool,
             config: Arc::new(config),
             crypto: Arc::new(crypto),
             discogs_client: Arc::new(discogs_client),
             image_proxy: Arc::new(image_proxy),
+            roon: Arc::new(roon),
         }
     }
 }

@@ -4,6 +4,7 @@ pub mod collection;
 pub mod discogs;
 pub mod proxy;
 pub mod records;
+pub mod roon;
 pub mod scan;
 pub mod users;
 
@@ -88,6 +89,8 @@ pub fn create_app(state: AppState) -> Router {
         .nest("/api/proxy", proxy::router())
         // Analytics & Dashboard endpoints (nested under /api/analytics)
         .nest("/api/analytics", analytics::router())
+        // Roon Audio endpoints (nested under /api/roon)
+        .nest("/api/roon", roon::router())
         // API root / ping
         .route("/api/ping", get(|| async { "pong" }))
         .fallback(fallback_handler)

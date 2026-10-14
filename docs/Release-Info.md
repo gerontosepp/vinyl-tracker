@@ -7,6 +7,15 @@
 
 ---
 
+## Unreleased
+
+- **DevOps / Runner-Tooling: Dozzle SSH-Tunnel & Launcher Script (`scripts/open_dozzle.sh`)**:
+  - Ermöglicht den schnellen Verbindungsaufbau zum Dozzle Log-Viewer auf dem CI-Runner-Server (`root@2.31.34.79:8888`).
+  - Öffnet das Dashboard automatisch in einem separaten, minimalistischen Browser-Fenster im App-Modus (Chrome/Brave/Edge `--app`).
+  - Verhindert Port-Kollisionen bei bereits aktiven Verbindungen und bietet `--stop`- bzw. `--restart`-Optionen.
+
+---
+
 ## v0.6.1 (2026-10-14) – Aktueller Release (WiP / Beta)
 
 - **Fix: Erhöhung der Proxy-Timeouts & Fail-Fast bei Discogs-Sync**:

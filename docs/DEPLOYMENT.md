@@ -226,3 +226,14 @@ volumes:
    docker compose -f docker/docker-compose.runner.yml logs -f
    ```
 3. Sobald `Listening for Jobs` in den Logs erscheint, ist der Runner aktiv und nimmt Jobs entgegen. Beide Runner bearbeiten Jobs vollkommen unabhängig und parallel.
+
+### Live-Logüberwachung mit Dozzle
+Wenn auf dem Runner-Server Dozzle (auf Port 8888) läuft, kann mit folgendem Skript ein SSH-Tunnel aufgebaut und das Dozzle-Dashboard direkt in einem minimalen App-Browserfenster gestartet werden:
+
+```bash
+# Tunnel aufbauen und Dozzle öffnen:
+./scripts/open_dozzle.sh
+
+# Tunnel beenden:
+./scripts/open_dozzle.sh --stop
+```

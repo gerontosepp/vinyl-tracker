@@ -187,4 +187,22 @@ describe('SettingsComponent', () => {
     component.scannerService.clearLastScannedCode();
     expect(component.scannerService.lastScannedCode()).toBeNull();
   });
+
+  it('should switch tabs and render the release notes / changes section', () => {
+    // Initial state: settings tab active
+    expect(component.activeTab()).toBe('settings');
+    expect(fixture.nativeElement.querySelector('app-release-notes')).toBeNull();
+
+    // Switch to changes tab
+    component.activeTab.set('changes');
+    fixture.detectChanges();
+
+    const releaseNotes = fixture.nativeElement.querySelector('app-release-notes');
+    expect(releaseNotes).toBeTruthy();
+
+    // Switch back to settings tab
+    component.activeTab.set('settings');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-release-notes')).toBeNull();
+  });
 });

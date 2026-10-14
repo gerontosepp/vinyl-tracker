@@ -43,11 +43,16 @@ echo "Updating README.md to v$NEW_VERSION..."
 # Update the first line of README.md to "# Vinyl Tracker v$NEW_VERSION"
 sedi "1s/.*/# Vinyl Tracker v$NEW_VERSION/" README.md
 
+echo "Syncing release info..."
+node scripts/sync-release-info.js
+
 echo "Committing changes..."
 git add frontend/package.json frontend/package-lock.json backend/pom.xml README.md \
     frontend/src/app/shared/components/layout/top-menu-bar/top-menu-bar.component.ts \
     frontend/src/app/features/auth/login/login.component.ts \
-    frontend/src/app/features/auth/register/register.component.ts
+    frontend/src/app/features/auth/register/register.component.ts \
+    frontend/src/app/core/constants/release-info.data.ts \
+    frontend/public/assets/release-info.json
 git commit -m "chore(release): bump version to $NEW_VERSION"
 
 echo "Done! Run 'git push' to push the bump to develop."

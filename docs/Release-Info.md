@@ -16,6 +16,11 @@
 - **Docker Build-Optimierung & Multi-Arch Beschleunigung (`#72`)**:
   - Umstellung im [`frontend/Dockerfile`](file:///Users/opolm/develop/AntiGrafity/frontend/Dockerfile) von `npm install` auf `npm ci --legacy-peer-deps` für deterministische, reproduzierbare und performante Paketinstallationen ohne Lockfile-Abweichungen.
   - Beschleunigung von Multi-Arch-Builds via `FROM --platform=$BUILDPLATFORM node:20-alpine AS build`: Die rechenintensive Angular-Kompilierung läuft nun nativ auf dem Host-Runner, wodurch die langsame QEMU-Software-Emulation entfällt und die Build-Zeiten in der CI-Pipeline drastisch verkürzt werden.
+- **Profil & Einstellungen: Neuer Abschnitt „Changes / Release-Notes“ (`#79`)**:
+  - Neuer Bereich in den Einstellungen mit strukturierter Anzeige der Release-Historie, Features, Fixes und Meilensteine basierend auf `docs/Release-Info.md`.
+  - Interaktives Accordion mit automatischer Hervorhebung der aktuellen App-Version, Live-Volltextsuche über alle Versionen und Änderungen hinweg sowie „Alle ausklappen / Alle einklappen“-Steuerung.
+  - Automatisierte Daten-Synchronisation via `scripts/sync-release-info.js` zur statischen Bereitstellung (`release-info.data.ts`) ohne Netzwerk-Latenz.
+  - Vollständige Lokalisierung in Deutsch und Englisch via `LanguageService`.
 
 ---
 

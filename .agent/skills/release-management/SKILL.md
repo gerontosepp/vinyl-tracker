@@ -14,7 +14,8 @@ This skill defines the exact workflow for releasing a new version of Vinyl Track
 Before bumping any versions, verify that the current branch is clean and all tests pass:
 
 ```bash
-# 1. Backend tests & linter (Rust)
+# 1. Backend formatting, tests & linter (Rust)
+cargo fmt --manifest-path backend/Cargo.toml -- --check
 cargo test --manifest-path backend/Cargo.toml
 cargo clippy --manifest-path backend/Cargo.toml -- -D warnings
 
@@ -72,7 +73,8 @@ Always add a new release entry at the top of [`docs/Release-Info.md`](../../../d
 
 Re-verify the build artifacts after updating the versions:
 ```bash
-# Verify backend compilation & tests
+# Verify backend compilation, formatting & tests
+cargo fmt --manifest-path backend/Cargo.toml -- --check
 cargo test --manifest-path backend/Cargo.toml
 cargo clippy --manifest-path backend/Cargo.toml -- -D warnings
 

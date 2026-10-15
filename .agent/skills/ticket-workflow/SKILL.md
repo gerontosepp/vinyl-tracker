@@ -63,12 +63,14 @@ Apply the mandatory project rules defined in `.agent/rules/`:
 
 Before requesting user verification, all tests must pass locally:
 
-1. **Backend Tests & Linter**:
+1. **Backend Formatting, Tests & Linter**:
    ```bash
+   cargo fmt --manifest-path backend/Cargo.toml -- --check
    cargo test --manifest-path backend/Cargo.toml
    cargo clippy --manifest-path backend/Cargo.toml -- -D warnings
    ```
    - Add/update unit and integration tests for all modified logic.
+   - Fix formatting issues with `cargo fmt --manifest-path backend/Cargo.toml` if needed.
 
 2. **Frontend Tests & Build**:
    ```bash

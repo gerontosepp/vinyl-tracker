@@ -20,6 +20,8 @@ permissions:
 jobs:
   backend-test:
     name: Backend Tests & Linting (Linux)
+    # Skip redundant test execution on PRs from develop (develop is already fully tested on push)
+    if: github.event_name != 'pull_request' || github.head_ref != 'develop'
     runs-on: [self-hosted, linux]
     defaults:
       run:
@@ -138,6 +140,8 @@ jobs:
 
   frontend-test:
     name: Frontend Tests & Build (Linux)
+    # Skip redundant test execution on PRs from develop (develop is already fully tested on push)
+    if: github.event_name != 'pull_request' || github.head_ref != 'develop'
     runs-on: [self-hosted, linux]
     defaults:
       run:
@@ -188,6 +192,8 @@ jobs:
 
   mcp-test:
     name: MCP Server Tests (Linux)
+    # Skip redundant test execution on PRs from develop (develop is already fully tested on push)
+    if: github.event_name != 'pull_request' || github.head_ref != 'develop'
     runs-on: [self-hosted, linux]
     defaults:
       run:

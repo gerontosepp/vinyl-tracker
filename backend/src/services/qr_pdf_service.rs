@@ -294,7 +294,7 @@ impl QrPdfService {
             FROM collection_item ci
             JOIN record_cache rc ON ci.record_id = rc.id
             WHERE ci.user_id = $1
-            ORDER BY LOWER(COALESCE(rc.artist, '')) ASC, LOWER(COALESCE(rc.title, '')) ASC
+            ORDER BY REGEXP_REPLACE(LOWER(rc.artist), '^the\s+', '', 'i') COLLATE "C" ASC NULLS LAST, LOWER(COALESCE(rc.title, '')) ASC
             "#,
         )
         .bind(user_id)

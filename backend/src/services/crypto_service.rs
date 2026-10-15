@@ -1,7 +1,7 @@
 use aes::Aes256;
 use cbc::{
-    cipher::{block_padding::Pkcs7, BlockDecryptMut, BlockEncryptMut, KeyIvInit},
     Decryptor, Encryptor,
+    cipher::{BlockDecryptMut, BlockEncryptMut, KeyIvInit, block_padding::Pkcs7},
 };
 use rand::RngCore;
 
@@ -19,8 +19,8 @@ impl CryptoService {
     /// - Cipher: AES-256-CBC with PKCS7 padding
     /// - Salt: hex-decoded from `salt_hex`
     pub fn new(password: &str, salt_hex: &str) -> Result<Self, String> {
-        let salt_bytes = hex::decode(salt_hex)
-            .map_err(|e| format!("Invalid hex salt for encryption: {e}"))?;
+        let salt_bytes =
+            hex::decode(salt_hex).map_err(|e| format!("Invalid hex salt for encryption: {e}"))?;
 
         let mut key = [0u8; 32];
         pbkdf2::pbkdf2_hmac::<sha1::Sha1>(password.as_bytes(), &salt_bytes, 1024, &mut key);

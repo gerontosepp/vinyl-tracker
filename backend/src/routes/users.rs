@@ -1,10 +1,3 @@
-use axum::{
-    extract::State,
-    http::{header, HeaderMap, HeaderValue, StatusCode},
-    response::IntoResponse,
-    routing::{get, post, put},
-    Json, Router,
-};
 use crate::{
     auth::CurrentUser,
     error::AppError,
@@ -13,6 +6,13 @@ use crate::{
     },
     services::user_service::UserService,
     state::AppState,
+};
+use axum::{
+    Json, Router,
+    extract::State,
+    http::{HeaderMap, HeaderValue, StatusCode, header},
+    response::IntoResponse,
+    routing::{get, post, put},
 };
 
 fn make_auth_cookie(token: &str) -> HeaderValue {
@@ -67,7 +67,8 @@ pub async fn update_discogs_handler(
     CurrentUser(user): CurrentUser,
     Json(payload): Json<UpdateDiscogsRequestDto>,
 ) -> Result<impl IntoResponse, AppError> {
-    let dto = UserService::update_discogs(&state.pool, &state.crypto, &user.username, payload).await?;
+    let dto =
+        UserService::update_discogs(&state.pool, &state.crypto, &user.username, payload).await?;
     Ok((StatusCode::OK, Json(dto)))
 }
 
@@ -75,7 +76,8 @@ pub async fn reset_password_handler(
     State(state): State<AppState>,
     Json(payload): Json<ResetPasswordRequestDto>,
 ) -> Result<impl IntoResponse, AppError> {
-    let dto = UserService::reset_password(&state.pool, &state.config, &state.crypto, payload).await?;
+    let dto =
+        UserService::reset_password(&state.pool, &state.config, &state.crypto, payload).await?;
 
     let mut headers = HeaderMap::new();
     if let Some(token) = &dto.token {
@@ -88,7 +90,11 @@ pub async fn reset_password_handler(
 pub async fn logout_handler() -> impl IntoResponse {
     let mut headers = HeaderMap::new();
     headers.insert(header::SET_COOKIE, make_clearing_cookie());
-    (StatusCode::OK, headers, Json(serde_json::json!({"status": "SUCCESS"})))
+    (
+        StatusCode::OK,
+        headers,
+        Json(serde_json::json!({"status": "SUCCESS"})),
+    )
 }
 
 pub fn router() -> Router<AppState> {

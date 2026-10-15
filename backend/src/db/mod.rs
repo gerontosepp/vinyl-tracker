@@ -1,8 +1,8 @@
 pub mod migrations;
 
-use std::time::Duration;
-use sqlx::{postgres::PgPoolOptions, PgPool};
 use crate::{config::Config, error::AppError};
+use sqlx::{PgPool, postgres::PgPoolOptions};
+use std::time::Duration;
 
 /// Returns a sanitized database connection URL with the password masked.
 pub fn sanitize_db_url(raw_url: &str) -> String {
@@ -32,18 +32,17 @@ pub async fn init_pool(config: &Config) -> Result<PgPool, AppError> {
         .connect(&config.database_url)
         .await
         .map_err(|e| {
-            tracing::error!("Failed to connect connection pool to database at {sanitized_url}: {e}");
+            tracing::error!(
+                "Failed to connect connection pool to database at {sanitized_url}: {e}"
+            );
             AppError::Database(e)
         })?;
 
     // Verify connectivity with a quick ping
-    sqlx::query("SELECT 1")
-        .execute(&pool)
-        .await
-        .map_err(|e| {
-            tracing::error!("Failed to ping PostgreSQL database at {sanitized_url}: {e}");
-            AppError::Database(e)
-        })?;
+    sqlx::query("SELECT 1").execute(&pool).await.map_err(|e| {
+        tracing::error!("Failed to ping PostgreSQL database at {sanitized_url}: {e}");
+        AppError::Database(e)
+    })?;
 
     tracing::info!("PostgreSQL connection pool initialized and verified successfully.");
     Ok(pool)
@@ -57,7 +56,10 @@ mod tests {
     fn test_sanitize_db_url_masks_password() {
         let raw = "postgres://vinyl_user:secret_password_123@postgres:5432/vinyl_tracker";
         let sanitized = sanitize_db_url(raw);
-        assert_eq!(sanitized, "postgres://vinyl_user:****@postgres:5432/vinyl_tracker");
+        assert_eq!(
+            sanitized,
+            "postgres://vinyl_user:****@postgres:5432/vinyl_tracker"
+        );
         assert!(!sanitized.contains("secret_password_123"));
     }
 
@@ -75,4 +77,3 @@ mod tests {
         assert_eq!(sanitized, "<invalid-database-url>");
     }
 }
-

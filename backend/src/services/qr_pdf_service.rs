@@ -1,15 +1,12 @@
-use fast_qr::convert::svg::SvgBuilder;
+use crate::{error::AppError, models::analytics::QrCodeItem};
 use fast_qr::QRBuilder;
+use fast_qr::convert::svg::SvgBuilder;
 use printpdf::{
-    BuiltinFont, Color, LineDashPattern, LinePoint, Mm, Op, PaintMode, PdfDocument,
-    PdfFontHandle, PdfPage, PdfSaveOptions, Point, Polygon, PolygonRing, Pt, Px,
-    RawImage, RawImageData, RawImageFormat, Rgb, TextItem, WindingOrder, XObjectTransform,
+    BuiltinFont, Color, LineDashPattern, LinePoint, Mm, Op, PaintMode, PdfDocument, PdfFontHandle,
+    PdfPage, PdfSaveOptions, Point, Polygon, PolygonRing, Pt, Px, RawImage, RawImageData,
+    RawImageFormat, Rgb, TextItem, WindingOrder, XObjectTransform,
 };
 use sqlx::{PgPool, Row};
-use crate::{
-    error::AppError,
-    models::analytics::QrCodeItem,
-};
 
 pub struct QrPdfService;
 
@@ -25,7 +22,9 @@ impl QrPdfService {
 
     pub fn generate_qr_codes_pdf(items: &[QrCodeItem]) -> Result<Vec<u8>, AppError> {
         if items.is_empty() {
-            return Err(AppError::BadRequest("Items list must not be empty".to_string()));
+            return Err(AppError::BadRequest(
+                "Items list must not be empty".to_string(),
+            ));
         }
 
         let mut doc = PdfDocument::new("Vinyl Tracker QR Codes");
@@ -88,10 +87,25 @@ impl QrPdfService {
                 let border_polygon = Polygon {
                     rings: vec![PolygonRing {
                         points: vec![
-                            LinePoint { p: Point::new(Mm(card_x), Mm(card_y)), bezier: false },
-                            LinePoint { p: Point::new(Mm(card_x + CARD_WIDTH_MM), Mm(card_y)), bezier: false },
-                            LinePoint { p: Point::new(Mm(card_x + CARD_WIDTH_MM), Mm(card_y + CARD_HEIGHT_MM)), bezier: false },
-                            LinePoint { p: Point::new(Mm(card_x), Mm(card_y + CARD_HEIGHT_MM)), bezier: false },
+                            LinePoint {
+                                p: Point::new(Mm(card_x), Mm(card_y)),
+                                bezier: false,
+                            },
+                            LinePoint {
+                                p: Point::new(Mm(card_x + CARD_WIDTH_MM), Mm(card_y)),
+                                bezier: false,
+                            },
+                            LinePoint {
+                                p: Point::new(
+                                    Mm(card_x + CARD_WIDTH_MM),
+                                    Mm(card_y + CARD_HEIGHT_MM),
+                                ),
+                                bezier: false,
+                            },
+                            LinePoint {
+                                p: Point::new(Mm(card_x), Mm(card_y + CARD_HEIGHT_MM)),
+                                bezier: false,
+                            },
                         ],
                     }],
                     mode: PaintMode::Stroke,
@@ -106,13 +120,13 @@ impl QrPdfService {
                         icc_profile: None,
                     }),
                 });
-                ops.push(Op::SetOutlineThickness {
-                    pt: Pt(0.75),
-                });
+                ops.push(Op::SetOutlineThickness { pt: Pt(0.75) });
                 ops.push(Op::SetLineDashPattern {
                     dash: LineDashPattern::new(0.0, &[3.0, 2.5]),
                 });
-                ops.push(Op::DrawPolygon { polygon: border_polygon });
+                ops.push(Op::DrawPolygon {
+                    polygon: border_polygon,
+                });
                 ops.push(Op::SetLineDashPattern {
                     dash: LineDashPattern::solid(),
                 });

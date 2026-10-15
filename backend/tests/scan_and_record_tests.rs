@@ -1,19 +1,16 @@
-use std::sync::atomic::{AtomicU64, Ordering};
 use axum::{
     body::Body,
-    http::{header, Method, Request, StatusCode},
+    http::{Method, Request, StatusCode, header},
 };
-use http_body_util::BodyExt;
-use serde_json::{json, Value};
-use sqlx::Row;
-use tower::ServiceExt;
 use backend_rs::{
-    config::Config,
-    db::init_pool,
-    models::record::RecordDetailDto,
-    routes::create_app,
+    config::Config, db::init_pool, models::record::RecordDetailDto, routes::create_app,
     state::AppState,
 };
+use http_body_util::BodyExt;
+use serde_json::{Value, json};
+use sqlx::Row;
+use std::sync::atomic::{AtomicU64, Ordering};
+use tower::ServiceExt;
 
 static USER_COUNTER: AtomicU64 = AtomicU64::new(100);
 
@@ -66,7 +63,11 @@ async fn create_authenticated_user(app: &axum::Router) -> (i64, String, String) 
 
     let reg_bytes = reg_res.into_body().collect().await.unwrap().to_bytes();
     if reg_status != StatusCode::OK {
-        panic!("Register failed with status {}: {}", reg_status, String::from_utf8_lossy(&reg_bytes));
+        panic!(
+            "Register failed with status {}: {}",
+            reg_status,
+            String::from_utf8_lossy(&reg_bytes)
+        );
     }
 
     let reg_json: Value = serde_json::from_slice(&reg_bytes).unwrap();
@@ -139,7 +140,10 @@ async fn test_record_details_listen_and_condition_lifecycle() {
     assert_eq!(details.year.as_deref(), Some("1973"));
     assert!(details.in_collection);
     assert_eq!(details.listen_count, 0);
-    assert_eq!(details.media_condition.as_deref(), Some("Very Good Plus (VG+)"));
+    assert_eq!(
+        details.media_condition.as_deref(),
+        Some("Very Good Plus (VG+)")
+    );
 
     // 3. POST /api/records/{id}/listen -> log listen event
     let res = app
@@ -186,7 +190,10 @@ async fn test_record_details_listen_and_condition_lifecycle() {
     let bytes = res.into_body().collect().await.unwrap().to_bytes();
     let patched: RecordDetailDto = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(patched.media_condition.as_deref(), Some("Mint (M)"));
-    assert_eq!(patched.sleeve_condition.as_deref(), Some("Near Mint (NM or M-)"));
+    assert_eq!(
+        patched.sleeve_condition.as_deref(),
+        Some("Near Mint (NM or M-)")
+    );
 }
 
 #[tokio::test]
@@ -247,7 +254,12 @@ async fn test_scan_qr_code_and_listen_history_reset() {
     let bytes = res.into_body().collect().await.unwrap().to_bytes();
     let scan_res: Value = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(scan_res["success"], true);
-    assert!(scan_res["message"].as_str().unwrap().contains("Random Access Memories"));
+    assert!(
+        scan_res["message"]
+            .as_str()
+            .unwrap()
+            .contains("Random Access Memories")
+    );
     assert_eq!(scan_res["record"]["discogsId"], discogs_id);
 
     // Also test German keyboard layout error format: discogsßidö<discogs_id>
@@ -262,7 +274,9 @@ async fn test_scan_qr_code_and_listen_history_reset() {
                 .uri("/api/scan")
                 .header(header::COOKIE, &cookie)
                 .header(header::CONTENT_TYPE, "application/json")
-                .body(Body::from(serde_json::to_vec(&de_keyboard_payload).unwrap()))
+                .body(Body::from(
+                    serde_json::to_vec(&de_keyboard_payload).unwrap(),
+                ))
                 .unwrap(),
         )
         .await
@@ -270,12 +284,14 @@ async fn test_scan_qr_code_and_listen_history_reset() {
     assert_eq!(res.status(), StatusCode::OK);
 
     // Verify 2 listen events exist in DB
-    let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM listen_event WHERE user_id = $1 AND record_id = $2")
-        .bind(user_id)
-        .bind(record_id)
-        .fetch_one(pool)
-        .await
-        .unwrap();
+    let count: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM listen_event WHERE user_id = $1 AND record_id = $2",
+    )
+    .bind(user_id)
+    .bind(record_id)
+    .fetch_one(pool)
+    .await
+    .unwrap();
     assert_eq!(count, 2);
 
     // 2. Fetch listen_event id to test DELETE /api/scan/{id}
@@ -322,11 +338,12 @@ async fn test_scan_qr_code_and_listen_history_reset() {
     assert_eq!(reset_res["deletedCount"], 1);
 
     // Count should now be 0
-    let count_after: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM listen_event WHERE user_id = $1")
-        .bind(user_id)
-        .fetch_one(pool)
-        .await
-        .unwrap();
+    let count_after: i64 =
+        sqlx::query_scalar("SELECT COUNT(*) FROM listen_event WHERE user_id = $1")
+            .bind(user_id)
+            .fetch_one(pool)
+            .await
+            .unwrap();
     assert_eq!(count_after, 0);
 }
 

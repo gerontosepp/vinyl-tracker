@@ -1,18 +1,15 @@
-use std::sync::atomic::{AtomicU64, Ordering};
 use axum::{
     body::Body,
-    http::{header, Method, Request, StatusCode},
+    http::{Method, Request, StatusCode, header},
 };
-use http_body_util::BodyExt;
-use serde_json::{json, Value};
-use tower::ServiceExt;
 use backend_rs::{
-    config::Config,
-    db::init_pool,
-    routes::create_app,
-    services::roon::moo::MooMessage,
+    config::Config, db::init_pool, routes::create_app, services::roon::moo::MooMessage,
     state::AppState,
 };
+use http_body_util::BodyExt;
+use serde_json::{Value, json};
+use std::sync::atomic::{AtomicU64, Ordering};
+use tower::ServiceExt;
 
 static USER_COUNTER: AtomicU64 = AtomicU64::new(800);
 
@@ -80,7 +77,10 @@ async fn create_authenticated_user(app: &axum::Router) -> (i64, String, String) 
 
     let login_body = login_res.into_body().collect().await.unwrap().to_bytes();
     let login_json: Value = serde_json::from_slice(&login_body).unwrap();
-    let token = login_json["token"].as_str().expect("token must be present").to_string();
+    let token = login_json["token"]
+        .as_str()
+        .expect("token must be present")
+        .to_string();
 
     (user_id, test_username, token)
 }
@@ -140,7 +140,10 @@ async fn test_roon_endpoints_require_authentication() {
                 .method(Method::POST)
                 .uri("/api/roon/play")
                 .header(header::CONTENT_TYPE, "application/json")
-                .body(Body::from(json!({ "artist": "Pink Floyd", "title": "The Dark Side of the Moon" }).to_string()))
+                .body(Body::from(
+                    json!({ "artist": "Pink Floyd", "title": "The Dark Side of the Moon" })
+                        .to_string(),
+                ))
                 .unwrap(),
         )
         .await
@@ -315,7 +318,9 @@ async fn test_roon_play_validation() {
                 .uri("/api/roon/play")
                 .header(header::AUTHORIZATION, format!("Bearer {token}"))
                 .header(header::CONTENT_TYPE, "application/json")
-                .body(Body::from(serde_json::to_vec(&empty_artist_payload).unwrap()))
+                .body(Body::from(
+                    serde_json::to_vec(&empty_artist_payload).unwrap(),
+                ))
                 .unwrap(),
         )
         .await
@@ -336,7 +341,9 @@ async fn test_roon_play_validation() {
                 .uri("/api/roon/play")
                 .header(header::AUTHORIZATION, format!("Bearer {token}"))
                 .header(header::CONTENT_TYPE, "application/json")
-                .body(Body::from(serde_json::to_vec(&empty_title_payload).unwrap()))
+                .body(Body::from(
+                    serde_json::to_vec(&empty_title_payload).unwrap(),
+                ))
                 .unwrap(),
         )
         .await
@@ -367,8 +374,8 @@ async fn test_roon_play_validation() {
 
 #[tokio::test]
 async fn test_moo_protocol_parsing_and_serialization() {
-    let request_msg = MooMessage::new("REQUEST", "com.roonlabs.ping:1/ping")
-        .with_header("Request-Id", "42");
+    let request_msg =
+        MooMessage::new("REQUEST", "com.roonlabs.ping:1/ping").with_header("Request-Id", "42");
 
     let serialized = request_msg.to_wire_string();
     assert!(serialized.starts_with("MOO/1 REQUEST com.roonlabs.ping:1/ping\n"));
@@ -390,7 +397,8 @@ async fn test_moo_protocol_parsing_and_serialization() {
     assert!(serialized_complete.contains("Content-Type: application/json\n"));
     assert!(serialized_complete.ends_with(body_json));
 
-    let parsed_complete = MooMessage::parse(&serialized_complete).expect("Should parse complete message");
+    let parsed_complete =
+        MooMessage::parse(&serialized_complete).expect("Should parse complete message");
     assert_eq!(parsed_complete.verb, "COMPLETE");
     assert_eq!(parsed_complete.name_or_status, "Success");
     assert_eq!(parsed_complete.get_header("Request-Id"), Some("99"));

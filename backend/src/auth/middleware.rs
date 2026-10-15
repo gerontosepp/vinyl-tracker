@@ -1,12 +1,7 @@
+use crate::{auth::jwt::validate_token, error::AppError, models::user::AppUser, state::AppState};
 use axum::{
     extract::{FromRef, FromRequestParts},
     http::request::Parts,
-};
-use crate::{
-    auth::jwt::validate_token,
-    error::AppError,
-    models::user::AppUser,
-    state::AppState,
 };
 
 pub struct CurrentUser(pub AppUser);

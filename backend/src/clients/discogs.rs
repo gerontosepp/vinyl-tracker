@@ -1,12 +1,3 @@
-use std::{collections::HashMap, num::NonZeroU32, sync::Arc, time::Duration};
-use governor::{
-    clock::DefaultClock,
-    middleware::NoOpMiddleware,
-    state::{InMemoryState, NotKeyed},
-    Quota, RateLimiter,
-};
-use moka::future::Cache;
-use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, USER_AGENT};
 use crate::{
     error::AppError,
     models::discogs::{
@@ -15,6 +6,15 @@ use crate::{
         DiscogsSearchResponse, DiscogsValueResponse,
     },
 };
+use governor::{
+    Quota, RateLimiter,
+    clock::DefaultClock,
+    middleware::NoOpMiddleware,
+    state::{InMemoryState, NotKeyed},
+};
+use moka::future::Cache;
+use reqwest::header::{AUTHORIZATION, HeaderMap, HeaderValue, USER_AGENT};
+use std::{collections::HashMap, num::NonZeroU32, sync::Arc, time::Duration};
 
 type DirectRateLimiter = RateLimiter<NotKeyed, InMemoryState, DefaultClock, NoOpMiddleware>;
 
@@ -82,7 +82,11 @@ impl DiscogsClient {
         Ok(headers)
     }
 
-    pub async fn get_release(&self, release_id: i64, token: &str) -> Result<Arc<DiscogsRelease>, AppError> {
+    pub async fn get_release(
+        &self,
+        release_id: i64,
+        token: &str,
+    ) -> Result<Arc<DiscogsRelease>, AppError> {
         // Check cache first
         if let Some(cached) = self.release_cache.get(&release_id).await {
             tracing::debug!("Returning release {release_id} from Moka cache");
@@ -105,21 +109,28 @@ impl DiscogsClient {
 
         if !res.status().is_success() {
             let status = res.status();
-            return Err(AppError::Internal(format!("Discogs API returned status {status}")));
+            return Err(AppError::Internal(format!(
+                "Discogs API returned status {status}"
+            )));
         }
 
-        let release: DiscogsRelease = res
-            .json()
-            .await
-            .map_err(|e| AppError::Internal(format!("Failed to parse Discogs release JSON: {e}")))?;
+        let release: DiscogsRelease = res.json().await.map_err(|e| {
+            AppError::Internal(format!("Failed to parse Discogs release JSON: {e}"))
+        })?;
 
         let release_arc = Arc::new(release);
-        self.release_cache.insert(release_id, release_arc.clone()).await;
+        self.release_cache
+            .insert(release_id, release_arc.clone())
+            .await;
 
         Ok(release_arc)
     }
 
-    pub async fn search_by_barcode(&self, barcode: &str, token: &str) -> Result<DiscogsSearchResponse, AppError> {
+    pub async fn search_by_barcode(
+        &self,
+        barcode: &str,
+        token: &str,
+    ) -> Result<DiscogsSearchResponse, AppError> {
         self.wait_for_rate_limit().await;
 
         let url = format!("{}/database/search", self.base_url);
@@ -163,15 +174,11 @@ impl DiscogsClient {
         let url = format!("{}/database/search", self.base_url);
         let headers = self.auth_headers(token)?;
 
-        let mut req = self
-            .http
-            .get(&url)
-            .headers(headers)
-            .query(&[
-                ("q", query),
-                ("page", &page.to_string()),
-                ("per_page", &per_page.to_string()),
-            ]);
+        let mut req = self.http.get(&url).headers(headers).query(&[
+            ("q", query),
+            ("page", &page.to_string()),
+            ("per_page", &per_page.to_string()),
+        ]);
 
         if let Some(st) = search_type {
             req = req.query(&[("type", st)]);
@@ -210,7 +217,10 @@ impl DiscogsClient {
 
         self.wait_for_rate_limit().await;
 
-        let url = format!("{}/marketplace/price_suggestions/{release_id}", self.base_url);
+        let url = format!(
+            "{}/marketplace/price_suggestions/{release_id}",
+            self.base_url
+        );
         let headers = self.auth_headers(token)?;
 
         let res = self
@@ -225,13 +235,13 @@ impl DiscogsClient {
             return Ok(Arc::new(HashMap::new()));
         }
 
-        let suggestions: HashMap<String, DiscogsPriceSuggestion> = res
-            .json()
-            .await
-            .unwrap_or_default();
+        let suggestions: HashMap<String, DiscogsPriceSuggestion> =
+            res.json().await.unwrap_or_default();
 
         let suggestions_arc = Arc::new(suggestions);
-        self.price_cache.insert(release_id, suggestions_arc.clone()).await;
+        self.price_cache
+            .insert(release_id, suggestions_arc.clone())
+            .await;
 
         Ok(suggestions_arc)
     }
@@ -262,10 +272,9 @@ impl DiscogsClient {
             )));
         }
 
-        let val_res: DiscogsValueResponse = res
-            .json()
-            .await
-            .map_err(|e| AppError::Internal(format!("Failed to parse collection value JSON: {e}")))?;
+        let val_res: DiscogsValueResponse = res.json().await.map_err(|e| {
+            AppError::Internal(format!("Failed to parse collection value JSON: {e}"))
+        })?;
 
         Ok(val_res)
     }
@@ -295,10 +304,9 @@ impl DiscogsClient {
             )));
         }
 
-        let fields_res: DiscogsCollectionFieldsResponse = res
-            .json()
-            .await
-            .map_err(|e| AppError::Internal(format!("Failed to parse collection fields JSON: {e}")))?;
+        let fields_res: DiscogsCollectionFieldsResponse = res.json().await.map_err(|e| {
+            AppError::Internal(format!("Failed to parse collection fields JSON: {e}"))
+        })?;
 
         Ok(fields_res)
     }
@@ -312,7 +320,10 @@ impl DiscogsClient {
     ) -> Result<DiscogsCollectionFolderResponse, AppError> {
         self.wait_for_rate_limit().await;
 
-        let url = format!("{}/users/{username}/collection/folders/0/releases", self.base_url);
+        let url = format!(
+            "{}/users/{username}/collection/folders/0/releases",
+            self.base_url
+        );
         let headers = self.auth_headers(token)?;
 
         let res = self
@@ -336,10 +347,9 @@ impl DiscogsClient {
             )));
         }
 
-        let folder_res: DiscogsCollectionFolderResponse = res
-            .json()
-            .await
-            .map_err(|e| AppError::Internal(format!("Failed to parse collection releases JSON: {e}")))?;
+        let folder_res: DiscogsCollectionFolderResponse = res.json().await.map_err(|e| {
+            AppError::Internal(format!("Failed to parse collection releases JSON: {e}"))
+        })?;
 
         Ok(folder_res)
     }
@@ -353,7 +363,10 @@ impl DiscogsClient {
     ) -> Result<DiscogsAddReleaseResponse, AppError> {
         self.wait_for_rate_limit().await;
 
-        let url = format!("{}/users/{username}/collection/folders/{folder_id}/releases/{release_id}", self.base_url);
+        let url = format!(
+            "{}/users/{username}/collection/folders/{folder_id}/releases/{release_id}",
+            self.base_url
+        );
         let headers = self.auth_headers(token)?;
 
         let res = self
@@ -387,7 +400,10 @@ impl DiscogsClient {
     ) -> Result<bool, AppError> {
         self.wait_for_rate_limit().await;
 
-        let url = format!("{}/users/{username}/collection/releases/{release_id}", self.base_url);
+        let url = format!(
+            "{}/users/{username}/collection/releases/{release_id}",
+            self.base_url
+        );
         let headers = self.auth_headers(token)?;
 
         let res = self
@@ -396,16 +412,16 @@ impl DiscogsClient {
             .headers(headers)
             .send()
             .await
-            .map_err(|e| AppError::Internal(format!("Check release in collection request error: {e}")))?;
+            .map_err(|e| {
+                AppError::Internal(format!("Check release in collection request error: {e}"))
+            })?;
 
         if !res.status().is_success() {
             return Ok(false);
         }
 
-        let folder_res: DiscogsCollectionFolderResponse = res
-            .json()
-            .await
-            .unwrap_or(DiscogsCollectionFolderResponse {
+        let folder_res: DiscogsCollectionFolderResponse =
+            res.json().await.unwrap_or(DiscogsCollectionFolderResponse {
                 pagination: crate::models::discogs::DiscogsPagination {
                     page: 1,
                     pages: 0,

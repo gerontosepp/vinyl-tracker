@@ -1,16 +1,16 @@
-use std::sync::Arc;
-use chrono::Utc;
-use sqlx::{PgPool, Row};
 use crate::{
     clients::discogs::DiscogsClient,
     error::AppError,
     models::{
-        discogs::{determine_format, DiscogsRelease, DiscogsSearchResult},
+        discogs::{DiscogsRelease, DiscogsSearchResult, determine_format},
         scan::{DiscogsMatchDto, ResetResultDto, ScanResultDto, TrackedRecordDto},
         user::AppUser,
     },
     services::crypto_service::CryptoService,
 };
+use chrono::Utc;
+use sqlx::{PgPool, Row};
+use std::sync::Arc;
 
 pub struct ScanService;
 
@@ -47,9 +47,10 @@ impl ScanService {
                 .map(|(_, id)| id)
                 .unwrap_or(&clean_barcode);
 
-            let release_id = id_str.trim().parse::<i64>().map_err(|_| {
-                AppError::BadRequest("Invalid custom barcode format".to_string())
-            })?;
+            let release_id = id_str
+                .trim()
+                .parse::<i64>()
+                .map_err(|_| AppError::BadRequest("Invalid custom barcode format".to_string()))?;
 
             if let Some(ref token) = dec_token {
                 matched_release = discogs_client.get_release(release_id, token).await.ok();
@@ -61,7 +62,7 @@ impl ScanService {
                     "SELECT id, discogs_id, title, artist, release_year, thumb_url, format
                      FROM record_cache
                      WHERE discogs_id = $1 OR id = $1
-                     LIMIT 1"
+                     LIMIT 1",
                 )
                 .bind(release_id)
                 .fetch_optional(pool)
@@ -100,13 +101,19 @@ impl ScanService {
         } else {
             // Standard Barcode Lookup via Discogs API
             let token = dec_token.as_deref().ok_or_else(|| {
-                AppError::BadRequest("User does not have a configured Discogs token for barcode scanning".to_string())
+                AppError::BadRequest(
+                    "User does not have a configured Discogs token for barcode scanning"
+                        .to_string(),
+                )
             })?;
 
             let mut results: Vec<DiscogsSearchResult> = Vec::new();
 
             // Try direct barcode
-            if let Ok(res) = discogs_client.search_by_barcode(&clean_barcode, token).await {
+            if let Ok(res) = discogs_client
+                .search_by_barcode(&clean_barcode, token)
+                .await
+            {
                 results.extend(res.results);
             }
 
@@ -128,7 +135,9 @@ impl ScanService {
 
             // Fallback 3: General query search (q=barcode)
             if results.is_empty() {
-                let search_res = discogs_client.search(&clean_barcode, Some("release"), 1, 10, token).await;
+                let search_res = discogs_client
+                    .search(&clean_barcode, Some("release"), 1, 10, token)
+                    .await;
                 if let Ok(res) = search_res {
                     results.extend(res.results);
                 }
@@ -141,7 +150,7 @@ impl ScanService {
                         SELECT 1 FROM collection_item ci
                         JOIN record_cache rc ON rc.id = ci.record_id
                         WHERE ci.user_id = $1 AND rc.discogs_id = $2
-                    )"
+                    )",
                 )
                 .bind(user.id)
                 .bind(candidate.id)
@@ -151,7 +160,11 @@ impl ScanService {
 
                 let in_discogs = if !in_local && user.discogs_username.is_some() {
                     discogs_client
-                        .is_release_in_collection(user.discogs_username.as_deref().unwrap(), candidate.id, token)
+                        .is_release_in_collection(
+                            user.discogs_username.as_deref().unwrap(),
+                            candidate.id,
+                            token,
+                        )
                         .await
                         .unwrap_or(false)
                 } else {
@@ -188,7 +201,8 @@ impl ScanService {
                 if !discogs_matches.is_empty() {
                     return Ok(ScanResultDto {
                         success: false,
-                        message: "Release not found in collection, but found on Discogs.".to_string(),
+                        message: "Release not found in collection, but found on Discogs."
+                            .to_string(),
                         record: None,
                         discogs_matches: Some(discogs_matches),
                     });
@@ -288,7 +302,10 @@ impl ScanService {
         Ok(())
     }
 
-    pub async fn reset_all_listens(pool: &PgPool, user_id: i64) -> Result<ResetResultDto, AppError> {
+    pub async fn reset_all_listens(
+        pool: &PgPool,
+        user_id: i64,
+    ) -> Result<ResetResultDto, AppError> {
         let res = sqlx::query("DELETE FROM listen_event WHERE user_id = $1")
             .bind(user_id)
             .execute(pool)

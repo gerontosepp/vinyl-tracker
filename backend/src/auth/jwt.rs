@@ -1,7 +1,7 @@
-use chrono::Utc;
-use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
-use serde::{Deserialize, Serialize};
 use crate::error::AppError;
+use chrono::Utc;
+use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Claims {
@@ -48,7 +48,8 @@ mod tests {
     #[test]
     fn test_jwt_roundtrip() {
         let secret = "testSecretMustBeAtLeast32CharactersLong!";
-        let token = generate_token("testuser", secret, 3600).expect("Token generation must succeed");
+        let token =
+            generate_token("testuser", secret, 3600).expect("Token generation must succeed");
         assert!(!token.is_empty());
 
         let claims = validate_token(&token, secret).expect("Token validation must succeed");

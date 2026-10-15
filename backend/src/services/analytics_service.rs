@@ -1,17 +1,17 @@
-use sqlx::{PgPool, Row};
 use crate::{
     clients::discogs::DiscogsClient,
     error::AppError,
     models::{
         analytics::{
-            parse_value_data, CollectionValueResponse, GenreBreakdownItem, ListenEventDto,
-            TopRecordDto,
+            CollectionValueResponse, GenreBreakdownItem, ListenEventDto, TopRecordDto,
+            parse_value_data,
         },
         scan::TrackedRecordDto,
         user::AppUser,
     },
     services::crypto_service::CryptoService,
 };
+use sqlx::{PgPool, Row};
 
 pub struct AnalyticsService;
 
@@ -164,25 +164,23 @@ impl AnalyticsService {
         crypto: &CryptoService,
         user: &AppUser,
     ) -> Result<CollectionValueResponse, AppError> {
-        let encrypted_token = match &user.discogs_token {
-            Some(t) if !t.trim().is_empty() => t,
-            _ => {
-                return Err(AppError::BadRequest(
+        let encrypted_token =
+            match &user.discogs_token {
+                Some(t) if !t.trim().is_empty() => t,
+                _ => return Err(AppError::BadRequest(
                     "Connect your Discogs account in settings before requesting collection value."
                         .to_string(),
-                ))
-            }
-        };
+                )),
+            };
 
-        let discogs_username = match &user.discogs_username {
-            Some(u) if !u.trim().is_empty() => u,
-            _ => {
-                return Err(AppError::BadRequest(
+        let discogs_username =
+            match &user.discogs_username {
+                Some(u) if !u.trim().is_empty() => u,
+                _ => return Err(AppError::BadRequest(
                     "Connect your Discogs account in settings before requesting collection value."
                         .to_string(),
-                ))
-            }
-        };
+                )),
+            };
 
         let token = crypto
             .decrypt(encrypted_token)

@@ -1,4 +1,3 @@
-use sqlx::PgPool;
 use crate::{
     auth::jwt::generate_token,
     config::Config,
@@ -9,6 +8,7 @@ use crate::{
     },
     services::crypto_service::CryptoService,
 };
+use sqlx::PgPool;
 
 pub struct UserService;
 
@@ -22,18 +22,23 @@ impl UserService {
         let password = payload.password;
 
         if username.len() < 3 {
-            return Err(AppError::BadRequest("Username must be at least 3 characters long".to_string()));
+            return Err(AppError::BadRequest(
+                "Username must be at least 3 characters long".to_string(),
+            ));
         }
         if password.len() < 8 {
-            return Err(AppError::BadRequest("Password must be at least 8 characters long".to_string()));
+            return Err(AppError::BadRequest(
+                "Password must be at least 8 characters long".to_string(),
+            ));
         }
 
         // Check if user already exists
-        let exists: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM app_user WHERE username = $1)")
-            .bind(username)
-            .fetch_one(pool)
-            .await
-            .map_err(AppError::Database)?;
+        let exists: bool =
+            sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM app_user WHERE username = $1)")
+                .bind(username)
+                .fetch_one(pool)
+                .await
+                .map_err(AppError::Database)?;
 
         if exists {
             return Err(AppError::Conflict("Username already taken".to_string()));
@@ -53,7 +58,11 @@ impl UserService {
         .await
         .map_err(AppError::Database)?;
 
-        let token = generate_token(&user.username, &config.jwt_secret, config.jwt_expiration_secs)?;
+        let token = generate_token(
+            &user.username,
+            &config.jwt_secret,
+            config.jwt_expiration_secs,
+        )?;
         Ok(user.to_dto(Some(token)))
     }
 
@@ -83,10 +92,16 @@ impl UserService {
         };
 
         if !is_valid {
-            return Err(AppError::Unauthorized("Invalid username or password".to_string()));
+            return Err(AppError::Unauthorized(
+                "Invalid username or password".to_string(),
+            ));
         }
 
-        let token = generate_token(&user.username, &config.jwt_secret, config.jwt_expiration_secs)?;
+        let token = generate_token(
+            &user.username,
+            &config.jwt_secret,
+            config.jwt_expiration_secs,
+        )?;
         Ok(user.to_dto(Some(token)))
     }
 
@@ -137,7 +152,9 @@ impl UserService {
     ) -> Result<UserResponseDto, AppError> {
         let new_password = payload.new_password;
         if new_password.len() < 8 {
-            return Err(AppError::BadRequest("Password must be at least 8 characters long".to_string()));
+            return Err(AppError::BadRequest(
+                "Password must be at least 8 characters long".to_string(),
+            ));
         }
 
         let hashed_password = bcrypt::hash(&new_password, 10)
@@ -175,7 +192,11 @@ impl UserService {
         .map_err(AppError::Database)?
         .ok_or_else(|| AppError::NotFound("User not found".to_string()))?;
 
-        let token = generate_token(&user.username, &config.jwt_secret, config.jwt_expiration_secs)?;
+        let token = generate_token(
+            &user.username,
+            &config.jwt_secret,
+            config.jwt_expiration_secs,
+        )?;
         Ok(user.to_dto(Some(token)))
     }
 }

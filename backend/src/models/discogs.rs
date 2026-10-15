@@ -146,7 +146,6 @@ pub struct DiscogsAddReleaseResponse {
     pub resource_url: Option<String>,
 }
 
-
 /// Determines the canonical format label from Discogs format descriptions.
 /// Matches the Java logic in `DiscogsDto.determineFormat`.
 pub fn determine_format(formats: Option<&[DiscogsFormat]>) -> String {

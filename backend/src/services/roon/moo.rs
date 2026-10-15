@@ -46,7 +46,11 @@ impl MooMessage {
         let body_len = body_bytes.len();
 
         let mut headers = self.headers.clone();
-        if body_len > 0 && !headers.keys().any(|k| k.eq_ignore_ascii_case("Content-Type")) {
+        if body_len > 0
+            && !headers
+                .keys()
+                .any(|k| k.eq_ignore_ascii_case("Content-Type"))
+        {
             headers.insert("Content-Type".to_string(), "application/json".to_string());
         }
         headers.insert("Content-Length".to_string(), body_len.to_string());
@@ -135,7 +139,8 @@ mod tests {
 
     #[test]
     fn test_parse_ping_and_format_pong() {
-        let ping_raw = "MOO/1 REQUEST com.roonlabs.ping:1/ping\nRequest-Id: 99\nContent-Length: 0\n\n";
+        let ping_raw =
+            "MOO/1 REQUEST com.roonlabs.ping:1/ping\nRequest-Id: 99\nContent-Length: 0\n\n";
         let parsed = MooMessage::parse(ping_raw).unwrap();
         assert_eq!(parsed.verb, "REQUEST");
         assert_eq!(parsed.name_or_status, "com.roonlabs.ping:1/ping");

@@ -1,12 +1,10 @@
-use std::sync::Arc;
-use sqlx::PgPool;
 use crate::{
     clients::discogs::DiscogsClient,
     config::Config,
-    services::{
-        crypto_service::CryptoService, image_proxy::ImageProxyService, roon::RoonService,
-    },
+    services::{crypto_service::CryptoService, image_proxy::ImageProxyService, roon::RoonService},
 };
+use sqlx::PgPool;
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct AppState {

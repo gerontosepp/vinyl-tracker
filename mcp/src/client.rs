@@ -1,5 +1,5 @@
 use crate::models::*;
-use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, SET_COOKIE};
+use reqwest::header::{AUTHORIZATION, HeaderMap, HeaderValue, SET_COOKIE};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
@@ -65,7 +65,12 @@ impl VinylApiClient {
             .json(&payload)
             .send()
             .await
-            .map_err(|e| format!("Login connection failed (is backend running at {}?): {}", self.base_url, e))?;
+            .map_err(|e| {
+                format!(
+                    "Login connection failed (is backend running at {}?): {}",
+                    self.base_url, e
+                )
+            })?;
 
         if !res.status().is_success() {
             let status = res.status();
@@ -128,7 +133,10 @@ impl VinylApiClient {
     // Collection APIs
     // ------------------------------------------------------------------------
 
-    pub async fn get_collection(&self, args: &GetCollectionArgs) -> Result<CollectionResponse, String> {
+    pub async fn get_collection(
+        &self,
+        args: &GetCollectionArgs,
+    ) -> Result<CollectionResponse, String> {
         self.ensure_authenticated().await?;
         let url = format!("{}/api/collection", self.base_url);
         let headers = self.build_auth_headers().await;
@@ -171,7 +179,11 @@ impl VinylApiClient {
             .map_err(|e| format!("Request to /api/collection failed: {}", e))?;
 
         if !res.status().is_success() {
-            return Err(format!("Backend error {}: {}", res.status(), res.text().await.unwrap_or_default()));
+            return Err(format!(
+                "Backend error {}: {}",
+                res.status(),
+                res.text().await.unwrap_or_default()
+            ));
         }
 
         res.json::<CollectionResponse>()
@@ -179,7 +191,10 @@ impl VinylApiClient {
             .map_err(|e| format!("Failed to parse collection JSON: {}", e))
     }
 
-    pub async fn get_random_record(&self, args: &GetRandomRecordArgs) -> Result<Option<CollectionRelease>, String> {
+    pub async fn get_random_record(
+        &self,
+        args: &GetRandomRecordArgs,
+    ) -> Result<Option<CollectionRelease>, String> {
         self.ensure_authenticated().await?;
         let url = format!("{}/api/collection/random", self.base_url);
         let headers = self.build_auth_headers().await;
@@ -202,7 +217,11 @@ impl VinylApiClient {
         }
 
         if !res.status().is_success() {
-            return Err(format!("Backend error {}: {}", res.status(), res.text().await.unwrap_or_default()));
+            return Err(format!(
+                "Backend error {}: {}",
+                res.status(),
+                res.text().await.unwrap_or_default()
+            ));
         }
 
         res.json::<CollectionRelease>()
@@ -211,7 +230,10 @@ impl VinylApiClient {
             .map_err(|e| format!("Failed to parse random record JSON: {}", e))
     }
 
-    pub async fn get_unplayed_records(&self, args: &GetUnplayedRecordsArgs) -> Result<CollectionResponse, String> {
+    pub async fn get_unplayed_records(
+        &self,
+        args: &GetUnplayedRecordsArgs,
+    ) -> Result<CollectionResponse, String> {
         self.ensure_authenticated().await?;
         let url = format!("{}/api/collection/unplayed", self.base_url);
         let headers = self.build_auth_headers().await;
@@ -230,7 +252,11 @@ impl VinylApiClient {
             .map_err(|e| format!("Request to /api/collection/unplayed failed: {}", e))?;
 
         if !res.status().is_success() {
-            return Err(format!("Backend error {}: {}", res.status(), res.text().await.unwrap_or_default()));
+            return Err(format!(
+                "Backend error {}: {}",
+                res.status(),
+                res.text().await.unwrap_or_default()
+            ));
         }
 
         res.json::<CollectionResponse>()
@@ -252,7 +278,11 @@ impl VinylApiClient {
             .map_err(|e| format!("Request to /api/collection/sync failed: {}", e))?;
 
         if !res.status().is_success() {
-            return Err(format!("Backend error {}: {}", res.status(), res.text().await.unwrap_or_default()));
+            return Err(format!(
+                "Backend error {}: {}",
+                res.status(),
+                res.text().await.unwrap_or_default()
+            ));
         }
 
         res.json::<SyncResultDto>()
@@ -311,7 +341,11 @@ impl VinylApiClient {
         if res.status().is_success() || res.status() == reqwest::StatusCode::NO_CONTENT {
             Ok(format!("Scan {} deleted successfully.", id))
         } else {
-            Err(format!("Delete scan failed (HTTP {}): {}", res.status(), res.text().await.unwrap_or_default()))
+            Err(format!(
+                "Delete scan failed (HTTP {}): {}",
+                res.status(),
+                res.text().await.unwrap_or_default()
+            ))
         }
     }
 
@@ -329,7 +363,11 @@ impl VinylApiClient {
             .map_err(|e| format!("Request to reset all listens failed: {}", e))?;
 
         if !res.status().is_success() {
-            return Err(format!("Reset listens failed (HTTP {}): {}", res.status(), res.text().await.unwrap_or_default()));
+            return Err(format!(
+                "Reset listens failed (HTTP {}): {}",
+                res.status(),
+                res.text().await.unwrap_or_default()
+            ));
         }
 
         res.json::<ResetResultDto>()
@@ -364,7 +402,11 @@ impl VinylApiClient {
             .map_err(|e| format!("Request to /api/analytics/recent failed: {}", e))?;
 
         if !res.status().is_success() {
-            return Err(format!("Analytics error {}: {}", res.status(), res.text().await.unwrap_or_default()));
+            return Err(format!(
+                "Analytics error {}: {}",
+                res.status(),
+                res.text().await.unwrap_or_default()
+            ));
         }
 
         res.json::<Vec<ListenEventDto>>()
@@ -395,7 +437,11 @@ impl VinylApiClient {
             .map_err(|e| format!("Request to /api/analytics/top failed: {}", e))?;
 
         if !res.status().is_success() {
-            return Err(format!("Analytics error {}: {}", res.status(), res.text().await.unwrap_or_default()));
+            return Err(format!(
+                "Analytics error {}: {}",
+                res.status(),
+                res.text().await.unwrap_or_default()
+            ));
         }
 
         res.json::<Vec<TopRecordDto>>()
@@ -417,7 +463,11 @@ impl VinylApiClient {
             .map_err(|e| format!("Request to /api/analytics/collection/value failed: {}", e))?;
 
         if !res.status().is_success() {
-            return Err(format!("Analytics error {}: {}", res.status(), res.text().await.unwrap_or_default()));
+            return Err(format!(
+                "Analytics error {}: {}",
+                res.status(),
+                res.text().await.unwrap_or_default()
+            ));
         }
 
         res.json::<CollectionValueDto>()
@@ -439,7 +489,11 @@ impl VinylApiClient {
             .map_err(|e| format!("Request to /api/analytics/collection/genres failed: {}", e))?;
 
         if !res.status().is_success() {
-            return Err(format!("Analytics error {}: {}", res.status(), res.text().await.unwrap_or_default()));
+            return Err(format!(
+                "Analytics error {}: {}",
+                res.status(),
+                res.text().await.unwrap_or_default()
+            ));
         }
 
         res.json::<serde_json::Value>()
@@ -461,7 +515,11 @@ impl VinylApiClient {
             .map_err(|e| format!("Request to /api/users/me failed: {}", e))?;
 
         if !res.status().is_success() {
-            return Err(format!("Get user error {}: {}", res.status(), res.text().await.unwrap_or_default()));
+            return Err(format!(
+                "Get user error {}: {}",
+                res.status(),
+                res.text().await.unwrap_or_default()
+            ));
         }
 
         res.json::<UserResponseDto>()
@@ -483,7 +541,11 @@ impl VinylApiClient {
             .map_err(|e| format!("Request to /api/records/{} failed: {}", id, e))?;
 
         if !res.status().is_success() {
-            return Err(format!("Backend error {}: {}", res.status(), res.text().await.unwrap_or_default()));
+            return Err(format!(
+                "Backend error {}: {}",
+                res.status(),
+                res.text().await.unwrap_or_default()
+            ));
         }
 
         res.json::<RecordDetailDto>()
@@ -491,7 +553,10 @@ impl VinylApiClient {
             .map_err(|e| format!("Failed to parse record details JSON: {}", e))
     }
 
-    pub async fn search_discogs(&self, args: &SearchDiscogsArgs) -> Result<DiscogsSearchResponse, String> {
+    pub async fn search_discogs(
+        &self,
+        args: &SearchDiscogsArgs,
+    ) -> Result<DiscogsSearchResponse, String> {
         self.ensure_authenticated().await?;
         let url = format!("{}/api/discogs/search", self.base_url);
         let headers = self.build_auth_headers().await;
@@ -514,7 +579,11 @@ impl VinylApiClient {
             .map_err(|e| format!("Request to /api/discogs/search failed: {}", e))?;
 
         if !res.status().is_success() {
-            return Err(format!("Backend error {}: {}", res.status(), res.text().await.unwrap_or_default()));
+            return Err(format!(
+                "Backend error {}: {}",
+                res.status(),
+                res.text().await.unwrap_or_default()
+            ));
         }
 
         res.json::<DiscogsSearchResponse>()
@@ -522,7 +591,10 @@ impl VinylApiClient {
             .map_err(|e| format!("Failed to parse Discogs search JSON: {}", e))
     }
 
-    pub async fn play_on_roon(&self, args: &PlayRecordOnRoonArgs) -> Result<RoonPlayResponse, String> {
+    pub async fn play_on_roon(
+        &self,
+        args: &PlayRecordOnRoonArgs,
+    ) -> Result<RoonPlayResponse, String> {
         self.ensure_authenticated().await?;
         let url = format!("{}/api/roon/play", self.base_url);
         let headers = self.build_auth_headers().await;
@@ -543,7 +615,11 @@ impl VinylApiClient {
             .map_err(|e| format!("Request to /api/roon/play failed: {}", e))?;
 
         if !res.status().is_success() {
-            return Err(format!("Roon playback error {}: {}", res.status(), res.text().await.unwrap_or_default()));
+            return Err(format!(
+                "Roon playback error {}: {}",
+                res.status(),
+                res.text().await.unwrap_or_default()
+            ));
         }
 
         res.json::<RoonPlayResponse>()
@@ -551,5 +627,3 @@ impl VinylApiClient {
             .map_err(|e| format!("Failed to parse Roon play JSON response: {}", e))
     }
 }
-
-

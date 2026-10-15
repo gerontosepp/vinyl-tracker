@@ -1,12 +1,12 @@
+use crate::{auth::CurrentUser, error::AppError, state::AppState};
 use axum::{
+    Json, Router,
     extract::{Query, State},
     http::StatusCode,
     response::IntoResponse,
     routing::get,
-    Json, Router,
 };
 use serde::Deserialize;
-use crate::{auth::CurrentUser, error::AppError, state::AppState};
 
 #[derive(Deserialize)]
 pub struct DiscogsSearchQuery {
@@ -35,9 +35,10 @@ pub async fn search_handler(
         AppError::BadRequest("User does not have a configured Discogs token".to_string())
     })?;
 
-    let token = state.crypto.decrypt(&enc_token).ok_or_else(|| {
-        AppError::Internal("Failed to decrypt user Discogs token".to_string())
-    })?;
+    let token = state
+        .crypto
+        .decrypt(&enc_token)
+        .ok_or_else(|| AppError::Internal("Failed to decrypt user Discogs token".to_string()))?;
 
     let search_type = params.search_type.as_deref().unwrap_or("release");
     let page = params.page.unwrap_or(1);

@@ -1,9 +1,9 @@
-use std::{net::IpAddr, time::Duration};
+use crate::error::AppError;
 use bytes::Bytes;
 use moka::future::Cache;
-use reqwest::header::{HeaderValue, CONTENT_TYPE, USER_AGENT};
+use reqwest::header::{CONTENT_TYPE, HeaderValue, USER_AGENT};
+use std::{net::IpAddr, time::Duration};
 use url::Url;
-use crate::error::AppError;
 
 #[derive(Clone)]
 pub struct ImageProxyService {
@@ -44,22 +44,30 @@ impl ImageProxyService {
     pub async fn validate_url(&self, raw_url: &str) -> Result<Url, AppError> {
         let raw_url = raw_url.trim();
         if raw_url.is_empty() {
-            return Err(AppError::BadRequest("Image URL must not be empty".to_string()));
+            return Err(AppError::BadRequest(
+                "Image URL must not be empty".to_string(),
+            ));
         }
 
         let parsed = Url::parse(raw_url)
             .map_err(|_| AppError::BadRequest("Invalid image URL format".to_string()))?;
 
         if parsed.scheme() != "https" {
-            return Err(AppError::BadRequest("Only HTTPS image URLs are permitted".to_string()));
+            return Err(AppError::BadRequest(
+                "Only HTTPS image URLs are permitted".to_string(),
+            ));
         }
 
         if !parsed.username().is_empty() || parsed.password().is_some() {
-            return Err(AppError::BadRequest("Userinfo is not allowed in image URLs".to_string()));
+            return Err(AppError::BadRequest(
+                "Userinfo is not allowed in image URLs".to_string(),
+            ));
         }
 
         if matches!(parsed.port(), Some(port) if port != 443) {
-            return Err(AppError::BadRequest("Non-standard ports are not allowed".to_string()));
+            return Err(AppError::BadRequest(
+                "Non-standard ports are not allowed".to_string(),
+            ));
         }
 
         let host_str = parsed
@@ -77,11 +85,15 @@ impl ImageProxyService {
         let host_with_port = format!("{host_str}:443");
         let addresses: Vec<std::net::SocketAddr> = tokio::net::lookup_host(&host_with_port)
             .await
-            .map_err(|e| AppError::BadRequest(format!("DNS resolution failed for '{host_str}': {e}")))?
+            .map_err(|e| {
+                AppError::BadRequest(format!("DNS resolution failed for '{host_str}': {e}"))
+            })?
             .collect();
 
         if addresses.is_empty() {
-            return Err(AppError::BadRequest(format!("No IP address found for '{host_str}'")));
+            return Err(AppError::BadRequest(format!(
+                "No IP address found for '{host_str}'"
+            )));
         }
 
         for addr in addresses {
@@ -201,7 +213,9 @@ mod tests {
     #[tokio::test]
     async fn test_validate_url_rejects_disallowed_host() {
         let proxy = ImageProxyService::new("i.discogs.com", "TestApp/1.0".to_string());
-        let res = proxy.validate_url("https://malicious-site.com/image.jpg").await;
+        let res = proxy
+            .validate_url("https://malicious-site.com/image.jpg")
+            .await;
         assert!(res.is_err());
     }
 

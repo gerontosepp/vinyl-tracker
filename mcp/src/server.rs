@@ -1,8 +1,9 @@
 use crate::client::VinylApiClient;
 use crate::models::*;
 use rmcp::{
+    ServerHandler,
     handler::server::{router::tool::ToolRouter, wrapper::Parameters},
-    tool, tool_handler, tool_router, ServerHandler,
+    tool, tool_handler, tool_router,
 };
 use std::sync::Arc;
 
@@ -286,4 +287,3 @@ mod tests {
         assert_eq!(t15.name, "play_record_on_roon");
     }
 }
-

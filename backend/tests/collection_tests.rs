@@ -1,18 +1,15 @@
 use axum::{
     body::Body,
-    http::{header, Method, Request, StatusCode},
+    http::{Method, Request, StatusCode, header},
 };
-use http_body_util::BodyExt;
-use serde_json::{json, Value};
-use sqlx::Row;
-use tower::ServiceExt;
 use backend_rs::{
-    config::Config,
-    db::init_pool,
-    models::collection::CollectionResponse,
-    routes::create_app,
+    config::Config, db::init_pool, models::collection::CollectionResponse, routes::create_app,
     state::AppState,
 };
+use http_body_util::BodyExt;
+use serde_json::{Value, json};
+use sqlx::Row;
+use tower::ServiceExt;
 
 async fn setup_app() -> (axum::Router, AppState) {
     dotenvy::dotenv().ok();
@@ -66,7 +63,11 @@ async fn create_authenticated_user(app: &axum::Router) -> (i64, String, String) 
 
     let reg_bytes = reg_res.into_body().collect().await.unwrap().to_bytes();
     if reg_status != StatusCode::OK {
-        panic!("Register failed with status {}: {}", reg_status, String::from_utf8_lossy(&reg_bytes));
+        panic!(
+            "Register failed with status {}: {}",
+            reg_status,
+            String::from_utf8_lossy(&reg_bytes)
+        );
     }
 
     let reg_json: Value = serde_json::from_slice(&reg_bytes).unwrap();
@@ -117,11 +118,13 @@ async fn test_collection_querying_filtering_and_pagination() {
     .unwrap();
     let rec_id_a: i64 = row_a.get("id");
 
-    sqlx::query("INSERT INTO record_genres (record_id, genre) VALUES ($1, 'Rock') ON CONFLICT DO NOTHING")
-        .bind(rec_id_a)
-        .execute(pool)
-        .await
-        .unwrap();
+    sqlx::query(
+        "INSERT INTO record_genres (record_id, genre) VALUES ($1, 'Rock') ON CONFLICT DO NOTHING",
+    )
+    .bind(rec_id_a)
+    .execute(pool)
+    .await
+    .unwrap();
 
     sqlx::query(
         r#"
@@ -162,11 +165,13 @@ async fn test_collection_querying_filtering_and_pagination() {
     .unwrap();
     let rec_id_b: i64 = row_b.get("id");
 
-    sqlx::query("INSERT INTO record_genres (record_id, genre) VALUES ($1, 'Jazz') ON CONFLICT DO NOTHING")
-        .bind(rec_id_b)
-        .execute(pool)
-        .await
-        .unwrap();
+    sqlx::query(
+        "INSERT INTO record_genres (record_id, genre) VALUES ($1, 'Jazz') ON CONFLICT DO NOTHING",
+    )
+    .bind(rec_id_b)
+    .execute(pool)
+    .await
+    .unwrap();
 
     sqlx::query(
         r#"
@@ -262,7 +267,11 @@ async fn test_collection_querying_filtering_and_pagination() {
     let bytes = res.into_body().collect().await.unwrap().to_bytes();
     let body: CollectionResponse = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(body.releases.len(), 2);
-    assert!(body.releases.iter().all(|r| r.basic_information.format.to_lowercase().contains("vinyl")));
+    assert!(
+        body.releases
+            .iter()
+            .all(|r| r.basic_information.format.to_lowercase().contains("vinyl"))
+    );
 
     // Query 3: Filter by category = 'cd' -> 1 release (Daft Punk)
     let res = app

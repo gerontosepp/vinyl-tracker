@@ -1,16 +1,16 @@
-use std::collections::HashSet;
-use chrono::{DateTime, Utc};
-use sqlx::{PgPool, Row};
 use crate::{
     clients::discogs::DiscogsClient,
     error::AppError,
     models::{
         collection::{PriceRefreshResultDto, SyncResultDto},
-        discogs::{determine_format, DiscogsFolderReleaseItem},
+        discogs::{DiscogsFolderReleaseItem, determine_format},
         user::AppUser,
     },
     services::crypto_service::CryptoService,
 };
+use chrono::{DateTime, Utc};
+use sqlx::{PgPool, Row};
+use std::collections::HashSet;
 
 pub struct CollectionSyncService;
 
@@ -39,7 +39,10 @@ impl CollectionSyncService {
         let mut media_field_id = 1i64;
         let mut sleeve_field_id = 2i64;
 
-        if let Ok(fields_res) = discogs_client.get_collection_fields(discogs_user, &token).await {
+        if let Ok(fields_res) = discogs_client
+            .get_collection_fields(discogs_user, &token)
+            .await
+        {
             for f in fields_res.fields.unwrap_or_default() {
                 if let Some(name) = f.name {
                     let name_lower = name.trim().to_lowercase();
@@ -99,12 +102,14 @@ impl CollectionSyncService {
                 .map_err(AppError::Database)?;
             del_res.rows_affected() as i32
         } else {
-            let del_res = sqlx::query("DELETE FROM collection_item WHERE user_id = $1 AND instance_id != ALL($2)")
-                .bind(user.id)
-                .bind(&remote_ids_vec)
-                .execute(pool)
-                .await
-                .map_err(AppError::Database)?;
+            let del_res = sqlx::query(
+                "DELETE FROM collection_item WHERE user_id = $1 AND instance_id != ALL($2)",
+            )
+            .bind(user.id)
+            .bind(&remote_ids_vec)
+            .execute(pool)
+            .await
+            .map_err(AppError::Database)?;
             del_res.rows_affected() as i32
         };
 
@@ -169,7 +174,7 @@ impl CollectionSyncService {
                            release_year = EXCLUDED.release_year,
                            thumb_url = COALESCE(EXCLUDED.thumb_url, record_cache.thumb_url),
                            format = EXCLUDED.format
-             RETURNING id"
+             RETURNING id",
         )
         .bind(release_id)
         .bind(&release.title)
@@ -207,7 +212,7 @@ impl CollectionSyncService {
             "INSERT INTO collection_item (user_id, record_id, instance_id, added_at)
              VALUES ($1, $2, $3, $4)
              ON CONFLICT (user_id, instance_id)
-             DO UPDATE SET record_id = EXCLUDED.record_id"
+             DO UPDATE SET record_id = EXCLUDED.record_id",
         )
         .bind(user.id)
         .bind(record_id)
@@ -247,7 +252,7 @@ impl CollectionSyncService {
                     rc.median_price::float8 as median_price
              FROM record_cache rc
              JOIN collection_item ci ON ci.record_id = rc.id
-             WHERE ci.user_id = $1"
+             WHERE ci.user_id = $1",
         )
         .bind(user.id)
         .fetch_all(pool)
@@ -267,7 +272,10 @@ impl CollectionSyncService {
                 continue;
             }
 
-            match discogs_client.get_price_suggestions(discogs_id, &token).await {
+            match discogs_client
+                .get_price_suggestions(discogs_id, &token)
+                .await
+            {
                 Ok(suggestions) => {
                     let vg_plus = suggestions.get("Very Good Plus (VG+)");
                     let good_plus = suggestions.get("Good Plus (G+)");
@@ -281,7 +289,7 @@ impl CollectionSyncService {
                             "UPDATE record_cache
                              SET median_price = COALESCE($1, median_price),
                                  lowest_price = COALESCE($2, lowest_price)
-                             WHERE id = $3"
+                             WHERE id = $3",
                         )
                         .bind(median)
                         .bind(lowest)
@@ -334,7 +342,7 @@ impl CollectionSyncService {
                            release_year = EXCLUDED.release_year,
                            thumb_url = COALESCE(EXCLUDED.thumb_url, record_cache.thumb_url),
                            format = EXCLUDED.format
-             RETURNING id"
+             RETURNING id",
         )
         .bind(discogs_id)
         .bind(title)
@@ -383,12 +391,16 @@ impl CollectionSyncService {
         let added_at = item
             .date_added
             .as_deref()
-            .and_then(|s| DateTime::parse_from_rfc3339(s).ok().map(|dt| dt.naive_utc()))
+            .and_then(|s| {
+                DateTime::parse_from_rfc3339(s)
+                    .ok()
+                    .map(|dt| dt.naive_utc())
+            })
             .unwrap_or_else(|| Utc::now().naive_utc());
 
         // 5. Upsert collection_item
         let existing: Option<(i64,)> = sqlx::query_as(
-            "SELECT id FROM collection_item WHERE user_id = $1 AND instance_id = $2"
+            "SELECT id FROM collection_item WHERE user_id = $1 AND instance_id = $2",
         )
         .bind(user_id)
         .bind(item.instance_id)

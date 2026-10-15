@@ -1,15 +1,15 @@
-use axum::{
-    extract::State,
-    http::StatusCode,
-    response::IntoResponse,
-    routing::{get, post},
-    Json, Router,
-};
 use crate::{
     auth::CurrentUser,
     error::AppError,
     models::roon::{RoonPlayRequestDto, RoonPlayResponseDto, RoonSettingsDto},
     state::AppState,
+};
+use axum::{
+    Json, Router,
+    extract::State,
+    http::StatusCode,
+    response::IntoResponse,
+    routing::{get, post},
 };
 
 pub async fn get_status_handler(
@@ -33,7 +33,10 @@ pub async fn update_settings_handler(
     CurrentUser(user): CurrentUser,
     Json(settings): Json<RoonSettingsDto>,
 ) -> Result<impl IntoResponse, AppError> {
-    let status = state.roon.update_settings(&state.pool, &user, settings).await?;
+    let status = state
+        .roon
+        .update_settings(&state.pool, &user, settings)
+        .await?;
     Ok((StatusCode::OK, Json(status)))
 }
 

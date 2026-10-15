@@ -1,16 +1,11 @@
 use axum::{
     body::Body,
-    http::{header, Method, Request, StatusCode},
+    http::{Method, Request, StatusCode, header},
 };
+use backend_rs::{config::Config, db::init_pool, routes::create_app, state::AppState};
 use http_body_util::BodyExt;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use tower::ServiceExt;
-use backend_rs::{
-    config::Config,
-    db::init_pool,
-    routes::create_app,
-    state::AppState,
-};
 
 async fn setup_app() -> (axum::Router, AppState) {
     dotenvy::dotenv().ok();
@@ -183,7 +178,12 @@ async fn test_register_login_and_me_lifecycle() {
         )
         .await
         .unwrap();
-    let me_discogs_bytes = me_discogs_res.into_body().collect().await.unwrap().to_bytes();
+    let me_discogs_bytes = me_discogs_res
+        .into_body()
+        .collect()
+        .await
+        .unwrap()
+        .to_bytes();
     let me_discogs_json: Value = serde_json::from_slice(&me_discogs_bytes).unwrap();
     assert_eq!(me_discogs_json["discogsUsername"], "discogs_tester");
     assert_eq!(me_discogs_json["hasDiscogsToken"], true);
@@ -216,7 +216,7 @@ async fn test_existing_database_discogs_token_decryption() {
 
     // Check if opolm user exists in DB and verify their encrypted Discogs token can be decrypted
     let row: Option<(String, Option<String>)> = sqlx::query_as(
-        "SELECT discogs_username, discogs_token FROM app_user WHERE username = 'opolm'"
+        "SELECT discogs_username, discogs_token FROM app_user WHERE username = 'opolm'",
     )
     .fetch_optional(&state.pool)
     .await
@@ -225,7 +225,10 @@ async fn test_existing_database_discogs_token_decryption() {
     if let Some((discogs_user, Some(enc_token))) = row {
         assert_eq!(discogs_user, "gerontosepp");
         let decrypted = state.crypto.decrypt(&enc_token);
-        assert!(decrypted.is_some(), "Existing database token must decrypt cleanly");
+        assert!(
+            decrypted.is_some(),
+            "Existing database token must decrypt cleanly"
+        );
         let pat = decrypted.unwrap();
         assert!(!pat.is_empty(), "Decrypted token must not be empty");
     }
@@ -236,12 +239,11 @@ async fn test_legacy_user_login() {
     let (app, state) = setup_app().await;
 
     // Ensure max_mustermann exists in database
-    let user_exists: Option<(i64,)> = sqlx::query_as(
-        "SELECT id FROM app_user WHERE username = 'max_mustermann'"
-    )
-    .fetch_optional(&state.pool)
-    .await
-    .unwrap();
+    let user_exists: Option<(i64,)> =
+        sqlx::query_as("SELECT id FROM app_user WHERE username = 'max_mustermann'")
+            .fetch_optional(&state.pool)
+            .await
+            .unwrap();
 
     if user_exists.is_none() {
         let hashed = bcrypt::hash("secret", 10).expect("Must hash password");

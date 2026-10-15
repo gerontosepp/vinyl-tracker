@@ -1,11 +1,8 @@
-use std::sync::Arc;
-use chrono::Utc;
-use sqlx::{PgPool, Row};
 use crate::{
     clients::discogs::DiscogsClient,
     error::AppError,
     models::{
-        discogs::{determine_format, DiscogsFormat, DiscogsLabel, DiscogsRelease, DiscogsTrack},
+        discogs::{DiscogsFormat, DiscogsLabel, DiscogsRelease, DiscogsTrack, determine_format},
         record::{RecordDetailDto, UpdateConditionRequestDto},
         user::AppUser,
     },
@@ -14,6 +11,9 @@ use crate::{
         marketplace::{extract_suggested_price, validate_goldmine_condition},
     },
 };
+use chrono::Utc;
+use sqlx::{PgPool, Row};
+use std::sync::Arc;
 
 pub struct RecordService;
 
@@ -96,8 +96,12 @@ impl RecordService {
         let added_at: Option<String> = collection_row
             .as_ref()
             .map(|r| r.get::<chrono::NaiveDateTime, _>("added_at").to_string());
-        let media_condition: Option<String> = collection_row.as_ref().and_then(|r| r.get("media_condition"));
-        let sleeve_condition: Option<String> = collection_row.as_ref().and_then(|r| r.get("sleeve_condition"));
+        let media_condition: Option<String> = collection_row
+            .as_ref()
+            .and_then(|r| r.get("media_condition"));
+        let sleeve_condition: Option<String> = collection_row
+            .as_ref()
+            .and_then(|r| r.get("sleeve_condition"));
 
         // 4. Look up listen history & counts
         let mut listen_count = 0i64;
@@ -143,31 +147,31 @@ impl RecordService {
             .and_then(|r| r.lowest_price)
             .or_else(|| record_row.as_ref().and_then(|r| r.get("lowest_price")));
 
-        let mut median_price: Option<f64> = record_row
-            .as_ref()
-            .and_then(|r| r.get("median_price"));
+        let mut median_price: Option<f64> = record_row.as_ref().and_then(|r| r.get("median_price"));
 
         // Price Suggestions if median price is missing
         if median_price.is_none() && dec_token.is_some() {
             let token = dec_token.as_deref().unwrap();
-            let suggestions = discogs_client.get_price_suggestions(discogs_id, token).await.unwrap_or_default();
+            let suggestions = discogs_client
+                .get_price_suggestions(discogs_id, token)
+                .await
+                .unwrap_or_default();
             if let Some(sug) = extract_suggested_price(&suggestions, media_condition.as_deref()) {
                 median_price = Some(sug);
                 if let Some(rec_id) = local_record_id {
-                    let _ = sqlx::query(
-                        "UPDATE record_cache SET median_price = $1 WHERE id = $2"
-                    )
-                    .bind(sug)
-                    .bind(rec_id)
-                    .execute(pool)
-                    .await;
+                    let _ = sqlx::query("UPDATE record_cache SET median_price = $1 WHERE id = $2")
+                        .bind(sug)
+                        .bind(rec_id)
+                        .execute(pool)
+                        .await;
                 }
             }
         }
 
         // Update lowest_price in DB if newly available
         if let (Some(l_price), Some(rec_id)) = (lowest_price, local_record_id) {
-            let current_db_lowest: Option<f64> = record_row.as_ref().and_then(|r| r.get("lowest_price"));
+            let current_db_lowest: Option<f64> =
+                record_row.as_ref().and_then(|r| r.get("lowest_price"));
             if current_db_lowest != Some(l_price) {
                 let _ = sqlx::query("UPDATE record_cache SET lowest_price = $1 WHERE id = $2")
                     .bind(l_price)
@@ -185,7 +189,12 @@ impl RecordService {
 
         let artist: Option<String> = discogs_release
             .as_ref()
-            .and_then(|r| r.artists.as_ref().and_then(|a| a.first()).map(|a| a.name.clone()))
+            .and_then(|r| {
+                r.artists
+                    .as_ref()
+                    .and_then(|a| a.first())
+                    .map(|a| a.name.clone())
+            })
             .or_else(|| record_row.as_ref().and_then(|r| r.get("artist")));
 
         let year: Option<String> = discogs_release
@@ -293,7 +302,7 @@ impl RecordService {
 
         // 1. Find or create record in record_cache
         let record_row = sqlx::query(
-            "SELECT id, discogs_id FROM record_cache WHERE id = $1 OR discogs_id = $1 LIMIT 1"
+            "SELECT id, discogs_id FROM record_cache WHERE id = $1 OR discogs_id = $1 LIMIT 1",
         )
         .bind(id_param)
         .fetch_optional(pool)
@@ -305,7 +314,9 @@ impl RecordService {
             None => {
                 // Must fetch from Discogs
                 let token = dec_token.as_deref().ok_or_else(|| {
-                    AppError::BadRequest("User has no Discogs token configured to fetch release details".to_string())
+                    AppError::BadRequest(
+                        "User has no Discogs token configured to fetch release details".to_string(),
+                    )
                 })?;
 
                 let release = discogs_client.get_release(id_param, token).await?;
@@ -385,16 +396,15 @@ impl RecordService {
             "SELECT id, discogs_id, median_price::float8 as median_price
              FROM record_cache
              WHERE id = $1 OR discogs_id = $1
-             LIMIT 1"
+             LIMIT 1",
         )
         .bind(id_param)
         .fetch_optional(pool)
         .await
         .map_err(AppError::Database)?;
 
-        let record_row = record_row.ok_or_else(|| {
-            AppError::NotFound(format!("Record not found with ID: {id_param}"))
-        })?;
+        let record_row = record_row
+            .ok_or_else(|| AppError::NotFound(format!("Record not found with ID: {id_param}")))?;
 
         let record_id: i64 = record_row.get("id");
         let discogs_id: i64 = record_row.get("discogs_id");
@@ -404,7 +414,7 @@ impl RecordService {
             "SELECT id, instance_id, media_condition, sleeve_condition
              FROM collection_item
              WHERE user_id = $1 AND record_id = $2
-             LIMIT 1"
+             LIMIT 1",
         )
         .bind(user.id)
         .bind(record_id)
@@ -436,8 +446,16 @@ impl RecordService {
         let sleeve_changed = has_sleeve_req && new_sleeve != old_sleeve;
 
         // 3. Update collection_item
-        let updated_media = if has_media_req { new_media.clone() } else { old_media };
-        let updated_sleeve = if has_sleeve_req { new_sleeve.clone() } else { old_sleeve };
+        let updated_media = if has_media_req {
+            new_media.clone()
+        } else {
+            old_media
+        };
+        let updated_sleeve = if has_sleeve_req {
+            new_sleeve.clone()
+        } else {
+            old_sleeve
+        };
 
         sqlx::query(
             "UPDATE collection_item SET media_condition = $1, sleeve_condition = $2 WHERE user_id = $3 AND record_id = $4"
@@ -454,7 +472,10 @@ impl RecordService {
         let current_median: Option<f64> = record_row.get("median_price");
         if (media_changed || current_median.is_none()) && dec_token.is_some() {
             let token = dec_token.as_deref().unwrap();
-            let suggestions = discogs_client.get_price_suggestions(discogs_id, token).await.unwrap_or_default();
+            let suggestions = discogs_client
+                .get_price_suggestions(discogs_id, token)
+                .await
+                .unwrap_or_default();
             if let Some(sug) = extract_suggested_price(&suggestions, updated_media.as_deref()) {
                 let _ = sqlx::query("UPDATE record_cache SET median_price = $1 WHERE id = $2")
                     .bind(sug)
@@ -474,13 +495,17 @@ impl RecordService {
             let mut media_field_id = 1i64;
             let mut sleeve_field_id = 2i64;
 
-            if let Ok(fields_res) = discogs_client.get_collection_fields(discogs_user, token).await {
+            if let Ok(fields_res) = discogs_client
+                .get_collection_fields(discogs_user, token)
+                .await
+            {
                 for f in fields_res.fields.unwrap_or_default() {
                     if let Some(name) = f.name {
                         let name_lower = name.trim().to_lowercase();
                         if name_lower.contains("media") && name_lower.contains("condition") {
                             media_field_id = f.id;
-                        } else if name_lower.contains("sleeve") && name_lower.contains("condition") {
+                        } else if name_lower.contains("sleeve") && name_lower.contains("condition")
+                        {
                             sleeve_field_id = f.id;
                         }
                     }
@@ -488,10 +513,28 @@ impl RecordService {
             }
 
             if let (true, Some(val)) = (media_changed, &updated_media) {
-                let _ = discogs_client.update_instance_field(discogs_user, discogs_id, inst_id, media_field_id, val, token).await;
+                let _ = discogs_client
+                    .update_instance_field(
+                        discogs_user,
+                        discogs_id,
+                        inst_id,
+                        media_field_id,
+                        val,
+                        token,
+                    )
+                    .await;
             }
             if let (true, Some(val)) = (sleeve_changed, &updated_sleeve) {
-                let _ = discogs_client.update_instance_field(discogs_user, discogs_id, inst_id, sleeve_field_id, val, token).await;
+                let _ = discogs_client
+                    .update_instance_field(
+                        discogs_user,
+                        discogs_id,
+                        inst_id,
+                        sleeve_field_id,
+                        val,
+                        token,
+                    )
+                    .await;
             }
         }
 

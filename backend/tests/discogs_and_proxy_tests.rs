@@ -1,19 +1,19 @@
 use axum::{
     body::Body,
-    http::{header, Method, Request, StatusCode},
+    http::{Method, Request, StatusCode, header},
 };
-use http_body_util::BodyExt;
-use serde_json::{json, Value};
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
-use tower::ServiceExt;
 use backend_rs::{
     config::Config,
     db::init_pool,
-    models::discogs::{determine_format, DiscogsFormat, DiscogsSearchResponse},
+    models::discogs::{DiscogsFormat, DiscogsSearchResponse, determine_format},
     routes::create_app,
     services::image_proxy::ImageProxyService,
     state::AppState,
 };
+use http_body_util::BodyExt;
+use serde_json::{Value, json};
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+use tower::ServiceExt;
 
 async fn setup_app() -> (axum::Router, AppState) {
     dotenvy::dotenv().ok();
@@ -101,7 +101,8 @@ fn test_discogs_search_response_deserialization() {
         ]
     });
 
-    let search_res: DiscogsSearchResponse = serde_json::from_value(raw_json).expect("Must deserialize");
+    let search_res: DiscogsSearchResponse =
+        serde_json::from_value(raw_json).expect("Must deserialize");
     assert_eq!(search_res.pagination.page, 1);
     assert_eq!(search_res.pagination.items, 1);
     assert_eq!(search_res.results.len(), 1);
@@ -121,21 +122,39 @@ fn test_discogs_search_response_deserialization() {
 #[test]
 fn test_image_proxy_ip_detection() {
     // Loopback
-    assert!(!ImageProxyService::is_public_ip(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1))));
-    assert!(!ImageProxyService::is_public_ip(IpAddr::V6(Ipv6Addr::LOCALHOST)));
+    assert!(!ImageProxyService::is_public_ip(IpAddr::V4(Ipv4Addr::new(
+        127, 0, 0, 1
+    ))));
+    assert!(!ImageProxyService::is_public_ip(IpAddr::V6(
+        Ipv6Addr::LOCALHOST
+    )));
 
     // RFC 1918 Private IPv4
-    assert!(!ImageProxyService::is_public_ip(IpAddr::V4(Ipv4Addr::new(10, 0, 0, 1))));
-    assert!(!ImageProxyService::is_public_ip(IpAddr::V4(Ipv4Addr::new(172, 16, 0, 1))));
-    assert!(!ImageProxyService::is_public_ip(IpAddr::V4(Ipv4Addr::new(172, 31, 255, 255))));
-    assert!(!ImageProxyService::is_public_ip(IpAddr::V4(Ipv4Addr::new(192, 168, 1, 100))));
+    assert!(!ImageProxyService::is_public_ip(IpAddr::V4(Ipv4Addr::new(
+        10, 0, 0, 1
+    ))));
+    assert!(!ImageProxyService::is_public_ip(IpAddr::V4(Ipv4Addr::new(
+        172, 16, 0, 1
+    ))));
+    assert!(!ImageProxyService::is_public_ip(IpAddr::V4(Ipv4Addr::new(
+        172, 31, 255, 255
+    ))));
+    assert!(!ImageProxyService::is_public_ip(IpAddr::V4(Ipv4Addr::new(
+        192, 168, 1, 100
+    ))));
 
     // Link-local
-    assert!(!ImageProxyService::is_public_ip(IpAddr::V4(Ipv4Addr::new(169, 254, 169, 254))));
+    assert!(!ImageProxyService::is_public_ip(IpAddr::V4(Ipv4Addr::new(
+        169, 254, 169, 254
+    ))));
 
     // Public IPs must be allowed
-    assert!(ImageProxyService::is_public_ip(IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8))));
-    assert!(ImageProxyService::is_public_ip(IpAddr::V4(Ipv4Addr::new(93, 184, 216, 34))));
+    assert!(ImageProxyService::is_public_ip(IpAddr::V4(Ipv4Addr::new(
+        8, 8, 8, 8
+    ))));
+    assert!(ImageProxyService::is_public_ip(IpAddr::V4(Ipv4Addr::new(
+        93, 184, 216, 34
+    ))));
 }
 
 #[tokio::test]
@@ -146,17 +165,52 @@ async fn test_image_proxy_service_rejects_ssrf_and_disallowed_hosts() {
     );
 
     // Missing / invalid scheme
-    assert!(proxy.validate_url("ftp://i.discogs.com/img.jpg").await.is_err());
-    assert!(proxy.validate_url("http://i.discogs.com/img.jpg").await.is_err()); // HTTP disallowed
+    assert!(
+        proxy
+            .validate_url("ftp://i.discogs.com/img.jpg")
+            .await
+            .is_err()
+    );
+    assert!(
+        proxy
+            .validate_url("http://i.discogs.com/img.jpg")
+            .await
+            .is_err()
+    ); // HTTP disallowed
 
     // Disallowed domain
-    assert!(proxy.validate_url("https://malicious.example.com/evil.png").await.is_err());
-    assert!(proxy.validate_url("https://evil-i.discogs.com.attacker.com/fake.png").await.is_err());
+    assert!(
+        proxy
+            .validate_url("https://malicious.example.com/evil.png")
+            .await
+            .is_err()
+    );
+    assert!(
+        proxy
+            .validate_url("https://evil-i.discogs.com.attacker.com/fake.png")
+            .await
+            .is_err()
+    );
 
     // Loopback & Private
-    assert!(proxy.validate_url("https://localhost/test.jpg").await.is_err());
-    assert!(proxy.validate_url("https://127.0.0.1/test.jpg").await.is_err());
-    assert!(proxy.validate_url("https://192.168.1.1/test.jpg").await.is_err());
+    assert!(
+        proxy
+            .validate_url("https://localhost/test.jpg")
+            .await
+            .is_err()
+    );
+    assert!(
+        proxy
+            .validate_url("https://127.0.0.1/test.jpg")
+            .await
+            .is_err()
+    );
+    assert!(
+        proxy
+            .validate_url("https://192.168.1.1/test.jpg")
+            .await
+            .is_err()
+    );
 }
 
 #[tokio::test]
@@ -284,28 +338,30 @@ async fn test_discogs_search_requires_user_with_token_configured() {
     assert_eq!(search_res.status(), StatusCode::BAD_REQUEST);
     let body = search_res.into_body().collect().await.unwrap().to_bytes();
     let err_json: Value = serde_json::from_slice(&body).unwrap();
-    assert!(err_json["detail"]
-        .as_str()
-        .unwrap()
-        .contains("User does not have a configured Discogs token"));
+    assert!(
+        err_json["detail"]
+            .as_str()
+            .unwrap()
+            .contains("User does not have a configured Discogs token")
+    );
 }
 
 #[tokio::test]
 async fn test_live_discogs_search_if_token_available() {
     let (app, state) = setup_app().await;
 
-    let row: Option<(String, Option<String>)> = sqlx::query_as(
-        "SELECT username, discogs_token FROM app_user WHERE username = 'opolm'"
-    )
-    .fetch_optional(&state.pool)
-    .await
-    .unwrap();
+    let row: Option<(String, Option<String>)> =
+        sqlx::query_as("SELECT username, discogs_token FROM app_user WHERE username = 'opolm'")
+            .fetch_optional(&state.pool)
+            .await
+            .unwrap();
 
     if let Some((username, Some(enc_token))) = row {
         if state.crypto.decrypt(&enc_token).is_none() {
             return;
         }
-        let jwt = backend_rs::auth::jwt::generate_token(&username, &state.config.jwt_secret, 3600).unwrap();
+        let jwt = backend_rs::auth::jwt::generate_token(&username, &state.config.jwt_secret, 3600)
+            .unwrap();
 
         let res = app
             .oneshot(
@@ -321,14 +377,27 @@ async fn test_live_discogs_search_if_token_available() {
         assert_eq!(res.status(), StatusCode::OK);
         let bytes = res.into_body().collect().await.unwrap().to_bytes();
         let json: Value = serde_json::from_slice(&bytes).unwrap();
-        let results = json["results"].as_array().expect("results must be an array");
+        let results = json["results"]
+            .as_array()
+            .expect("results must be an array");
         println!("\n=== LIVE DISCOGS API RESPONSE ===");
-        println!("Found {} results for query 'Dark Side Of The Moon':", results.len());
+        println!(
+            "Found {} results for query 'Dark Side Of The Moon':",
+            results.len()
+        );
         for (idx, r) in results.iter().take(3).enumerate() {
-            println!("  {}. ID: {} | Title: {} | Year: {}", idx + 1, r["id"], r["title"], r["year"]);
+            println!(
+                "  {}. ID: {} | Title: {} | Year: {}",
+                idx + 1,
+                r["id"],
+                r["title"],
+                r["year"]
+            );
         }
         println!("=================================\n");
-        assert!(!results.is_empty(), "Live search should return results from Discogs API");
+        assert!(
+            !results.is_empty(),
+            "Live search should return results from Discogs API"
+        );
     }
 }
-

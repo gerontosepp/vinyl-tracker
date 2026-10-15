@@ -8,22 +8,19 @@ pub mod roon;
 pub mod scan;
 pub mod users;
 
+use crate::{error::ProblemDetail, state::AppState};
 use axum::{
+    Json, Router,
     http::{
-        header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE},
         HeaderName, HeaderValue, Method, StatusCode,
+        header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE},
     },
     response::IntoResponse,
     routing::get,
-    Json, Router,
 };
 use tower_http::{
     cors::{AllowOrigin, CorsLayer},
     trace::TraceLayer,
-};
-use crate::{
-    error::ProblemDetail,
-    state::AppState,
 };
 
 async fn fallback_handler(uri: axum::http::Uri) -> impl IntoResponse {

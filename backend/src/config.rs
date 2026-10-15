@@ -30,7 +30,8 @@ impl Config {
 
         let database_url = env::var("DATABASE_URL").unwrap_or_else(|_| {
             let db_user = env::var("POSTGRES_USER").unwrap_or_else(|_| "vinyl_user".to_string());
-            let db_pass = env::var("POSTGRES_PASSWORD").unwrap_or_else(|_| "vinyl_password".to_string());
+            let db_pass =
+                env::var("POSTGRES_PASSWORD").unwrap_or_else(|_| "vinyl_password".to_string());
             let db_name = env::var("POSTGRES_DB").unwrap_or_else(|_| "vinyl_tracker".to_string());
             let db_host = env::var("POSTGRES_HOST").unwrap_or_else(|_| "localhost".to_string());
             let db_port = env::var("POSTGRES_PORT").unwrap_or_else(|_| "5432".to_string());
@@ -57,9 +58,8 @@ impl Config {
             .and_then(|s| s.parse().ok())
             .unwrap_or(600);
 
-        let jwt_secret = env::var("JWT_SECRET").unwrap_or_else(|_| {
-            "superSecretDevelopmentKeyDoNotUseInProduction123!".to_string()
-        });
+        let jwt_secret = env::var("JWT_SECRET")
+            .unwrap_or_else(|_| "superSecretDevelopmentKeyDoNotUseInProduction123!".to_string());
 
         let jwt_expiration_secs = env::var("JWT_EXPIRATION_SECS")
             .ok()
@@ -69,8 +69,9 @@ impl Config {
         let encryption_password = env::var("VINYL_ENCRYPTION_PASSWORD").ok();
         let encryption_salt = env::var("VINYL_ENCRYPTION_SALT").ok();
 
-        let discogs_user_agent = env::var("DISCOGS_USER_AGENT")
-            .unwrap_or_else(|_| "VinylTracker/1.0 (+https://github.com/gerontosepp/vinyl-tracker)".to_string());
+        let discogs_user_agent = env::var("DISCOGS_USER_AGENT").unwrap_or_else(|_| {
+            "VinylTracker/1.0 (+https://github.com/gerontosepp/vinyl-tracker)".to_string()
+        });
 
         let discogs_api_base_url = env::var("DISCOGS_API_BASE_URL")
             .unwrap_or_else(|_| "https://api.discogs.com".to_string());

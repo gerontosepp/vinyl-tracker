@@ -1,14 +1,14 @@
-use axum::{
-    extract::{Path, State},
-    routing::{get, patch, post},
-    Json, Router,
-};
 use crate::{
     auth::CurrentUser,
     error::AppError,
     models::record::{RecordDetailDto, UpdateConditionRequestDto},
     services::record_service::RecordService,
     state::AppState,
+};
+use axum::{
+    Json, Router,
+    extract::{Path, State},
+    routing::{get, patch, post},
 };
 
 pub fn router() -> Router<AppState> {
@@ -40,14 +40,9 @@ async fn log_listen(
     CurrentUser(user): CurrentUser,
     Path(id): Path<i64>,
 ) -> Result<Json<RecordDetailDto>, AppError> {
-    let details = RecordService::log_listen(
-        &state.pool,
-        &state.discogs_client,
-        &state.crypto,
-        &user,
-        id,
-    )
-    .await?;
+    let details =
+        RecordService::log_listen(&state.pool, &state.discogs_client, &state.crypto, &user, id)
+            .await?;
 
     Ok(Json(details))
 }

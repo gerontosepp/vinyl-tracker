@@ -1,16 +1,16 @@
-use axum::{
-    extract::{Path, State},
-    http::StatusCode,
-    response::IntoResponse,
-    routing::{delete, post},
-    Json, Router,
-};
 use crate::{
     auth::CurrentUser,
     error::AppError,
     models::scan::{ResetResultDto, ScanRequest},
     services::scan_service::ScanService,
     state::AppState,
+};
+use axum::{
+    Json, Router,
+    extract::{Path, State},
+    http::StatusCode,
+    response::IntoResponse,
+    routing::{delete, post},
 };
 
 pub fn router() -> Router<AppState> {
@@ -34,7 +34,13 @@ async fn scan_barcode(
     )
     .await?;
 
-    let status = if result.success || result.discogs_matches.as_ref().map(|m| !m.is_empty()).unwrap_or(false) {
+    let status = if result.success
+        || result
+            .discogs_matches
+            .as_ref()
+            .map(|m| !m.is_empty())
+            .unwrap_or(false)
+    {
         StatusCode::OK
     } else {
         StatusCode::BAD_REQUEST

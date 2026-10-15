@@ -1,16 +1,11 @@
 use axum::{
     body::Body,
-    http::{header, Method, Request, StatusCode},
+    http::{Method, Request, StatusCode, header},
 };
+use backend_rs::{config::Config, db::init_pool, routes::create_app, state::AppState};
 use http_body_util::BodyExt;
 use serde_json::Value;
 use tower::ServiceExt;
-use backend_rs::{
-    config::Config,
-    db::init_pool,
-    routes::create_app,
-    state::AppState,
-};
 
 async fn setup_app() -> axum::Router {
     dotenvy::dotenv().ok();
@@ -71,7 +66,11 @@ async fn test_info_endpoint_returns_version_info() {
 async fn test_restricted_actuator_endpoints_return_forbidden() {
     let app = setup_app().await;
 
-    for endpoint in ["/actuator/metrics", "/actuator/env", "/actuator/configprops"] {
+    for endpoint in [
+        "/actuator/metrics",
+        "/actuator/env",
+        "/actuator/configprops",
+    ] {
         let app_clone = app.clone();
         let response = app_clone
             .oneshot(

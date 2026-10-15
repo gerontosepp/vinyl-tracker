@@ -1,16 +1,13 @@
+use crate::{
+    auth::CurrentUser, error::AppError, models::analytics::DateRangeParams,
+    services::analytics_service::AnalyticsService, state::AppState,
+};
 use axum::{
+    Json, Router,
     extract::{Query, State},
-    http::{header::CACHE_CONTROL, StatusCode},
+    http::{StatusCode, header::CACHE_CONTROL},
     response::IntoResponse,
     routing::get,
-    Json, Router,
-};
-use crate::{
-    auth::CurrentUser,
-    error::AppError,
-    models::analytics::DateRangeParams,
-    services::analytics_service::AnalyticsService,
-    state::AppState,
 };
 
 pub async fn get_recent_listens_handler(
@@ -57,12 +54,8 @@ pub async fn get_collection_value_handler(
     State(state): State<AppState>,
     CurrentUser(user): CurrentUser,
 ) -> Result<impl IntoResponse, AppError> {
-    let value = AnalyticsService::get_collection_value(
-        &state.discogs_client,
-        &state.crypto,
-        &user,
-    )
-    .await?;
+    let value =
+        AnalyticsService::get_collection_value(&state.discogs_client, &state.crypto, &user).await?;
 
     Ok((
         StatusCode::OK,

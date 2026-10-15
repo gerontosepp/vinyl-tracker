@@ -11,6 +11,15 @@
 
 ---
 
+## v0.8.1 (2026-10-15)
+
+- **Backend Startup & Datenbankverbindungs-Resilienz**:
+  - Robuste Verbindungs-Retry-Schleife mit konfigurierbarem Backoff in `run_migrations` zur Verhinderung von Crash-Loops, falls PostgreSQL beim Hochfahren einige Sekunden benötigt.
+  - Sicheres Logging des Verbindungsziels (`sanitize_db_url` mit maskiertem Passwort) und detaillierte Ausgabe der Root-Cause-Fehler (z. B. OS Connection Refused, DNS-Fehler) beim Start.
+  - Automatische Bereitstellung eines Symlinks `docker/.env -> ../.env` in `scripts/deploy_proxmox.sh`, damit Docker Compose Umgebungsvariablen unabhängig vom Ausführungsverzeichnis stets zuverlässig auflöst.
+
+---
+
 ## v0.8.0 (2026-10-15) – Rust Backend & Architektur-Upgrade
 
 - **Vollständige Migration auf Rust-Backend & Ablösung von Java (`#82`, `#90`)**:

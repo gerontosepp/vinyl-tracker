@@ -1,19 +1,59 @@
 use std::collections::HashSet;
+use std::error::Error;
+use std::time::Duration;
 use chrono::Utc;
 use refinery::embed_migrations;
 use tokio_postgres::NoTls;
 use crate::error::AppError;
+use super::sanitize_db_url;
 
 embed_migrations!("migrations");
 
 /// Runs all database migrations, ensuring full compatibility with existing
 /// databases (both Flyway-managed and legacy Hibernate-created schemas).
 pub async fn run_migrations(database_url: &str) -> Result<(), AppError> {
-    tracing::info!("Connecting to database for schema migration check...");
+    let sanitized_url = sanitize_db_url(database_url);
+    tracing::info!("Connecting to database at {sanitized_url} for schema migration check...");
 
-    let (mut client, connection) = tokio_postgres::connect(database_url, NoTls)
-        .await
-        .map_err(|e| AppError::Migration(format!("Failed to connect to database for migrations: {e}")))?;
+    let max_retries: u32 = std::env::var("DATABASE_CONNECT_RETRIES")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(15);
+    let retry_delay_secs: u64 = std::env::var("DATABASE_CONNECT_RETRY_INTERVAL_SECS")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(2);
+    let retry_delay = Duration::from_secs(retry_delay_secs);
+
+    let mut attempt: u32 = 0;
+
+    let (mut client, connection) = loop {
+        attempt += 1;
+        match tokio_postgres::connect(database_url, NoTls).await {
+            Ok(res) => {
+                if attempt > 1 {
+                    tracing::info!("Successfully connected to database at {sanitized_url} after {attempt} attempts.");
+                }
+                break res;
+            }
+            Err(e) => {
+                let cause = e
+                    .source()
+                    .map(|s| s.to_string())
+                    .unwrap_or_else(|| "none".to_string());
+                if attempt >= max_retries {
+                    return Err(AppError::Migration(format!(
+                        "Failed to connect to database at {sanitized_url} after {attempt} attempts: {e} (underlying error: {cause})"
+                    )));
+                }
+                tracing::warn!(
+                    "Failed to connect to database at {sanitized_url} (attempt {attempt}/{max_retries}): {e} (underlying error: {cause}). Retrying in {}s...",
+                    retry_delay_secs
+                );
+                tokio::time::sleep(retry_delay).await;
+            }
+        }
+    };
 
     // Spawn the connection driver in the background
     tokio::spawn(async move {

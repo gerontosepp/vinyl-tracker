@@ -86,7 +86,7 @@ export class TopMenuBarComponent {
   readonly scannerService = inject(ScannerService);
   private readonly router = inject(Router);
 
-  readonly appVersion = '0.8.0';
+  readonly appVersion = '0.8.1';
 
   toggleLanguage(): void {
     const current = this.languageService.language();

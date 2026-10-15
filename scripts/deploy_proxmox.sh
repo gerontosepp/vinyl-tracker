@@ -105,6 +105,11 @@ fi
 
 echo -e "${GREEN}✓ Environment file (.env) ready.${NC}"
 
+# Ensure docker/.env symlink exists so standard docker-compose commands find .env automatically
+if [ -d "docker" ] && [ ! -e "docker/.env" ]; then
+    ln -sf ../.env docker/.env 2>/dev/null || cp .env docker/.env 2>/dev/null || true
+fi
+
 if grep -q "^CORS_ALLOWED_ORIGINS=https://localhost:5173" .env; then
     echo -e "${YELLOW}Hinweis: Wenn Sie über eine Domain (z.B. https://vinyl.meinedomain.de) zugreifen, tragen Sie diese bitte in .env bei CORS_ALLOWED_ORIGINS ein.${NC}"
 fi

@@ -18,27 +18,31 @@ describe('ReleaseInfoService', () => {
   it('should load initial releases', () => {
     const list = service.releases();
     expect(list.length).toBeGreaterThan(0);
+    const current = list.find((r) => r.isCurrent);
+    expect(current).toBeDefined();
+    expect(current?.version).toBe('v0.8.1');
     const v080 = list.find((r) => r.version === 'v0.8.0');
     expect(v080).toBeDefined();
-    expect(v080?.isCurrent).toBeTrue();
   });
 
   it('should return current release', () => {
     const current = service.currentRelease();
     expect(current).toBeDefined();
-    expect(current?.version).toBe('v0.8.0');
+    expect(current?.version).toBe('v0.8.1');
+    expect(current?.isCurrent).toBeTrue();
   });
 
   it('should manage expanded versions', () => {
-    expect(service.isExpanded('v0.8.0')).toBeTrue();
+    const currentVersion = service.currentRelease()?.version || 'v0.8.1';
+    expect(service.isExpanded(currentVersion)).toBeTrue();
 
     // Toggle off
-    service.toggleExpand('v0.8.0');
-    expect(service.isExpanded('v0.8.0')).toBeFalse();
+    service.toggleExpand(currentVersion);
+    expect(service.isExpanded(currentVersion)).toBeFalse();
 
     // Toggle back on
-    service.toggleExpand('v0.8.0');
-    expect(service.isExpanded('v0.8.0')).toBeTrue();
+    service.toggleExpand(currentVersion);
+    expect(service.isExpanded(currentVersion)).toBeTrue();
   });
 
   it('should expand and collapse all releases', () => {

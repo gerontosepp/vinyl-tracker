@@ -88,23 +88,21 @@ impl VinylApiClient {
                         .strip_prefix("vinyl_token=")
                         .or_else(|| trimmed.strip_prefix("auth_token="))
                         .or_else(|| trimmed.strip_prefix("token="))
+                        && !token_val.is_empty()
                     {
-                        if !token_val.is_empty() {
-                            extracted_token = Some(token_val.to_string());
-                            break;
-                        }
+                        extracted_token = Some(token_val.to_string());
+                        break;
                     }
                 }
             }
         }
 
         // If not in cookie, check response body
-        if extracted_token.is_none() {
-            if let Ok(dto) = res.json::<UserResponseDto>().await {
-                if let Some(t) = dto.token {
-                    extracted_token = Some(t);
-                }
-            }
+        if extracted_token.is_none()
+            && let Ok(dto) = res.json::<UserResponseDto>().await
+            && let Some(t) = dto.token
+        {
+            extracted_token = Some(t);
         }
 
         let token = extracted_token.ok_or_else(|| {
@@ -288,6 +286,36 @@ impl VinylApiClient {
         res.json::<SyncResultDto>()
             .await
             .map_err(|e| format!("Failed to parse sync result JSON: {}", e))
+    }
+
+    pub async fn remove_from_collection(
+        &self,
+        release_id: i64,
+        instance_id: Option<i64>,
+    ) -> Result<(), String> {
+        self.ensure_authenticated().await?;
+        let url = format!("{}/api/collection/releases/{}", self.base_url, release_id);
+        let headers = self.build_auth_headers().await;
+
+        let mut req = self.http_client.delete(&url).headers(headers);
+        if let Some(inst_id) = instance_id {
+            req = req.query(&[("instance_id", inst_id.to_string())]);
+        }
+
+        let res = req
+            .send()
+            .await
+            .map_err(|e| format!("Request to delete release failed: {}", e))?;
+
+        if !res.status().is_success() {
+            return Err(format!(
+                "Backend error {}: {}",
+                res.status(),
+                res.text().await.unwrap_or_default()
+            ));
+        }
+
+        Ok(())
     }
 
     // ------------------------------------------------------------------------

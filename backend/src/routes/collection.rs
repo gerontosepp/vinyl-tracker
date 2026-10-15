@@ -15,6 +15,13 @@ use axum::{
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
+pub struct RemoveReleaseQueryParams {
+    #[serde(rename = "instanceId")]
+    pub instance_id_camel: Option<i64>,
+    pub instance_id: Option<i64>,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct RandomQueryParams {
     pub genre: Option<String>,
     pub unplayed_only: Option<bool>,
@@ -110,6 +117,26 @@ pub async fn add_release_handler(
     Ok((StatusCode::OK, Json(sync_res)))
 }
 
+pub async fn remove_release_handler(
+    State(state): State<AppState>,
+    CurrentUser(user): CurrentUser,
+    Path(release_id): Path<i64>,
+    Query(params): Query<RemoveReleaseQueryParams>,
+) -> Result<StatusCode, AppError> {
+    let instance_id = params.instance_id.or(params.instance_id_camel);
+    CollectionSyncService::remove_release(
+        &state.pool,
+        &state.discogs_client,
+        &state.crypto,
+        &user,
+        release_id,
+        instance_id,
+    )
+    .await?;
+
+    Ok(StatusCode::NO_CONTENT)
+}
+
 pub async fn refresh_prices_handler(
     State(state): State<AppState>,
     CurrentUser(user): CurrentUser,
@@ -179,7 +206,10 @@ pub fn router() -> Router<AppState> {
         .route("/random", get(get_random_record_handler))
         .route("/unplayed", get(get_unplayed_collection_handler))
         .route("/sync", post(sync_collection_handler))
-        .route("/releases/{release_id}", post(add_release_handler))
+        .route(
+            "/releases/{release_id}",
+            post(add_release_handler).delete(remove_release_handler),
+        )
         .route("/prices/refresh", post(refresh_prices_handler))
         .route(
             "/qr-codes/selected",

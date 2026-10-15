@@ -462,4 +462,24 @@ describe('CollectionComponent', () => {
       expect(component.selectedRecord()?.media_condition).toBe('Mint (M)');
     });
   });
+
+  describe('onRecordRemoved', () => {
+    it('should close detail modal and remove record from releases and selectedItems', () => {
+      const release1 = { id: 101, instance_id: 1, basic_information: { title: 'Album 1' } } as any;
+      const release2 = { id: 102, instance_id: 2, basic_information: { title: 'Album 2' } } as any;
+
+      component.releases.set([release1, release2]);
+      component.totalItems.set(2);
+      component.selectedRecord.set(release1);
+      component.selectedItems.set(new Map([[101, { id: 101, title: 'Album 1', artist: 'Artist 1' }]]));
+
+      component.onRecordRemoved(101);
+
+      expect(component.selectedRecord()).toBeNull();
+      expect(component.releases().length).toBe(1);
+      expect(component.releases()[0].id).toBe(102);
+      expect(component.totalItems()).toBe(1);
+      expect(component.selectedItems().has(101)).toBeFalse();
+    });
+  });
 });

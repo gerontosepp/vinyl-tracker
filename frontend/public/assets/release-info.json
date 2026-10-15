@@ -5,7 +5,21 @@
     "tag": "In Entwicklung",
     "isCurrent": false,
     "isUnreleased": true,
-    "items": []
+    "items": [
+      {
+        "title": "Platten aus der Sammlung entfernen / löschen (`#97`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "**Frontend UI / UX**: Neuer Aktionsbutton „Aus Sammlung entfernen“ im Album-Detail-Modal (`RecordDetailModalComponent`) mit Bestätigungsabfrage vor dem Löschen, Toast-Feedback und reaktiver Aktualisierung der Sammlungsliste ohne Neuladen.",
+          "**Internationalisierung (i18n)**: Vollständige Unterstützung in Deutsch und Englisch im `LanguageService` (`collection.removeFromCollection`, `collection.deleteConfirmTitle`, `collection.deleteConfirmMessage`, etc.).",
+          "**Backend REST-API**: Neuer Endpunkt `DELETE /api/collection/releases/{release_id}` (mit optionalem `instanceId`-Parameter) zum Entfernen aus der Tabelle `collection_item` unter Beibehaltung der Scrobble-Historie (`listen_event`).",
+          "**Discogs-API Integration**: Automatischer Aufruf zum Löschen der Instanz aus Folder 0 auf Discogs (`DELETE /users/{username}/collection/folders/{folder_id}/releases/{release_id}/instances/{instance_id}`).",
+          "**MCP-Server**: Neues Tool `remove_from_collection` im Vinyl-Tracker MCP-Server zur Steuerung über KI-Assistenten.",
+          "**Tests**: Umfassende Unit- und Integrationstests im Backend (`backend/tests/collection_tests.rs`) und Frontend (`record-detail-modal.component.spec.ts`, `collection.component.spec.ts`)."
+        ]
+      }
+    ]
   },
   {
     "version": "v0.8.1",

@@ -620,3 +620,147 @@ async fn test_sync_endpoints_error_handling() {
         .unwrap();
     assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
 }
+
+#[tokio::test]
+async fn test_remove_release_from_collection() {
+    let (app, state) = setup_app().await;
+    let (user_id, _, cookie) = create_authenticated_user(&app).await;
+    let pool = &state.pool;
+
+    let discogs_id = 778899i64;
+    let instance_id = 998877i64;
+
+    // 1. Delete without auth -> 401
+    let res = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::DELETE)
+                .uri(format!("/api/collection/releases/{discogs_id}"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
+
+    // 2. Delete when item not in collection -> 404
+    let res = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::DELETE)
+                .uri(format!("/api/collection/releases/{discogs_id}"))
+                .header(header::COOKIE, &cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(res.status(), StatusCode::NOT_FOUND);
+
+    // 3. Seed record_cache, collection_item, and a listen_event
+    let row = sqlx::query(
+        r#"
+        INSERT INTO record_cache (discogs_id, title, artist, release_year, format)
+        VALUES ($1, 'Delete Me Album', 'Delete Artist', '2020', 'Vinyl')
+        ON CONFLICT (discogs_id) DO UPDATE SET title = EXCLUDED.title
+        RETURNING id
+        "#,
+    )
+    .bind(discogs_id)
+    .fetch_one(pool)
+    .await
+    .unwrap();
+    let rec_id: i64 = row.get("id");
+
+    sqlx::query(
+        r#"
+        INSERT INTO collection_item (user_id, record_id, instance_id, added_at)
+        VALUES ($1, $2, $3, NOW())
+        ON CONFLICT (user_id, instance_id) DO NOTHING
+        "#,
+    )
+    .bind(user_id)
+    .bind(rec_id)
+    .bind(instance_id)
+    .execute(pool)
+    .await
+    .unwrap();
+
+    sqlx::query(
+        r#"
+        INSERT INTO listen_event (user_id, record_id, timestamp)
+        VALUES ($1, $2, NOW())
+        "#,
+    )
+    .bind(user_id)
+    .bind(rec_id)
+    .execute(pool)
+    .await
+    .unwrap();
+
+    // Verify item is currently in collection
+    let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM collection_item WHERE user_id = $1 AND instance_id = $2")
+        .bind(user_id)
+        .bind(instance_id)
+        .fetch_one(pool)
+        .await
+        .unwrap();
+    assert_eq!(count, 1);
+
+    // 4. Delete the release
+    let res = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::DELETE)
+                .uri(format!("/api/collection/releases/{discogs_id}"))
+                .header(header::COOKIE, &cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(res.status(), StatusCode::NO_CONTENT);
+
+    // 5. Verify collection_item is deleted
+    let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM collection_item WHERE user_id = $1 AND instance_id = $2")
+        .bind(user_id)
+        .bind(instance_id)
+        .fetch_one(pool)
+        .await
+        .unwrap();
+    assert_eq!(count, 0);
+
+    // 6. Verify listen_event and record_cache still exist!
+    let listen_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM listen_event WHERE user_id = $1 AND record_id = $2")
+        .bind(user_id)
+        .bind(rec_id)
+        .fetch_one(pool)
+        .await
+        .unwrap();
+    assert_eq!(listen_count, 1);
+
+    let cache_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM record_cache WHERE id = $1")
+        .bind(rec_id)
+        .fetch_one(pool)
+        .await
+        .unwrap();
+    assert_eq!(cache_count, 1);
+
+    // 7. Deleting again returns 404
+    let res = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::DELETE)
+                .uri(format!("/api/collection/releases/{discogs_id}"))
+                .header(header::COOKIE, &cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(res.status(), StatusCode::NOT_FOUND);
+}

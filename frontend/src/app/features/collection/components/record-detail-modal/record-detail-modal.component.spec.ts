@@ -48,6 +48,9 @@ describe('RecordDetailModalComponent', () => {
       updateRecordCondition: jasmine.createSpy('updateRecordCondition').and.returnValue(
         of({ ...mockDetail, media_condition: 'Mint (M)', median_price: 29.99 })
       ),
+      removeReleaseFromCollection: jasmine.createSpy('removeReleaseFromCollection').and.returnValue(
+        of(undefined)
+      ),
     };
 
     mockToastService = {
@@ -271,6 +274,56 @@ describe('RecordDetailModalComponent', () => {
       jasmine.stringContaining('Discogs update failed'),
       'error'
     );
+  });
+
+  describe('delete / remove from collection flow', () => {
+    beforeEach(() => {
+      fixture.componentRef.setInput('record', { id: 123456, instance_id: 789 } as any);
+      fixture.componentRef.setInput('detail', { ...mockDetail, instance_id: 789 });
+      fixture.detectChanges();
+    });
+
+    it('should show confirmation banner when promptDelete is called', () => {
+      expect(component.showDeleteConfirm()).toBeFalse();
+      component.promptDelete();
+      expect(component.showDeleteConfirm()).toBeTrue();
+    });
+
+    it('should hide confirmation banner when cancelDelete is called', () => {
+      component.promptDelete();
+      expect(component.showDeleteConfirm()).toBeTrue();
+      component.cancelDelete();
+      expect(component.showDeleteConfirm()).toBeFalse();
+    });
+
+    it('should call apiService.removeReleaseFromCollection and emit recordRemoved on confirmDelete', () => {
+      spyOn(component.recordRemoved, 'emit');
+
+      component.confirmDelete();
+
+      expect(mockApiService.removeReleaseFromCollection).toHaveBeenCalledWith(123456, 789);
+      expect(component.isRemoving()).toBeFalse();
+      expect(component.showDeleteConfirm()).toBeFalse();
+      expect(mockToastService.showToast).toHaveBeenCalledWith(
+        jasmine.any(String),
+        'success'
+      );
+      expect(component.recordRemoved.emit).toHaveBeenCalledWith(123456);
+    });
+
+    it('should show error toast when removeReleaseFromCollection fails', () => {
+      mockApiService.removeReleaseFromCollection.and.returnValue(
+        throwError(() => new Error('Delete failed'))
+      );
+
+      component.confirmDelete();
+
+      expect(component.isRemoving()).toBeFalse();
+      expect(mockToastService.showToast).toHaveBeenCalledWith(
+        jasmine.stringContaining('Delete failed'),
+        'error'
+      );
+    });
   });
 });
 

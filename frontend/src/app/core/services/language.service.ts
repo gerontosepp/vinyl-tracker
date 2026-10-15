@@ -202,6 +202,12 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'collection.yearFilter': 'Jahr',
     'collection.yearPlaceholder': 'z.B. 1970-1972, 1975',
     'collection.clearFilters': 'Filter zurücksetzen',
+    'collection.removeFromCollection': 'Aus Sammlung entfernen',
+    'collection.deleteConfirmTitle': 'Platte aus Sammlung entfernen?',
+    'collection.deleteConfirmMessage': 'Möchtest du dieses Album wirklich aus deiner Sammlung entfernen? Dies löscht auch die Instanz aus deiner Discogs-Sammlung.',
+    'collection.deleteSuccess': 'Platte erfolgreich aus der Sammlung entfernt 🗑️',
+    'collection.deleteError': 'Fehler beim Entfernen der Platte aus der Sammlung',
+    'collection.deleting': 'Wird entfernt...',
 
     // Statistics
     'stats.title': 'Statistiken & Einblicke',
@@ -221,6 +227,8 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'common.loading': 'Laden...',
     'common.success': 'Erfolgreich',
     'common.error': 'Fehler',
+    'common.confirm': 'Bestätigen',
+    'common.cancel': 'Abbrechen',
   },
   en: {
     // Navigation & Layout
@@ -421,6 +429,12 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'collection.yearFilter': 'Year',
     'collection.yearPlaceholder': 'e.g. 1970-1972, 1975',
     'collection.clearFilters': 'Reset filters',
+    'collection.removeFromCollection': 'Remove from collection',
+    'collection.deleteConfirmTitle': 'Remove record from collection?',
+    'collection.deleteConfirmMessage': 'Are you sure you want to remove this album from your collection? This will also remove the instance from your Discogs collection.',
+    'collection.deleteSuccess': 'Record successfully removed from collection 🗑️',
+    'collection.deleteError': 'Error removing record from collection',
+    'collection.deleting': 'Removing...',
 
     // Statistics
     'stats.title': 'Statistics & Insights',
@@ -440,6 +454,8 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'common.loading': 'Loading...',
     'common.success': 'Success',
     'common.error': 'Error',
+    'common.confirm': 'Confirm',
+    'common.cancel': 'Cancel',
   },
 };
 

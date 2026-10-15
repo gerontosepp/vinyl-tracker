@@ -21,7 +21,11 @@ else
 fi
 
 echo -e "${GREEN}1. Pulling latest code changes...${NC}"
-git pull
+if git rev-parse --abbrev-ref --symbolic-full-name @{u} >/dev/null 2>&1; then
+    git pull
+else
+    echo "No remote tracking branch configured for '$(git branch --show-current)', skipping git pull."
+fi
 
 echo -e "${GREEN}2. Stopping existing containers...${NC}"
 $DOCKER_COMPOSE_CMD down

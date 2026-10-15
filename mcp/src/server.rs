@@ -51,6 +51,24 @@ impl VinylMcpServer {
         ))
     }
 
+    /// Remove an album from the user's vinyl collection and connected Discogs account.
+    #[tool(
+        name = "remove_from_collection",
+        description = "Removes a vinyl album or CD from the user's local collection and from their connected Discogs folder. Does not delete listen scrobbles or playback statistics."
+    )]
+    async fn remove_from_collection(
+        &self,
+        Parameters(args): Parameters<RemoveFromCollectionArgs>,
+    ) -> Result<String, String> {
+        self.client
+            .remove_from_collection(args.release_id, args.instance_id)
+            .await?;
+        Ok(format!(
+            "Successfully removed release {} from collection.",
+            args.release_id
+        ))
+    }
+
     /// Log a listen event by scanning a barcode or custom QR code.
     #[tool(
         name = "scan_barcode",

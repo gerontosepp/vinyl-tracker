@@ -231,6 +231,86 @@ impl CollectionSyncService {
         })
     }
 
+    pub async fn remove_release(
+        pool: &PgPool,
+        discogs_client: &DiscogsClient,
+        crypto: &CryptoService,
+        user: &AppUser,
+        release_id: i64,
+        instance_id_opt: Option<i64>,
+    ) -> Result<(), AppError> {
+        // 1. Locate the collection item for the user
+        let item_row = if let Some(inst_id) = instance_id_opt {
+            sqlx::query(
+                "SELECT ci.id, ci.instance_id, rc.discogs_id
+                 FROM collection_item ci
+                 JOIN record_cache rc ON rc.id = ci.record_id
+                 WHERE ci.user_id = $1 AND ci.instance_id = $2
+                 LIMIT 1",
+            )
+            .bind(user.id)
+            .bind(inst_id)
+            .fetch_optional(pool)
+            .await
+            .map_err(AppError::Database)?
+        } else {
+            sqlx::query(
+                "SELECT ci.id, ci.instance_id, rc.discogs_id
+                 FROM collection_item ci
+                 JOIN record_cache rc ON rc.id = ci.record_id
+                 WHERE ci.user_id = $1 AND (rc.discogs_id = $2 OR rc.id = $2)
+                 LIMIT 1",
+            )
+            .bind(user.id)
+            .bind(release_id)
+            .fetch_optional(pool)
+            .await
+            .map_err(AppError::Database)?
+        };
+
+        let Some(row) = item_row else {
+            return Err(AppError::NotFound(
+                "Record not found in user collection".to_string(),
+            ));
+        };
+
+        let item_id: i64 = row.get("id");
+        let instance_id: i64 = row.get("instance_id");
+        let discogs_id: i64 = row.get("discogs_id");
+
+        // 2. Delete instance from remote Discogs collection if credentials exist
+        let discogs_auth = user
+            .discogs_username
+            .as_deref()
+            .zip(user.discogs_token.as_deref())
+            .and_then(|(u, enc)| crypto.decrypt(enc).map(|token| (u, token)));
+
+        if let Some((discogs_user, token)) = discogs_auth
+            && let Err(e) = discogs_client
+                .delete_release_instance(discogs_user, 0, discogs_id, instance_id, &token)
+                .await
+        {
+            tracing::warn!(
+                "Failed to delete instance {instance_id} for release {discogs_id} from Discogs folder 0: {e}"
+            );
+            return Err(e);
+        }
+
+        // 3. Delete from local collection_item
+        sqlx::query("DELETE FROM collection_item WHERE id = $1")
+            .bind(item_id)
+            .execute(pool)
+            .await
+            .map_err(AppError::Database)?;
+
+        tracing::info!(
+            "Successfully removed release {discogs_id} (instance {instance_id}) from collection for user {}",
+            user.id
+        );
+
+        Ok(())
+    }
+
     pub async fn refresh_collection_prices(
         pool: &PgPool,
         discogs_client: &DiscogsClient,

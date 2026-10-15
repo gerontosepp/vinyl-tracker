@@ -9,6 +9,12 @@
 
 ## Unreleased
 
+- **Natürliche Künstlersortierung & Regal-Inventur-Abgleich (`#98`)**:
+  - **Artikel-Normalisierung**: Bands mit führendem englischen Artikel „The “ (*The Beatles*, *The Alan Parsons Project*, *The Clash*, etc.) werden natürlich unter ihrem Stamm-Namen einsortiert (*The Beatles* unter **B**, *The Alan Parsons Project* unter **A**). Der Anzeigename bleibt unverändert erhalten.
+  - **Collation für Punkt-Abkürzungen**: Durch zielgerichtete `COLLATE "C"`-Sortierung werden Punkt-Abkürzungen wie *A.R. & Machines* strikt vor nachfolgenden Buchstaben-Namen wie *Adele* platziert, exakt wie im Kallax-Inventarverzeichnis.
+  - **Sekundäre Chronologische Sortierung**: Bei gleichem Interpreten erfolgt die Sortierung chronologisch aufsteigend nach Veröffentlichungsjahr (`release_year ASC NULLS LAST, title ASC`).
+  - **Sammlung & QR-Code PDF-Export**: Die Sortierlogik ist konsistent in der Sammlungs-API (`CollectionQueryService`) und beim A4-PDF-Etikettendruck (`QrPdfService`) verankert.
+
 - **Platten aus der Sammlung entfernen / löschen (`#97`)**:
   - **Frontend UI / UX**: Neuer Aktionsbutton „Aus Sammlung entfernen“ im Album-Detail-Modal (`RecordDetailModalComponent`) mit Bestätigungsabfrage vor dem Löschen, Toast-Feedback und reaktiver Aktualisierung der Sammlungsliste ohne Neuladen.
   - **Internationalisierung (i18n)**: Vollständige Unterstützung in Deutsch und Englisch im `LanguageService` (`collection.removeFromCollection`, `collection.deleteConfirmTitle`, `collection.deleteConfirmMessage`, etc.).

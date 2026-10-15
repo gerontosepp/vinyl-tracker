@@ -764,3 +764,129 @@ async fn test_remove_release_from_collection() {
         .unwrap();
     assert_eq!(res.status(), StatusCode::NOT_FOUND);
 }
+
+#[tokio::test]
+async fn test_collection_artist_sorting_natural_order_and_collation() {
+    let (app, state) = setup_app().await;
+    let (user_id, _, cookie) = create_authenticated_user(&app).await;
+    let pool = &state.pool;
+
+    let artists_and_titles = vec![
+        (980001i64, "The Beatles", "Abbey Road", 1969),
+        (980002i64, "Adele (3)", "21", 2011),
+        (980003i64, "A.R. & Machines", "Echo", 1972),
+        (980004i64, "BAP", "Zwesche Salzjebäck Un Bier", 1984),
+        (980005i64, "The Alan Parsons Project", "Eye in the Sky", 1982),
+    ];
+
+    for (discogs_id, artist, title, year) in &artists_and_titles {
+        let row = sqlx::query(
+            r#"
+            INSERT INTO record_cache (discogs_id, title, artist, release_year, format)
+            VALUES ($1, $2, $3, $4, 'Vinyl, LP')
+            ON CONFLICT (discogs_id) DO UPDATE SET title = EXCLUDED.title, artist = EXCLUDED.artist, release_year = EXCLUDED.release_year
+            RETURNING id
+            "#,
+        )
+        .bind(discogs_id)
+        .bind(title)
+        .bind(artist)
+        .bind(year.to_string())
+        .fetch_one(pool)
+        .await
+        .unwrap();
+
+        let rec_id: i64 = row.get("id");
+
+        sqlx::query(
+            r#"
+            INSERT INTO collection_item (user_id, record_id, instance_id, added_at)
+            VALUES ($1, $2, $3, NOW())
+            ON CONFLICT (user_id, instance_id) DO NOTHING
+            "#,
+        )
+        .bind(user_id)
+        .bind(rec_id)
+        .bind(discogs_id + 10000)
+        .execute(pool)
+        .await
+        .unwrap();
+    }
+
+    // 1. Sort by artist ASC:
+    // Expected order:
+    // 1. A.R. & Machines ('.' precedes 'd' in ASCII/"C" collation)
+    // 2. Adele (3)
+    // 3. The Alan Parsons Project ('The ' stripped -> 'alan parsons project')
+    // 4. BAP
+    // 5. The Beatles ('The ' stripped -> 'beatles')
+    let res = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/api/collection?sort=artist&sort_order=asc")
+                .header(header::COOKIE, &cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(res.status(), StatusCode::OK);
+    let bytes = res.into_body().collect().await.unwrap().to_bytes();
+    let body: CollectionResponse = serde_json::from_slice(&bytes).unwrap();
+    assert_eq!(body.releases.len(), 5);
+
+    let artist_names: Vec<String> = body
+        .releases
+        .iter()
+        .map(|r| r.basic_information.artists[0].name.clone())
+        .collect();
+
+    assert_eq!(
+        artist_names,
+        vec![
+            "A.R. & Machines",
+            "Adele (3)",
+            "The Alan Parsons Project",
+            "BAP",
+            "The Beatles",
+        ]
+    );
+
+    // 2. Sort by artist DESC: exact reverse
+    let res_desc = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/api/collection?sort=artist&sort_order=desc")
+                .header(header::COOKIE, &cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(res_desc.status(), StatusCode::OK);
+    let bytes_desc = res_desc.into_body().collect().await.unwrap().to_bytes();
+    let body_desc: CollectionResponse = serde_json::from_slice(&bytes_desc).unwrap();
+    let artist_names_desc: Vec<String> = body_desc
+        .releases
+        .iter()
+        .map(|r| r.basic_information.artists[0].name.clone())
+        .collect();
+
+    assert_eq!(
+        artist_names_desc,
+        vec![
+            "The Beatles",
+            "BAP",
+            "The Alan Parsons Project",
+            "Adele (3)",
+            "A.R. & Machines",
+        ]
+    );
+}
+

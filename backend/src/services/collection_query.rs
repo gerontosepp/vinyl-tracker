@@ -55,6 +55,11 @@ impl CollectionQueryService {
         }
 
         // 2. Build ORDER BY clause
+        let normalized_artist_asc =
+            r#"REGEXP_REPLACE(LOWER(rc.artist), '^the\s+', '', 'i') COLLATE "C" ASC"#;
+        let normalized_artist_desc =
+            r#"REGEXP_REPLACE(LOWER(rc.artist), '^the\s+', '', 'i') COLLATE "C" DESC"#;
+
         let order_by = match filter.sort.as_str() {
             "year" => {
                 let dir = if filter.sort_order == "desc" {
@@ -62,7 +67,7 @@ impl CollectionQueryService {
                 } else {
                     "ASC"
                 };
-                format!("rc.release_year {dir} NULLS LAST, rc.artist ASC NULLS LAST, rc.title ASC")
+                format!("rc.release_year {dir} NULLS LAST, {normalized_artist_asc} NULLS LAST, rc.title ASC")
             }
             "format" => {
                 let dir = if filter.sort_order == "desc" {
@@ -71,7 +76,7 @@ impl CollectionQueryService {
                     "ASC"
                 };
                 format!(
-                    "rc.format {dir} NULLS LAST, rc.artist ASC NULLS LAST, rc.release_year ASC NULLS LAST, rc.title ASC"
+                    "rc.format {dir} NULLS LAST, {normalized_artist_asc} NULLS LAST, rc.release_year ASC NULLS LAST, rc.title ASC"
                 )
             }
             "listens" => {
@@ -81,16 +86,16 @@ impl CollectionQueryService {
                     "ASC"
                 };
                 format!(
-                    "COALESCE(le.listen_count, 0) {dir}, rc.artist ASC NULLS LAST, rc.release_year ASC NULLS LAST"
+                    "COALESCE(le.listen_count, 0) {dir}, {normalized_artist_asc} NULLS LAST, rc.release_year ASC NULLS LAST"
                 )
             }
             "artist" => {
                 let dir = if filter.sort_order == "desc" {
-                    "DESC"
+                    normalized_artist_desc
                 } else {
-                    "ASC"
+                    normalized_artist_asc
                 };
-                format!("rc.artist {dir} NULLS LAST, rc.release_year ASC NULLS LAST, rc.title ASC")
+                format!("{dir} NULLS LAST, rc.release_year ASC NULLS LAST, rc.title ASC")
             }
             _ => {
                 let dir = if filter.sort_order == "desc" {

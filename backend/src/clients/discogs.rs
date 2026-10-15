@@ -414,7 +414,9 @@ impl DiscogsClient {
             .headers(headers)
             .send()
             .await
-            .map_err(|e| AppError::Internal(format!("Delete release instance request error: {e}")))?;
+            .map_err(|e| {
+                AppError::Internal(format!("Delete release instance request error: {e}"))
+            })?;
 
         if !res.status().is_success() && res.status() != reqwest::StatusCode::NOT_FOUND {
             return Err(AppError::Internal(format!(

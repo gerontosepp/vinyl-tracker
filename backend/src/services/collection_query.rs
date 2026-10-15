@@ -67,7 +67,9 @@ impl CollectionQueryService {
                 } else {
                     "ASC"
                 };
-                format!("rc.release_year {dir} NULLS LAST, {normalized_artist_asc} NULLS LAST, rc.title ASC")
+                format!(
+                    "rc.release_year {dir} NULLS LAST, {normalized_artist_asc} NULLS LAST, rc.title ASC"
+                )
             }
             "format" => {
                 let dir = if filter.sort_order == "desc" {

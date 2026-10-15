@@ -701,12 +701,14 @@ async fn test_remove_release_from_collection() {
     .unwrap();
 
     // Verify item is currently in collection
-    let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM collection_item WHERE user_id = $1 AND instance_id = $2")
-        .bind(user_id)
-        .bind(instance_id)
-        .fetch_one(pool)
-        .await
-        .unwrap();
+    let count: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM collection_item WHERE user_id = $1 AND instance_id = $2",
+    )
+    .bind(user_id)
+    .bind(instance_id)
+    .fetch_one(pool)
+    .await
+    .unwrap();
     assert_eq!(count, 1);
 
     // 4. Delete the release
@@ -725,21 +727,25 @@ async fn test_remove_release_from_collection() {
     assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
     // 5. Verify collection_item is deleted
-    let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM collection_item WHERE user_id = $1 AND instance_id = $2")
-        .bind(user_id)
-        .bind(instance_id)
-        .fetch_one(pool)
-        .await
-        .unwrap();
+    let count: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM collection_item WHERE user_id = $1 AND instance_id = $2",
+    )
+    .bind(user_id)
+    .bind(instance_id)
+    .fetch_one(pool)
+    .await
+    .unwrap();
     assert_eq!(count, 0);
 
     // 6. Verify listen_event and record_cache still exist!
-    let listen_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM listen_event WHERE user_id = $1 AND record_id = $2")
-        .bind(user_id)
-        .bind(rec_id)
-        .fetch_one(pool)
-        .await
-        .unwrap();
+    let listen_count: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM listen_event WHERE user_id = $1 AND record_id = $2",
+    )
+    .bind(user_id)
+    .bind(rec_id)
+    .fetch_one(pool)
+    .await
+    .unwrap();
     assert_eq!(listen_count, 1);
 
     let cache_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM record_cache WHERE id = $1")
@@ -776,7 +782,12 @@ async fn test_collection_artist_sorting_natural_order_and_collation() {
         (980002i64, "Adele (3)", "21", 2011),
         (980003i64, "A.R. & Machines", "Echo", 1972),
         (980004i64, "BAP", "Zwesche Salzjebäck Un Bier", 1984),
-        (980005i64, "The Alan Parsons Project", "Eye in the Sky", 1982),
+        (
+            980005i64,
+            "The Alan Parsons Project",
+            "Eye in the Sky",
+            1982,
+        ),
     ];
 
     for (discogs_id, artist, title, year) in &artists_and_titles {
@@ -889,4 +900,3 @@ async fn test_collection_artist_sorting_natural_order_and_collation() {
         ]
     );
 }
-

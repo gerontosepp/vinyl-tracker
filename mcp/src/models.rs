@@ -42,6 +42,15 @@ pub struct DeleteScanArgs {
     pub id: i64,
 }
 
+/// Arguments for removing an album from the user's collection.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub struct RemoveFromCollectionArgs {
+    /// The Discogs release ID of the album to remove from the collection
+    pub release_id: i64,
+    /// Optional specific collection instance ID to delete
+    pub instance_id: Option<i64>,
+}
+
 /// Arguments for querying analytics within an optional date range.
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, Default)]
 pub struct AnalyticsDateRangeArgs {

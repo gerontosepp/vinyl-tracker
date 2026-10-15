@@ -423,6 +423,17 @@ export class CollectionComponent implements OnInit, OnDestroy {
     );
   }
 
+  onRecordRemoved(releaseId: number): void {
+    this.closeDetail();
+    this.selectedItems.update((map) => {
+      const next = new Map(map);
+      next.delete(releaseId);
+      return next;
+    });
+    this.releases.update((list) => list.filter((r) => r.id !== releaseId));
+    this.totalItems.update((total) => Math.max(0, total - 1));
+  }
+
   getFormatType(release: CollectionRelease): FormatType {
     return getFormatType(release);
   }

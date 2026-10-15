@@ -392,6 +392,40 @@ impl DiscogsClient {
         Ok(add_res)
     }
 
+    pub async fn delete_release_instance(
+        &self,
+        username: &str,
+        folder_id: i64,
+        release_id: i64,
+        instance_id: i64,
+        token: &str,
+    ) -> Result<(), AppError> {
+        self.wait_for_rate_limit().await;
+
+        let url = format!(
+            "{}/users/{username}/collection/folders/{folder_id}/releases/{release_id}/instances/{instance_id}",
+            self.base_url
+        );
+        let headers = self.auth_headers(token)?;
+
+        let res = self
+            .http
+            .delete(&url)
+            .headers(headers)
+            .send()
+            .await
+            .map_err(|e| AppError::Internal(format!("Delete release instance request error: {e}")))?;
+
+        if !res.status().is_success() && res.status() != reqwest::StatusCode::NOT_FOUND {
+            return Err(AppError::Internal(format!(
+                "Discogs delete release instance returned status {}",
+                res.status()
+            )));
+        }
+
+        Ok(())
+    }
+
     pub async fn is_release_in_collection(
         &self,
         username: &str,

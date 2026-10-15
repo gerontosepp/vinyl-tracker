@@ -167,6 +167,14 @@ export class ApiService {
     return this.http.post<SyncResult>(`${this.baseUrl}/collection/releases/${releaseId}`, {});
   }
 
+  removeReleaseFromCollection(releaseId: number, instanceId?: number): Observable<void> {
+    let params = new HttpParams();
+    if (instanceId) {
+      params = params.set('instanceId', instanceId.toString());
+    }
+    return this.http.delete<void>(`${this.baseUrl}/collection/releases/${releaseId}`, { params });
+  }
+
   downloadQrCodes(): Observable<Blob> {
     return this.http.get(`${this.baseUrl}/collection/qr-codes/all`, { responseType: 'blob' });
   }

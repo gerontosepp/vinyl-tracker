@@ -12,11 +12,30 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "items": []
   },
   {
+    "version": "v0.8.1",
+    "rawHeader": "v0.8.1 (2026-10-15)",
+    "date": "2026-10-15",
+    "isCurrent": true,
+    "isUnreleased": false,
+    "items": [
+      {
+        "title": "Backend Startup & Datenbankverbindungs-Resilienz",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "Robuste Verbindungs-Retry-Schleife mit konfigurierbarem Backoff in `run_migrations` zur Verhinderung von Crash-Loops, falls PostgreSQL beim Hochfahren einige Sekunden benötigt.",
+          "Sicheres Logging des Verbindungsziels (`sanitize_db_url` mit maskiertem Passwort) und detaillierte Ausgabe der Root-Cause-Fehler (z. B. OS Connection Refused, DNS-Fehler) beim Start.",
+          "Automatische Bereitstellung eines Symlinks `docker/.env -> ../.env` in `scripts/deploy_proxmox.sh`, damit Docker Compose Umgebungsvariablen unabhängig vom Ausführungsverzeichnis stets zuverlässig auflöst."
+        ]
+      }
+    ]
+  },
+  {
     "version": "v0.8.0",
     "rawHeader": "v0.8.0 (2026-10-15) – Rust Backend & Architektur-Upgrade",
     "date": "2026-10-15",
     "tag": "Rust Backend & Architektur-Upgrade",
-    "isCurrent": true,
+    "isCurrent": false,
     "isUnreleased": false,
     "items": [
       {

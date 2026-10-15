@@ -55,24 +55,24 @@ Before running in production, verify the following configuration values:
 
 ### Check Container Status
 ```bash
-docker compose -f docker/docker-compose.registry.yml ps
+docker compose --env-file .env -f docker/docker-compose.registry.yml ps
 ```
 
 ### View Application Logs
 ```bash
 # Backend logs (JSON structured in production):
-docker compose -f docker/docker-compose.registry.yml logs -f backend
+docker compose --env-file .env -f docker/docker-compose.registry.yml logs -f backend
 
 # Frontend (Nginx access & error logs):
-docker compose -f docker/docker-compose.registry.yml logs -f frontend
+docker compose --env-file .env -f docker/docker-compose.registry.yml logs -f frontend
 
 # Database logs:
-docker compose -f docker/docker-compose.registry.yml logs -f postgres
+docker compose --env-file .env -f docker/docker-compose.registry.yml logs -f postgres
 ```
 
 ### Restart Services
 ```bash
-docker compose -f docker/docker-compose.registry.yml restart
+docker compose --env-file .env -f docker/docker-compose.registry.yml restart
 ```
 
 ## 5. Self-Hosted GitHub Actions Runner

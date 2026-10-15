@@ -26,6 +26,7 @@ async fn main() -> anyhow::Result<()> {
     // 3. Load configuration
     let config = Config::from_env();
     tracing::info!("Configured host: {}, port: {}", config.host, config.port);
+    tracing::info!("Database target: {}", backend_rs::db::sanitize_db_url(&config.database_url));
 
     // 4. Run database migrations
     if let Err(e) = run_migrations(&config.database_url).await {

@@ -33,6 +33,8 @@ pub struct ResetPasswordRequestDto {
     pub new_password: String,
     #[serde(alias = "discogsToken", alias = "discogs_token")]
     pub discogs_token: Option<String>,
+    #[serde(alias = "currentPassword", alias = "current_password")]
+    pub current_password: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]

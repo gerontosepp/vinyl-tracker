@@ -9,6 +9,12 @@
 
 ## Unreleased
 
+- **Sicherheits-Fix: Verifikation beim Passwort-Reset (`#99`)**:
+  - **Identitätsnachweis & Account-Schutz**: Unauthentifizierte Aufrufe von `POST /api/users/reset-password` erfordern nun zwingend einen gültigen Nachweis der Inhaberschaft (entweder das hinterlegte Discogs-Token oder das bisherige Passwort). Unberechtigte Anfragen ohne passenden Token werden mit `401 Unauthorized` abgewiesen.
+  - **Keine automatische Session-Ausstellung**: Beim Passwort-Reset wird kein Login-JWT mehr automatisch ausgestellt oder per Cookie gesetzt, sondern eine explizite Neuanmeldung am Login-Formular verlangt.
+  - **Frontend UI / UX**: `ForgotPasswordComponent` verarbeitet RFC 7807 Problem-Details sauber, zeigt Toast-Feedback an und leitet den Nutzer nach erfolgreichem Reset zur Neuanmeldung.
+  - **Tests**: Ausführliche Integrationstests im Backend (`test_reset_password_flow` in `auth_tests.rs`) und Unit-Tests im Frontend (`forgot-password.component.spec.ts`).
+
 - **Natürliche Künstlersortierung & Regal-Inventur-Abgleich (`#98`)**:
   - **Artikel-Normalisierung**: Bands mit führendem englischen Artikel „The “ (*The Beatles*, *The Alan Parsons Project*, *The Clash*, etc.) werden natürlich unter ihrem Stamm-Namen einsortiert (*The Beatles* unter **B**, *The Alan Parsons Project* unter **A**). Der Anzeigename bleibt unverändert erhalten.
   - **Collation für Punkt-Abkürzungen**: Durch zielgerichtete `COLLATE "C"`-Sortierung werden Punkt-Abkürzungen wie *A.R. & Machines* strikt vor nachfolgenden Buchstaben-Namen wie *Adele* platziert, exakt wie im Kallax-Inventarverzeichnis.

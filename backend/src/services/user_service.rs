@@ -146,10 +146,15 @@ impl UserService {
 
     pub async fn reset_password(
         pool: &PgPool,
-        config: &Config,
+        _config: &Config,
         crypto: &CryptoService,
         payload: ResetPasswordRequestDto,
     ) -> Result<UserResponseDto, AppError> {
+        let username = payload.username.trim();
+        if username.is_empty() {
+            return Err(AppError::BadRequest("Username cannot be empty".to_string()));
+        }
+
         let new_password = payload.new_password;
         if new_password.len() < 8 {
             return Err(AppError::BadRequest(
@@ -157,46 +162,70 @@ impl UserService {
             ));
         }
 
-        let hashed_password = bcrypt::hash(&new_password, 10)
-            .map_err(|e| AppError::Internal(format!("Failed to hash password: {e}")))?;
-
-        let encrypted_token = payload
-            .discogs_token
-            .as_deref()
-            .and_then(|t| crypto.encrypt(t));
-
-        let user = if let Some(enc_token) = encrypted_token {
-            sqlx::query_as::<_, AppUser>(
-                "UPDATE app_user
-                 SET password = $1, discogs_token = $2
-                 WHERE username = $3
-                 RETURNING id, username, password, discogs_username, discogs_token, roon_host, roon_port, roon_zone_id, roon_zone_name, roon_token",
-            )
-            .bind(hashed_password)
-            .bind(enc_token)
-            .bind(payload.username.trim())
-            .fetch_optional(pool)
-            .await
-        } else {
-            sqlx::query_as::<_, AppUser>(
-                "UPDATE app_user
-                 SET password = $1
-                 WHERE username = $2
-                 RETURNING id, username, password, discogs_username, discogs_token, roon_host, roon_port, roon_zone_id, roon_zone_name, roon_token",
-            )
-            .bind(hashed_password)
-            .bind(payload.username.trim())
-            .fetch_optional(pool)
-            .await
-        }
+        // 1. Fetch user to verify credentials
+        let user = sqlx::query_as::<_, AppUser>(
+            "SELECT id, username, password, discogs_username, discogs_token, roon_host, roon_port, roon_zone_id, roon_zone_name, roon_token
+             FROM app_user WHERE username = $1",
+        )
+        .bind(username)
+        .fetch_optional(pool)
+        .await
         .map_err(AppError::Database)?
         .ok_or_else(|| AppError::NotFound("User not found".to_string()))?;
 
-        let token = generate_token(
-            &user.username,
-            &config.jwt_secret,
-            config.jwt_expiration_secs,
-        )?;
-        Ok(user.to_dto(Some(token)))
+        // 2. Verify identity:
+        // Must either provide correct current_password OR correct discogs_token matching the user's stored token
+        let verified_by_password = payload
+            .current_password
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .is_some_and(|pw| bcrypt::verify(pw, &user.password).unwrap_or(false));
+
+        let verified_by_discogs = payload
+            .discogs_token
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .is_some_and(|provided| {
+                user.discogs_token
+                    .as_deref()
+                    .and_then(|enc| crypto.decrypt(enc))
+                    .is_some_and(|decrypted| decrypted == provided)
+            });
+
+        if !verified_by_password && !verified_by_discogs {
+            return Err(AppError::Unauthorized(
+                "Invalid verification credentials for password reset. A valid current password or matching Discogs verification token is required.".to_string(),
+            ));
+        }
+
+        // 3. Hash new password
+        let hashed_password = bcrypt::hash(&new_password, 10)
+            .map_err(|e| AppError::Internal(format!("Failed to hash password: {e}")))?;
+
+        // 4. Update password and optionally re-encrypt Discogs token
+        let encrypted_token = payload
+            .discogs_token
+            .as_deref()
+            .filter(|s| !s.trim().is_empty())
+            .and_then(|t| crypto.encrypt(t.trim()))
+            .or_else(|| user.discogs_token.clone());
+
+        let updated_user = sqlx::query_as::<_, AppUser>(
+            "UPDATE app_user
+             SET password = $1, discogs_token = $2
+             WHERE id = $3
+             RETURNING id, username, password, discogs_username, discogs_token, roon_host, roon_port, roon_zone_id, roon_zone_name, roon_token",
+        )
+        .bind(hashed_password)
+        .bind(encrypted_token)
+        .bind(user.id)
+        .fetch_one(pool)
+        .await
+        .map_err(AppError::Database)?;
+
+        // Return user DTO without auto-login token to require explicit login
+        Ok(updated_user.to_dto(None))
     }
 }

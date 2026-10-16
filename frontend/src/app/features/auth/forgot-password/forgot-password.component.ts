@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
@@ -122,6 +123,7 @@ import { firstValueFrom } from 'rxjs';
 })
 export class ForgotPasswordComponent {
   private readonly apiService = inject(ApiService);
+  private readonly toastService = inject(ToastService);
   private readonly router = inject(Router);
 
   username = '';
@@ -149,13 +151,16 @@ export class ForgotPasswordComponent {
       await firstValueFrom(
         this.apiService.resetPassword(this.username, this.newPassword, this.discogsToken)
       );
+      this.toastService.showToast('Password reset successfully. Please sign in.', 'success');
       this.router.navigate(['/login']);
     } catch (err: any) {
       console.error(err);
       if (err?.status === 429) {
         this.error.set('Too many attempts. Please wait a minute and try again.');
+      } else if (err?.error?.detail) {
+        this.error.set(err.error.detail);
       } else {
-        this.error.set('Failed to reset password. Verify username.');
+        this.error.set('Failed to reset password. Verify username and Discogs token.');
       }
     } finally {
       this.isLoading.set(false);

@@ -292,7 +292,7 @@ async fn test_reset_password_flow() {
         "username": test_user,
         "password": initial_pw
     });
-    let _ = app
+    let reg_res = app
         .clone()
         .oneshot(
             Request::builder()
@@ -304,11 +304,78 @@ async fn test_reset_password_flow() {
         )
         .await
         .unwrap();
+    assert_eq!(reg_res.status(), StatusCode::OK);
+    let reg_bytes = reg_res.into_body().collect().await.unwrap().to_bytes();
+    let reg_json: Value = serde_json::from_slice(&reg_bytes).unwrap();
+    let reg_token = reg_json["token"].as_str().unwrap();
 
-    // 2. Reset password
-    let reset_payload = json!({
+    // 2. Unverified reset attempt (no credentials / token) MUST be rejected with 401 Unauthorized
+    let unverified_payload = json!({
         "username": test_user,
         "newPassword": new_pw
+    });
+    let unverified_res = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/api/users/reset-password")
+                .header(header::CONTENT_TYPE, "application/json")
+                .body(Body::from(serde_json::to_vec(&unverified_payload).unwrap()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(unverified_res.status(), StatusCode::UNAUTHORIZED);
+
+    // 3. Link Discogs credentials
+    let discogs_token = "valid_discogs_pat_token_12345";
+    let discogs_payload = json!({
+        "discogsUsername": "d_user",
+        "token": discogs_token
+    });
+    let discogs_res = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::PUT)
+                .uri("/api/users/me/discogs")
+                .header(header::AUTHORIZATION, format!("Bearer {reg_token}"))
+                .header(header::CONTENT_TYPE, "application/json")
+                .body(Body::from(serde_json::to_vec(&discogs_payload).unwrap()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(discogs_res.status(), StatusCode::OK);
+
+    // 4. Reset attempt with WRONG Discogs token MUST be rejected with 401 Unauthorized
+    let wrong_token_payload = json!({
+        "username": test_user,
+        "newPassword": new_pw,
+        "discogsToken": "invalid_wrong_pat_token"
+    });
+    let wrong_token_res = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/api/users/reset-password")
+                .header(header::CONTENT_TYPE, "application/json")
+                .body(Body::from(
+                    serde_json::to_vec(&wrong_token_payload).unwrap(),
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(wrong_token_res.status(), StatusCode::UNAUTHORIZED);
+
+    // 5. Reset attempt with CORRECT Discogs token succeeds
+    let correct_payload = json!({
+        "username": test_user,
+        "newPassword": new_pw,
+        "discogsToken": discogs_token
     });
     let reset_res = app
         .clone()
@@ -317,14 +384,19 @@ async fn test_reset_password_flow() {
                 .method(Method::POST)
                 .uri("/api/users/reset-password")
                 .header(header::CONTENT_TYPE, "application/json")
-                .body(Body::from(serde_json::to_vec(&reset_payload).unwrap()))
+                .body(Body::from(serde_json::to_vec(&correct_payload).unwrap()))
                 .unwrap(),
         )
         .await
         .unwrap();
     assert_eq!(reset_res.status(), StatusCode::OK);
+    // Ensure no automatic session/auth cookie is returned
+    assert!(reset_res.headers().get(header::SET_COOKIE).is_none());
+    let reset_bytes = reset_res.into_body().collect().await.unwrap().to_bytes();
+    let reset_json: Value = serde_json::from_slice(&reset_bytes).unwrap();
+    assert!(reset_json["token"].is_null());
 
-    // 3. Old password must now fail
+    // 6. Old password must now fail
     let old_login_payload = json!({
         "username": test_user,
         "password": initial_pw
@@ -343,7 +415,7 @@ async fn test_reset_password_flow() {
         .unwrap();
     assert_eq!(old_login_res.status(), StatusCode::UNAUTHORIZED);
 
-    // 4. New password must succeed
+    // 7. New password must succeed
     let new_login_payload = json!({
         "username": test_user,
         "password": new_pw
@@ -361,4 +433,25 @@ async fn test_reset_password_flow() {
         .await
         .unwrap();
     assert_eq!(new_login_res.status(), StatusCode::OK);
+
+    // 8. Password change using currentPassword also succeeds
+    let newer_pw = "NewerPassword7890!";
+    let change_payload = json!({
+        "username": test_user,
+        "newPassword": newer_pw,
+        "currentPassword": new_pw
+    });
+    let change_res = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/api/users/reset-password")
+                .header(header::CONTENT_TYPE, "application/json")
+                .body(Body::from(serde_json::to_vec(&change_payload).unwrap()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(change_res.status(), StatusCode::OK);
 }

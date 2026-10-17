@@ -7,7 +7,6 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     // Navigation & Layout
     'nav.home': 'Start',
     'nav.collection': 'Sammlung',
-    'nav.stats': 'Statistiken',
     'nav.profile': 'Profil',
     'nav.scan': 'Scannen',
     'nav.settings': 'Einstellungen',
@@ -210,13 +209,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'collection.deleting': 'Wird entfernt...',
 
     // Statistics
-    'stats.title': 'Statistiken & Einblicke',
-    'stats.overview': 'Übersicht',
-    'stats.totalListens': 'Gesamte Hördurchgänge',
-    'stats.uniqueVinyls': 'Gespielte Vinyls',
     'stats.topPlayed': 'Meistgespielte Alben',
-    'stats.topGenres': 'Top Genres',
-    'stats.releaseDecades': 'Veröffentlichung nach Jahrzehnten',
 
     // General & Auth
     'auth.login': 'Anmelden',
@@ -234,7 +227,6 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     // Navigation & Layout
     'nav.home': 'Home',
     'nav.collection': 'Collection',
-    'nav.stats': 'Stats',
     'nav.profile': 'Profile',
     'nav.scan': 'Scan',
     'nav.settings': 'Settings',
@@ -437,13 +429,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'collection.deleting': 'Removing...',
 
     // Statistics
-    'stats.title': 'Statistics & Insights',
-    'stats.overview': 'Overview',
-    'stats.totalListens': 'Total Listening Sessions',
-    'stats.uniqueVinyls': 'Played Vinyls',
     'stats.topPlayed': 'Most Played Albums',
-    'stats.topGenres': 'Top Genres',
-    'stats.releaseDecades': 'Releases by Decade',
 
     // General & Auth
     'auth.login': 'Sign In',

@@ -8,7 +8,6 @@ import {
   LucideUser,
   LucideSettings,
   LucideScanLine,
-  LucideBarChart2,
 } from '@lucide/angular';
 
 @Component({
@@ -23,7 +22,6 @@ import {
     LucideUser,
     LucideSettings,
     LucideScanLine,
-    LucideBarChart2,
   ],
   template: `
     <aside
@@ -63,23 +61,6 @@ import {
         >
           <svg lucideDisc [size]="26" [strokeWidth]="rlaCol.isActive ? 2.5 : 2"></svg>
           <span class="mt-1.5 text-xs tracking-wide">{{ 'nav.collection' | translate }}</span>
-        </a>
-
-        <!-- Stats -->
-        <a
-          routerLink="/statistics"
-          (click)="scannerService.closeScanner()"
-          routerLinkActive
-          #rlaStats="routerLinkActive"
-          [class]="
-            'flex flex-col items-center justify-center py-4 px-2 w-[calc(100%-1rem)] rounded-2xl mx-2 transition-all duration-200 cursor-pointer ' +
-            (rlaStats.isActive
-              ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/20 shadow-sm font-bold'
-              : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 font-medium')
-          "
-        >
-          <svg lucideBarChart2 [size]="26" [strokeWidth]="rlaStats.isActive ? 2.5 : 2"></svg>
-          <span class="mt-1.5 text-xs tracking-wide">{{ 'nav.stats' | translate }}</span>
         </a>
 
         <!-- Profile -->

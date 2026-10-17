@@ -9,6 +9,11 @@
 
 ## Unreleased
 
+- **Entfernung der Statistik-Seite & Bereinigung der Navigation (`#39`)**:
+  - **Navigation & Routing**: Route `/statistics` sowie die Navigationslinks in der Desktop-Sidebar (`SidebarComponent`) und der mobilen Navigation (`BottomNavComponent`) wurden entfernt.
+  - **Mobiles Layout**: `BottomNavComponent` wurde für ein harmonisches 4-Elemente-Layout (Home, Sammlung, QR-Scan, Profil) mit `justify-around` optimiert.
+  - **Code-Bereinigung**: Löschung von `StatisticsComponent` inklusive Test-Suite sowie Bereinigung ungenutzter Lokalisierungsschlüssel in Deutsch und Englisch (`nav.stats`, `stats.*`), unter Beibehaltung von `stats.topPlayed` für das Dashboard.
+
 - **Sicherheits-Härtung: JWT_SECRET Fail-Fast, sichere Cookie-Attribute & Rate-Limiting (`#100`)**:
   - **Fail-Fast Konfigurationsprüfung**: Backend-Start bricht sofort mit klarer Fehlermeldung ab, wenn `JWT_SECRET` kürzer als 32 Zeichen ist oder in einer Produktionsumgebung (`APP_ENV=production`) der unsichere Standard-Entwicklungsschlüssel verwendet wird.
   - **Konfigurierbare & gehärtete Cookie-Attribute**: Vollständige Unterstützung von `AUTH_COOKIE_NAME`, `AUTH_COOKIE_MAX_AGE_SECONDS`, `AUTH_COOKIE_SECURE`, `AUTH_COOKIE_SAME_SITE`, `AUTH_COOKIE_PATH` und `AUTH_COOKIE_DOMAIN`. In Produktionsumgebungen ist das `Secure`-Flag standardmäßig aktiv. Authentifizierungs-Middleware und Logout synchronisieren Cookie-Namen und Attribute dynamisch.

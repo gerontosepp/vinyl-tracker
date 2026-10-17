@@ -9,6 +9,14 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "tag": "In Entwicklung",
     "isCurrent": false,
     "isUnreleased": true,
+    "items": []
+  },
+  {
+    "version": "v0.9.0",
+    "rawHeader": "v0.9.0 (2026-10-18)",
+    "date": "2026-10-18",
+    "isCurrent": true,
+    "isUnreleased": false,
     "items": [
       {
         "title": "Major Upgrade: Frontend-Migration auf Angular 22 (`#73`)",
@@ -120,7 +128,7 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "version": "v0.8.1",
     "rawHeader": "v0.8.1 (2026-10-15)",
     "date": "2026-10-15",
-    "isCurrent": true,
+    "isCurrent": false,
     "isUnreleased": false,
     "items": [
       {

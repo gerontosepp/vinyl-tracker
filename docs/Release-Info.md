@@ -9,6 +9,10 @@
 
 ## Unreleased
 
+---
+
+## v0.9.0 (2026-10-18)
+
 - **Major Upgrade: Frontend-Migration auf Angular 22 (`#73`)**:
   - **Framework-Upgrade**: Erfolgreiche Aktualisierung der gesamten Angular-Suite (`@angular/core`, `@angular/common`, `@angular/compiler`, `@angular/forms`, `@angular/router`, `@angular/service-worker`, `@angular/cli`, `@angular/build`) von Version 19.2 auf Angular 22.2.3.
   - **Build- & Tooling-Modernisierung**: Umstellung auf den neuen `@angular/build` Application Builder mit Vite/esbuild Integration sowie TypeScript ~6.0.3.

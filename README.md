@@ -1,4 +1,4 @@
-# Vinyl Tracker v0.8.1
+# Vinyl Tracker v0.9.0
 
 A personal vinyl record tracking application that allows users to scan barcodes, identify records via Discogs, and log listening sessions.
 

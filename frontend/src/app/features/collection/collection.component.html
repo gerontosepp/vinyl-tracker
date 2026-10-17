@@ -23,7 +23,6 @@
       [availableGenres]="availableGenres()"
       [selectedGenres]="selectedGenres()"
       [years]="years()"
-      [isExporting]="isExporting()"
       (searchChange)="onSearchChange($event)"
       (clearSearch)="clearSearch()"
       (sortChange)="onSortChange($event)"
@@ -42,7 +41,6 @@
       (genresChange)="onGenresChange($event)"
       (yearsChange)="onYearsChange($event)"
       (clearAllFilters)="clearAllFilters()"
-      (exportFormat)="handleExport($event)"
     />
 
     <!-- List Content -->

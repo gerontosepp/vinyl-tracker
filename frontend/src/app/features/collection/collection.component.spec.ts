@@ -483,21 +483,4 @@ describe('CollectionComponent', () => {
       expect(component.selectedItems().has(101)).toBeFalse();
     });
   });
-
-  describe('handleExport', () => {
-    it('should call exportCollection with format and current active filters', async () => {
-      spyOn<any>(component, 'downloadBlob').and.callFake(() => {});
-      component.debouncedSearch.set('Pink Floyd');
-      component.category.set('vinyl');
-
-      await component.handleExport('pdf');
-
-      expect(mockApiService.exportCollection).toHaveBeenCalledWith('pdf', jasmine.objectContaining({
-        search: 'Pink Floyd',
-        category: 'vinyl'
-      }));
-      expect(component.isExporting()).toBeFalse();
-      expect(mockToastService.showToast).toHaveBeenCalled();
-    });
-  });
 });

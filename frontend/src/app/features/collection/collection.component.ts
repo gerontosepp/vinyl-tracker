@@ -45,7 +45,6 @@ export class CollectionComponent implements OnInit, OnDestroy {
 
   readonly loading = signal<boolean>(false);
   readonly generating = signal<boolean>(false);
-  readonly isExporting = signal<boolean>(false);
   readonly search = signal<string>('');
   readonly debouncedSearch = signal<string>('');
   readonly loadStatus = signal<string>('');
@@ -337,32 +336,6 @@ export class CollectionComponent implements OnInit, OnDestroy {
       this.toastService.showToast(getErrorMessage(err, 'Failed to generate QR codes.'), 'error');
     } finally {
       this.generating.set(false);
-    }
-  }
-
-  async handleExport(format: 'csv' | 'json' | 'pdf'): Promise<void> {
-    this.isExporting.set(true);
-    try {
-      const filters = {
-        search: this.debouncedSearch() || undefined,
-        category: this.category() !== 'all' ? this.category() : undefined,
-        genres: this.selectedGenres().length > 0 ? this.selectedGenres() : undefined,
-        years: this.debouncedYears() || undefined,
-        notPlayedSince: this.notPlayedSince() || undefined,
-        unplayedOnly: this.unplayedOnly() || undefined,
-        sort: this.sort(),
-        sortOrder: this.sortOrder(),
-      };
-      const blob = await firstValueFrom(this.apiService.exportCollection(format, filters));
-      const extension = format === 'pdf' ? 'pdf' : (format === 'json' ? 'json' : 'csv');
-      const filename = `vinyl_collection_${format === 'pdf' ? 'catalog' : (format === 'json' ? 'backup' : 'export')}.${extension}`;
-      this.downloadBlob(blob, filename);
-      this.toastService.showToast(this.languageService.translate('collection.exportSuccess'), 'success');
-    } catch (err) {
-      console.error(err);
-      this.toastService.showToast(getErrorMessage(err, this.languageService.translate('collection.exportError')), 'error');
-    } finally {
-      this.isExporting.set(false);
     }
   }
 

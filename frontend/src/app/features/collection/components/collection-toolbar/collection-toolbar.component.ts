@@ -59,7 +59,6 @@ export class CollectionToolbarComponent {
   readonly availableGenres = input<{ name: string; value: number }[]>([]);
   readonly selectedGenres = input<string[]>([]);
   readonly years = input<string>('');
-  readonly isExporting = input<boolean>(false);
 
   readonly searchChange = output<string>();
   readonly clearSearch = output<void>();
@@ -79,11 +78,9 @@ export class CollectionToolbarComponent {
   readonly genresChange = output<string[]>();
   readonly yearsChange = output<string>();
   readonly clearAllFilters = output<void>();
-  readonly exportFormat = output<'csv' | 'json' | 'pdf'>();
 
   readonly isGenreDropdownOpen = signal<boolean>(false);
   readonly isNotPlayedPopoverOpen = signal<boolean>(false);
-  readonly isExportDropdownOpen = signal<boolean>(false);
   readonly genreSearchTerm = signal<string>('');
 
   readonly filteredGenres = computed(() => {
@@ -156,14 +153,5 @@ export class CollectionToolbarComponent {
 
   onClearNotPlayed(): void {
     this.clearNotPlayedFilters.emit();
-  }
-
-  toggleExportDropdown(): void {
-    this.isExportDropdownOpen.update((open) => !open);
-  }
-
-  onSelectExport(format: 'csv' | 'json' | 'pdf'): void {
-    this.isExportDropdownOpen.set(false);
-    this.exportFormat.emit(format);
   }
 }

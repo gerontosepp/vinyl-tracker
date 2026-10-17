@@ -217,6 +217,8 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
 
     // Statistics
     'stats.topPlayed': 'Meistgespielte Alben',
+    'stats.showMore': 'Mehr anzeigen',
+    'stats.showLess': 'Weniger anzeigen',
 
     // General & Auth
     'auth.login': 'Anmelden',
@@ -444,6 +446,8 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
 
     // Statistics
     'stats.topPlayed': 'Most Played Albums',
+    'stats.showMore': 'Show more',
+    'stats.showLess': 'Show less',
 
     // General & Auth
     'auth.login': 'Sign In',

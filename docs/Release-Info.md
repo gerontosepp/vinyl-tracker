@@ -9,6 +9,13 @@
 
 ## Unreleased
 
+- **Major Upgrade: Frontend-Migration auf Angular 22 (`#73`)**:
+  - **Framework-Upgrade**: Erfolgreiche Aktualisierung der gesamten Angular-Suite (`@angular/core`, `@angular/common`, `@angular/compiler`, `@angular/forms`, `@angular/router`, `@angular/service-worker`, `@angular/cli`, `@angular/build`) von Version 19.2 auf Angular 22.2.3.
+  - **Build- & Tooling-Modernisierung**: Umstellung auf den neuen `@angular/build` Application Builder mit Vite/esbuild Integration sowie TypeScript ~6.0.3.
+  - **Node.js-Upgrade**: Aktualisierung der Entwicklungsumgebung und Docker-Container-Basis auf Node.js 24 (`node:24-alpine`) gemäß Angular 22 Mindestanforderungen.
+  - **Change Detection & Reactivity**: Übernahme optimierter Change-Detection-Strategien (`ChangeDetectionStrategy.Eager`), verbesserter Signal-Reaktivität und Bereinigung redundanter `CommonModule`-Imports.
+  - **Tests & Qualität**: Alle 224 Karma-Unit-Tests und alle 12 Playwright End-to-End-Tests wurden auf Angular 22 validiert und bestehen fehlerfrei.
+
 - **Kompaktes Leaderboard-Layout für meistgespielte Alben (`#103`)**:
   - **High-Density Zeilen-Design**: Die Zeilenhöhe in `TopRecordsComponent` wurde um über 50 % reduziert (von ca. 85px auf ca. 40px), wodurch das Dashboard deutlich kompakter wird und nachfolgende Widgets wie „Kürzlich gehört“ direkt im sichtbaren Bereich (First Fold) liegen.
   - **Rank-Badges & Subtiler Fortschrittsbalken**: Medaillen-Kennzeichnungen (1, 2, 3) für die Top 3, 38×38px Cover-Thumbnails und dezente relative Füllbalken direkt im Zeilen-Hintergrund, die ohne vertikalen Platzverlust die relative Spielhäufigkeit visualisieren.

@@ -6,11 +6,12 @@ import { TopMenuBarComponent } from './top-menu-bar/top-menu-bar.component';
 import { AuthService } from '../../../core/services/auth.service';
 import { ScannerService } from '../../../core/services/scanner.service';
 import { Router } from '@angular/router';
-import { Component, signal, NO_ERRORS_SCHEMA } from '@angular/core';
+import { Component, signal, NO_ERRORS_SCHEMA, ChangeDetectionStrategy } from '@angular/core';
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: ''
 })
 class MockSidebarComponent {}
@@ -18,6 +19,7 @@ class MockSidebarComponent {}
 @Component({
   selector: 'app-bottom-nav',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: ''
 })
 class MockBottomNavComponent {}
@@ -25,6 +27,7 @@ class MockBottomNavComponent {}
 @Component({
   selector: 'app-top-menu-bar',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: ''
 })
 class MockTopMenuBarComponent {}

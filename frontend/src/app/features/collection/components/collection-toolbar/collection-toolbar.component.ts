@@ -1,5 +1,5 @@
-import { Component, input, output, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, input, output, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
 import {
@@ -21,7 +21,6 @@ import {
   selector: 'app-collection-toolbar',
   standalone: true,
   imports: [
-    CommonModule,
     FormsModule,
     TranslatePipe,
     LucideDownload,
@@ -35,8 +34,9 @@ import {
     LucideDiscAlbum,
     LucideTag,
     LucideCalendar,
-    LucideChevronDown,
-  ],
+    LucideChevronDown
+],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './collection-toolbar.component.html',
 })
 export class CollectionToolbarComponent {

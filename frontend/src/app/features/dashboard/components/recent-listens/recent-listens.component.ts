@@ -1,4 +1,4 @@
-import { Component, input, output, inject } from '@angular/core';
+import { Component, input, output, inject, ChangeDetectionStrategy } from '@angular/core';
 import { ApiService } from '../../../../core/services/api.service';
 import { ListenEvent } from '../../../../core/types';
 import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
@@ -9,6 +9,7 @@ import { LucideTrash2 } from '@lucide/angular';
   selector: 'app-recent-listens',
   standalone: true,
   imports: [LocalizedDatePipe, TranslatePipe, LucideTrash2],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <div
       [class]="

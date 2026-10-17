@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth.service';
 import { LanguageService } from '../../../../core/services/language.service';
@@ -10,6 +10,7 @@ import { LucideLogOut, LucideSettings, LucideGlobe } from '@lucide/angular';
   selector: 'app-top-menu-bar',
   standalone: true,
   imports: [RouterLink, LucideLogOut, LucideSettings, LucideGlobe, TranslatePipe],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     @if (authService.user(); as user) {
       <header

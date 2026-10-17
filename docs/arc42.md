@@ -32,7 +32,7 @@ The **Vinyl Tracker** is a personal web application designed for vinyl enthusias
 - **Technology Stack**:
     - **Primary Backend**: Rust (Axum 0.8, Tokio, Tower-HTTP, SQLx).
     - **Legacy Backend**: Java 25+ (Spring Boot 4.0+).
-    - **Frontend**: Angular 19 (TypeScript, Signals, Tailwind CSS).
+    - **Frontend**: Angular 22 (TypeScript, Signals, Tailwind CSS).
     - **MCP Server**: Rust (`rmcp` v3.5 SDK, stdio JSON-RPC).
     - **Database**: PostgreSQL 16.
     - **Caching & Resilience**: `moka`, `governor` (Rust); Caffeine, Resilience4j (Java legacy).
@@ -86,7 +86,7 @@ The system consists of three main containers:
 
 | Building Block | Description | Technology |
 | :--- | :--- | :--- |
-| **Frontend** | Single Page Application handling UI, routing, and device integration (Camera & HID Scanner). | Angular 19, Tailwind CSS, html5-qrcode, ScannerService (HID listener) |
+| **Frontend** | Single Page Application handling UI, routing, and device integration (Camera & HID Scanner). | Angular 22, Tailwind CSS, html5-qrcode, ScannerService (HID listener) |
 | **Backend** | Core business logic, API endpoints, schedulers, and database interactions. | Java 25, Spring Boot, Spring Data JPA, Lombok |
 | **Database** | Persistent storage for users, records, and listening events. | PostgreSQL 16, Flyway |
 
@@ -228,7 +228,7 @@ The system is deployed as a multi-container Docker application orchestrated by D
 | Decision | Reasoning | Status |
 | :--- | :--- | :--- |
 | **Java 25 Migration** | Upgraded to Java 25 (LTS) along with Lombok 1.18.44. The previous downgrade to Java 21 LTS is no longer necessary as tools have caught up with the newer LTS release. | Accepted |
-| **Angular 19** | Modern, robust framework with signals for reactive state management, service worker support, and standalone components. | Accepted |
+| **Angular 22** | Modern, robust framework with signals for reactive state management, service worker support, and standalone components. | Accepted |
 | **Tailwind CSS** | Utility-first CSS allows for rapid UI development and consistent design tokens without managing complex stylesheets. | Accepted |
 | **PostgreSQL** | Industry standard, robust relational database. Suitable for structured data like catalog entries. | Accepted |
 | **Flyway Migrations** | Replaced Hibernate `ddl-auto: update` with Flyway for reliable, versioned schema migrations in production. | Accepted |

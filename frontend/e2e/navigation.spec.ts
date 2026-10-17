@@ -27,6 +27,16 @@ test.describe('Navigation', () => {
     await page.route('**/api/analytics/top*', async (route) => {
       await route.fulfill({ status: 200, body: JSON.stringify([]) });
     });
+    await page.route('**/api/analytics/collection/**', async (route) => {
+      await route.fulfill({ status: 200, body: JSON.stringify([]) });
+    });
+    await page.route('**/api/roon/**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ host: '', port: 9330, paired: false }),
+      });
+    });
 
     await page.goto('/login');
     await page.getByPlaceholder('Enter your username').fill('testuser');

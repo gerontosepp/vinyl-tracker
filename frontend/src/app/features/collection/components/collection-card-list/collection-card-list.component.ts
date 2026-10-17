@@ -1,4 +1,4 @@
-import { Component, input, output, inject } from '@angular/core';
+import { Component, input, output, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ApiService } from '../../../../core/services/api.service';
 import { FormatBadgeComponent } from '../format-badge/format-badge.component';
@@ -13,6 +13,7 @@ import { getConditionShortCode } from '../../utils/condition.util';
     CommonModule,
     FormatBadgeComponent,
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './collection-card-list.component.html',
 })
 export class CollectionCardListComponent {

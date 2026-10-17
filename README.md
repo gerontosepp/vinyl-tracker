@@ -9,7 +9,7 @@ Release history: [Release-Info](docs/Release-Info.md) | Architecture: [arc42](do
 The project follows a modern containerized micro-architecture:
 
 ### Frontend
-- **Framework**: Angular 19
+- **Framework**: Angular 22
 - **Language**: TypeScript
 - **Features**: 
   - Progressive Web App (PWA) capabilities for mobile usage.

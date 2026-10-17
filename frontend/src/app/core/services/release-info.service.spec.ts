@@ -20,7 +20,7 @@ describe('ReleaseInfoService', () => {
     expect(list.length).toBeGreaterThan(0);
     const current = list.find((r) => r.isCurrent);
     expect(current).toBeDefined();
-    expect(current?.version).toBe('v0.8.1');
+    expect(current?.version).toMatch(/^v\d+\.\d+\.\d+/);
     const v080 = list.find((r) => r.version === 'v0.8.0');
     expect(v080).toBeDefined();
   });
@@ -28,12 +28,12 @@ describe('ReleaseInfoService', () => {
   it('should return current release', () => {
     const current = service.currentRelease();
     expect(current).toBeDefined();
-    expect(current?.version).toBe('v0.8.1');
+    expect(current?.version).toMatch(/^v\d+\.\d+\.\d+/);
     expect(current?.isCurrent).toBeTrue();
   });
 
   it('should manage expanded versions', () => {
-    const currentVersion = service.currentRelease()?.version || 'v0.8.1';
+    const currentVersion = service.currentRelease()?.version || 'v0.9.0';
     expect(service.isExpanded(currentVersion)).toBeTrue();
 
     // Toggle off

@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { ToastService } from '../../../core/services/toast.service';
 import {
   LucideX,
@@ -12,6 +12,7 @@ import {
   selector: 'app-toast',
   standalone: true,
   imports: [LucideX, LucideCheckCircle, LucideAlertCircle, LucideInfo, LucideAlertTriangle],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <div
       class="fixed bottom-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none min-w-[300px] max-w-[400px]"

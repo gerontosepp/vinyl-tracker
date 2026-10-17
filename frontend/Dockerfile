@@ -1,5 +1,5 @@
 # Stage 1: Base
-FROM node:20-alpine AS base
+FROM node:24-alpine AS base
 WORKDIR /app
 COPY package*.json ./
 
@@ -11,7 +11,7 @@ EXPOSE 5173
 CMD ["npm", "run", "dev", "--", "--host"]
 
 # Stage 3: Build (runs on the host build platform natively, eliminating slow QEMU emulation)
-FROM --platform=$BUILDPLATFORM node:20-alpine AS build
+FROM --platform=$BUILDPLATFORM node:24-alpine AS build
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci --legacy-peer-deps

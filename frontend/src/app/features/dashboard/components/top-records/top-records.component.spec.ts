@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TopRecordsComponent } from './top-records.component';
 import { ApiService } from '../../../../core/services/api.service';
+import { LanguageService } from '../../../../core/services/language.service';
 import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
 import { AnalyticsTopRecord } from '../../../../core/types';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
@@ -72,8 +73,9 @@ describe('TopRecordsComponent', () => {
     expect(component.maxCount()).toBe(0);
     expect(component.visibleData().length).toBe(0);
 
+    const langService = TestBed.inject(LanguageService);
     const emptyText = fixture.nativeElement.textContent;
-    expect(emptyText).toContain('Keine Schallplatten gefunden');
+    expect(emptyText).toContain(langService.translate('collection.noRecords'));
   });
 
   it('should render rank numbers and cover image correctly', () => {

@@ -1,4 +1,4 @@
-import { Component, input, inject, computed, signal } from '@angular/core';
+import { Component, input, inject, computed, signal, ChangeDetectionStrategy } from '@angular/core';
 import { ApiService } from '../../../../core/services/api.service';
 import { AnalyticsTopRecord } from '../../../../core/types';
 import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
@@ -8,6 +8,7 @@ import { LucideChevronDown, LucideChevronUp } from '@lucide/angular';
   selector: 'app-top-records',
   standalone: true,
   imports: [TranslatePipe, LucideChevronDown, LucideChevronUp],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <div
       [class]="

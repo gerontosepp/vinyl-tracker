@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
@@ -28,6 +28,7 @@ import { ReleaseNotesComponent } from './components/release-notes/release-notes.
     LucideHistory,
     ReleaseNotesComponent,
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <app-layout>
       <div class="max-w-6xl mx-auto space-y-6">

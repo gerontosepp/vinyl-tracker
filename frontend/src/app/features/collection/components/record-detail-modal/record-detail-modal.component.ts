@@ -1,4 +1,4 @@
-import { Component, input, output, inject, signal, computed } from '@angular/core';
+import { Component, input, output, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../../core/services/api.service';
@@ -26,6 +26,7 @@ import { getConditionShortCode, MEDIA_CONDITION_OPTIONS, SLEEVE_CONDITION_OPTION
     LucidePlay,
     LucideTrash2,
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './record-detail-modal.component.html',
 })
 export class RecordDetailModalComponent {

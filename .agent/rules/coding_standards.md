@@ -8,7 +8,7 @@ trigger: always_on
    - DTOs & Serialization: Use expressive DTOs with snake_case JSON serialization via Serde (`#[serde(rename_all = "snake_case")]` or `#[serde(rename = "...")]`).
    - Resilience & Caching: Guard external APIs (Discogs, Roon) with Governor rate limiting, Reqwest HTTP client with retries/timeouts, and Moka in-memory caching.
 2. **Frontend Tech Stack & Architecture**: 
-   - Use Angular 19 with TypeScript and standalone components.
+   - Use Angular 22 with TypeScript and standalone components.
    - Use Angular Signals for reactive state management.
    - Use Tailwind CSS for styling via utility classes. Avoid custom CSS unless absolutely necessary (e.g., complex keyframe animations).
    - **Internationalization (i18n)**: All user-facing UI text must be localized via `LanguageService` and `TranslatePipe`. Maintain both German (`de`) and English (`en`) dictionaries in `language.service.ts`. Never hardcode static display strings in templates.

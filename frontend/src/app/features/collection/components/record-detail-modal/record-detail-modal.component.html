@@ -122,7 +122,7 @@
               >
                 {{
                   detail()?.median_price != null
-                    ? (detail()?.median_price
+                    ? ($safeNavigationMigration(detail()?.median_price)
                       | currency: 'EUR' : 'symbol' : '1.2-2')
                     : '—'
                 }}
@@ -130,8 +130,8 @@
               <div class="text-[11px] text-slate-400 truncate">
                 {{
                   detail()?.media_condition
-                    ? 'Zustand: ' + getConditionShortCode(detail()?.media_condition)
-                    : (record()?.media_condition ? 'Zustand: ' + getConditionShortCode(record()?.media_condition) : 'Standard (VG+)')
+                    ? 'Zustand: ' + getConditionShortCode($safeNavigationMigration(detail()?.media_condition))
+                    : (record()?.media_condition ? 'Zustand: ' + getConditionShortCode($safeNavigationMigration(record()?.media_condition)) : 'Standard (VG+)')
                 }}
               </div>
             </div>
@@ -152,7 +152,7 @@
               <div class="text-[11px] text-slate-400">
                 {{
                   detail()?.last_listened_at
-                    ? (detail()?.last_listened_at | localizedDate: 'shortDate')
+                    ? ($safeNavigationMigration(detail()?.last_listened_at) | localizedDate: 'shortDate')
                     : ('record.never' | translate)
                 }}
               </div>
@@ -189,7 +189,7 @@
               >
                 {{
                   detail()?.added_at
-                    ? (detail()?.added_at | localizedDate: 'mediumDate')
+                    ? ($safeNavigationMigration(detail()?.added_at) | localizedDate: 'mediumDate')
                     : '—'
                 }}
               </div>
@@ -329,7 +329,7 @@
                 <span class="text-slate-400">{{ 'record.lastListened' | translate }}:</span>
                 <strong class="text-slate-700 dark:text-slate-200 ml-1">{{
                   detail()?.last_listened_at
-                    ? (detail()?.last_listened_at | localizedDate: 'medium')
+                    ? ($safeNavigationMigration(detail()?.last_listened_at) | localizedDate: 'medium')
                     : ('record.notYet' | translate)
                 }}</strong>
               </div>
@@ -547,7 +547,7 @@
         <div class="flex items-center gap-2 flex-wrap">
           <a
             [href]="
-              'https://www.discogs.com/release/' + record()?.id
+              'https://www.discogs.com/release/' + $safeNavigationMigration(record()?.id)
             "
             target="_blank"
             rel="noopener noreferrer"

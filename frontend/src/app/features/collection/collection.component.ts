@@ -1,5 +1,5 @@
-import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, OnDestroy, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+
 import { LayoutComponent } from '../../shared/components/layout/layout.component';
 import { CollectionToolbarComponent } from './components/collection-toolbar/collection-toolbar.component';
 import { CollectionTableComponent } from './components/collection-table/collection-table.component';
@@ -18,13 +18,13 @@ import { Subscription, firstValueFrom } from 'rxjs';
   selector: 'app-collection',
   standalone: true,
   imports: [
-    CommonModule,
     LayoutComponent,
     CollectionToolbarComponent,
     CollectionTableComponent,
     CollectionCardListComponent,
-    RecordDetailModalComponent,
-  ],
+    RecordDetailModalComponent
+],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './collection.component.html',
 })
 export class CollectionComponent implements OnInit, OnDestroy {

@@ -1,4 +1,4 @@
-import { Component, output, inject } from '@angular/core';
+import { Component, output, inject, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
 import { ScannerService } from '../../../../core/services/scanner.service';
@@ -23,6 +23,7 @@ import {
     LucideSettings,
     LucideScanLine,
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <aside
       class="hidden md:flex flex-col w-24 h-[calc(100vh-4rem)] bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl fixed left-0 top-16 border-r border-slate-200/50 dark:border-slate-700 z-20 items-center py-6 transition-colors shadow-[4px_0_24px_-12px_rgba(0,0,0,0.05)]"

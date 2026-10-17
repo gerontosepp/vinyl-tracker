@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ToastComponent } from './shared/components/toast/toast.component';
 
@@ -7,6 +7,7 @@ import { ToastComponent } from './shared/components/toast/toast.component';
   standalone: true,
   imports: [RouterOutlet, ToastComponent],
   templateUrl: './app.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './app.component.css',
 })
 export class AppComponent {

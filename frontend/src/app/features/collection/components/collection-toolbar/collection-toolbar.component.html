@@ -6,27 +6,84 @@
     {{ 'collection.title' | translate }}
   </h1>
 
-  @if (selectedCount() > 0) {
-    <div class="hidden md:flex gap-2.5 w-full md:w-auto items-center">
-      <button
-        (click)="downloadSelected.emit()"
-        [disabled]="generating()"
-        class="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md hover:-translate-y-0.5"
-      >
-        <svg lucideDownload [size]="18"></svg>
-        {{ 'collection.selectedQr' | translate: { count: selectedCount() } }}
-      </button>
+  <div class="flex flex-wrap gap-2.5 items-center w-full md:w-auto justify-end">
+    @if (selectedCount() > 0) {
+      <div class="hidden md:flex gap-2.5 items-center">
+        <button
+          (click)="downloadSelected.emit()"
+          [disabled]="generating()"
+          class="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md hover:-translate-y-0.5"
+        >
+          <svg lucideDownload [size]="18"></svg>
+          {{ 'collection.selectedQr' | translate: { count: selectedCount() } }}
+        </button>
+        <button
+          type="button"
+          (click)="clearSelection.emit()"
+          class="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-600 shadow-sm hover:shadow"
+          [title]="'collection.clearSelection' | translate"
+        >
+          <svg lucideX [size]="16" class="text-slate-500 dark:text-slate-400"></svg>
+          <span>{{ 'collection.clearSelection' | translate }}</span>
+        </button>
+      </div>
+    }
+
+    <!-- Export Collection Dropdown -->
+    <div class="relative">
       <button
         type="button"
-        (click)="clearSelection.emit()"
-        class="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-600 shadow-sm hover:shadow"
-        [title]="'collection.clearSelection' | translate"
+        (click)="toggleExportDropdown()"
+        [disabled]="isExporting()"
+        class="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-600 shadow-xs hover:shadow-sm disabled:opacity-50"
+        [title]="'collection.exportCollection' | translate"
       >
-        <svg lucideX [size]="16" class="text-slate-500 dark:text-slate-400"></svg>
-        <span>{{ 'collection.clearSelection' | translate }}</span>
+        <svg lucideDownload [size]="16" class="text-slate-400 dark:text-slate-500"></svg>
+        <span>{{ (isExporting() ? 'collection.exporting' : 'collection.export') | translate }}</span>
+        <svg lucideChevronDown [size]="14" class="text-slate-400 transition-transform duration-200" [class.rotate-180]="isExportDropdownOpen()"></svg>
       </button>
+
+      @if (isExportDropdownOpen()) {
+        <!-- Backdrop to close -->
+        <div class="fixed inset-0 z-30" (click)="isExportDropdownOpen.set(false)"></div>
+        <!-- Menu -->
+        <div
+          class="absolute right-0 mt-2 w-56 rounded-2xl bg-white dark:bg-slate-800 shadow-xl border border-slate-100 dark:border-slate-700 py-1.5 z-40 animate-fade-in"
+        >
+          <button
+            type="button"
+            (click)="onSelectExport('csv')"
+            class="w-full text-left px-4 py-2.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 flex items-center justify-between transition-colors cursor-pointer"
+          >
+            <span class="flex items-center gap-2">
+              <span>📊</span>
+              <span>{{ 'collection.exportCsv' | translate }}</span>
+            </span>
+          </button>
+          <button
+            type="button"
+            (click)="onSelectExport('json')"
+            class="w-full text-left px-4 py-2.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 flex items-center justify-between transition-colors cursor-pointer"
+          >
+            <span class="flex items-center gap-2">
+              <span>💾</span>
+              <span>{{ 'collection.exportJson' | translate }}</span>
+            </span>
+          </button>
+          <button
+            type="button"
+            (click)="onSelectExport('pdf')"
+            class="w-full text-left px-4 py-2.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/20 flex items-center justify-between transition-colors cursor-pointer border-t border-slate-100 dark:border-slate-700/50"
+          >
+            <span class="flex items-center gap-2 font-bold">
+              <span>📑</span>
+              <span>{{ 'collection.exportPdf' | translate }}</span>
+            </span>
+          </button>
+        </div>
+      }
     </div>
-  }
+  </div>
 </div>
 
 <!-- Controls & Pagination Top -->

@@ -19,7 +19,8 @@ describe('CollectionComponent', () => {
     mockApiService = {
       getCollection: jasmine.createSpy('getCollection').and.returnValue(of({ releases: [], pagination: { page: 1, pages: 1, per_page: 50, items: 0, urls: {} } })),
       getGenreBreakdown: jasmine.createSpy('getGenreBreakdown').and.returnValue(of([{ name: 'Rock', value: 10 }])),
-      getProxiedImageUrl: jasmine.createSpy('getProxiedImageUrl').and.callFake((url: string) => url)
+      getProxiedImageUrl: jasmine.createSpy('getProxiedImageUrl').and.callFake((url: string) => url),
+      exportCollection: jasmine.createSpy('exportCollection').and.returnValue(of(new Blob(['csv'], { type: 'text/csv' }))),
     };
     mockAuthService = {
       isSyncing: signal(false)
@@ -480,6 +481,23 @@ describe('CollectionComponent', () => {
       expect(component.releases()[0].id).toBe(102);
       expect(component.totalItems()).toBe(1);
       expect(component.selectedItems().has(101)).toBeFalse();
+    });
+  });
+
+  describe('handleExport', () => {
+    it('should call exportCollection with format and current active filters', async () => {
+      spyOn<any>(component, 'downloadBlob').and.callFake(() => {});
+      component.debouncedSearch.set('Pink Floyd');
+      component.category.set('vinyl');
+
+      await component.handleExport('pdf');
+
+      expect(mockApiService.exportCollection).toHaveBeenCalledWith('pdf', jasmine.objectContaining({
+        search: 'Pink Floyd',
+        category: 'vinyl'
+      }));
+      expect(component.isExporting()).toBeFalse();
+      expect(mockToastService.showToast).toHaveBeenCalled();
     });
   });
 });

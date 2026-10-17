@@ -380,11 +380,48 @@ import { ReleaseNotesComponent } from './components/release-notes/release-notes.
                 >
                   {{ 'settings.resetListens' | translate }}
                 </button>
-                <button
-                  class="flex-1 bg-slate-100 dark:bg-slate-900/50 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 font-bold px-4 py-3 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors flex items-center justify-center gap-2"
-                >
-                  {{ 'settings.exportCsv' | translate }}
-                </button>
+              </div>
+
+              <!-- Export Collection Options -->
+              <div class="border-t border-slate-100 dark:border-slate-700/50 pt-5">
+                <h4 class="text-sm font-bold text-slate-900 dark:text-slate-100 mb-1">
+                  {{ 'settings.exportTitle' | translate }}
+                </h4>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 font-medium">
+                  {{ 'settings.exportDesc' | translate }}
+                </p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <button
+                    type="button"
+                    (click)="handleExportCollection('csv')"
+                    [disabled]="isExporting() !== null"
+                    class="bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 font-bold px-4 py-3 rounded-xl transition-all shadow-xs hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  >
+                    <svg lucideDownload [size]="16" class="text-slate-400 dark:text-slate-500"></svg>
+                    <span>{{ (isExporting() === 'csv' ? 'settings.exporting' : 'settings.exportCsv') | translate }}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    (click)="handleExportCollection('json')"
+                    [disabled]="isExporting() !== null"
+                    class="bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 font-bold px-4 py-3 rounded-xl transition-all shadow-xs hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  >
+                    <svg lucideDownload [size]="16" class="text-slate-400 dark:text-slate-500"></svg>
+                    <span>{{ (isExporting() === 'json' ? 'settings.exporting' : 'settings.exportJson') | translate }}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    (click)="handleExportCollection('pdf')"
+                    [disabled]="isExporting() !== null"
+                    class="bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/50 font-bold px-4 py-3 rounded-xl transition-all shadow-xs hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  >
+                    <svg lucideDownload [size]="16" class="text-indigo-500"></svg>
+                    <span>{{ (isExporting() === 'pdf' ? 'settings.exporting' : 'settings.exportPdf') | translate }}</span>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -586,6 +623,7 @@ export class SettingsComponent {
   readonly isSavingRoon = signal<boolean>(false);
   readonly isLoadingZones = signal<boolean>(false);
   readonly isDownloadingQr = signal<boolean>(false);
+  readonly isExporting = signal<'csv' | 'json' | 'pdf' | null>(null);
 
   constructor() {
     this.loadRoonStatus();
@@ -729,6 +767,25 @@ export class SettingsComponent {
       this.toastService.showToast(getErrorMessage(err, 'Failed to generate QR codes.'), 'error');
     } finally {
       this.isDownloadingQr.set(false);
+    }
+  }
+
+  async handleExportCollection(format: 'csv' | 'json' | 'pdf'): Promise<void> {
+    const user = this.authService.user();
+    if (!user) return;
+
+    this.isExporting.set(format);
+    try {
+      const blob = await firstValueFrom(this.apiService.exportCollection(format));
+      const extension = format === 'pdf' ? 'pdf' : (format === 'json' ? 'json' : 'csv');
+      const filename = `vinyl_collection_${format === 'pdf' ? 'catalog' : (format === 'json' ? 'backup' : 'export')}.${extension}`;
+      this.downloadBlob(blob, filename);
+      this.toastService.showToast(this.languageService.translate('settings.exportSuccess'), 'success');
+    } catch (err) {
+      console.error(err);
+      this.toastService.showToast(getErrorMessage(err, this.languageService.translate('settings.exportError')), 'error');
+    } finally {
+      this.isExporting.set(null);
     }
   }
 

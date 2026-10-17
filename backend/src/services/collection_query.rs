@@ -54,45 +54,61 @@ impl CollectionQueryService {
             });
         }
 
-        // 2. Build ORDER BY clause
+        let offset = ((filter.page - 1) * filter.per_page) as i64;
+        let limit = filter.per_page as i64;
+        let limit_clause = format!("LIMIT {limit} OFFSET {offset}");
+
+        let releases =
+            Self::fetch_and_map_releases(pool, user_id, &filter, Some(&limit_clause)).await?;
+
+        let total_pages = ((total_items as f64) / (filter.per_page as f64)).ceil() as u32;
+
+        Ok(CollectionResponse {
+            releases,
+            pagination: DiscogsPagination {
+                page: filter.page,
+                pages: total_pages,
+                per_page: filter.per_page,
+                items: total_items as u32,
+            },
+        })
+    }
+
+    pub async fn get_collection_for_export(
+        pool: &PgPool,
+        user_id: i64,
+        filter: ParsedCollectionFilter,
+    ) -> Result<Vec<CollectionRelease>, AppError> {
+        Self::fetch_and_map_releases(pool, user_id, &filter, None).await
+    }
+
+    fn build_order_by(sort: &str, sort_order: &str) -> String {
         let normalized_artist_asc =
             r#"REGEXP_REPLACE(LOWER(rc.artist), '^the\s+', '', 'i') COLLATE "C" ASC"#;
         let normalized_artist_desc =
             r#"REGEXP_REPLACE(LOWER(rc.artist), '^the\s+', '', 'i') COLLATE "C" DESC"#;
 
-        let order_by = match filter.sort.as_str() {
+        match sort {
             "year" => {
-                let dir = if filter.sort_order == "desc" {
-                    "DESC"
-                } else {
-                    "ASC"
-                };
+                let dir = if sort_order == "desc" { "DESC" } else { "ASC" };
                 format!(
                     "rc.release_year {dir} NULLS LAST, {normalized_artist_asc} NULLS LAST, rc.title ASC"
                 )
             }
             "format" => {
-                let dir = if filter.sort_order == "desc" {
-                    "DESC"
-                } else {
-                    "ASC"
-                };
+                let dir = if sort_order == "desc" { "DESC" } else { "ASC" };
                 format!(
                     "rc.format {dir} NULLS LAST, {normalized_artist_asc} NULLS LAST, rc.release_year ASC NULLS LAST, rc.title ASC"
                 )
             }
             "listens" => {
-                let dir = if filter.sort_order == "desc" {
-                    "DESC"
-                } else {
-                    "ASC"
-                };
+                let dir = if sort_order == "desc" { "DESC" } else { "ASC" };
                 format!(
                     "COALESCE(le.listen_count, 0) {dir}, {normalized_artist_asc} NULLS LAST, rc.release_year ASC NULLS LAST"
                 )
             }
             "artist" => {
-                let dir = if filter.sort_order == "desc" {
+                let dir = if sort_order == "desc" {
                     normalized_artist_desc
                 } else {
                     normalized_artist_asc
@@ -100,18 +116,21 @@ impl CollectionQueryService {
                 format!("{dir} NULLS LAST, rc.release_year ASC NULLS LAST, rc.title ASC")
             }
             _ => {
-                let dir = if filter.sort_order == "desc" {
-                    "DESC"
-                } else {
-                    "ASC"
-                };
+                let dir = if sort_order == "desc" { "DESC" } else { "ASC" };
                 format!("ci.added_at {dir}")
             }
-        };
+        }
+    }
 
-        // 3. Fetch paged results with lowest_price and median_price cast to float8
-        let offset = ((filter.page - 1) * filter.per_page) as i64;
-        let limit = filter.per_page as i64;
+    async fn fetch_and_map_releases(
+        pool: &PgPool,
+        user_id: i64,
+        filter: &ParsedCollectionFilter,
+        limit_clause: Option<&str>,
+    ) -> Result<Vec<CollectionRelease>, AppError> {
+        let where_clause = Self::build_where_clause(filter);
+        let order_by = Self::build_order_by(&filter.sort, &filter.sort_order);
+        let limit_str = limit_clause.unwrap_or("");
 
         let select_sql = format!(
             "SELECT ci.id as item_id, ci.instance_id, ci.added_at, ci.media_condition, ci.sleeve_condition,
@@ -130,17 +149,16 @@ impl CollectionQueryService {
              ) le ON le.record_id = ci.record_id
              WHERE {where_clause}
              ORDER BY {order_by}
-             LIMIT {limit} OFFSET {offset}"
+             {limit_str}"
         );
 
         let mut select_query = sqlx::query(&select_sql).bind(user_id);
-        select_query = Self::bind_filter_params(select_query, &filter);
+        select_query = Self::bind_filter_params(select_query, filter);
         let rows = select_query
             .fetch_all(pool)
             .await
             .map_err(AppError::Database)?;
 
-        // 4. Batch fetch genres
         let record_ids: Vec<i64> = rows.iter().map(|r| r.get::<i64, _>("record_id")).collect();
         let mut genres_map: HashMap<i64, Vec<String>> = HashMap::new();
 
@@ -159,7 +177,6 @@ impl CollectionQueryService {
             }
         }
 
-        // 5. Map to CollectionRelease DTOs
         let mut releases = Vec::with_capacity(rows.len());
         for row in rows {
             let record_id: i64 = row.get("record_id");
@@ -235,17 +252,7 @@ impl CollectionQueryService {
             });
         }
 
-        let total_pages = ((total_items as f64) / (filter.per_page as f64)).ceil() as u32;
-
-        Ok(CollectionResponse {
-            releases,
-            pagination: DiscogsPagination {
-                page: filter.page,
-                pages: total_pages,
-                per_page: filter.per_page,
-                items: total_items as u32,
-            },
-        })
+        Ok(releases)
     }
 
     pub async fn get_random_record(

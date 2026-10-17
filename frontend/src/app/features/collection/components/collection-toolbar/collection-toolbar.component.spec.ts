@@ -165,5 +165,17 @@ describe('CollectionToolbarComponent', () => {
     component.onClearNotPlayed();
     expect(component.clearNotPlayedFilters.emit).toHaveBeenCalled();
   });
+
+  it('should toggle export dropdown and emit exportFormat when format selected', () => {
+    spyOn(component.exportFormat, 'emit');
+    expect(component.isExportDropdownOpen()).toBeFalse();
+
+    component.toggleExportDropdown();
+    expect(component.isExportDropdownOpen()).toBeTrue();
+
+    component.onSelectExport('pdf');
+    expect(component.exportFormat.emit).toHaveBeenCalledWith('pdf');
+    expect(component.isExportDropdownOpen()).toBeFalse();
+  });
 });
 

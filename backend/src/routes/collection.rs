@@ -2,7 +2,10 @@ use crate::{
     auth::CurrentUser,
     error::AppError,
     models::collection::{CollectionQueryParams, ParsedCollectionFilter},
-    services::{collection_query::CollectionQueryService, collection_sync::CollectionSyncService},
+    services::{
+        collection_query::CollectionQueryService, collection_sync::CollectionSyncService,
+        export_service::ExportService,
+    },
     state::AppState,
 };
 use axum::{
@@ -38,6 +41,13 @@ pub struct PriceRefreshQueryParams {
     #[serde(rename = "onlyMissing")]
     pub only_missing_camel: Option<bool>,
     pub only_missing: Option<bool>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CollectionExportQueryParams {
+    pub format: Option<String>,
+    #[serde(flatten)]
+    pub filter: CollectionQueryParams,
 }
 
 pub async fn get_collection_handler(
@@ -200,9 +210,77 @@ pub async fn generate_all_qr_codes_handler(
     ))
 }
 
+pub async fn export_collection_handler(
+    State(state): State<AppState>,
+    CurrentUser(user): CurrentUser,
+    Query(params): Query<CollectionExportQueryParams>,
+) -> Result<impl IntoResponse, AppError> {
+    let format_str = params.format.as_deref().unwrap_or("").trim().to_lowercase();
+    let filter = ParsedCollectionFilter::from(params.filter);
+    let releases =
+        CollectionQueryService::get_collection_for_export(&state.pool, user.id, filter).await?;
+
+    match format_str.as_str() {
+        "csv" => {
+            let csv_bytes = ExportService::export_collection_csv(&releases)?;
+            Ok((
+                StatusCode::OK,
+                [
+                    (axum::http::header::CONTENT_TYPE, "text/csv; charset=utf-8"),
+                    (
+                        axum::http::header::CONTENT_DISPOSITION,
+                        "attachment; filename=\"vinyl_collection_export.csv\"",
+                    ),
+                ],
+                csv_bytes,
+            ))
+        }
+        "json" => {
+            let json_bytes = ExportService::export_collection_json(&user.username, &releases)?;
+            Ok((
+                StatusCode::OK,
+                [
+                    (
+                        axum::http::header::CONTENT_TYPE,
+                        "application/json; charset=utf-8",
+                    ),
+                    (
+                        axum::http::header::CONTENT_DISPOSITION,
+                        "attachment; filename=\"vinyl_collection_backup.json\"",
+                    ),
+                ],
+                json_bytes,
+            ))
+        }
+        "pdf" => {
+            let pdf_bytes = ExportService::export_collection_pdf(
+                &user.username,
+                &releases,
+                Some(&state.image_proxy),
+            )
+            .await?;
+            Ok((
+                StatusCode::OK,
+                [
+                    (axum::http::header::CONTENT_TYPE, "application/pdf"),
+                    (
+                        axum::http::header::CONTENT_DISPOSITION,
+                        "attachment; filename=\"vinyl_collection_catalog.pdf\"",
+                    ),
+                ],
+                pdf_bytes,
+            ))
+        }
+        _ => Err(AppError::BadRequest(
+            "Unsupported or missing export format. Supported formats: csv, json, pdf".to_string(),
+        )),
+    }
+}
+
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/", get(get_collection_handler))
+        .route("/export", get(export_collection_handler))
         .route("/random", get(get_random_record_handler))
         .route("/unplayed", get(get_unplayed_collection_handler))
         .route("/sync", post(sync_collection_handler))

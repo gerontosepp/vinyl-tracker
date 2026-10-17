@@ -9,6 +9,15 @@
 
 ## Unreleased
 
+- **Vollständiges Sammlungs-Backup & Versicherungs-Export (CSV, JSON, PDF) (`#42`)**:
+  - **Export-Formate**:
+    - **CSV-Export**: RFC-4180-konformer tabellarischer Export aller Tonträger mit Metadaten (Interpret, Albumtitel, Veröffentlichungsjahr, Format, Genres, Discogs-ID, Schätzwert/Medianpreis, Hinzugefügt am, Media-/Sleeve-Zustand, Hörzähler und letztes Spieldatum).
+    - **JSON-Backup**: Vollständiges maschinenlesbares Backup der Sammlung inklusive Metadaten (`exported_at`, `username`, `total_records`, `total_estimated_value` und Release-Details).
+    - **PDF-Katalog & Versicherungs-Dokumentation**: Hochwertiger, druckfertiger Sammlungs- und Versicherungskatalog mit Bewertungs-Zusammenfassungsbanner (Gesamtwert, Datumsstempel, Eigentümer), strukturierter Kartenansicht mit Cover-Artwork (inkl. stilisiertem Vektor-Vinyl-Fallback) sowie Goldmine-Zustandsbewertungen und Discogs-Preisen.
+  - **REST-API**: Neuer Endpunkt `GET /api/collection/export?format=csv|json|pdf` mit Unterstützung sämtlicher Filter-, Such- und Sortierparameter (`search`, `genre`, `year`, `category`, `sort`, `sort_order`).
+  - **Frontend UI & Einstellungen**: Neuer Bereich „Sammlung exportieren“ in den Einstellungen unter Datenverwaltung zum direkten Herunterladen von CSV-, JSON- und PDF-Exporten mit Ladeindikator und Fehlerbehandlung.
+  - **Tests**: Umfassende Unit- und Integrationstests im Backend (`export_service.rs`, `backend/tests/collection_tests.rs`) und Frontend (`settings.component.spec.ts`, `collection-toolbar.component.spec.ts`, `collection.component.spec.ts`).
+
 - **Entfernung der Statistik-Seite & Bereinigung der Navigation (`#39`)**:
   - **Navigation & Routing**: Route `/statistics` sowie die Navigationslinks in der Desktop-Sidebar (`SidebarComponent`) und der mobilen Navigation (`BottomNavComponent`) wurden entfernt.
   - **Mobiles Layout**: `BottomNavComponent` wurde für ein harmonisches 4-Elemente-Layout (Home, Sammlung, QR-Scan, Profil) mit `justify-around` optimiert.

@@ -900,3 +900,238 @@ async fn test_collection_artist_sorting_natural_order_and_collation() {
         ]
     );
 }
+
+#[tokio::test]
+async fn test_collection_export_endpoints() {
+    let (app, state) = setup_app().await;
+    let (user_id, username, cookie) = create_authenticated_user(&app).await;
+
+    // 1. Unauthorized export request returns 401
+    let unauth_res = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/api/collection/export?format=csv")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(unauth_res.status(), StatusCode::UNAUTHORIZED);
+
+    // 2. Unsupported format returns 400 with RFC 7807 Problem Detail
+    let bad_fmt_res = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/api/collection/export?format=xml")
+                .header(header::COOKIE, &cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(bad_fmt_res.status(), StatusCode::BAD_REQUEST);
+    let bad_fmt_bytes = bad_fmt_res.into_body().collect().await.unwrap().to_bytes();
+    let bad_fmt_json: Value = serde_json::from_slice(&bad_fmt_bytes).unwrap();
+    assert!(
+        bad_fmt_json["detail"]
+            .as_str()
+            .unwrap()
+            .contains("Unsupported or missing export format")
+    );
+
+    // 3. Insert sample records into user collection
+    let row1 = sqlx::query(
+        r#"
+        INSERT INTO record_cache (discogs_id, title, artist, release_year, format, lowest_price, median_price)
+        VALUES (99001, 'The Dark Side of the Moon', 'Pink Floyd', '1973', 'LP', 34.50, 40.00)
+        ON CONFLICT (discogs_id) DO UPDATE SET title = EXCLUDED.title
+        RETURNING id
+        "#,
+    )
+    .fetch_one(&state.pool)
+    .await
+    .unwrap();
+    let r1: i64 = row1.get("id");
+
+    sqlx::query(
+        "INSERT INTO record_genres (record_id, genre) VALUES ($1, 'Rock') ON CONFLICT DO NOTHING",
+    )
+    .bind(r1)
+    .execute(&state.pool)
+    .await
+    .unwrap();
+
+    let row2 = sqlx::query(
+        r#"
+        INSERT INTO record_cache (discogs_id, title, artist, release_year, format, lowest_price, median_price)
+        VALUES (99002, 'Kind of Blue', 'Miles Davis', '1959', 'LP', 28.00, 35.00)
+        ON CONFLICT (discogs_id) DO UPDATE SET title = EXCLUDED.title
+        RETURNING id
+        "#,
+    )
+    .fetch_one(&state.pool)
+    .await
+    .unwrap();
+    let r2: i64 = row2.get("id");
+
+    sqlx::query(
+        "INSERT INTO record_genres (record_id, genre) VALUES ($1, 'Jazz') ON CONFLICT DO NOTHING",
+    )
+    .bind(r2)
+    .execute(&state.pool)
+    .await
+    .unwrap();
+
+    sqlx::query(
+        r#"
+        INSERT INTO collection_item (user_id, record_id, instance_id, media_condition, sleeve_condition, added_at)
+        VALUES ($1, $2, 9900101, 'Near Mint (NM or M-)', 'Very Good Plus (VG+)', NOW())
+        ON CONFLICT (user_id, instance_id) DO NOTHING
+        "#,
+    )
+    .bind(user_id)
+    .bind(r1)
+    .execute(&state.pool)
+    .await
+    .unwrap();
+
+    sqlx::query(
+        r#"
+        INSERT INTO collection_item (user_id, record_id, instance_id, media_condition, sleeve_condition, added_at)
+        VALUES ($1, $2, 9900201, 'Mint (M)', 'Near Mint (NM or M-)', NOW())
+        ON CONFLICT (user_id, instance_id) DO NOTHING
+        "#,
+    )
+    .bind(user_id)
+    .bind(r2)
+    .execute(&state.pool)
+    .await
+    .unwrap();
+
+    // 4. Test CSV Export
+    let csv_res = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/api/collection/export?format=csv")
+                .header(header::COOKIE, &cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(csv_res.status(), StatusCode::OK);
+    let csv_content_type = csv_res
+        .headers()
+        .get(header::CONTENT_TYPE)
+        .unwrap()
+        .to_str()
+        .unwrap();
+    assert!(csv_content_type.contains("text/csv"));
+    let csv_disp = csv_res
+        .headers()
+        .get(header::CONTENT_DISPOSITION)
+        .unwrap()
+        .to_str()
+        .unwrap();
+    assert!(csv_disp.contains("vinyl_collection_export.csv"));
+
+    let csv_bytes = csv_res.into_body().collect().await.unwrap().to_bytes();
+    let csv_text = String::from_utf8(csv_bytes.to_vec()).unwrap();
+    assert!(csv_text.starts_with("Artist,Title,Release Year,Format"));
+    assert!(csv_text.contains("Pink Floyd"));
+    assert!(csv_text.contains("The Dark Side of the Moon"));
+    assert!(csv_text.contains("Miles Davis"));
+    assert!(csv_text.contains("Kind of Blue"));
+
+    // 5. Test JSON Export
+    let json_res = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/api/collection/export?format=json")
+                .header(header::COOKIE, &cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(json_res.status(), StatusCode::OK);
+    let json_content_type = json_res
+        .headers()
+        .get(header::CONTENT_TYPE)
+        .unwrap()
+        .to_str()
+        .unwrap();
+    assert!(json_content_type.contains("application/json"));
+    let json_disp = json_res
+        .headers()
+        .get(header::CONTENT_DISPOSITION)
+        .unwrap()
+        .to_str()
+        .unwrap();
+    assert!(json_disp.contains("vinyl_collection_backup.json"));
+
+    let json_bytes = json_res.into_body().collect().await.unwrap().to_bytes();
+    let backup_data: Value = serde_json::from_slice(&json_bytes).unwrap();
+    assert_eq!(backup_data["username"], username);
+    assert_eq!(backup_data["total_records"], 2);
+    assert!(backup_data["total_estimated_value"].as_f64().unwrap() > 0.0);
+    assert_eq!(backup_data["releases"].as_array().unwrap().len(), 2);
+
+    // 6. Test PDF Catalog Export
+    let pdf_res = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/api/collection/export?format=pdf")
+                .header(header::COOKIE, &cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(pdf_res.status(), StatusCode::OK);
+    let pdf_content_type = pdf_res
+        .headers()
+        .get(header::CONTENT_TYPE)
+        .unwrap()
+        .to_str()
+        .unwrap();
+    assert_eq!(pdf_content_type, "application/pdf");
+    let pdf_disp = pdf_res
+        .headers()
+        .get(header::CONTENT_DISPOSITION)
+        .unwrap()
+        .to_str()
+        .unwrap();
+    assert!(pdf_disp.contains("vinyl_collection_catalog.pdf"));
+
+    let pdf_bytes = pdf_res.into_body().collect().await.unwrap().to_bytes();
+    assert_eq!(&pdf_bytes[0..4], b"%PDF");
+
+    let mut pdf_doc = lopdf::Document::load_mem(&pdf_bytes).expect("Valid PDF");
+    pdf_doc.decompress();
+    let mut full_text = String::new();
+    for (_, object) in pdf_doc.objects.iter() {
+        if let lopdf::Object::Stream(stream) = object {
+            if let Ok(text) = String::from_utf8(stream.content.clone()) {
+                full_text.push_str(&text);
+            }
+        }
+    }
+    assert!(full_text.contains("Vinyl Tracker - Collection Catalog & Insurance Report"));
+    assert!(full_text.contains(&username));
+    assert!(full_text.contains("Pink Floyd"));
+    assert!(full_text.contains("The Dark Side of the Moon"));
+}

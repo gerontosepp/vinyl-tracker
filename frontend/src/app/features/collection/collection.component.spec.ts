@@ -19,7 +19,8 @@ describe('CollectionComponent', () => {
     mockApiService = {
       getCollection: jasmine.createSpy('getCollection').and.returnValue(of({ releases: [], pagination: { page: 1, pages: 1, per_page: 50, items: 0, urls: {} } })),
       getGenreBreakdown: jasmine.createSpy('getGenreBreakdown').and.returnValue(of([{ name: 'Rock', value: 10 }])),
-      getProxiedImageUrl: jasmine.createSpy('getProxiedImageUrl').and.callFake((url: string) => url)
+      getProxiedImageUrl: jasmine.createSpy('getProxiedImageUrl').and.callFake((url: string) => url),
+      exportCollection: jasmine.createSpy('exportCollection').and.returnValue(of(new Blob(['csv'], { type: 'text/csv' }))),
     };
     mockAuthService = {
       isSyncing: signal(false)

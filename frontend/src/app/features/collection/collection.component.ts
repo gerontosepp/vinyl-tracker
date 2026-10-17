@@ -8,6 +8,7 @@ import { RecordDetailModalComponent } from './components/record-detail-modal/rec
 import { AuthService } from '../../core/services/auth.service';
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
+import { LanguageService } from '../../core/services/language.service';
 import { CollectionRelease, QrCodeItem, RecordDetailDto, GenreBreakdownItem } from '../../core/types';
 import { getErrorMessage } from '../../core/utils/error';
 import { getFormatType, FormatType } from './utils/format-type.util';
@@ -30,6 +31,7 @@ export class CollectionComponent implements OnInit, OnDestroy {
   readonly authService = inject(AuthService);
   readonly apiService = inject(ApiService);
   readonly toastService = inject(ToastService);
+  readonly languageService = inject(LanguageService);
 
   readonly selectedRecord = signal<CollectionRelease | null>(null);
   readonly recordDetail = signal<RecordDetailDto | null>(null);

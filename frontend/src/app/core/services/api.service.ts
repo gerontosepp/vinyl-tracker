@@ -183,6 +183,51 @@ export class ApiService {
     return this.http.post(`${this.baseUrl}/collection/qr-codes/selected`, { items }, { responseType: 'blob' });
   }
 
+  exportCollection(
+    format: 'csv' | 'json' | 'pdf',
+    filters?: {
+      search?: string;
+      category?: string;
+      genres?: string[];
+      years?: string;
+      notPlayedSince?: string;
+      unplayedOnly?: boolean;
+      sort?: string;
+      sortOrder?: string;
+    }
+  ): Observable<Blob> {
+    let params = new HttpParams().set('format', format);
+    if (filters) {
+      if (filters.search) {
+        params = params.set('search', filters.search);
+      }
+      if (filters.category && filters.category !== 'all') {
+        params = params.set('category', filters.category);
+      }
+      if (filters.genres && filters.genres.length > 0) {
+        filters.genres.forEach((g) => {
+          params = params.append('genres', g);
+        });
+      }
+      if (filters.years && filters.years.trim()) {
+        params = params.set('years', filters.years.trim());
+      }
+      if (filters.notPlayedSince && filters.notPlayedSince.trim()) {
+        params = params.set('not_played_since', filters.notPlayedSince.trim());
+      }
+      if (filters.unplayedOnly) {
+        params = params.set('unplayed_only', 'true');
+      }
+      if (filters.sort) {
+        params = params.set('sort', filters.sort);
+      }
+      if (filters.sortOrder) {
+        params = params.set('sort_order', filters.sortOrder);
+      }
+    }
+    return this.http.get(`${this.baseUrl}/collection/export`, { params, responseType: 'blob' });
+  }
+
   getUser(): Observable<User> {
     return this.http.get<User>(`${this.baseUrl}/users/me`);
   }

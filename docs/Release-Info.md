@@ -9,6 +9,12 @@
 
 ## Unreleased
 
+- **Kompaktes Leaderboard-Layout für meistgespielte Alben (`#103`)**:
+  - **High-Density Zeilen-Design**: Die Zeilenhöhe in `TopRecordsComponent` wurde um über 50 % reduziert (von ca. 85px auf ca. 40px), wodurch das Dashboard deutlich kompakter wird und nachfolgende Widgets wie „Kürzlich gehört“ direkt im sichtbaren Bereich (First Fold) liegen.
+  - **Rank-Badges & Subtiler Fortschrittsbalken**: Medaillen-Kennzeichnungen (1, 2, 3) für die Top 3, 38×38px Cover-Thumbnails und dezente relative Füllbalken direkt im Zeilen-Hintergrund, die ohne vertikalen Platzverlust die relative Spielhäufigkeit visualisieren.
+  - **Standardmäßige Top-5-Ansicht mit Toggle**: Standardmäßig werden die Top 5 angezeigt, mit einem Button zum einfachen Auf- und Zuklappen („Mehr anzeigen (X)“ / „Weniger anzeigen“) inklusive vollständiger i18n-Unterstützung (`stats.showMore`, `stats.showLess`).
+  - **Tests**: Neue eigenständige Unit-Test-Suite `top-records.component.spec.ts`.
+
 - **Vollständiges Sammlungs-Backup & Versicherungs-Export (CSV, JSON, PDF) (`#42`)**:
   - **Export-Formate**:
     - **CSV-Export**: RFC-4180-konformer tabellarischer Export aller Tonträger mit Metadaten (Interpret, Albumtitel, Veröffentlichungsjahr, Format, Genres, Discogs-ID, Schätzwert/Medianpreis, Hinzugefügt am, Media-/Sleeve-Zustand, Hörzähler und letztes Spieldatum).

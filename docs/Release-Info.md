@@ -9,6 +9,12 @@
 
 ## Unreleased
 
+- **Sicherheits-Upgrade: Moderne AEAD-Kryptografie & Login-Absicherung (`#101`)**:
+  - **AES-256-GCM & PBKDF2-HMAC-SHA256**: Umstellung des `CryptoService` von veraltetem CBC/SHA1 auf moderne authentifizierte Verschlüsselung (AES-256-GCM mit 96-Bit-Nonce und 128-Bit-Auth-Tag) sowie 100.000 PBKDF2-Iterationen nach BSI-/OWASP-Vorgaben.
+  - **Transparente Migration bestehender Tokens**: Vollständige Abwärtskompatibilität für bereits verschlüsselte Tokens in der Datenbank. Neu gespeicherte Tokens erhalten das moderne Format mit `v2:`-Präfix.
+  - **Entfernung des Klartext-Passwort-Fallbacks**: Der Entwicklungs-Fallback für unverschlüsselte Passwörter in `UserService::login` wurde restlos entfernt; Passwörter werden strikt per BCrypt verifiziert.
+  - **Tests**: Umfassende Roundtrip-, Tampering- und Abwärtskompatibilitätstests in `crypto_service` und Integrationstests in `auth_tests.rs`.
+
 - **Sicherheits-Fix: Verifikation beim Passwort-Reset (`#99`)**:
   - **Identitätsnachweis & Account-Schutz**: Unauthentifizierte Aufrufe von `POST /api/users/reset-password` erfordern nun zwingend einen gültigen Nachweis der Inhaberschaft (entweder das hinterlegte Discogs-Token oder das bisherige Passwort). Unberechtigte Anfragen ohne passenden Token werden mit `401 Unauthorized` abgewiesen.
   - **Keine automatische Session-Ausstellung**: Beim Passwort-Reset wird kein Login-JWT mehr automatisch ausgestellt oder per Cookie gesetzt, sondern eine explizite Neuanmeldung am Login-Formular verlangt.

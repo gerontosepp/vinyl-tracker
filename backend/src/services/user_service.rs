@@ -81,15 +81,7 @@ impl UserService {
         .map_err(AppError::Database)?
         .ok_or_else(|| AppError::Unauthorized("Invalid username or password".to_string()))?;
 
-        let is_valid = if user.password.starts_with("$2a$")
-            || user.password.starts_with("$2b$")
-            || user.password.starts_with("$2y$")
-        {
-            bcrypt::verify(&payload.password, &user.password).unwrap_or(false)
-        } else {
-            // Fallback for legacy plain-text development seeds
-            user.password == payload.password
-        };
+        let is_valid = bcrypt::verify(&payload.password, &user.password).unwrap_or(false);
 
         if !is_valid {
             return Err(AppError::Unauthorized(

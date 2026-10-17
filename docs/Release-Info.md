@@ -9,6 +9,12 @@
 
 ## Unreleased
 
+- **Sicherheits-Härtung: JWT_SECRET Fail-Fast, sichere Cookie-Attribute & Rate-Limiting (`#100`)**:
+  - **Fail-Fast Konfigurationsprüfung**: Backend-Start bricht sofort mit klarer Fehlermeldung ab, wenn `JWT_SECRET` kürzer als 32 Zeichen ist oder in einer Produktionsumgebung (`APP_ENV=production`) der unsichere Standard-Entwicklungsschlüssel verwendet wird.
+  - **Konfigurierbare & gehärtete Cookie-Attribute**: Vollständige Unterstützung von `AUTH_COOKIE_NAME`, `AUTH_COOKIE_MAX_AGE_SECONDS`, `AUTH_COOKIE_SECURE`, `AUTH_COOKIE_SAME_SITE`, `AUTH_COOKIE_PATH` und `AUTH_COOKIE_DOMAIN`. In Produktionsumgebungen ist das `Secure`-Flag standardmäßig aktiv. Authentifizierungs-Middleware und Logout synchronisieren Cookie-Namen und Attribute dynamisch.
+  - **IP-basiertes Rate-Limiting für Auth-Routen**: Öffentliche Authentifizierungs-Endpunkte (`POST /api/users/login`, `POST /api/users/register`, `POST /api/users/reset-password`) sind mittels `governor` gegen Brute-Force-Angriffe geschützt (`AUTH_RATE_LIMIT_FOR_PERIOD`, Standard: 10 Anfragen/Minute pro IP). Bei Überschreitung wird strikt HTTP `429 Too Many Requests` mit RFC 7807 Problem-Details zurückgegeben.
+  - **Tests**: Neue Unit-Tests für Konfigurationsvalidierung und Integrationstests für Cookie-Attribute und Rate-Limiting in `backend/tests/auth_tests.rs`.
+
 - **Sicherheits-Upgrade: Moderne AEAD-Kryptografie & Login-Absicherung (`#101`)**:
   - **AES-256-GCM & PBKDF2-HMAC-SHA256**: Umstellung des `CryptoService` von veraltetem CBC/SHA1 auf moderne authentifizierte Verschlüsselung (AES-256-GCM mit 96-Bit-Nonce und 128-Bit-Auth-Tag) sowie 100.000 PBKDF2-Iterationen nach BSI-/OWASP-Vorgaben.
   - **Transparente Migration bestehender Tokens**: Vollständige Abwärtskompatibilität für bereits verschlüsselte Tokens in der Datenbank. Neu gespeicherte Tokens erhalten das moderne Format mit `v2:`-Präfix.

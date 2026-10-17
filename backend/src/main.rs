@@ -25,6 +25,10 @@ async fn main() -> anyhow::Result<()> {
 
     // 3. Load configuration
     let config = Config::from_env();
+    if let Err(e) = config.validate() {
+        tracing::error!("Configuration validation failed: {e}");
+        return Err(anyhow::anyhow!("Configuration validation failed: {e}"));
+    }
     tracing::info!("Configured host: {}, port: {}", config.host, config.port);
     tracing::info!(
         "Database target: {}",

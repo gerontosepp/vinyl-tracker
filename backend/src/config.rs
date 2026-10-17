@@ -12,16 +12,28 @@ pub struct Config {
     pub jwt_secret: String,
     pub jwt_expiration_secs: u64,
     pub encryption_password: Option<String>,
+    pub app_env: String,
     pub encryption_salt: Option<String>,
     pub discogs_user_agent: String,
     pub discogs_api_base_url: String,
     pub image_proxy_allowed_hosts: String,
     pub cors_allowed_origins: Vec<String>,
     pub cors_allow_credentials: bool,
+    pub auth_cookie_name: String,
+    pub auth_cookie_max_age_secs: u64,
+    pub auth_cookie_secure: bool,
+    pub auth_cookie_same_site: String,
+    pub auth_cookie_path: String,
+    pub auth_cookie_domain: Option<String>,
+    pub auth_rate_limit_for_period: u32,
 }
 
 impl Config {
     pub fn from_env() -> Self {
+        let app_env = env::var("APP_ENV")
+            .or_else(|_| env::var("ENVIRONMENT"))
+            .unwrap_or_else(|_| "development".to_string());
+
         let host = env::var("HOST").unwrap_or_else(|_| "0.0.0.0".to_string());
         let port = env::var("PORT")
             .ok()
@@ -93,7 +105,36 @@ impl Config {
             .map(|v| v.eq_ignore_ascii_case("true") || v == "1")
             .unwrap_or(true);
 
+        let auth_cookie_name =
+            env::var("AUTH_COOKIE_NAME").unwrap_or_else(|_| "vinyl_token".to_string());
+
+        let auth_cookie_max_age_secs = env::var("AUTH_COOKIE_MAX_AGE_SECONDS")
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(86400);
+
+        let is_prod = app_env.eq_ignore_ascii_case("production");
+        let auth_cookie_secure = env::var("AUTH_COOKIE_SECURE")
+            .map(|v| v.eq_ignore_ascii_case("true") || v == "1")
+            .unwrap_or(is_prod);
+
+        let auth_cookie_same_site =
+            env::var("AUTH_COOKIE_SAME_SITE").unwrap_or_else(|_| "Lax".to_string());
+
+        let auth_cookie_path = env::var("AUTH_COOKIE_PATH").unwrap_or_else(|_| "/".to_string());
+
+        let auth_cookie_domain = env::var("AUTH_COOKIE_DOMAIN")
+            .ok()
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty());
+
+        let auth_rate_limit_for_period = env::var("AUTH_RATE_LIMIT_FOR_PERIOD")
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(10);
+
         Self {
+            app_env,
             host,
             port,
             database_url,
@@ -110,6 +151,89 @@ impl Config {
             image_proxy_allowed_hosts,
             cors_allowed_origins,
             cors_allow_credentials,
+            auth_cookie_name,
+            auth_cookie_max_age_secs,
+            auth_cookie_secure,
+            auth_cookie_same_site,
+            auth_cookie_path,
+            auth_cookie_domain,
+            auth_rate_limit_for_period,
         }
+    }
+
+    /// Validates application configuration.
+    /// - `JWT_SECRET` must be at least 32 characters long.
+    /// - In production mode (`APP_ENV=production`), the insecure development default key is disallowed.
+    pub fn validate(&self) -> Result<(), String> {
+        if self.jwt_secret.trim().len() < 32 {
+            return Err(format!(
+                "JWT_SECRET is invalid: must be at least 32 characters long (current length: {}).",
+                self.jwt_secret.trim().len()
+            ));
+        }
+
+        if self.app_env.eq_ignore_ascii_case("production")
+            && self.jwt_secret == "superSecretDevelopmentKeyDoNotUseInProduction123!"
+        {
+            return Err("JWT_SECRET is using the insecure default key in production mode. A secure, randomly generated key with at least 32 characters is required.".to_string());
+        }
+
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn create_test_config(secret: &str, app_env: &str) -> Config {
+        let mut config = Config::from_env();
+        config.jwt_secret = secret.to_string();
+        config.app_env = app_env.to_string();
+        config
+    }
+
+    #[test]
+    fn test_valid_jwt_secret_passes() {
+        let config = create_test_config(
+            "a_valid_and_sufficiently_long_jwt_secret_32_chars!",
+            "development",
+        );
+        assert!(config.validate().is_ok());
+    }
+
+    #[test]
+    fn test_short_jwt_secret_fails_validation() {
+        let config = create_test_config("too_short_secret", "development");
+        let err = config.validate().unwrap_err();
+        assert!(err.contains("at least 32 characters"));
+    }
+
+    #[test]
+    fn test_default_jwt_secret_rejected_in_production() {
+        let config = create_test_config(
+            "superSecretDevelopmentKeyDoNotUseInProduction123!",
+            "production",
+        );
+        let err = config.validate().unwrap_err();
+        assert!(err.contains("insecure default key in production mode"));
+    }
+
+    #[test]
+    fn test_custom_jwt_secret_accepted_in_production() {
+        let config = create_test_config(
+            "customProductionSecretWithAtLeast32CharactersHere!",
+            "production",
+        );
+        assert!(config.validate().is_ok());
+    }
+
+    #[test]
+    fn test_default_jwt_secret_accepted_in_development() {
+        let config = create_test_config(
+            "superSecretDevelopmentKeyDoNotUseInProduction123!",
+            "development",
+        );
+        assert!(config.validate().is_ok());
     }
 }

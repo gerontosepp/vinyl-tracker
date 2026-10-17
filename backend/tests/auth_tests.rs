@@ -7,9 +7,8 @@ use http_body_util::BodyExt;
 use serde_json::{Value, json};
 use tower::ServiceExt;
 
-async fn setup_app() -> (axum::Router, AppState) {
+async fn setup_app_with_config(config: Config) -> (axum::Router, AppState) {
     dotenvy::dotenv().ok();
-    let config = Config::from_env();
     let _ = backend_rs::db::migrations::run_migrations(&config.database_url).await;
     let pool = init_pool(&config)
         .await
@@ -17,6 +16,11 @@ async fn setup_app() -> (axum::Router, AppState) {
     let state = AppState::new(pool, config);
     let app = create_app(state.clone());
     (app, state)
+}
+
+async fn setup_app() -> (axum::Router, AppState) {
+    let config = Config::from_env();
+    setup_app_with_config(config).await
 }
 
 #[tokio::test]
@@ -575,5 +579,167 @@ async fn test_update_discogs_stores_modern_aead_format() {
         decrypted.as_deref(),
         Some(secret_token),
         "CryptoService must decrypt modern AEAD token correctly"
+    );
+}
+
+#[tokio::test]
+async fn test_configurable_cookie_attributes() {
+    let mut config = Config::from_env();
+    config.auth_cookie_name = "custom_auth_cookie".to_string();
+    config.auth_cookie_secure = true;
+    config.auth_cookie_same_site = "Strict".to_string();
+    config.auth_cookie_max_age_secs = 3600;
+    config.auth_cookie_domain = Some("example.com".to_string());
+
+    let (app, _) = setup_app_with_config(config).await;
+
+    let test_user = format!("cookie_user_{}", chrono::Utc::now().timestamp_millis());
+    let password = "ValidPassword123!";
+
+    // 1. Register
+    let reg_payload = json!({
+        "username": test_user,
+        "password": password
+    });
+    let reg_res = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/api/users/register")
+                .header(header::CONTENT_TYPE, "application/json")
+                .body(Body::from(serde_json::to_vec(&reg_payload).unwrap()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(reg_res.status(), StatusCode::OK);
+
+    let set_cookie = reg_res
+        .headers()
+        .get(header::SET_COOKIE)
+        .expect("Must have Set-Cookie header")
+        .to_str()
+        .unwrap();
+
+    assert!(set_cookie.starts_with("custom_auth_cookie="));
+    assert!(set_cookie.contains("Secure"));
+    assert!(set_cookie.contains("SameSite=Strict"));
+    assert!(set_cookie.contains("Max-Age=3600"));
+    assert!(set_cookie.contains("Domain=example.com"));
+    assert!(set_cookie.contains("HttpOnly"));
+
+    let cookie_val = set_cookie.split(';').next().unwrap();
+    let token = cookie_val.strip_prefix("custom_auth_cookie=").unwrap();
+
+    // 2. Access /me using the custom cookie name
+    let me_res = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/api/users/me")
+                .header(header::COOKIE, format!("custom_auth_cookie={token}"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(me_res.status(), StatusCode::OK);
+
+    // 3. Logout clears custom cookie with matching attributes
+    let logout_res = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/api/users/logout")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(logout_res.status(), StatusCode::OK);
+
+    let clear_cookie = logout_res
+        .headers()
+        .get(header::SET_COOKIE)
+        .expect("Must have Set-Cookie header on logout")
+        .to_str()
+        .unwrap();
+
+    assert!(clear_cookie.starts_with("custom_auth_cookie="));
+    assert!(clear_cookie.contains("Max-Age=0"));
+    assert!(clear_cookie.contains("Secure"));
+    assert!(clear_cookie.contains("Domain=example.com"));
+}
+
+#[tokio::test]
+async fn test_auth_rate_limiting_returns_429() {
+    let mut config = Config::from_env();
+    config.auth_rate_limit_for_period = 3;
+    let (app, _) = setup_app_with_config(config).await;
+
+    let test_ip = "198.51.100.42";
+    let login_payload = json!({
+        "username": "non_existent_rate_limit_user",
+        "password": "wrong_password_123"
+    });
+
+    // Send 3 requests (within quota) -> returns 401 Unauthorized
+    for i in 1..=3 {
+        let req = Request::builder()
+            .method(Method::POST)
+            .uri("/api/users/login")
+            .header(header::CONTENT_TYPE, "application/json")
+            .header("x-forwarded-for", test_ip)
+            .body(Body::from(serde_json::to_vec(&login_payload).unwrap()))
+            .unwrap();
+
+        let res = app.clone().oneshot(req).await.unwrap();
+        assert_eq!(
+            res.status(),
+            StatusCode::UNAUTHORIZED,
+            "Request {i} must be within rate limit"
+        );
+    }
+
+    // 4th request from same IP -> exceeds limit -> returns 429 Too Many Requests
+    let blocked_req = Request::builder()
+        .method(Method::POST)
+        .uri("/api/users/login")
+        .header(header::CONTENT_TYPE, "application/json")
+        .header("x-forwarded-for", test_ip)
+        .body(Body::from(serde_json::to_vec(&login_payload).unwrap()))
+        .unwrap();
+
+    let blocked_res = app.clone().oneshot(blocked_req).await.unwrap();
+    assert_eq!(blocked_res.status(), StatusCode::TOO_MANY_REQUESTS);
+
+    let bytes = blocked_res.into_body().collect().await.unwrap().to_bytes();
+    let problem: Value = serde_json::from_slice(&bytes).unwrap();
+    assert_eq!(problem["status"], 429);
+    assert_eq!(problem["title"], "Too Many Requests");
+    assert!(
+        problem["detail"]
+            .as_str()
+            .unwrap()
+            .contains("Rate limit exceeded")
+    );
+
+    // Request from another IP should NOT be blocked
+    let other_ip_req = Request::builder()
+        .method(Method::POST)
+        .uri("/api/users/login")
+        .header(header::CONTENT_TYPE, "application/json")
+        .header("x-forwarded-for", "198.51.100.99")
+        .body(Body::from(serde_json::to_vec(&login_payload).unwrap()))
+        .unwrap();
+
+    let other_ip_res = app.clone().oneshot(other_ip_req).await.unwrap();
+    assert_eq!(
+        other_ip_res.status(),
+        StatusCode::UNAUTHORIZED,
+        "Different IP must not be rate limited"
     );
 }

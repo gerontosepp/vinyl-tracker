@@ -245,14 +245,20 @@ async fn test_legacy_user_login() {
             .await
             .unwrap();
 
+    let hashed = bcrypt::hash("secret", 10).expect("Must hash password");
     if user_exists.is_none() {
-        let hashed = bcrypt::hash("secret", 10).expect("Must hash password");
         sqlx::query("INSERT INTO app_user (username, password) VALUES ($1, $2)")
             .bind("max_mustermann")
             .bind(&hashed)
             .execute(&state.pool)
             .await
             .expect("Must insert legacy test user");
+    } else {
+        sqlx::query("UPDATE app_user SET password = $1 WHERE username = 'max_mustermann'")
+            .bind(&hashed)
+            .execute(&state.pool)
+            .await
+            .expect("Must ensure legacy test user has bcrypt password");
     }
 
     let login_payload = json!({
@@ -454,4 +460,120 @@ async fn test_reset_password_flow() {
         .await
         .unwrap();
     assert_eq!(change_res.status(), StatusCode::OK);
+}
+
+#[tokio::test]
+async fn test_plaintext_password_is_rejected() {
+    let (app, state) = setup_app().await;
+
+    let test_user = format!("plain_user_{}", chrono::Utc::now().timestamp_millis());
+    let plaintext_pw = "PlaintextPassword123!";
+
+    // Insert user with unhashed plaintext password
+    sqlx::query("INSERT INTO app_user (username, password) VALUES ($1, $2)")
+        .bind(&test_user)
+        .bind(plaintext_pw)
+        .execute(&state.pool)
+        .await
+        .expect("Must insert user with plaintext password");
+
+    let login_payload = json!({
+        "username": test_user,
+        "password": plaintext_pw
+    });
+
+    let res = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/api/users/login")
+                .header(header::CONTENT_TYPE, "application/json")
+                .body(Body::from(serde_json::to_vec(&login_payload).unwrap()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(
+        res.status(),
+        StatusCode::UNAUTHORIZED,
+        "Plaintext passwords must never be accepted for login"
+    );
+}
+
+#[tokio::test]
+async fn test_update_discogs_stores_modern_aead_format() {
+    let (app, state) = setup_app().await;
+
+    let test_user = format!(
+        "discogs_aead_user_{}",
+        chrono::Utc::now().timestamp_millis()
+    );
+    let password = "ValidPassword123!";
+    let secret_token = "discogs_pat_super_secret_456789";
+
+    // 1. Register user
+    let reg_payload = json!({
+        "username": test_user,
+        "password": password
+    });
+    let reg_res = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/api/users/register")
+                .header(header::CONTENT_TYPE, "application/json")
+                .body(Body::from(serde_json::to_vec(&reg_payload).unwrap()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(reg_res.status(), StatusCode::OK);
+
+    let reg_bytes = reg_res.into_body().collect().await.unwrap().to_bytes();
+    let reg_json: Value = serde_json::from_slice(&reg_bytes).unwrap();
+    let token = reg_json["token"].as_str().unwrap();
+
+    // 2. Update Discogs settings
+    let update_payload = json!({
+        "discogsUsername": "modern_discogs_user",
+        "token": secret_token
+    });
+    let update_res = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::PUT)
+                .uri("/api/users/me/discogs")
+                .header(header::CONTENT_TYPE, "application/json")
+                .header(header::AUTHORIZATION, format!("Bearer {token}"))
+                .body(Body::from(serde_json::to_vec(&update_payload).unwrap()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(update_res.status(), StatusCode::OK);
+
+    // 3. Inspect encrypted value in database: must start with modern v2: prefix
+    let db_token: Option<String> =
+        sqlx::query_scalar("SELECT discogs_token FROM app_user WHERE username = $1")
+            .bind(&test_user)
+            .fetch_one(&state.pool)
+            .await
+            .unwrap();
+
+    let enc_token = db_token.expect("discogs_token must be persisted in database");
+    assert!(
+        enc_token.starts_with("v2:"),
+        "Newly persisted Discogs token must use modern AES-256-GCM format starting with 'v2:', got: {enc_token}"
+    );
+
+    // 4. Decrypt via CryptoService: must match original plaintext
+    let decrypted = state.crypto.decrypt(&enc_token);
+    assert_eq!(
+        decrypted.as_deref(),
+        Some(secret_token),
+        "CryptoService must decrypt modern AEAD token correctly"
+    );
 }

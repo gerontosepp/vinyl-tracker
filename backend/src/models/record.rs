@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use crate::models::discogs::{DiscogsFormat, DiscogsLabel, DiscogsTrack};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RecordDetailDto {

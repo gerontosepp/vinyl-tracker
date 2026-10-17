@@ -1,6 +1,8 @@
+use crate::models::discogs::{
+    DiscogsArtist, DiscogsFormat, DiscogsLabel, DiscogsPagination, DiscogsTrack,
+};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use crate::models::discogs::{DiscogsArtist, DiscogsFormat, DiscogsLabel, DiscogsPagination, DiscogsTrack};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CollectionNote {
@@ -116,15 +118,21 @@ impl From<CollectionQueryParams> for ParsedCollectionFilter {
             .or(params.sort_by)
             .unwrap_or_else(|| "artist".to_string())
             .to_lowercase();
-        let sort_order = params.sort_order.unwrap_or_else(|| "asc".to_string()).to_lowercase();
-        
+        let sort_order = params
+            .sort_order
+            .unwrap_or_else(|| "asc".to_string())
+            .to_lowercase();
+
         let category = match params.category.as_deref() {
             Some(c) if c.eq_ignore_ascii_case("vinyl") => "vinyl".to_string(),
             Some(c) if c.eq_ignore_ascii_case("cd") => "cd".to_string(),
             _ => "all".to_string(),
         };
 
-        let search = params.search.map(|s| s.trim().to_string()).filter(|s| !s.is_empty());
+        let search = params
+            .search
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty());
 
         let genres = params
             .genres
@@ -141,10 +149,11 @@ impl From<CollectionQueryParams> for ParsedCollectionFilter {
             .map(|y| parse_years_filter(&y))
             .unwrap_or_default();
 
-        let not_played_since = params
-            .not_played_since
-            .as_deref()
-            .and_then(|s| DateTime::parse_from_rfc3339(s).ok().map(|dt| dt.with_timezone(&Utc)));
+        let not_played_since = params.not_played_since.as_deref().and_then(|s| {
+            DateTime::parse_from_rfc3339(s)
+                .ok()
+                .map(|dt| dt.with_timezone(&Utc))
+        });
 
         let unplayed_only = params.unplayed_only.unwrap_or(false);
         let min_plays = params.min_plays.filter(|p| *p > 0);
@@ -222,7 +231,9 @@ mod tests {
         );
         assert_eq!(
             parse_years_filter("1990s"),
-            vec!["1990", "1991", "1992", "1993", "1994", "1995", "1996", "1997", "1998", "1999"]
+            vec![
+                "1990", "1991", "1992", "1993", "1994", "1995", "1996", "1997", "1998", "1999"
+            ]
         );
     }
 }

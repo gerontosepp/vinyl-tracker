@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-use sqlx::{PgPool, Row};
 use crate::{
     error::AppError,
     models::{
@@ -10,6 +8,8 @@ use crate::{
         discogs::{DiscogsArtist, DiscogsPagination},
     },
 };
+use sqlx::{PgPool, Row};
+use std::collections::HashMap;
 
 pub struct CollectionQueryService;
 
@@ -37,7 +37,10 @@ impl CollectionQueryService {
 
         let mut count_query = sqlx::query_scalar::<_, i64>(&count_sql).bind(user_id);
         count_query = Self::bind_filter_params_scalar(count_query, &filter);
-        let total_items = count_query.fetch_one(pool).await.map_err(AppError::Database)?;
+        let total_items = count_query
+            .fetch_one(pool)
+            .await
+            .map_err(AppError::Database)?;
 
         if total_items == 0 {
             return Ok(CollectionResponse {
@@ -51,33 +54,83 @@ impl CollectionQueryService {
             });
         }
 
-        // 2. Build ORDER BY clause
-        let order_by = match filter.sort.as_str() {
-            "year" => {
-                let dir = if filter.sort_order == "desc" { "DESC" } else { "ASC" };
-                format!("rc.release_year {dir} NULLS LAST, rc.artist ASC NULLS LAST, rc.title ASC")
-            }
-            "format" => {
-                let dir = if filter.sort_order == "desc" { "DESC" } else { "ASC" };
-                format!("rc.format {dir} NULLS LAST, rc.artist ASC NULLS LAST, rc.release_year ASC NULLS LAST, rc.title ASC")
-            }
-            "listens" => {
-                let dir = if filter.sort_order == "desc" { "DESC" } else { "ASC" };
-                format!("COALESCE(le.listen_count, 0) {dir}, rc.artist ASC NULLS LAST, rc.release_year ASC NULLS LAST")
-            }
-            "artist" => {
-                let dir = if filter.sort_order == "desc" { "DESC" } else { "ASC" };
-                format!("rc.artist {dir} NULLS LAST, rc.release_year ASC NULLS LAST, rc.title ASC")
-            }
-            _ => {
-                let dir = if filter.sort_order == "desc" { "DESC" } else { "ASC" };
-                format!("ci.added_at {dir}")
-            }
-        };
-
-        // 3. Fetch paged results with lowest_price and median_price cast to float8
         let offset = ((filter.page - 1) * filter.per_page) as i64;
         let limit = filter.per_page as i64;
+        let limit_clause = format!("LIMIT {limit} OFFSET {offset}");
+
+        let releases =
+            Self::fetch_and_map_releases(pool, user_id, &filter, Some(&limit_clause)).await?;
+
+        let total_pages = ((total_items as f64) / (filter.per_page as f64)).ceil() as u32;
+
+        Ok(CollectionResponse {
+            releases,
+            pagination: DiscogsPagination {
+                page: filter.page,
+                pages: total_pages,
+                per_page: filter.per_page,
+                items: total_items as u32,
+            },
+        })
+    }
+
+    pub async fn get_collection_for_export(
+        pool: &PgPool,
+        user_id: i64,
+        filter: ParsedCollectionFilter,
+    ) -> Result<Vec<CollectionRelease>, AppError> {
+        Self::fetch_and_map_releases(pool, user_id, &filter, None).await
+    }
+
+    fn build_order_by(sort: &str, sort_order: &str) -> String {
+        let normalized_artist_asc =
+            r#"REGEXP_REPLACE(LOWER(rc.artist), '^the\s+', '', 'i') COLLATE "C" ASC"#;
+        let normalized_artist_desc =
+            r#"REGEXP_REPLACE(LOWER(rc.artist), '^the\s+', '', 'i') COLLATE "C" DESC"#;
+
+        match sort {
+            "year" => {
+                let dir = if sort_order == "desc" { "DESC" } else { "ASC" };
+                format!(
+                    "rc.release_year {dir} NULLS LAST, {normalized_artist_asc} NULLS LAST, rc.title ASC"
+                )
+            }
+            "format" => {
+                let dir = if sort_order == "desc" { "DESC" } else { "ASC" };
+                format!(
+                    "rc.format {dir} NULLS LAST, {normalized_artist_asc} NULLS LAST, rc.release_year ASC NULLS LAST, rc.title ASC"
+                )
+            }
+            "listens" => {
+                let dir = if sort_order == "desc" { "DESC" } else { "ASC" };
+                format!(
+                    "COALESCE(le.listen_count, 0) {dir}, {normalized_artist_asc} NULLS LAST, rc.release_year ASC NULLS LAST"
+                )
+            }
+            "artist" => {
+                let dir = if sort_order == "desc" {
+                    normalized_artist_desc
+                } else {
+                    normalized_artist_asc
+                };
+                format!("{dir} NULLS LAST, rc.release_year ASC NULLS LAST, rc.title ASC")
+            }
+            _ => {
+                let dir = if sort_order == "desc" { "DESC" } else { "ASC" };
+                format!("ci.added_at {dir}")
+            }
+        }
+    }
+
+    async fn fetch_and_map_releases(
+        pool: &PgPool,
+        user_id: i64,
+        filter: &ParsedCollectionFilter,
+        limit_clause: Option<&str>,
+    ) -> Result<Vec<CollectionRelease>, AppError> {
+        let where_clause = Self::build_where_clause(filter);
+        let order_by = Self::build_order_by(&filter.sort, &filter.sort_order);
+        let limit_str = limit_clause.unwrap_or("");
 
         let select_sql = format!(
             "SELECT ci.id as item_id, ci.instance_id, ci.added_at, ci.media_condition, ci.sleeve_condition,
@@ -96,25 +149,26 @@ impl CollectionQueryService {
              ) le ON le.record_id = ci.record_id
              WHERE {where_clause}
              ORDER BY {order_by}
-             LIMIT {limit} OFFSET {offset}"
+             {limit_str}"
         );
 
         let mut select_query = sqlx::query(&select_sql).bind(user_id);
-        select_query = Self::bind_filter_params(select_query, &filter);
-        let rows = select_query.fetch_all(pool).await.map_err(AppError::Database)?;
+        select_query = Self::bind_filter_params(select_query, filter);
+        let rows = select_query
+            .fetch_all(pool)
+            .await
+            .map_err(AppError::Database)?;
 
-        // 4. Batch fetch genres
         let record_ids: Vec<i64> = rows.iter().map(|r| r.get::<i64, _>("record_id")).collect();
         let mut genres_map: HashMap<i64, Vec<String>> = HashMap::new();
 
         if !record_ids.is_empty() {
-            let genre_rows = sqlx::query(
-                "SELECT record_id, genre FROM record_genres WHERE record_id = ANY($1)"
-            )
-            .bind(&record_ids)
-            .fetch_all(pool)
-            .await
-            .map_err(AppError::Database)?;
+            let genre_rows =
+                sqlx::query("SELECT record_id, genre FROM record_genres WHERE record_id = ANY($1)")
+                    .bind(&record_ids)
+                    .fetch_all(pool)
+                    .await
+                    .map_err(AppError::Database)?;
 
             for grow in genre_rows {
                 let rid: i64 = grow.get("record_id");
@@ -123,7 +177,6 @@ impl CollectionQueryService {
             }
         }
 
-        // 5. Map to CollectionRelease DTOs
         let mut releases = Vec::with_capacity(rows.len());
         for row in rows {
             let record_id: i64 = row.get("record_id");
@@ -149,15 +202,24 @@ impl CollectionQueryService {
             let artists = if artist.is_empty() {
                 Vec::new()
             } else {
-                vec![DiscogsArtist { name: artist, id: None }]
+                vec![DiscogsArtist {
+                    name: artist,
+                    id: None,
+                }]
             };
 
             let mut notes = Vec::new();
             if let Some(mc) = &media_cond {
-                notes.push(CollectionNote { field_id: Some(1), value: Some(mc.clone()) });
+                notes.push(CollectionNote {
+                    field_id: Some(1),
+                    value: Some(mc.clone()),
+                });
             }
             if let Some(sc) = &sleeve_cond {
-                notes.push(CollectionNote { field_id: Some(2), value: Some(sc.clone()) });
+                notes.push(CollectionNote {
+                    field_id: Some(2),
+                    value: Some(sc.clone()),
+                });
             }
 
             releases.push(CollectionRelease {
@@ -168,7 +230,8 @@ impl CollectionQueryService {
                 rating: None,
                 media_condition: media_cond,
                 sleeve_condition: sleeve_cond,
-                last_played_at: last_played_at.map(|lp| lp.format("%Y-%m-%dT%H:%M:%SZ").to_string()),
+                last_played_at: last_played_at
+                    .map(|lp| lp.format("%Y-%m-%dT%H:%M:%SZ").to_string()),
                 notes: Some(notes),
                 basic_information: BasicInformation {
                     id: discogs_id,
@@ -189,17 +252,7 @@ impl CollectionQueryService {
             });
         }
 
-        let total_pages = ((total_items as f64) / (filter.per_page as f64)).ceil() as u32;
-
-        Ok(CollectionResponse {
-            releases,
-            pagination: DiscogsPagination {
-                page: filter.page,
-                pages: total_pages,
-                per_page: filter.per_page,
-                items: total_items as u32,
-            },
-        })
+        Ok(releases)
     }
 
     pub async fn get_random_record(
@@ -246,7 +299,10 @@ impl CollectionQueryService {
 
         let mut query = sqlx::query(&sql).bind(user_id);
         query = Self::bind_filter_params(query, &filter);
-        let row_opt = query.fetch_optional(pool).await.map_err(AppError::Database)?;
+        let row_opt = query
+            .fetch_optional(pool)
+            .await
+            .map_err(AppError::Database)?;
 
         let row = match row_opt {
             Some(r) => r,
@@ -270,28 +326,35 @@ impl CollectionQueryService {
         let last_played_at: Option<chrono::NaiveDateTime> = row.get("last_played_at");
 
         let year_i32 = release_year.as_deref().and_then(|y| y.parse::<i32>().ok());
-        let genre_rows = sqlx::query(
-            "SELECT genre FROM record_genres WHERE record_id = $1"
-        )
-        .bind(record_id)
-        .fetch_all(pool)
-        .await
-        .map_err(AppError::Database)?;
+        let genre_rows = sqlx::query("SELECT genre FROM record_genres WHERE record_id = $1")
+            .bind(record_id)
+            .fetch_all(pool)
+            .await
+            .map_err(AppError::Database)?;
         let genres: Vec<String> = genre_rows.iter().map(|r| r.get("genre")).collect();
 
         let artist = artist_name.unwrap_or_default();
         let artists = if artist.is_empty() {
             Vec::new()
         } else {
-            vec![DiscogsArtist { name: artist, id: None }]
+            vec![DiscogsArtist {
+                name: artist,
+                id: None,
+            }]
         };
 
         let mut notes = Vec::new();
         if let Some(mc) = &media_cond {
-            notes.push(CollectionNote { field_id: Some(1), value: Some(mc.clone()) });
+            notes.push(CollectionNote {
+                field_id: Some(1),
+                value: Some(mc.clone()),
+            });
         }
         if let Some(sc) = &sleeve_cond {
-            notes.push(CollectionNote { field_id: Some(2), value: Some(sc.clone()) });
+            notes.push(CollectionNote {
+                field_id: Some(2),
+                value: Some(sc.clone()),
+            });
         }
 
         Ok(Some(CollectionRelease {
@@ -401,7 +464,8 @@ impl CollectionQueryService {
         }
 
         if !filter.genres.is_empty() {
-            let lower_genres: Vec<String> = filter.genres.iter().map(|g| g.to_lowercase()).collect();
+            let lower_genres: Vec<String> =
+                filter.genres.iter().map(|g| g.to_lowercase()).collect();
             query = query.bind(lower_genres);
         }
 
@@ -429,7 +493,8 @@ impl CollectionQueryService {
         }
 
         if !filter.genres.is_empty() {
-            let lower_genres: Vec<String> = filter.genres.iter().map(|g| g.to_lowercase()).collect();
+            let lower_genres: Vec<String> =
+                filter.genres.iter().map(|g| g.to_lowercase()).collect();
             query = query.bind(lower_genres);
         }
 

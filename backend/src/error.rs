@@ -1,7 +1,7 @@
 use axum::{
+    Json,
     http::StatusCode,
     response::{IntoResponse, Response},
-    Json,
 };
 use serde::{Deserialize, Serialize};
 
@@ -30,6 +30,9 @@ pub enum AppError {
 
     #[error("Conflict: {0}")]
     Conflict(String),
+
+    #[error("Too many requests: {0}")]
+    TooManyRequests(String),
 
     #[error("Internal server error: {0}")]
     Internal(String),
@@ -95,6 +98,11 @@ impl IntoResponse for AppError {
             AppError::Forbidden(msg) => (StatusCode::FORBIDDEN, "Forbidden", msg.clone()),
             AppError::NotFound(msg) => (StatusCode::NOT_FOUND, "Not Found", msg.clone()),
             AppError::Conflict(msg) => (StatusCode::CONFLICT, "Conflict", msg.clone()),
+            AppError::TooManyRequests(msg) => (
+                StatusCode::TOO_MANY_REQUESTS,
+                "Too Many Requests",
+                msg.clone(),
+            ),
             AppError::Internal(msg) => {
                 tracing::error!("Internal server error: {}", msg);
                 (

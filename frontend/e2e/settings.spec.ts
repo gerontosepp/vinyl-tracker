@@ -49,6 +49,22 @@ test.describe('Settings Sync', () => {
         body: JSON.stringify([]),
       });
     });
+
+    await page.route('**/api/analytics/collection/**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      });
+    });
+
+    await page.route('**/api/roon/**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ host: '', port: 9330, paired: false }),
+      });
+    });
   });
 
   test('should show success toast after manual sync', async ({ page }) => {

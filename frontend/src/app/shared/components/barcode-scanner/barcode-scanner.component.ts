@@ -1,5 +1,5 @@
-import { Component, AfterViewInit, OnDestroy, inject, signal, effect } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, AfterViewInit, OnDestroy, inject, signal, effect, ChangeDetectionStrategy } from '@angular/core';
+
 import { FormsModule } from '@angular/forms';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { AuthService } from '../../../core/services/auth.service';
@@ -13,7 +13,8 @@ import { firstValueFrom } from 'rxjs';
 @Component({
   selector: 'app-barcode-scanner',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe],
+  imports: [FormsModule, TranslatePipe],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <div class="flex flex-col items-center p-4 h-full">
       <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">Scan Vinyl Barcode</h2>

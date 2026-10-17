@@ -1,4 +1,4 @@
-import { Component, inject, input } from '@angular/core';
+import { Component, inject, input, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 import { SidebarComponent } from './sidebar/sidebar.component';
 import { BottomNavComponent } from './bottom-nav/bottom-nav.component';
@@ -10,6 +10,7 @@ import { ScannerService } from '../../../core/services/scanner.service';
   selector: 'app-layout',
   standalone: true,
   imports: [SidebarComponent, BottomNavComponent, TopMenuBarComponent],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <div
       class="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col md:flex-row transition-colors text-slate-900 dark:text-slate-50"

@@ -1,4 +1,4 @@
-import { Component, output, inject } from '@angular/core';
+import { Component, output, inject, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
 import { ScannerService } from '../../../../core/services/scanner.service';
@@ -7,7 +7,6 @@ import {
   LucideDisc,
   LucideUser,
   LucideScanLine,
-  LucideBarChart2,
 } from '@lucide/angular';
 
 @Component({
@@ -21,11 +20,11 @@ import {
     LucideDisc,
     LucideUser,
     LucideScanLine,
-    LucideBarChart2,
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <nav
-      class="md:hidden fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-t border-slate-200/50 dark:border-slate-700 flex justify-between items-center px-6 py-2 z-50 h-[80px] pb-safe transition-colors shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)]"
+      class="md:hidden fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-t border-slate-200/50 dark:border-slate-700 flex justify-around items-center px-4 py-2 z-50 h-[80px] pb-safe transition-colors shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)]"
     >
       <!-- Home -->
       <a
@@ -78,23 +77,6 @@ import {
         </button>
       </div>
 
-      <!-- Stats -->
-      <a
-        routerLink="/statistics"
-        (click)="scannerService.closeScanner()"
-        routerLinkActive
-        #rlaStats="routerLinkActive"
-        [attr.aria-label]="'nav.stats' | translate"
-        [class]="
-          'p-4 transition-all duration-200 cursor-pointer ' +
-          (rlaStats.isActive
-            ? 'text-indigo-600 dark:text-indigo-400 scale-110 drop-shadow-sm font-bold'
-            : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300')
-        "
-      >
-        <svg lucideBarChart2 [size]="28" [strokeWidth]="rlaStats.isActive ? 2.5 : 2"></svg>
-      </a>
-
       <!-- Profile -->
       <a
         routerLink="/profile"
@@ -111,9 +93,6 @@ import {
       >
         <svg lucideUser [size]="28" [strokeWidth]="rlaProfile.isActive ? 2.5 : 2"></svg>
       </a>
-
-      <!-- Additional spacer to balance design -->
-      <div class="w-8"></div>
     </nav>
   `,
 })

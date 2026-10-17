@@ -82,7 +82,8 @@ test.describe('Dashboard', () => {
     await expect(page.getByText('Collection Value', { exact: false })).toBeVisible();
     await expect(page.getByText('Genre Breakdown', { exact: false })).toBeVisible();
     await expect(page.getByText('Test Artist').first()).toBeVisible();
-    await expect(page.getByText('5 plays')).toBeVisible();
+    await expect(page.getByText('plays').first()).toBeVisible();
+    await expect(page.getByText('5', { exact: true }).first()).toBeVisible();
   });
 
   test('should toggle scanner', async ({ page }) => {

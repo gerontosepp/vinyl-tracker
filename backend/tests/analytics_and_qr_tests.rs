@@ -1,17 +1,12 @@
-use std::sync::atomic::{AtomicU64, Ordering};
 use axum::{
     body::Body,
-    http::{header, Method, Request, StatusCode},
+    http::{Method, Request, StatusCode, header},
 };
+use backend_rs::{config::Config, db::init_pool, routes::create_app, state::AppState};
 use http_body_util::BodyExt;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
+use std::sync::atomic::{AtomicU64, Ordering};
 use tower::ServiceExt;
-use backend_rs::{
-    config::Config,
-    db::init_pool,
-    routes::create_app,
-    state::AppState,
-};
 
 static USER_COUNTER: AtomicU64 = AtomicU64::new(700);
 
@@ -89,7 +84,10 @@ async fn create_authenticated_user(app: &axum::Router) -> (i64, String, String) 
     let login_body = login_res.into_body().collect().await.unwrap().to_bytes();
     assert_eq!(login_status, StatusCode::OK);
     let login_json: Value = serde_json::from_slice(&login_body).unwrap();
-    let token = login_json["token"].as_str().expect("token present").to_string();
+    let token = login_json["token"]
+        .as_str()
+        .expect("token present")
+        .to_string();
 
     (user_id, test_username, token)
 }
@@ -221,12 +219,14 @@ async fn test_analytics_and_qr_full_lifecycle() {
 
     // 3. Insert listen events: rec1 listened 3 times, rec2 listened 1 time
     for _ in 0..3 {
-        sqlx::query("INSERT INTO listen_event (user_id, record_id, timestamp) VALUES ($1, $2, NOW())")
-            .bind(user_id)
-            .bind(rec1_id)
-            .execute(&pool)
-            .await
-            .unwrap();
+        sqlx::query(
+            "INSERT INTO listen_event (user_id, record_id, timestamp) VALUES ($1, $2, NOW())",
+        )
+        .bind(user_id)
+        .bind(rec1_id)
+        .execute(&pool)
+        .await
+        .unwrap();
     }
     sqlx::query("INSERT INTO listen_event (user_id, record_id, timestamp) VALUES ($1, $2, NOW())")
         .bind(user_id)
@@ -306,10 +306,12 @@ async fn test_analytics_and_qr_full_lifecycle() {
     let bytes_val = res_val.into_body().collect().await.unwrap().to_bytes();
     let val_json: Value = serde_json::from_slice(&bytes_val).unwrap();
     assert_eq!(val_json["status"], 400);
-    assert!(val_json["detail"]
-        .as_str()
-        .unwrap()
-        .contains("Connect your Discogs account in settings"));
+    assert!(
+        val_json["detail"]
+            .as_str()
+            .unwrap()
+            .contains("Connect your Discogs account in settings")
+    );
 
     // 8. Test POST /api/collection/qr-codes/selected with empty items -> 400 Bad Request
     let req_qr_empty = Request::builder()
@@ -353,13 +355,15 @@ async fn test_analytics_and_qr_full_lifecycle() {
         res_qr_valid.headers().get(header::CONTENT_TYPE).unwrap(),
         "application/pdf"
     );
-    assert!(res_qr_valid
-        .headers()
-        .get(header::CONTENT_DISPOSITION)
-        .unwrap()
-        .to_str()
-        .unwrap()
-        .contains("collection_qr_codes.pdf"));
+    assert!(
+        res_qr_valid
+            .headers()
+            .get(header::CONTENT_DISPOSITION)
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .contains("collection_qr_codes.pdf")
+    );
 
     let pdf_bytes = res_qr_valid.into_body().collect().await.unwrap().to_bytes();
     assert!(!pdf_bytes.is_empty());

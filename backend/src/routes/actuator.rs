@@ -1,13 +1,7 @@
-use axum::{
-    extract::State,
-    http::StatusCode,
-    response::IntoResponse,
-    routing::get,
-    Json, Router,
-};
-use serde::Serialize;
-use crate::state::AppState;
 use crate::error::AppError;
+use crate::state::AppState;
+use axum::{Json, Router, extract::State, http::StatusCode, response::IntoResponse, routing::get};
+use serde::Serialize;
 
 #[derive(Serialize)]
 pub struct HealthResponse {
@@ -30,10 +24,7 @@ pub struct InfoResponse {
 
 pub async fn health_handler(State(state): State<AppState>) -> impl IntoResponse {
     // Quick DB check to confirm database is operational
-    let db_ok = sqlx::query("SELECT 1")
-        .execute(&state.pool)
-        .await
-        .is_ok();
+    let db_ok = sqlx::query("SELECT 1").execute(&state.pool).await.is_ok();
 
     if db_ok {
         (
@@ -66,7 +57,9 @@ pub async fn info_handler() -> impl IntoResponse {
 }
 
 pub async fn restricted_handler() -> Result<(), AppError> {
-    Err(AppError::Forbidden("Actuator endpoint is restricted.".to_string()))
+    Err(AppError::Forbidden(
+        "Actuator endpoint is restricted.".to_string(),
+    ))
 }
 
 pub fn router() -> Router<AppState> {

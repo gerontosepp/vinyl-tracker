@@ -1,8 +1,9 @@
 use crate::client::VinylApiClient;
 use crate::models::*;
 use rmcp::{
+    ServerHandler,
     handler::server::{router::tool::ToolRouter, wrapper::Parameters},
-    tool, tool_handler, tool_router, ServerHandler,
+    tool, tool_handler, tool_router,
 };
 use std::sync::Arc;
 
@@ -47,6 +48,24 @@ impl VinylMcpServer {
         Ok(format!(
             "Sync completed successfully: {} added, {} removed.",
             result.added_count, result.removed_count
+        ))
+    }
+
+    /// Remove an album from the user's vinyl collection and connected Discogs account.
+    #[tool(
+        name = "remove_from_collection",
+        description = "Removes a vinyl album or CD from the user's local collection and from their connected Discogs folder. Does not delete listen scrobbles or playback statistics."
+    )]
+    async fn remove_from_collection(
+        &self,
+        Parameters(args): Parameters<RemoveFromCollectionArgs>,
+    ) -> Result<String, String> {
+        self.client
+            .remove_from_collection(args.release_id, args.instance_id)
+            .await?;
+        Ok(format!(
+            "Successfully removed release {} from collection.",
+            args.release_id
         ))
     }
 
@@ -286,4 +305,3 @@ mod tests {
         assert_eq!(t15.name, "play_record_on_roon");
     }
 }
-

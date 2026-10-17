@@ -1,11 +1,11 @@
-use std::net::SocketAddr;
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use backend_rs::{
     config::Config,
     db::{init_pool, migrations::run_migrations},
     routes::create_app,
     state::AppState,
 };
+use std::net::SocketAddr;
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -25,8 +25,15 @@ async fn main() -> anyhow::Result<()> {
 
     // 3. Load configuration
     let config = Config::from_env();
+    if let Err(e) = config.validate() {
+        tracing::error!("Configuration validation failed: {e}");
+        return Err(anyhow::anyhow!("Configuration validation failed: {e}"));
+    }
     tracing::info!("Configured host: {}, port: {}", config.host, config.port);
-    tracing::info!("Database target: {}", backend_rs::db::sanitize_db_url(&config.database_url));
+    tracing::info!(
+        "Database target: {}",
+        backend_rs::db::sanitize_db_url(&config.database_url)
+    );
 
     // 4. Run database migrations
     if let Err(e) = run_migrations(&config.database_url).await {

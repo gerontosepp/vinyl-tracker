@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use crate::models::scan::TrackedRecordDto;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListenEventDto {
@@ -63,7 +63,7 @@ pub fn parse_value_data(raw: Option<&str>) -> CollectionValueData {
             return CollectionValueData {
                 currency: "EUR".to_string(),
                 value: 0.0,
-            }
+            };
         }
     };
 

@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use crate::{error::AppError, models::discogs::DiscogsPriceSuggestion};
+use std::collections::HashMap;
 
 pub const GOLDMINE_CONDITIONS: [&str; 8] = [
     "Mint (M)",
@@ -82,7 +82,11 @@ pub fn extract_suggested_price(
 
     // Fallback 2: Any first positive value in standard condition order
     for canonical in GOLDMINE_CONDITIONS {
-        if let Some(val) = suggestions.get(canonical).map(|s| s.value).filter(|&v| v > 0.0) {
+        if let Some(val) = suggestions
+            .get(canonical)
+            .map(|s| s.value)
+            .filter(|&v| v > 0.0)
+        {
             return Some(val);
         }
     }
@@ -98,10 +102,22 @@ mod tests {
     fn test_normalize_goldmine_condition() {
         assert_eq!(normalize_goldmine_condition("Mint (M)"), Some("Mint (M)"));
         assert_eq!(normalize_goldmine_condition("m"), Some("Mint (M)"));
-        assert_eq!(normalize_goldmine_condition("VG+"), Some("Very Good Plus (VG+)"));
-        assert_eq!(normalize_goldmine_condition("very good plus"), Some("Very Good Plus (VG+)"));
-        assert_eq!(normalize_goldmine_condition("Near Mint (NM)"), Some("Near Mint (NM or M-)"));
-        assert_eq!(normalize_goldmine_condition("NM"), Some("Near Mint (NM or M-)"));
+        assert_eq!(
+            normalize_goldmine_condition("VG+"),
+            Some("Very Good Plus (VG+)")
+        );
+        assert_eq!(
+            normalize_goldmine_condition("very good plus"),
+            Some("Very Good Plus (VG+)")
+        );
+        assert_eq!(
+            normalize_goldmine_condition("Near Mint (NM)"),
+            Some("Near Mint (NM or M-)")
+        );
+        assert_eq!(
+            normalize_goldmine_condition("NM"),
+            Some("Near Mint (NM or M-)")
+        );
         assert_eq!(normalize_goldmine_condition("G+"), Some("Good Plus (G+)"));
         assert_eq!(normalize_goldmine_condition("poor"), Some("Poor (P)"));
         assert_eq!(normalize_goldmine_condition("unknown_string"), None);

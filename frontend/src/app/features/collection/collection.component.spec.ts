@@ -19,7 +19,8 @@ describe('CollectionComponent', () => {
     mockApiService = {
       getCollection: jasmine.createSpy('getCollection').and.returnValue(of({ releases: [], pagination: { page: 1, pages: 1, per_page: 50, items: 0, urls: {} } })),
       getGenreBreakdown: jasmine.createSpy('getGenreBreakdown').and.returnValue(of([{ name: 'Rock', value: 10 }])),
-      getProxiedImageUrl: jasmine.createSpy('getProxiedImageUrl').and.callFake((url: string) => url)
+      getProxiedImageUrl: jasmine.createSpy('getProxiedImageUrl').and.callFake((url: string) => url),
+      exportCollection: jasmine.createSpy('exportCollection').and.returnValue(of(new Blob(['csv'], { type: 'text/csv' }))),
     };
     mockAuthService = {
       isSyncing: signal(false)
@@ -460,6 +461,26 @@ describe('CollectionComponent', () => {
       expect(component.releases()[0].sleeve_condition).toBe('Near Mint (NM or M-)');
       expect(component.releases()[0].basic_information.median_price).toBe(32.50);
       expect(component.selectedRecord()?.media_condition).toBe('Mint (M)');
+    });
+  });
+
+  describe('onRecordRemoved', () => {
+    it('should close detail modal and remove record from releases and selectedItems', () => {
+      const release1 = { id: 101, instance_id: 1, basic_information: { title: 'Album 1' } } as any;
+      const release2 = { id: 102, instance_id: 2, basic_information: { title: 'Album 2' } } as any;
+
+      component.releases.set([release1, release2]);
+      component.totalItems.set(2);
+      component.selectedRecord.set(release1);
+      component.selectedItems.set(new Map([[101, { id: 101, title: 'Album 1', artist: 'Artist 1' }]]));
+
+      component.onRecordRemoved(101);
+
+      expect(component.selectedRecord()).toBeNull();
+      expect(component.releases().length).toBe(1);
+      expect(component.releases()[0].id).toBe(102);
+      expect(component.totalItems()).toBe(1);
+      expect(component.selectedItems().has(101)).toBeFalse();
     });
   });
 });

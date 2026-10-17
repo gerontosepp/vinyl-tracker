@@ -1,18 +1,15 @@
 use axum::{
     body::Body,
-    http::{header, Method, Request, StatusCode},
+    http::{Method, Request, StatusCode, header},
 };
-use http_body_util::BodyExt;
-use serde_json::{json, Value};
-use sqlx::Row;
-use tower::ServiceExt;
 use backend_rs::{
-    config::Config,
-    db::init_pool,
-    models::collection::CollectionResponse,
-    routes::create_app,
+    config::Config, db::init_pool, models::collection::CollectionResponse, routes::create_app,
     state::AppState,
 };
+use http_body_util::BodyExt;
+use serde_json::{Value, json};
+use sqlx::Row;
+use tower::ServiceExt;
 
 async fn setup_app() -> (axum::Router, AppState) {
     dotenvy::dotenv().ok();
@@ -66,7 +63,11 @@ async fn create_authenticated_user(app: &axum::Router) -> (i64, String, String) 
 
     let reg_bytes = reg_res.into_body().collect().await.unwrap().to_bytes();
     if reg_status != StatusCode::OK {
-        panic!("Register failed with status {}: {}", reg_status, String::from_utf8_lossy(&reg_bytes));
+        panic!(
+            "Register failed with status {}: {}",
+            reg_status,
+            String::from_utf8_lossy(&reg_bytes)
+        );
     }
 
     let reg_json: Value = serde_json::from_slice(&reg_bytes).unwrap();
@@ -117,11 +118,13 @@ async fn test_collection_querying_filtering_and_pagination() {
     .unwrap();
     let rec_id_a: i64 = row_a.get("id");
 
-    sqlx::query("INSERT INTO record_genres (record_id, genre) VALUES ($1, 'Rock') ON CONFLICT DO NOTHING")
-        .bind(rec_id_a)
-        .execute(pool)
-        .await
-        .unwrap();
+    sqlx::query(
+        "INSERT INTO record_genres (record_id, genre) VALUES ($1, 'Rock') ON CONFLICT DO NOTHING",
+    )
+    .bind(rec_id_a)
+    .execute(pool)
+    .await
+    .unwrap();
 
     sqlx::query(
         r#"
@@ -162,11 +165,13 @@ async fn test_collection_querying_filtering_and_pagination() {
     .unwrap();
     let rec_id_b: i64 = row_b.get("id");
 
-    sqlx::query("INSERT INTO record_genres (record_id, genre) VALUES ($1, 'Jazz') ON CONFLICT DO NOTHING")
-        .bind(rec_id_b)
-        .execute(pool)
-        .await
-        .unwrap();
+    sqlx::query(
+        "INSERT INTO record_genres (record_id, genre) VALUES ($1, 'Jazz') ON CONFLICT DO NOTHING",
+    )
+    .bind(rec_id_b)
+    .execute(pool)
+    .await
+    .unwrap();
 
     sqlx::query(
         r#"
@@ -262,7 +267,11 @@ async fn test_collection_querying_filtering_and_pagination() {
     let bytes = res.into_body().collect().await.unwrap().to_bytes();
     let body: CollectionResponse = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(body.releases.len(), 2);
-    assert!(body.releases.iter().all(|r| r.basic_information.format.to_lowercase().contains("vinyl")));
+    assert!(
+        body.releases
+            .iter()
+            .all(|r| r.basic_information.format.to_lowercase().contains("vinyl"))
+    );
 
     // Query 3: Filter by category = 'cd' -> 1 release (Daft Punk)
     let res = app
@@ -610,4 +619,519 @@ async fn test_sync_endpoints_error_handling() {
         .await
         .unwrap();
     assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
+}
+
+#[tokio::test]
+async fn test_remove_release_from_collection() {
+    let (app, state) = setup_app().await;
+    let (user_id, _, cookie) = create_authenticated_user(&app).await;
+    let pool = &state.pool;
+
+    let discogs_id = 778899i64;
+    let instance_id = 998877i64;
+
+    // 1. Delete without auth -> 401
+    let res = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::DELETE)
+                .uri(format!("/api/collection/releases/{discogs_id}"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
+
+    // 2. Delete when item not in collection -> 404
+    let res = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::DELETE)
+                .uri(format!("/api/collection/releases/{discogs_id}"))
+                .header(header::COOKIE, &cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(res.status(), StatusCode::NOT_FOUND);
+
+    // 3. Seed record_cache, collection_item, and a listen_event
+    let row = sqlx::query(
+        r#"
+        INSERT INTO record_cache (discogs_id, title, artist, release_year, format)
+        VALUES ($1, 'Delete Me Album', 'Delete Artist', '2020', 'Vinyl')
+        ON CONFLICT (discogs_id) DO UPDATE SET title = EXCLUDED.title
+        RETURNING id
+        "#,
+    )
+    .bind(discogs_id)
+    .fetch_one(pool)
+    .await
+    .unwrap();
+    let rec_id: i64 = row.get("id");
+
+    sqlx::query(
+        r#"
+        INSERT INTO collection_item (user_id, record_id, instance_id, added_at)
+        VALUES ($1, $2, $3, NOW())
+        ON CONFLICT (user_id, instance_id) DO NOTHING
+        "#,
+    )
+    .bind(user_id)
+    .bind(rec_id)
+    .bind(instance_id)
+    .execute(pool)
+    .await
+    .unwrap();
+
+    sqlx::query(
+        r#"
+        INSERT INTO listen_event (user_id, record_id, timestamp)
+        VALUES ($1, $2, NOW())
+        "#,
+    )
+    .bind(user_id)
+    .bind(rec_id)
+    .execute(pool)
+    .await
+    .unwrap();
+
+    // Verify item is currently in collection
+    let count: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM collection_item WHERE user_id = $1 AND instance_id = $2",
+    )
+    .bind(user_id)
+    .bind(instance_id)
+    .fetch_one(pool)
+    .await
+    .unwrap();
+    assert_eq!(count, 1);
+
+    // 4. Delete the release
+    let res = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::DELETE)
+                .uri(format!("/api/collection/releases/{discogs_id}"))
+                .header(header::COOKIE, &cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(res.status(), StatusCode::NO_CONTENT);
+
+    // 5. Verify collection_item is deleted
+    let count: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM collection_item WHERE user_id = $1 AND instance_id = $2",
+    )
+    .bind(user_id)
+    .bind(instance_id)
+    .fetch_one(pool)
+    .await
+    .unwrap();
+    assert_eq!(count, 0);
+
+    // 6. Verify listen_event and record_cache still exist!
+    let listen_count: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM listen_event WHERE user_id = $1 AND record_id = $2",
+    )
+    .bind(user_id)
+    .bind(rec_id)
+    .fetch_one(pool)
+    .await
+    .unwrap();
+    assert_eq!(listen_count, 1);
+
+    let cache_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM record_cache WHERE id = $1")
+        .bind(rec_id)
+        .fetch_one(pool)
+        .await
+        .unwrap();
+    assert_eq!(cache_count, 1);
+
+    // 7. Deleting again returns 404
+    let res = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::DELETE)
+                .uri(format!("/api/collection/releases/{discogs_id}"))
+                .header(header::COOKIE, &cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(res.status(), StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn test_collection_artist_sorting_natural_order_and_collation() {
+    let (app, state) = setup_app().await;
+    let (user_id, _, cookie) = create_authenticated_user(&app).await;
+    let pool = &state.pool;
+
+    let artists_and_titles = vec![
+        (980001i64, "The Beatles", "Abbey Road", 1969),
+        (980002i64, "Adele (3)", "21", 2011),
+        (980003i64, "A.R. & Machines", "Echo", 1972),
+        (980004i64, "BAP", "Zwesche Salzjebäck Un Bier", 1984),
+        (
+            980005i64,
+            "The Alan Parsons Project",
+            "Eye in the Sky",
+            1982,
+        ),
+    ];
+
+    for (discogs_id, artist, title, year) in &artists_and_titles {
+        let row = sqlx::query(
+            r#"
+            INSERT INTO record_cache (discogs_id, title, artist, release_year, format)
+            VALUES ($1, $2, $3, $4, 'Vinyl, LP')
+            ON CONFLICT (discogs_id) DO UPDATE SET title = EXCLUDED.title, artist = EXCLUDED.artist, release_year = EXCLUDED.release_year
+            RETURNING id
+            "#,
+        )
+        .bind(discogs_id)
+        .bind(title)
+        .bind(artist)
+        .bind(year.to_string())
+        .fetch_one(pool)
+        .await
+        .unwrap();
+
+        let rec_id: i64 = row.get("id");
+
+        sqlx::query(
+            r#"
+            INSERT INTO collection_item (user_id, record_id, instance_id, added_at)
+            VALUES ($1, $2, $3, NOW())
+            ON CONFLICT (user_id, instance_id) DO NOTHING
+            "#,
+        )
+        .bind(user_id)
+        .bind(rec_id)
+        .bind(discogs_id + 10000)
+        .execute(pool)
+        .await
+        .unwrap();
+    }
+
+    // 1. Sort by artist ASC:
+    // Expected order:
+    // 1. A.R. & Machines ('.' precedes 'd' in ASCII/"C" collation)
+    // 2. Adele (3)
+    // 3. The Alan Parsons Project ('The ' stripped -> 'alan parsons project')
+    // 4. BAP
+    // 5. The Beatles ('The ' stripped -> 'beatles')
+    let res = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/api/collection?sort=artist&sort_order=asc")
+                .header(header::COOKIE, &cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(res.status(), StatusCode::OK);
+    let bytes = res.into_body().collect().await.unwrap().to_bytes();
+    let body: CollectionResponse = serde_json::from_slice(&bytes).unwrap();
+    assert_eq!(body.releases.len(), 5);
+
+    let artist_names: Vec<String> = body
+        .releases
+        .iter()
+        .map(|r| r.basic_information.artists[0].name.clone())
+        .collect();
+
+    assert_eq!(
+        artist_names,
+        vec![
+            "A.R. & Machines",
+            "Adele (3)",
+            "The Alan Parsons Project",
+            "BAP",
+            "The Beatles",
+        ]
+    );
+
+    // 2. Sort by artist DESC: exact reverse
+    let res_desc = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/api/collection?sort=artist&sort_order=desc")
+                .header(header::COOKIE, &cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(res_desc.status(), StatusCode::OK);
+    let bytes_desc = res_desc.into_body().collect().await.unwrap().to_bytes();
+    let body_desc: CollectionResponse = serde_json::from_slice(&bytes_desc).unwrap();
+    let artist_names_desc: Vec<String> = body_desc
+        .releases
+        .iter()
+        .map(|r| r.basic_information.artists[0].name.clone())
+        .collect();
+
+    assert_eq!(
+        artist_names_desc,
+        vec![
+            "The Beatles",
+            "BAP",
+            "The Alan Parsons Project",
+            "Adele (3)",
+            "A.R. & Machines",
+        ]
+    );
+}
+
+#[tokio::test]
+async fn test_collection_export_endpoints() {
+    let (app, state) = setup_app().await;
+    let (user_id, username, cookie) = create_authenticated_user(&app).await;
+
+    // 1. Unauthorized export request returns 401
+    let unauth_res = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/api/collection/export?format=csv")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(unauth_res.status(), StatusCode::UNAUTHORIZED);
+
+    // 2. Unsupported format returns 400 with RFC 7807 Problem Detail
+    let bad_fmt_res = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/api/collection/export?format=xml")
+                .header(header::COOKIE, &cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(bad_fmt_res.status(), StatusCode::BAD_REQUEST);
+    let bad_fmt_bytes = bad_fmt_res.into_body().collect().await.unwrap().to_bytes();
+    let bad_fmt_json: Value = serde_json::from_slice(&bad_fmt_bytes).unwrap();
+    assert!(
+        bad_fmt_json["detail"]
+            .as_str()
+            .unwrap()
+            .contains("Unsupported or missing export format")
+    );
+
+    // 3. Insert sample records into user collection
+    let row1 = sqlx::query(
+        r#"
+        INSERT INTO record_cache (discogs_id, title, artist, release_year, format, lowest_price, median_price)
+        VALUES (99001, 'The Dark Side of the Moon', 'Pink Floyd', '1973', 'LP', 34.50, 40.00)
+        ON CONFLICT (discogs_id) DO UPDATE SET title = EXCLUDED.title
+        RETURNING id
+        "#,
+    )
+    .fetch_one(&state.pool)
+    .await
+    .unwrap();
+    let r1: i64 = row1.get("id");
+
+    sqlx::query(
+        "INSERT INTO record_genres (record_id, genre) VALUES ($1, 'Rock') ON CONFLICT DO NOTHING",
+    )
+    .bind(r1)
+    .execute(&state.pool)
+    .await
+    .unwrap();
+
+    let row2 = sqlx::query(
+        r#"
+        INSERT INTO record_cache (discogs_id, title, artist, release_year, format, lowest_price, median_price)
+        VALUES (99002, 'Kind of Blue', 'Miles Davis', '1959', 'LP', 28.00, 35.00)
+        ON CONFLICT (discogs_id) DO UPDATE SET title = EXCLUDED.title
+        RETURNING id
+        "#,
+    )
+    .fetch_one(&state.pool)
+    .await
+    .unwrap();
+    let r2: i64 = row2.get("id");
+
+    sqlx::query(
+        "INSERT INTO record_genres (record_id, genre) VALUES ($1, 'Jazz') ON CONFLICT DO NOTHING",
+    )
+    .bind(r2)
+    .execute(&state.pool)
+    .await
+    .unwrap();
+
+    sqlx::query(
+        r#"
+        INSERT INTO collection_item (user_id, record_id, instance_id, media_condition, sleeve_condition, added_at)
+        VALUES ($1, $2, 9900101, 'Near Mint (NM or M-)', 'Very Good Plus (VG+)', NOW())
+        ON CONFLICT (user_id, instance_id) DO NOTHING
+        "#,
+    )
+    .bind(user_id)
+    .bind(r1)
+    .execute(&state.pool)
+    .await
+    .unwrap();
+
+    sqlx::query(
+        r#"
+        INSERT INTO collection_item (user_id, record_id, instance_id, media_condition, sleeve_condition, added_at)
+        VALUES ($1, $2, 9900201, 'Mint (M)', 'Near Mint (NM or M-)', NOW())
+        ON CONFLICT (user_id, instance_id) DO NOTHING
+        "#,
+    )
+    .bind(user_id)
+    .bind(r2)
+    .execute(&state.pool)
+    .await
+    .unwrap();
+
+    // 4. Test CSV Export
+    let csv_res = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/api/collection/export?format=csv")
+                .header(header::COOKIE, &cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(csv_res.status(), StatusCode::OK);
+    let csv_content_type = csv_res
+        .headers()
+        .get(header::CONTENT_TYPE)
+        .unwrap()
+        .to_str()
+        .unwrap();
+    assert!(csv_content_type.contains("text/csv"));
+    let csv_disp = csv_res
+        .headers()
+        .get(header::CONTENT_DISPOSITION)
+        .unwrap()
+        .to_str()
+        .unwrap();
+    assert!(csv_disp.contains("vinyl_collection_export.csv"));
+
+    let csv_bytes = csv_res.into_body().collect().await.unwrap().to_bytes();
+    let csv_text = String::from_utf8(csv_bytes.to_vec()).unwrap();
+    assert!(csv_text.starts_with("Artist,Title,Release Year,Format"));
+    assert!(csv_text.contains("Pink Floyd"));
+    assert!(csv_text.contains("The Dark Side of the Moon"));
+    assert!(csv_text.contains("Miles Davis"));
+    assert!(csv_text.contains("Kind of Blue"));
+
+    // 5. Test JSON Export
+    let json_res = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/api/collection/export?format=json")
+                .header(header::COOKIE, &cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(json_res.status(), StatusCode::OK);
+    let json_content_type = json_res
+        .headers()
+        .get(header::CONTENT_TYPE)
+        .unwrap()
+        .to_str()
+        .unwrap();
+    assert!(json_content_type.contains("application/json"));
+    let json_disp = json_res
+        .headers()
+        .get(header::CONTENT_DISPOSITION)
+        .unwrap()
+        .to_str()
+        .unwrap();
+    assert!(json_disp.contains("vinyl_collection_backup.json"));
+
+    let json_bytes = json_res.into_body().collect().await.unwrap().to_bytes();
+    let backup_data: Value = serde_json::from_slice(&json_bytes).unwrap();
+    assert_eq!(backup_data["username"], username);
+    assert_eq!(backup_data["total_records"], 2);
+    assert!(backup_data["total_estimated_value"].as_f64().unwrap() > 0.0);
+    assert_eq!(backup_data["releases"].as_array().unwrap().len(), 2);
+
+    // 6. Test PDF Catalog Export
+    let pdf_res = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/api/collection/export?format=pdf")
+                .header(header::COOKIE, &cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(pdf_res.status(), StatusCode::OK);
+    let pdf_content_type = pdf_res
+        .headers()
+        .get(header::CONTENT_TYPE)
+        .unwrap()
+        .to_str()
+        .unwrap();
+    assert_eq!(pdf_content_type, "application/pdf");
+    let pdf_disp = pdf_res
+        .headers()
+        .get(header::CONTENT_DISPOSITION)
+        .unwrap()
+        .to_str()
+        .unwrap();
+    assert!(pdf_disp.contains("vinyl_collection_catalog.pdf"));
+
+    let pdf_bytes = pdf_res.into_body().collect().await.unwrap().to_bytes();
+    assert_eq!(&pdf_bytes[0..4], b"%PDF");
+
+    let mut pdf_doc = lopdf::Document::load_mem(&pdf_bytes).expect("Valid PDF");
+    pdf_doc.decompress();
+    let mut full_text = String::new();
+    for (_, object) in pdf_doc.objects.iter() {
+        if let lopdf::Object::Stream(stream) = object {
+            if let Ok(text) = String::from_utf8(stream.content.clone()) {
+                full_text.push_str(&text);
+            }
+        }
+    }
+    assert!(full_text.contains("Vinyl Tracker - Collection Catalog & Insurance Report"));
+    assert!(full_text.contains(&username));
+    assert!(full_text.contains("Pink Floyd"));
+    assert!(full_text.contains("The Dark Side of the Moon"));
 }

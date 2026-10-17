@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth.service';
 import { LanguageService } from '../../../../core/services/language.service';
@@ -10,6 +10,7 @@ import { LucideLogOut, LucideSettings, LucideGlobe } from '@lucide/angular';
   selector: 'app-top-menu-bar',
   standalone: true,
   imports: [RouterLink, LucideLogOut, LucideSettings, LucideGlobe, TranslatePipe],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     @if (authService.user(); as user) {
       <header
@@ -86,7 +87,7 @@ export class TopMenuBarComponent {
   readonly scannerService = inject(ScannerService);
   private readonly router = inject(Router);
 
-  readonly appVersion = '0.8.1';
+  readonly appVersion = '0.9.0';
 
   toggleLanguage(): void {
     const current = this.languageService.language();

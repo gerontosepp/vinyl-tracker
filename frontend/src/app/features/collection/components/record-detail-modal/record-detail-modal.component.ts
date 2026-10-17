@@ -1,11 +1,11 @@
-import { Component, input, output, inject, signal, computed } from '@angular/core';
+import { Component, input, output, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../../core/services/api.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { LanguageService } from '../../../../core/services/language.service';
 import { CollectionRelease, RecordDetailDto } from '../../../../core/types';
-import { LucideExternalLink, LucideX, LucideHeadphones, LucideCheck, LucidePlay } from '@lucide/angular';
+import { LucideExternalLink, LucideX, LucideHeadphones, LucideCheck, LucidePlay, LucideTrash2 } from '@lucide/angular';
 import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
 import { LocalizedDatePipe } from '../../../../core/pipes/localized-date.pipe';
 import { getErrorMessage } from '../../../../core/utils/error';
@@ -24,7 +24,9 @@ import { getConditionShortCode, MEDIA_CONDITION_OPTIONS, SLEEVE_CONDITION_OPTION
     LucideHeadphones,
     LucideCheck,
     LucidePlay,
+    LucideTrash2,
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './record-detail-modal.component.html',
 })
 export class RecordDetailModalComponent {
@@ -42,14 +44,54 @@ export class RecordDetailModalComponent {
   readonly close = output<void>();
   readonly listenLogged = output<RecordDetailDto>();
   readonly conditionUpdated = output<RecordDetailDto>();
+  readonly recordRemoved = output<number>();
 
   readonly isLoggingListen = signal<boolean>(false);
   readonly justListened = signal<boolean>(false);
   readonly isPlayingOnRoon = signal<boolean>(false);
   readonly isUpdatingCondition = signal<boolean>(false);
+  readonly isRemoving = signal<boolean>(false);
+  readonly showDeleteConfirm = signal<boolean>(false);
   readonly currentMediaCondition = computed(() => this.detail()?.media_condition || this.record()?.media_condition || '');
   readonly currentSleeveCondition = computed(() => this.detail()?.sleeve_condition || this.record()?.sleeve_condition || '');
   private justListenedTimeout?: ReturnType<typeof setTimeout>;
+
+  promptDelete(): void {
+    this.showDeleteConfirm.set(true);
+  }
+
+  cancelDelete(): void {
+    this.showDeleteConfirm.set(false);
+  }
+
+  confirmDelete(): void {
+    const rec = this.record();
+    const det = this.detail();
+    const releaseId = det?.discogs_id ?? rec?.id;
+    const instanceId = det?.instance_id ?? rec?.instance_id;
+
+    if (!releaseId || this.isRemoving()) return;
+
+    this.isRemoving.set(true);
+    this.apiService.removeReleaseFromCollection(releaseId, instanceId).subscribe({
+      next: () => {
+        this.isRemoving.set(false);
+        this.showDeleteConfirm.set(false);
+        this.toastService.showToast(
+          this.languageService.translate('collection.deleteSuccess'),
+          'success'
+        );
+        this.recordRemoved.emit(releaseId);
+      },
+      error: (err) => {
+        this.isRemoving.set(false);
+        this.toastService.showToast(
+          getErrorMessage(err, this.languageService.translate('collection.deleteError')),
+          'error'
+        );
+      },
+    });
+  }
 
 
 

@@ -1,11 +1,11 @@
+use super::sanitize_db_url;
+use crate::error::AppError;
+use chrono::Utc;
+use refinery::embed_migrations;
 use std::collections::HashSet;
 use std::error::Error;
 use std::time::Duration;
-use chrono::Utc;
-use refinery::embed_migrations;
 use tokio_postgres::NoTls;
-use crate::error::AppError;
-use super::sanitize_db_url;
 
 embed_migrations!("migrations");
 
@@ -32,7 +32,9 @@ pub async fn run_migrations(database_url: &str) -> Result<(), AppError> {
         match tokio_postgres::connect(database_url, NoTls).await {
             Ok(res) => {
                 if attempt > 1 {
-                    tracing::info!("Successfully connected to database at {sanitized_url} after {attempt} attempts.");
+                    tracing::info!(
+                        "Successfully connected to database at {sanitized_url} after {attempt} attempts."
+                    );
                 }
                 break res;
             }
@@ -74,7 +76,9 @@ pub async fn run_migrations(database_url: &str) -> Result<(), AppError> {
             &[],
         )
         .await
-        .map_err(|e| AppError::Migration(format!("Failed to ensure refinery_schema_history: {e}")))?;
+        .map_err(|e| {
+            AppError::Migration(format!("Failed to ensure refinery_schema_history: {e}"))
+        })?;
 
     let mut applied_versions: HashSet<i32> = HashSet::new();
 
@@ -92,14 +96,18 @@ pub async fn run_migrations(database_url: &str) -> Result<(), AppError> {
         .unwrap_or(false);
 
     if flyway_exists {
-        tracing::info!("Found existing 'flyway_schema_history' table. Synchronizing Flyway migration state...");
+        tracing::info!(
+            "Found existing 'flyway_schema_history' table. Synchronizing Flyway migration state..."
+        );
         let rows = client
             .query(
                 "SELECT version FROM flyway_schema_history WHERE success = true;",
                 &[],
             )
             .await
-            .map_err(|e| AppError::Migration(format!("Failed to query flyway_schema_history: {e}")))?;
+            .map_err(|e| {
+                AppError::Migration(format!("Failed to query flyway_schema_history: {e}"))
+            })?;
 
         for row in rows {
             let ver_str: String = row.get(0);
@@ -122,7 +130,9 @@ pub async fn run_migrations(database_url: &str) -> Result<(), AppError> {
             .unwrap_or(false);
 
         if app_user_exists {
-            tracing::info!("Detected existing schema without Flyway history. Analyzing baseline version...");
+            tracing::info!(
+                "Detected existing schema without Flyway history. Analyzing baseline version..."
+            );
             // V1: app_user exists
             applied_versions.insert(1);
 
@@ -260,7 +270,9 @@ pub async fn run_migrations(database_url: &str) -> Result<(), AppError> {
                     &[&ver, &name, &now_str, &checksum],
                 )
                 .await
-                .map_err(|e| AppError::Migration(format!("Failed to record migration {ver}: {e}")))?;
+                .map_err(|e| {
+                    AppError::Migration(format!("Failed to record migration {ver}: {e}"))
+                })?;
         }
     }
 

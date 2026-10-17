@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ReleaseInfoService } from '../../../../core/services/release-info.service';
 import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
@@ -23,6 +23,7 @@ import {
     LucideSearch,
     LucideCalendar
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <div
       class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-600 p-6 transition-colors space-y-6"

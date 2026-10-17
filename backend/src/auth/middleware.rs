@@ -1,12 +1,7 @@
+use crate::{auth::jwt::validate_token, error::AppError, models::user::AppUser, state::AppState};
 use axum::{
     extract::{FromRef, FromRequestParts},
     http::request::Parts,
-};
-use crate::{
-    auth::jwt::validate_token,
-    error::AppError,
-    models::user::AppUser,
-    state::AppState,
 };
 
 pub struct CurrentUser(pub AppUser);
@@ -45,7 +40,9 @@ where
                     cookie_hdr.split(';').find_map(|pair| {
                         let mut item = pair.trim().splitn(2, '=');
                         match (item.next(), item.next()) {
-                            (Some("vinyl_token"), Some(v)) => Some(v.to_string()),
+                            (Some(name), Some(v)) if name == app_state.config.auth_cookie_name => {
+                                Some(v.to_string())
+                            }
                             _ => None,
                         }
                     })

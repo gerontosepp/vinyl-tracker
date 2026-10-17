@@ -1,19 +1,16 @@
-use std::sync::atomic::{AtomicU64, Ordering};
 use axum::{
     body::Body,
-    http::{header, Method, Request, StatusCode},
+    http::{Method, Request, StatusCode, header},
 };
-use http_body_util::BodyExt;
-use serde_json::{json, Value};
-use sqlx::Row;
-use tower::ServiceExt;
 use backend_rs::{
-    config::Config,
-    db::init_pool,
-    models::record::RecordDetailDto,
-    routes::create_app,
+    config::Config, db::init_pool, models::record::RecordDetailDto, routes::create_app,
     state::AppState,
 };
+use http_body_util::BodyExt;
+use serde_json::{Value, json};
+use sqlx::Row;
+use std::sync::atomic::{AtomicU64, Ordering};
+use tower::ServiceExt;
 
 static USER_COUNTER: AtomicU64 = AtomicU64::new(500);
 
@@ -66,7 +63,11 @@ async fn create_authenticated_user(app: &axum::Router) -> (i64, String, String) 
 
     let reg_bytes = reg_res.into_body().collect().await.unwrap().to_bytes();
     if reg_status != StatusCode::OK {
-        panic!("Register failed with status {}: {}", reg_status, String::from_utf8_lossy(&reg_bytes));
+        panic!(
+            "Register failed with status {}: {}",
+            reg_status,
+            String::from_utf8_lossy(&reg_bytes)
+        );
     }
 
     let reg_json: Value = serde_json::from_slice(&reg_bytes).unwrap();
@@ -154,8 +155,14 @@ async fn test_goldmine_condition_validation_and_normalization() {
     assert_eq!(res.status(), StatusCode::OK);
     let bytes = res.into_body().collect().await.unwrap().to_bytes();
     let updated: RecordDetailDto = serde_json::from_slice(&bytes).unwrap();
-    assert_eq!(updated.media_condition.as_deref(), Some("Very Good Plus (VG+)"));
-    assert_eq!(updated.sleeve_condition.as_deref(), Some("Near Mint (NM or M-)"));
+    assert_eq!(
+        updated.media_condition.as_deref(),
+        Some("Very Good Plus (VG+)")
+    );
+    assert_eq!(
+        updated.sleeve_condition.as_deref(),
+        Some("Near Mint (NM or M-)")
+    );
 }
 
 #[tokio::test]

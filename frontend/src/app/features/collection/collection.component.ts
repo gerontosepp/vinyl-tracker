@@ -1,5 +1,5 @@
-import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, OnDestroy, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+
 import { LayoutComponent } from '../../shared/components/layout/layout.component';
 import { CollectionToolbarComponent } from './components/collection-toolbar/collection-toolbar.component';
 import { CollectionTableComponent } from './components/collection-table/collection-table.component';
@@ -8,6 +8,7 @@ import { RecordDetailModalComponent } from './components/record-detail-modal/rec
 import { AuthService } from '../../core/services/auth.service';
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
+import { LanguageService } from '../../core/services/language.service';
 import { CollectionRelease, QrCodeItem, RecordDetailDto, GenreBreakdownItem } from '../../core/types';
 import { getErrorMessage } from '../../core/utils/error';
 import { getFormatType, FormatType } from './utils/format-type.util';
@@ -17,19 +18,20 @@ import { Subscription, firstValueFrom } from 'rxjs';
   selector: 'app-collection',
   standalone: true,
   imports: [
-    CommonModule,
     LayoutComponent,
     CollectionToolbarComponent,
     CollectionTableComponent,
     CollectionCardListComponent,
-    RecordDetailModalComponent,
-  ],
+    RecordDetailModalComponent
+],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './collection.component.html',
 })
 export class CollectionComponent implements OnInit, OnDestroy {
   readonly authService = inject(AuthService);
   readonly apiService = inject(ApiService);
   readonly toastService = inject(ToastService);
+  readonly languageService = inject(LanguageService);
 
   readonly selectedRecord = signal<CollectionRelease | null>(null);
   readonly recordDetail = signal<RecordDetailDto | null>(null);
@@ -421,6 +423,17 @@ export class CollectionComponent implements OnInit, OnDestroy {
           : r
       )
     );
+  }
+
+  onRecordRemoved(releaseId: number): void {
+    this.closeDetail();
+    this.selectedItems.update((map) => {
+      const next = new Map(map);
+      next.delete(releaseId);
+      return next;
+    });
+    this.releases.update((list) => list.filter((r) => r.id !== releaseId));
+    this.totalItems.update((total) => Math.max(0, total - 1));
   }
 
   getFormatType(release: CollectionRelease): FormatType {

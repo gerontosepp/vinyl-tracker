@@ -1,4 +1,4 @@
-import { Component, input, output, inject } from '@angular/core';
+import { Component, input, output, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ApiService } from '../../../../core/services/api.service';
 import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
@@ -21,6 +21,7 @@ import { LucideCheckSquare, LucideSquare, LucideExternalLink } from '@lucide/ang
     LucideSquare,
     LucideExternalLink,
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './collection-table.component.html',
 })
 export class CollectionTableComponent {

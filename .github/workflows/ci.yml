@@ -20,6 +20,8 @@ permissions:
 jobs:
   backend-test:
     name: Backend Tests & Linting (Linux)
+    # Skip redundant test execution on PRs from develop (develop is already fully tested on push)
+    if: github.event_name != 'pull_request' || github.head_ref != 'develop'
     runs-on: [self-hosted, linux]
     defaults:
       run:
@@ -39,6 +41,9 @@ jobs:
       uses: Swatinem/rust-cache@v2
       with:
         workspaces: "./backend -> ./backend/target"
+
+    - name: Check Formatting
+      run: cargo fmt -- --check
 
     - name: Run Cargo Check
       run: cargo check
@@ -138,6 +143,8 @@ jobs:
 
   frontend-test:
     name: Frontend Tests & Build (Linux)
+    # Skip redundant test execution on PRs from develop (develop is already fully tested on push)
+    if: github.event_name != 'pull_request' || github.head_ref != 'develop'
     runs-on: [self-hosted, linux]
     defaults:
       run:
@@ -171,11 +178,23 @@ jobs:
         CHROME_BIN: ${{ steps.setup-chrome.outputs.chrome-path }}
       run: npm run test -- --watch=false --code-coverage --browsers=ChromeHeadlessCI
 
+    - name: Cache Playwright Browsers
+      uses: actions/cache@v4
+      id: playwright-cache
+      with:
+        path: ~/.cache/ms-playwright
+        key: ${{ runner.os }}-playwright-${{ hashFiles('frontend/package-lock.json') }}
+
     - name: Install Playwright Browsers
+      if: steps.playwright-cache.outputs.cache-hit != 'true'
       env:
         PLAYWRIGHT_DOWNLOAD_CONNECTION_TIMEOUT: "180000"
         NODE_OPTIONS: "--dns-result-order=ipv4first"
       run: npx playwright install --with-deps chromium
+
+    - name: Install Playwright System Dependencies
+      if: steps.playwright-cache.outputs.cache-hit == 'true'
+      run: npx playwright install-deps chromium
 
     - name: Ensure Development Certificates
       run: node scripts/ensure-certs.js
@@ -188,6 +207,8 @@ jobs:
 
   mcp-test:
     name: MCP Server Tests (Linux)
+    # Skip redundant test execution on PRs from develop (develop is already fully tested on push)
+    if: github.event_name != 'pull_request' || github.head_ref != 'develop'
     runs-on: [self-hosted, linux]
     defaults:
       run:
@@ -207,6 +228,9 @@ jobs:
       uses: Swatinem/rust-cache@v2
       with:
         workspaces: "./mcp -> ./mcp/target"
+
+    - name: Check Formatting
+      run: cargo fmt -- --check
 
     - name: Run Cargo Check
       run: cargo check
@@ -258,7 +282,7 @@ jobs:
             type=raw,value=v${{ steps.project_version.outputs.VERSION }}
 
       - name: Build and Push Backend Image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./backend
           platforms: linux/amd64,linux/arm64
@@ -266,6 +290,8 @@ jobs:
           provenance: false
           tags: ${{ steps.meta_backend.outputs.tags }}
           labels: ${{ steps.meta_backend.outputs.labels }}
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
 
       - name: Extract metadata (tags, labels) for Frontend
         id: meta_frontend
@@ -277,7 +303,7 @@ jobs:
             type=raw,value=v${{ steps.project_version.outputs.VERSION }}
 
       - name: Build and Push Frontend Image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./frontend
           target: production
@@ -286,6 +312,8 @@ jobs:
           provenance: false
           tags: ${{ steps.meta_frontend.outputs.tags }}
           labels: ${{ steps.meta_frontend.outputs.labels }}
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,mode=max,scope=frontend
 
   cleanup-ghcr:
     name: Cleanup GHCR Packages

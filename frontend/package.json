@@ -1,6 +1,6 @@
 {
   "name": "frontend",
-  "version": "0.8.1",
+  "version": "0.9.0",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
@@ -15,14 +15,14 @@
   },
   "private": true,
   "dependencies": {
-    "@angular/common": "^19.2.25",
-    "@angular/compiler": "^19.2.25",
-    "@angular/core": "^19.2.25",
-    "@angular/forms": "^19.2.25",
-    "@angular/platform-browser": "^19.2.25",
-    "@angular/platform-browser-dynamic": "^19.2.25",
-    "@angular/router": "^19.2.25",
-    "@angular/service-worker": "^19.2.25",
+    "@angular/common": "^22.2.3",
+    "@angular/compiler": "^22.2.3",
+    "@angular/core": "^22.2.3",
+    "@angular/forms": "^22.2.3",
+    "@angular/platform-browser": "^22.2.3",
+    "@angular/platform-browser-dynamic": "^22.2.3",
+    "@angular/router": "^22.2.3",
+    "@angular/service-worker": "^22.2.3",
     "@lucide/angular": "^1.56.0",
     "@tailwindcss/postcss": "^4.3.3",
     "html5-qrcode": "^2.3.8",
@@ -33,17 +33,19 @@
     "zone.js": "~0.15.1"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "^19.2.27",
-    "@angular/cli": "^19.2.27",
-    "@angular/compiler-cli": "^19.2.25",
+    "@angular/build": "^22.2.3",
+    "@angular/cli": "^22.2.3",
+    "@angular/compiler-cli": "^22.2.3",
     "@playwright/test": "^1.64.0",
     "@types/jasmine": "~5.1.15",
+    "istanbul-lib-instrument": "^6.0.3",
     "jasmine-core": "~5.6.0",
     "karma": "~6.4.0",
     "karma-chrome-launcher": "~3.2.0",
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
-    "typescript": "~5.7.3"
+    "postcss": "^8.5.3",
+    "typescript": "~6.0.3"
   }
 }

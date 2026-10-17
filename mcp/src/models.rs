@@ -42,6 +42,15 @@ pub struct DeleteScanArgs {
     pub id: i64,
 }
 
+/// Arguments for removing an album from the user's collection.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub struct RemoveFromCollectionArgs {
+    /// The Discogs release ID of the album to remove from the collection
+    pub release_id: i64,
+    /// Optional specific collection instance ID to delete
+    pub instance_id: Option<i64>,
+}
+
 /// Arguments for querying analytics within an optional date range.
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, Default)]
 pub struct AnalyticsDateRangeArgs {
@@ -376,7 +385,8 @@ mod tests {
             }
         }"#;
 
-        let resp: CollectionResponse = serde_json::from_str(json).expect("deserialize collection response");
+        let resp: CollectionResponse =
+            serde_json::from_str(json).expect("deserialize collection response");
         assert_eq!(resp.releases.len(), 1);
         let rel = &resp.releases[0];
         assert_eq!(rel.id, 12345);
@@ -434,7 +444,8 @@ mod tests {
                 "playCount": 15
             }
         ]"#;
-        let top: Vec<TopRecordDto> = serde_json::from_str(top_json).expect("deserialize top records");
+        let top: Vec<TopRecordDto> =
+            serde_json::from_str(top_json).expect("deserialize top records");
         assert_eq!(top.len(), 1);
         assert_eq!(top[0].title, "Abbey Road");
         assert_eq!(top[0].play_count, 15);
@@ -444,7 +455,8 @@ mod tests {
             "median": "€2,500.00",
             "maximum": "€5,000.00"
         }"#;
-        let val: CollectionValueDto = serde_json::from_str(value_json).expect("deserialize collection value");
+        let val: CollectionValueDto =
+            serde_json::from_str(value_json).expect("deserialize collection value");
         assert_eq!(val.median.as_deref(), Some("€2,500.00"));
     }
 
@@ -494,14 +506,18 @@ mod tests {
             ]
         }"#;
 
-        let detail: RecordDetailDto = serde_json::from_str(json).expect("deserialize record detail");
+        let detail: RecordDetailDto =
+            serde_json::from_str(json).expect("deserialize record detail");
         assert_eq!(detail.id, Some(10));
         assert_eq!(detail.discogs_id, 9999);
         assert_eq!(detail.title.as_deref(), Some("A Night at the Opera"));
         assert!(detail.in_collection);
         assert_eq!(detail.listen_count, 8);
         assert_eq!(detail.tracklist.len(), 1);
-        assert_eq!(detail.tracklist[0].title.as_deref(), Some("Death on Two Legs"));
+        assert_eq!(
+            detail.tracklist[0].title.as_deref(),
+            Some("Death on Two Legs")
+        );
         assert_eq!(detail.formats.len(), 1);
         assert_eq!(detail.formats[0].name.as_deref(), Some("Vinyl"));
         assert_eq!(detail.labels.len(), 1);
@@ -528,12 +544,14 @@ mod tests {
             ]
         }"#;
 
-        let search: DiscogsSearchResponse = serde_json::from_str(json).expect("deserialize search response");
+        let search: DiscogsSearchResponse =
+            serde_json::from_str(json).expect("deserialize search response");
         assert_eq!(search.results.len(), 1);
         assert_eq!(search.results[0].id, 123456);
-        assert_eq!(search.results[0].title.as_deref(), Some("Bohemian Rhapsody"));
+        assert_eq!(
+            search.results[0].title.as_deref(),
+            Some("Bohemian Rhapsody")
+        );
         assert_eq!(search.results[0].genre, vec!["Rock"]);
     }
 }
-
-

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, signal, computed, effect } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, computed, effect, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LayoutComponent } from '../../shared/components/layout/layout.component';
@@ -27,6 +27,7 @@ import { Subscription, firstValueFrom, forkJoin, of, catchError } from 'rxjs';
     StatisticWidgetComponent,
     TranslatePipe,
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <app-layout [fullWidth]="true">
       @if (scannerService.showScanner()) {

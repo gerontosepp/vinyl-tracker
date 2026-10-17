@@ -2,9 +2,6 @@ pub mod client;
 pub mod discovery;
 pub mod moo;
 
-use std::{collections::HashMap, sync::Arc};
-use sqlx::PgPool;
-use tokio::sync::{mpsc, RwLock};
 use crate::{
     error::AppError,
     models::{
@@ -13,6 +10,9 @@ use crate::{
     },
     services::roon::client::RoonClient,
 };
+use sqlx::PgPool;
+use std::{collections::HashMap, sync::Arc};
+use tokio::sync::{RwLock, mpsc};
 
 #[derive(Clone)]
 pub struct RoonService {
@@ -74,7 +74,11 @@ impl RoonService {
             }
             Err(e) => {
                 tracing::debug!("Roon client connection error for user {}: {e}", user.id);
-                let paired = user.roon_token.as_ref().map(|t| !t.trim().is_empty()).unwrap_or(false);
+                let paired = user
+                    .roon_token
+                    .as_ref()
+                    .map(|t| !t.trim().is_empty())
+                    .unwrap_or(false);
                 RoonStatusDto {
                     connected: false,
                     paired,
@@ -177,7 +181,7 @@ impl RoonService {
             _ => {
                 return Err(AppError::BadRequest(
                     "Roon Core is not configured. Please configure host in Settings.".to_string(),
-                ))
+                ));
             }
         };
 
@@ -186,9 +190,7 @@ impl RoonService {
             .get_or_create_client(pool, user, &host, port)
             .await
             .map_err(|e| {
-                AppError::BadRequest(format!(
-                    "Roon Core is not connected at {host}:{port} ({e})"
-                ))
+                AppError::BadRequest(format!("Roon Core is not connected at {host}:{port} ({e})"))
             })?;
 
         if !client.is_connected() {
@@ -197,7 +199,10 @@ impl RoonService {
             )));
         }
 
-        let mut target_zone_id = request.zone_id.clone().or_else(|| user.roon_zone_id.clone());
+        let mut target_zone_id = request
+            .zone_id
+            .clone()
+            .or_else(|| user.roon_zone_id.clone());
         if target_zone_id.as_deref().unwrap_or("").trim().is_empty() {
             let zones = client.get_zones().await;
             if let Some(first) = zones.first() {
@@ -210,7 +215,9 @@ impl RoonService {
         }
 
         let zone_id = target_zone_id.unwrap();
-        client.play_album(&zone_id, &request.artist, &request.title).await
+        client
+            .play_album(&zone_id, &request.artist, &request.title)
+            .await
     }
 
     async fn get_or_create_client(

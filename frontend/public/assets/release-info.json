@@ -7,6 +7,17 @@
     "isUnreleased": true,
     "items": [
       {
+        "title": "Sicherheits-Härtung: JWT_SECRET Fail-Fast, sichere Cookie-Attribute & Rate-Limiting (`#100`)",
+        "type": "security",
+        "typeLabel": "Security",
+        "details": [
+          "**Fail-Fast Konfigurationsprüfung**: Backend-Start bricht sofort mit klarer Fehlermeldung ab, wenn `JWT_SECRET` kürzer als 32 Zeichen ist oder in einer Produktionsumgebung (`APP_ENV=production`) der unsichere Standard-Entwicklungsschlüssel verwendet wird.",
+          "**Konfigurierbare & gehärtete Cookie-Attribute**: Vollständige Unterstützung von `AUTH_COOKIE_NAME`, `AUTH_COOKIE_MAX_AGE_SECONDS`, `AUTH_COOKIE_SECURE`, `AUTH_COOKIE_SAME_SITE`, `AUTH_COOKIE_PATH` und `AUTH_COOKIE_DOMAIN`. In Produktionsumgebungen ist das `Secure`-Flag standardmäßig aktiv. Authentifizierungs-Middleware und Logout synchronisieren Cookie-Namen und Attribute dynamisch.",
+          "**IP-basiertes Rate-Limiting für Auth-Routen**: Öffentliche Authentifizierungs-Endpunkte (`POST /api/users/login`, `POST /api/users/register`, `POST /api/users/reset-password`) sind mittels `governor` gegen Brute-Force-Angriffe geschützt (`AUTH_RATE_LIMIT_FOR_PERIOD`, Standard: 10 Anfragen/Minute pro IP). Bei Überschreitung wird strikt HTTP `429 Too Many Requests` mit RFC 7807 Problem-Details zurückgegeben.",
+          "**Tests**: Neue Unit-Tests für Konfigurationsvalidierung und Integrationstests für Cookie-Attribute und Rate-Limiting in `backend/tests/auth_tests.rs`."
+        ]
+      },
+      {
         "title": "Sicherheits-Upgrade: Moderne AEAD-Kryptografie & Login-Absicherung (`#101`)",
         "type": "security",
         "typeLabel": "Security",

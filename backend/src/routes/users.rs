@@ -1,5 +1,6 @@
 use crate::{
     auth::CurrentUser,
+    config::Config,
     error::AppError,
     models::user::{
         LoginRequestDto, RegisterRequestDto, ResetPasswordRequestDto, UpdateDiscogsRequestDto,
@@ -9,21 +10,104 @@ use crate::{
 };
 use axum::{
     Json, Router,
-    extract::State,
+    extract::{Request, State},
     http::{HeaderMap, HeaderValue, StatusCode, header},
-    response::IntoResponse,
+    middleware::Next,
+    response::{IntoResponse, Response},
     routing::{get, post, put},
 };
+use std::net::IpAddr;
 
-fn make_auth_cookie(token: &str) -> HeaderValue {
-    HeaderValue::from_str(&format!(
-        "vinyl_token={token}; Path=/; Max-Age=86400; HttpOnly; SameSite=Lax"
-    ))
-    .unwrap_or_else(|_| HeaderValue::from_static("vinyl_token=; Path=/; Max-Age=0"))
+pub fn make_auth_cookie(config: &Config, token: &str) -> HeaderValue {
+    let mut parts = vec![
+        format!("{}={}", config.auth_cookie_name, token),
+        format!("Path={}", config.auth_cookie_path),
+        format!("Max-Age={}", config.auth_cookie_max_age_secs),
+        "HttpOnly".to_string(),
+        format!("SameSite={}", config.auth_cookie_same_site),
+    ];
+    if config.auth_cookie_secure {
+        parts.push("Secure".to_string());
+    }
+    if let Some(domain) = &config.auth_cookie_domain {
+        parts.push(format!("Domain={domain}"));
+    }
+    let cookie_str = parts.join("; ");
+    HeaderValue::from_str(&cookie_str).unwrap_or_else(|_| {
+        HeaderValue::from_str(&format!("{}=; Path=/; Max-Age=0", config.auth_cookie_name))
+            .unwrap_or_else(|_| HeaderValue::from_static("token=; Path=/; Max-Age=0"))
+    })
 }
 
-fn make_clearing_cookie() -> HeaderValue {
-    HeaderValue::from_static("vinyl_token=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax")
+pub fn make_clearing_cookie(config: &Config) -> HeaderValue {
+    let mut parts = vec![
+        format!("{}=deleted", config.auth_cookie_name),
+        format!("Path={}", config.auth_cookie_path),
+        "Max-Age=0".to_string(),
+        "HttpOnly".to_string(),
+        format!("SameSite={}", config.auth_cookie_same_site),
+    ];
+    if config.auth_cookie_secure {
+        parts.push("Secure".to_string());
+    }
+    if let Some(domain) = &config.auth_cookie_domain {
+        parts.push(format!("Domain={domain}"));
+    }
+    let cookie_str = parts.join("; ");
+    HeaderValue::from_str(&cookie_str).unwrap_or_else(|_| {
+        HeaderValue::from_str(&format!("{}=; Path=/; Max-Age=0", config.auth_cookie_name))
+            .unwrap_or_else(|_| HeaderValue::from_static("token=; Path=/; Max-Age=0"))
+    })
+}
+
+fn extract_client_ip(req: &Request) -> IpAddr {
+    // 1. Check X-Forwarded-For header
+    if let Some(forwarded) = req
+        .headers()
+        .get("x-forwarded-for")
+        .and_then(|h| h.to_str().ok())
+        .and_then(|s| s.split(',').next())
+        .and_then(|s| s.trim().parse::<IpAddr>().ok())
+    {
+        return forwarded;
+    }
+
+    // 2. Check X-Real-IP header
+    if let Some(real_ip) = req
+        .headers()
+        .get("x-real-ip")
+        .and_then(|h| h.to_str().ok())
+        .and_then(|s| s.trim().parse::<IpAddr>().ok())
+    {
+        return real_ip;
+    }
+
+    // 3. Fallback to socket connection address if present in extensions
+    if let Some(connect_info) = req
+        .extensions()
+        .get::<axum::extract::ConnectInfo<std::net::SocketAddr>>()
+    {
+        return connect_info.0.ip();
+    }
+
+    // 4. Default fallback to localhost
+    IpAddr::V4(std::net::Ipv4Addr::new(127, 0, 0, 1))
+}
+
+pub async fn auth_rate_limit_middleware(
+    State(state): State<AppState>,
+    request: Request,
+    next: Next,
+) -> Result<Response, AppError> {
+    let client_ip = extract_client_ip(&request);
+
+    if state.auth_rate_limiter.check_key(&client_ip).is_err() {
+        return Err(AppError::TooManyRequests(
+            "Rate limit exceeded for authentication attempts. Please try again later.".to_string(),
+        ));
+    }
+
+    Ok(next.run(request).await)
 }
 
 pub async fn register_handler(
@@ -34,7 +118,7 @@ pub async fn register_handler(
 
     let mut headers = HeaderMap::new();
     if let Some(token) = &dto.token {
-        headers.insert(header::SET_COOKIE, make_auth_cookie(token));
+        headers.insert(header::SET_COOKIE, make_auth_cookie(&state.config, token));
     }
 
     Ok((StatusCode::OK, headers, Json(dto)))
@@ -48,7 +132,7 @@ pub async fn login_handler(
 
     let mut headers = HeaderMap::new();
     if let Some(token) = &dto.token {
-        headers.insert(header::SET_COOKIE, make_auth_cookie(token));
+        headers.insert(header::SET_COOKIE, make_auth_cookie(&state.config, token));
     }
 
     Ok((StatusCode::OK, headers, Json(dto)))
@@ -81,15 +165,15 @@ pub async fn reset_password_handler(
 
     let mut headers = HeaderMap::new();
     if let Some(token) = &dto.token {
-        headers.insert(header::SET_COOKIE, make_auth_cookie(token));
+        headers.insert(header::SET_COOKIE, make_auth_cookie(&state.config, token));
     }
 
     Ok((StatusCode::OK, headers, Json(dto)))
 }
 
-pub async fn logout_handler() -> impl IntoResponse {
+pub async fn logout_handler(State(state): State<AppState>) -> impl IntoResponse {
     let mut headers = HeaderMap::new();
-    headers.insert(header::SET_COOKIE, make_clearing_cookie());
+    headers.insert(header::SET_COOKIE, make_clearing_cookie(&state.config));
     (
         StatusCode::OK,
         headers,
@@ -97,12 +181,19 @@ pub async fn logout_handler() -> impl IntoResponse {
     )
 }
 
-pub fn router() -> Router<AppState> {
-    Router::new()
+pub fn router(state: &AppState) -> Router<AppState> {
+    let rate_limited_routes = Router::new()
         .route("/register", post(register_handler))
         .route("/login", post(login_handler))
+        .route("/reset-password", post(reset_password_handler))
+        .layer(axum::middleware::from_fn_with_state(
+            state.clone(),
+            auth_rate_limit_middleware,
+        ));
+
+    Router::new()
+        .merge(rate_limited_routes)
         .route("/me", get(get_me_handler))
         .route("/me/discogs", put(update_discogs_handler))
-        .route("/reset-password", post(reset_password_handler))
         .route("/logout", post(logout_handler))
 }

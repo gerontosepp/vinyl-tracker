@@ -9,6 +9,11 @@
 
 ## Unreleased
 
+- **Architektur-Dokumentation: Einführung von Architecture Decision Records (ADRs)**:
+  - **Neues ADR-Verzeichnis (`docs/adr/`)**: Etablierung eines standardisierten Formats (MADR / Nygard) zur transparenten Nachvollziehbarkeit wesentlicher Architekturentscheidungen inklusive Vorlage.
+  - **Initiale Dokumentation (ADR-0001 bis ADR-0006)**: Festhaltung der Kernentscheidungen bezüglich Rust-Backend-Migration, Angular 22 Frontend, nativem Rust MCP Server, AEAD AES-256-GCM Kryptografie, direkter Roon MOO/WebSocket Integration und automatisierter Rust-Testabdeckungsprüfung via `cargo-llvm-cov`.
+  - **Synchronisation**: Verknüpfung in `README.md` und `docs/arc42.md` (Kapitel 9).
+
 - **MCP-Server Erweiterung: Zustandseinstufung, Marktpreis-Refresh & Roon-Status (`#107`)**:
   - **`update_record_condition`**: Neues MCP-Tool zur Aktualisierung der Goldmine-Zustandseinstufung von Tonträger und Cover (`media_condition`, `sleeve_condition`) mit automatischer Discogs-Synchronisation (`PATCH /api/records/{id}/condition`).
   - **`refresh_collection_prices`**: Neues MCP-Tool zum gezielten oder vollständigen Aktualisieren geschätzter Marktpreise (Min, Median) der Sammlung via Discogs (`POST /api/collection/prices/refresh`).

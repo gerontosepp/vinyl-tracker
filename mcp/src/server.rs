@@ -51,6 +51,22 @@ impl VinylMcpServer {
         ))
     }
 
+    /// Add an album from Discogs to the user's vinyl collection and trigger sync.
+    #[tool(
+        name = "add_to_collection",
+        description = "Adds a vinyl record or CD release by its Discogs release ID to the user's collection and syncs with Discogs."
+    )]
+    async fn add_to_collection(
+        &self,
+        Parameters(args): Parameters<AddToCollectionArgs>,
+    ) -> Result<String, String> {
+        let result = self.client.add_to_collection(args.release_id).await?;
+        Ok(format!(
+            "Successfully added release {} to collection. Sync result: {} added, {} removed.",
+            args.release_id, result.added_count, result.removed_count
+        ))
+    }
+
     /// Remove an album from the user's vinyl collection and connected Discogs account.
     #[tool(
         name = "remove_from_collection",
@@ -81,6 +97,20 @@ impl VinylMcpServer {
         let result = self.client.scan_barcode(&args.barcode).await?;
         serde_json::to_string_pretty(&result)
             .map_err(|e| format!("Failed to serialize scan result: {}", e))
+    }
+
+    /// Directly log a listen event for a vinyl record by its internal record ID or Discogs release ID.
+    #[tool(
+        name = "log_record_listen",
+        description = "Directly logs a vinyl record listen event by its internal record ID or Discogs release ID (without needing to scan a barcode). Increments the play count and records the timestamp."
+    )]
+    async fn log_record_listen(
+        &self,
+        Parameters(args): Parameters<LogRecordListenArgs>,
+    ) -> Result<String, String> {
+        let details = self.client.log_record_listen(args.id).await?;
+        serde_json::to_string_pretty(&details)
+            .map_err(|e| format!("Failed to serialize record details: {}", e))
     }
 
     /// Delete a logged listen event by its unique ID.
@@ -233,6 +263,17 @@ impl VinylMcpServer {
             .map_err(|e| format!("Failed to serialize Discogs search results: {}", e))
     }
 
+    /// Retrieve available audio playback zones and output rooms from a configured Roon Core.
+    #[tool(
+        name = "get_roon_zones",
+        description = "Retrieves the list of active Roon audio playback zones (zone ID, zone name, and playback state) from the configured Roon Core."
+    )]
+    async fn get_roon_zones(&self) -> Result<String, String> {
+        let zones = self.client.get_roon_zones().await?;
+        serde_json::to_string_pretty(&zones)
+            .map_err(|e| format!("Failed to serialize Roon zones: {}", e))
+    }
+
     /// Play an album/record on Roon via Roon Core integration.
     #[tool(
         name = "play_record_on_roon",
@@ -265,43 +306,55 @@ mod tests {
         let t2 = VinylMcpServer::sync_collection_tool_attr();
         assert_eq!(t2.name, "sync_collection");
 
-        let t3 = VinylMcpServer::scan_barcode_tool_attr();
-        assert_eq!(t3.name, "scan_barcode");
+        let t3 = VinylMcpServer::add_to_collection_tool_attr();
+        assert_eq!(t3.name, "add_to_collection");
 
-        let t4 = VinylMcpServer::delete_scan_tool_attr();
-        assert_eq!(t4.name, "delete_scan");
+        let t4 = VinylMcpServer::remove_from_collection_tool_attr();
+        assert_eq!(t4.name, "remove_from_collection");
 
-        let t5 = VinylMcpServer::reset_all_listens_tool_attr();
-        assert_eq!(t5.name, "reset_all_listens");
+        let t5 = VinylMcpServer::scan_barcode_tool_attr();
+        assert_eq!(t5.name, "scan_barcode");
 
-        let t6 = VinylMcpServer::get_recent_listens_tool_attr();
-        assert_eq!(t6.name, "get_recent_listens");
+        let t6 = VinylMcpServer::log_record_listen_tool_attr();
+        assert_eq!(t6.name, "log_record_listen");
 
-        let t7 = VinylMcpServer::get_top_records_tool_attr();
-        assert_eq!(t7.name, "get_top_records");
+        let t7 = VinylMcpServer::delete_scan_tool_attr();
+        assert_eq!(t7.name, "delete_scan");
 
-        let t8 = VinylMcpServer::get_collection_value_tool_attr();
-        assert_eq!(t8.name, "get_collection_value");
+        let t8 = VinylMcpServer::reset_all_listens_tool_attr();
+        assert_eq!(t8.name, "reset_all_listens");
 
-        let t9 = VinylMcpServer::get_genre_breakdown_tool_attr();
-        assert_eq!(t9.name, "get_genre_breakdown");
+        let t9 = VinylMcpServer::get_recent_listens_tool_attr();
+        assert_eq!(t9.name, "get_recent_listens");
 
-        let t10 = VinylMcpServer::get_current_user_tool_attr();
-        assert_eq!(t10.name, "get_current_user");
+        let t10 = VinylMcpServer::get_top_records_tool_attr();
+        assert_eq!(t10.name, "get_top_records");
 
-        let t11 = VinylMcpServer::get_random_record_tool_attr();
-        assert_eq!(t11.name, "get_random_record");
+        let t11 = VinylMcpServer::get_collection_value_tool_attr();
+        assert_eq!(t11.name, "get_collection_value");
 
-        let t12 = VinylMcpServer::get_unplayed_records_tool_attr();
-        assert_eq!(t12.name, "get_unplayed_records");
+        let t12 = VinylMcpServer::get_genre_breakdown_tool_attr();
+        assert_eq!(t12.name, "get_genre_breakdown");
 
-        let t13 = VinylMcpServer::get_record_details_tool_attr();
-        assert_eq!(t13.name, "get_record_details");
+        let t13 = VinylMcpServer::get_current_user_tool_attr();
+        assert_eq!(t13.name, "get_current_user");
 
-        let t14 = VinylMcpServer::search_discogs_tool_attr();
-        assert_eq!(t14.name, "search_discogs");
+        let t14 = VinylMcpServer::get_random_record_tool_attr();
+        assert_eq!(t14.name, "get_random_record");
 
-        let t15 = VinylMcpServer::play_record_on_roon_tool_attr();
-        assert_eq!(t15.name, "play_record_on_roon");
+        let t15 = VinylMcpServer::get_unplayed_records_tool_attr();
+        assert_eq!(t15.name, "get_unplayed_records");
+
+        let t16 = VinylMcpServer::get_record_details_tool_attr();
+        assert_eq!(t16.name, "get_record_details");
+
+        let t17 = VinylMcpServer::search_discogs_tool_attr();
+        assert_eq!(t17.name, "search_discogs");
+
+        let t18 = VinylMcpServer::get_roon_zones_tool_attr();
+        assert_eq!(t18.name, "get_roon_zones");
+
+        let t19 = VinylMcpServer::play_record_on_roon_tool_attr();
+        assert_eq!(t19.name, "play_record_on_roon");
     }
 }

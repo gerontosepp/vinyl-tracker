@@ -42,6 +42,13 @@ pub struct DeleteScanArgs {
     pub id: i64,
 }
 
+/// Arguments for adding an album/release to the user's collection.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub struct AddToCollectionArgs {
+    /// The Discogs release ID of the album to add to the collection
+    pub release_id: i64,
+}
+
 /// Arguments for removing an album from the user's collection.
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct RemoveFromCollectionArgs {
@@ -49,6 +56,13 @@ pub struct RemoveFromCollectionArgs {
     pub release_id: i64,
     /// Optional specific collection instance ID to delete
     pub instance_id: Option<i64>,
+}
+
+/// Arguments for directly logging a record listen event by record ID or Discogs release ID.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub struct LogRecordListenArgs {
+    /// The internal record ID or Discogs release ID to log a listen event for
+    pub id: i64,
 }
 
 /// Arguments for querying analytics within an optional date range.
@@ -344,6 +358,15 @@ pub struct RoonPlayResponse {
     pub message: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct RoonZoneDto {
+    #[serde(alias = "zone_id")]
+    pub zone_id: String,
+    pub name: String,
+    pub state: String,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -553,5 +576,29 @@ mod tests {
             Some("Bohemian Rhapsody")
         );
         assert_eq!(search.results[0].genre, vec!["Rock"]);
+    }
+
+    #[test]
+    fn test_roon_zone_dto_deserialization() {
+        let json = r#"[
+            {
+                "zoneId": "16013a96-6e27-4a0e-9276-88094916a040",
+                "name": "Living Room",
+                "state": "playing"
+            },
+            {
+                "zone_id": "22222222-6e27-4a0e-9276-88094916a040",
+                "name": "Office",
+                "state": "paused"
+            }
+        ]"#;
+
+        let zones: Vec<RoonZoneDto> = serde_json::from_str(json).expect("deserialize roon zones");
+        assert_eq!(zones.len(), 2);
+        assert_eq!(zones[0].name, "Living Room");
+        assert_eq!(zones[0].zone_id, "16013a96-6e27-4a0e-9276-88094916a040");
+        assert_eq!(zones[0].state, "playing");
+        assert_eq!(zones[1].name, "Office");
+        assert_eq!(zones[1].zone_id, "22222222-6e27-4a0e-9276-88094916a040");
     }
 }

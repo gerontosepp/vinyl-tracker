@@ -5,7 +5,19 @@
     "tag": "In Entwicklung",
     "isCurrent": false,
     "isUnreleased": true,
-    "items": []
+    "items": [
+      {
+        "title": "MCP-Server Erweiterung: Sammlungs-Management & Roon-Zonenerkennung (`#106`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "**`add_to_collection`**: Neues MCP-Tool zur direkten Aufnahme von Alben via Discogs-Release-ID in die lokale Sammlung inklusive automatischem Discogs-Abgleich (`POST /api/collection/releases/{release_id}`).",
+          "**`log_record_listen`**: Neues MCP-Tool zum direkten Protokollieren von Hör-Events anhand der internen Record-ID oder Discogs-Release-ID (`POST /api/records/{id}/listen`), ohne Barcode-Synthetisierung.",
+          "**`get_roon_zones`**: Neues MCP-Tool zur Abfrage verfügbarer aktiver Roon-Audiozonen und Ausgaberäume (`GET /api/roon/zones`) für gezieltes Multi-Room-Playback.",
+          "**Tools-Synchronisation & Tests**: Ergänzung von `remove_from_collection`, `add_to_collection`, `log_record_listen` und `get_roon_zones` in der Tool-Registrierungs-Testsuite (19 registrierte Tools) sowie Dokumentation in `mcp/README.md`."
+        ]
+      }
+    ]
   },
   {
     "version": "v0.9.0",

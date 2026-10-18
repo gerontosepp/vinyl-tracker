@@ -288,6 +288,32 @@ impl VinylApiClient {
             .map_err(|e| format!("Failed to parse sync result JSON: {}", e))
     }
 
+    pub async fn add_to_collection(&self, release_id: i64) -> Result<SyncResultDto, String> {
+        self.ensure_authenticated().await?;
+        let url = format!("{}/api/collection/releases/{}", self.base_url, release_id);
+        let headers = self.build_auth_headers().await;
+
+        let res = self
+            .http_client
+            .post(&url)
+            .headers(headers)
+            .send()
+            .await
+            .map_err(|e| format!("Request to add release to collection failed: {}", e))?;
+
+        if !res.status().is_success() {
+            return Err(format!(
+                "Backend error {}: {}",
+                res.status(),
+                res.text().await.unwrap_or_default()
+            ));
+        }
+
+        res.json::<SyncResultDto>()
+            .await
+            .map_err(|e| format!("Failed to parse sync result JSON: {}", e))
+    }
+
     pub async fn remove_from_collection(
         &self,
         release_id: i64,
@@ -351,6 +377,32 @@ impl VinylApiClient {
         res.json::<ScanResultDto>()
             .await
             .map_err(|e| format!("Failed to parse scan result: {}", e))
+    }
+
+    pub async fn log_record_listen(&self, id: i64) -> Result<RecordDetailDto, String> {
+        self.ensure_authenticated().await?;
+        let url = format!("{}/api/records/{}/listen", self.base_url, id);
+        let headers = self.build_auth_headers().await;
+
+        let res = self
+            .http_client
+            .post(&url)
+            .headers(headers)
+            .send()
+            .await
+            .map_err(|e| format!("Request to /api/records/{}/listen failed: {}", id, e))?;
+
+        if !res.status().is_success() {
+            return Err(format!(
+                "Backend error {}: {}",
+                res.status(),
+                res.text().await.unwrap_or_default()
+            ));
+        }
+
+        res.json::<RecordDetailDto>()
+            .await
+            .map_err(|e| format!("Failed to parse record detail JSON: {}", e))
     }
 
     pub async fn delete_scan(&self, id: i64) -> Result<String, String> {
@@ -653,5 +705,31 @@ impl VinylApiClient {
         res.json::<RoonPlayResponse>()
             .await
             .map_err(|e| format!("Failed to parse Roon play JSON response: {}", e))
+    }
+
+    pub async fn get_roon_zones(&self) -> Result<Vec<RoonZoneDto>, String> {
+        self.ensure_authenticated().await?;
+        let url = format!("{}/api/roon/zones", self.base_url);
+        let headers = self.build_auth_headers().await;
+
+        let res = self
+            .http_client
+            .get(&url)
+            .headers(headers)
+            .send()
+            .await
+            .map_err(|e| format!("Request to /api/roon/zones failed: {}", e))?;
+
+        if !res.status().is_success() {
+            return Err(format!(
+                "Backend error {}: {}",
+                res.status(),
+                res.text().await.unwrap_or_default()
+            ));
+        }
+
+        res.json::<Vec<RoonZoneDto>>()
+            .await
+            .map_err(|e| format!("Failed to parse Roon zones JSON response: {}", e))
     }
 }

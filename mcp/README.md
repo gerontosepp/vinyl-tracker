@@ -21,7 +21,10 @@ Der Server implementiert **Option 1 (REST-Client)**: Er kommuniziert direkt übe
 | :--- | :--- | :--- |
 | `get_user_collection` | Ruft die persönliche Vinyl-Sammlung ab | `page` (int), `per_page` (int), `sort` (`artist`, `listens`, `addedAt`), `sort_order` (`asc`, `desc`), `min_plays` (int), `search` (str) |
 | `sync_collection` | Startet den bidirektionalen Abgleich mit Discogs | *keine* |
+| `add_to_collection` | Fügt ein Album via Discogs-Release-ID zur Sammlung hinzu und gleicht ab | `release_id` (int) |
+| `remove_from_collection` | Entfernt ein Album aus der Sammlung und von Discogs | `release_id` (int), `instance_id` (int, optional) |
 | `scan_barcode` | Protokolliert ein Hör-Event via Barcode oder QR-Code | `barcode` (str, z. B. `discogs-id:12345` oder UPC/EAN) |
+| `log_record_listen` | Protokolliert ein Hör-Event direkt per Record-ID oder Release-ID | `id` (int) |
 | `delete_scan` | Löscht ein einzelnes Hör-Event | `id` (int) |
 | `reset_all_listens` | Setzt alle Hör-Events des Nutzers zurück | *keine* |
 | `get_recent_listens` | Historie der zuletzt gehörten Platten | `from` (YYYY-MM-DD), `to` (YYYY-MM-DD) |
@@ -33,6 +36,7 @@ Der Server implementiert **Option 1 (REST-Client)**: Er kommuniziert direkt übe
 | `get_unplayed_records` | Ungespielte Platten der Sammlung ("Shelf of Shame") | `page` (int), `per_page` (int) |
 | `get_record_details` | Vollständige Album-Details mit Tracklist, Formaten, Labels & Play-History | `id` (int, interne Record-ID oder Discogs-Release-ID) |
 | `search_discogs` | Globale Discogs-Datenbanksuche nach Alben/Künstlern | `query` (str), `type` (str, optional), `page` (int), `per_page` (int) |
+| `get_roon_zones` | Ruft aktive Roon-Audiozonen und Ausgaberäume ab | *keine* |
 | `play_record_on_roon` | Startet direkte Wiedergabe ('Play Now') eines Albums auf einem konfigurierten Roon Core | `artist` (str), `title` (str), `zone_id` (str, optional) |
 
 ---

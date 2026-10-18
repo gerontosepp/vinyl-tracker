@@ -289,6 +289,49 @@ impl VinylMcpServer {
             args.artist, args.title, resp.message
         ))
     }
+
+    /// Update the media and/or sleeve condition grading for a record in the collection.
+    #[tool(
+        name = "update_record_condition",
+        description = "Updates the Goldmine condition grading for vinyl media and/or sleeve for a record in the user's collection (e.g. 'Mint (M)', 'Near Mint (NM or M-)', 'Very Good Plus (VG+)', 'Very Good (VG)', 'Good Plus (G+)', etc.)."
+    )]
+    async fn update_record_condition(
+        &self,
+        Parameters(args): Parameters<UpdateRecordConditionArgs>,
+    ) -> Result<String, String> {
+        let id = args.id;
+        let details = self.client.update_record_condition(id, &args).await?;
+        serde_json::to_string_pretty(&details)
+            .map_err(|e| format!("Failed to serialize updated record details: {}", e))
+    }
+
+    /// Refresh Discogs market value estimations for records in the user's collection.
+    #[tool(
+        name = "refresh_collection_prices",
+        description = "Refreshes lowest and median market price estimates from Discogs for records in the user's collection. By default (only_missing = true), updates only records missing price data; set only_missing to false to refresh all records."
+    )]
+    async fn refresh_collection_prices(
+        &self,
+        Parameters(args): Parameters<RefreshCollectionPricesArgs>,
+    ) -> Result<String, String> {
+        let result = self
+            .client
+            .refresh_collection_prices(args.only_missing)
+            .await?;
+        serde_json::to_string_pretty(&result)
+            .map_err(|e| format!("Failed to serialize price refresh result: {}", e))
+    }
+
+    /// Get the current connection and pairing status of the Roon Core integration.
+    #[tool(
+        name = "get_roon_status",
+        description = "Inspects the Roon Core integration status, including whether the backend is connected and paired with Roon Core, core name, host, port, active zone, and all available playback zones."
+    )]
+    async fn get_roon_status(&self) -> Result<String, String> {
+        let status = self.client.get_roon_status().await?;
+        serde_json::to_string_pretty(&status)
+            .map_err(|e| format!("Failed to serialize Roon status: {}", e))
+    }
 }
 
 #[tool_handler(router = self.tool_router)]
@@ -356,5 +399,14 @@ mod tests {
 
         let t19 = VinylMcpServer::play_record_on_roon_tool_attr();
         assert_eq!(t19.name, "play_record_on_roon");
+
+        let t20 = VinylMcpServer::update_record_condition_tool_attr();
+        assert_eq!(t20.name, "update_record_condition");
+
+        let t21 = VinylMcpServer::refresh_collection_prices_tool_attr();
+        assert_eq!(t21.name, "refresh_collection_prices");
+
+        let t22 = VinylMcpServer::get_roon_status_tool_attr();
+        assert_eq!(t22.name, "get_roon_status");
     }
 }

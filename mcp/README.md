@@ -37,7 +37,10 @@ Der Server implementiert **Option 1 (REST-Client)**: Er kommuniziert direkt übe
 | `get_record_details` | Vollständige Album-Details mit Tracklist, Formaten, Labels & Play-History | `id` (int, interne Record-ID oder Discogs-Release-ID) |
 | `search_discogs` | Globale Discogs-Datenbanksuche nach Alben/Künstlern | `query` (str), `type` (str, optional), `page` (int), `per_page` (int) |
 | `get_roon_zones` | Ruft aktive Roon-Audiozonen und Ausgaberäume ab | *keine* |
+| `get_roon_status` | Prüft Verbindungs- und Pairing-Status des lokalen Roon Cores | *keine* |
 | `play_record_on_roon` | Startet direkte Wiedergabe ('Play Now') eines Albums auf einem konfigurierten Roon Core | `artist` (str), `title` (str), `zone_id` (str, optional) |
+| `update_record_condition` | Aktualisiert die Goldmine-Zustandseinstufung (Media/Sleeve) einer Platte | `id` (int), `media_condition` (str, optional), `sleeve_condition` (str, optional) |
+| `refresh_collection_prices` | Aktualisiert Discogs-Marktpreise (Min, Median) der Sammlung | `only_missing` (bool, optional, default `true`) |
 
 ---
 

@@ -65,6 +65,24 @@ pub struct LogRecordListenArgs {
     pub id: i64,
 }
 
+/// Arguments for updating media and sleeve condition grading of a record.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub struct UpdateRecordConditionArgs {
+    /// Internal record ID or Discogs release ID
+    pub id: i64,
+    /// Optional media condition according to Goldmine Standard (e.g. "Mint (M)", "Near Mint (NM or M-)", "Very Good Plus (VG+)", "Very Good (VG)", "Good Plus (G+)", "Good (G)", "Fair (F)", "Poor (P)")
+    pub media_condition: Option<String>,
+    /// Optional sleeve condition according to Goldmine Standard
+    pub sleeve_condition: Option<String>,
+}
+
+/// Arguments for refreshing collection market prices from Discogs.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, Default)]
+pub struct RefreshCollectionPricesArgs {
+    /// If true, only records currently missing price information will be refreshed (default: true). Set false to force refresh all records.
+    pub only_missing: Option<bool>,
+}
+
 /// Arguments for querying analytics within an optional date range.
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, Default)]
 pub struct AnalyticsDateRangeArgs {
@@ -173,6 +191,14 @@ pub struct SyncResultDto {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PriceRefreshResultDto {
+    #[serde(alias = "updatedCount", alias = "updated_count")]
+    pub updated_count: i32,
+    #[serde(alias = "failedCount", alias = "failed_count")]
+    pub failed_count: i32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ScanResultDto {
     pub success: bool,
     pub message: String,
@@ -271,6 +297,10 @@ pub struct RecordDetailDto {
     pub last_listened_at: Option<String>,
     #[serde(alias = "addedAt", alias = "added_at")]
     pub added_at: Option<String>,
+    #[serde(alias = "mediaCondition", alias = "media_condition")]
+    pub media_condition: Option<String>,
+    #[serde(alias = "sleeveCondition", alias = "sleeve_condition")]
+    pub sleeve_condition: Option<String>,
     #[serde(alias = "lowestPrice", alias = "lowest_price")]
     pub lowest_price: Option<f64>,
     #[serde(alias = "medianPrice", alias = "median_price")]
@@ -365,6 +395,21 @@ pub struct RoonZoneDto {
     pub zone_id: String,
     pub name: String,
     pub state: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct RoonStatusDto {
+    pub connected: bool,
+    pub paired: bool,
+    pub core_name: Option<String>,
+    pub core_id: Option<String>,
+    pub host: Option<String>,
+    pub port: Option<i32>,
+    pub selected_zone_id: Option<String>,
+    pub selected_zone_name: Option<String>,
+    #[serde(default)]
+    pub zones: Vec<RoonZoneDto>,
 }
 
 #[cfg(test)]
@@ -600,5 +645,47 @@ mod tests {
         assert_eq!(zones[0].state, "playing");
         assert_eq!(zones[1].name, "Office");
         assert_eq!(zones[1].zone_id, "22222222-6e27-4a0e-9276-88094916a040");
+    }
+
+    #[test]
+    fn test_price_refresh_result_dto_deserialization() {
+        let json = r#"{
+            "updatedCount": 12,
+            "failedCount": 1
+        }"#;
+        let res: PriceRefreshResultDto =
+            serde_json::from_str(json).expect("deserialize price refresh result");
+        assert_eq!(res.updated_count, 12);
+        assert_eq!(res.failed_count, 1);
+    }
+
+    #[test]
+    fn test_roon_status_dto_deserialization() {
+        let json = r#"{
+            "connected": true,
+            "paired": true,
+            "coreName": "LivingRoom Core",
+            "coreId": "core-123",
+            "host": "192.168.1.100",
+            "port": 9330,
+            "selectedZoneId": "16013a96-6e27-4a0e-9276-88094916a040",
+            "selectedZoneName": "Living Room",
+            "zones": [
+                {
+                    "zoneId": "16013a96-6e27-4a0e-9276-88094916a040",
+                    "name": "Living Room",
+                    "state": "playing"
+                }
+            ]
+        }"#;
+
+        let status: RoonStatusDto = serde_json::from_str(json).expect("deserialize roon status");
+        assert!(status.connected);
+        assert!(status.paired);
+        assert_eq!(status.core_name.as_deref(), Some("LivingRoom Core"));
+        assert_eq!(status.host.as_deref(), Some("192.168.1.100"));
+        assert_eq!(status.port, Some(9330));
+        assert_eq!(status.zones.len(), 1);
+        assert_eq!(status.zones[0].name, "Living Room");
     }
 }

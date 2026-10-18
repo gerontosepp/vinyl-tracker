@@ -225,18 +225,16 @@ The system is deployed as a multi-container Docker application orchestrated by D
 
 ## 9. Architecture Decisions
 
-| Decision | Reasoning | Status |
-| :--- | :--- | :--- |
-| **Java 25 Migration** | Upgraded to Java 25 (LTS) along with Lombok 1.18.44. The previous downgrade to Java 21 LTS is no longer necessary as tools have caught up with the newer LTS release. | Accepted |
-| **Angular 22** | Modern, robust framework with signals for reactive state management, service worker support, and standalone components. | Accepted |
-| **Tailwind CSS** | Utility-first CSS allows for rapid UI development and consistent design tokens without managing complex stylesheets. | Accepted |
-| **PostgreSQL** | Industry standard, robust relational database. Suitable for structured data like catalog entries. | Accepted |
-| **Flyway Migrations** | Replaced Hibernate `ddl-auto: update` with Flyway for reliable, versioned schema migrations in production. | Accepted |
-| **Modular Frontend Components** | Decomposed monolithic page components (such as `CollectionComponent`) into focused subcomponents with dedicated HTML templates and clear Angular Signal inputs/outputs to maintain low file complexity (< 350 lines). | Accepted |
-| **BCrypt Self-Contained Salt** | Dropped redundant `salt` column from `app_user` (Flyway `V5`) since BCrypt handles salt generation internally. | Accepted |
-| **Discogs Condition Tracking** | Added `media_condition` and `sleeve_condition` to `collection_item` (Flyway `V8`) to persist Goldmine gradings synchronized from Discogs custom fields for UI display and marketplace pricing (#62). | Accepted |
-| **Condition-Based Market Price Caching** | Added `median_price` to `record_cache` (Flyway `V9`) to persist condition-mapped estimated marketplace values in EUR from the Discogs Price Suggestions API, enabling fast collection valuation without manual overrides (#30). | Accepted |
-| **Node.js 24 CI Runtime** | Aligned GitHub Actions workflow runner and setup-node action to Node 24. | Accepted |
+Architectural decisions in Vinyl Tracker are maintained as formal **Architecture Decision Records (ADRs)** located in [`docs/adr/`](adr/README.md).
+
+| ADR | Date | Title | Status |
+| :--- | :--- | :--- | :--- |
+| [ADR-0001](adr/0001-backend-migration-spring-boot-zu-rust-axum.md) | 2026-10-05 | Migration of backend from Spring Boot (Java) to Rust (Axum, SQLx, Tokio) | `Accepted` |
+| [ADR-0002](adr/0002-frontend-upgrade-auf-angular-22-und-signals.md) | 2026-10-18 | Frontend upgrade to Angular 22, Signals, and Vite-based Application Builder | `Accepted` |
+| [ADR-0003](adr/0003-nativer-rust-mcp-server-mit-rmcp.md) | 2026-10-17 | Native Rust Model Context Protocol (MCP) server with `rmcp` SDK | `Accepted` |
+| [ADR-0004](adr/0004-aead-aes-256-gcm-kryptografie-fuer-tokens.md) | 2026-10-17 | Cryptographic modernization to authenticated AES-256-GCM (AEAD) for Discogs tokens | `Accepted` |
+| [ADR-0005](adr/0005-direkte-roon-core-integration-via-websocket-moo.md) | 2026-10-17 | Direct Roon Core integration via WebSockets and binary MOO/1 protocol | `Accepted` |
+| [ADR-0006](adr/0006-rust-test-coverage-enforcement-mit-cargo-llvm-cov.md) | 2026-10-18 | Automated Rust test coverage enforcement in CI pipeline via `cargo-llvm-cov` (>= 80%) | `Accepted` |
 
 ## 10. Quality Requirements
 

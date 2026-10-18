@@ -7,6 +7,16 @@
     "isUnreleased": true,
     "items": [
       {
+        "title": "Architektur-Dokumentation: Einführung von Architecture Decision Records (ADRs)",
+        "type": "refactor",
+        "typeLabel": "Refactor",
+        "details": [
+          "**Neues ADR-Verzeichnis (`docs/adr/`)**: Etablierung eines standardisierten Formats (MADR / Nygard) zur transparenten Nachvollziehbarkeit wesentlicher Architekturentscheidungen inklusive Vorlage.",
+          "**Initiale Dokumentation (ADR-0001 bis ADR-0006)**: Festhaltung der Kernentscheidungen bezüglich Rust-Backend-Migration, Angular 22 Frontend, nativem Rust MCP Server, AEAD AES-256-GCM Kryptografie, direkter Roon MOO/WebSocket Integration und automatisierter Rust-Testabdeckungsprüfung via `cargo-llvm-cov`.",
+          "**Synchronisation**: Verknüpfung in `README.md` und `docs/arc42.md` (Kapitel 9)."
+        ]
+      },
+      {
         "title": "MCP-Server Erweiterung: Zustandseinstufung, Marktpreis-Refresh & Roon-Status (`#107`)",
         "type": "feat",
         "typeLabel": "Feature",

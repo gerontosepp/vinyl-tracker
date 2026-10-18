@@ -732,4 +732,97 @@ impl VinylApiClient {
             .await
             .map_err(|e| format!("Failed to parse Roon zones JSON response: {}", e))
     }
+
+    pub async fn update_record_condition(
+        &self,
+        id: i64,
+        args: &UpdateRecordConditionArgs,
+    ) -> Result<RecordDetailDto, String> {
+        self.ensure_authenticated().await?;
+        let url = format!("{}/api/records/{}/condition", self.base_url, id);
+        let headers = self.build_auth_headers().await;
+
+        let payload = serde_json::json!({
+            "mediaCondition": args.media_condition,
+            "sleeveCondition": args.sleeve_condition,
+        });
+
+        let res = self
+            .http_client
+            .patch(&url)
+            .headers(headers)
+            .json(&payload)
+            .send()
+            .await
+            .map_err(|e| format!("Request to /api/records/{}/condition failed: {}", id, e))?;
+
+        if !res.status().is_success() {
+            return Err(format!(
+                "Backend error {}: {}",
+                res.status(),
+                res.text().await.unwrap_or_default()
+            ));
+        }
+
+        res.json::<RecordDetailDto>()
+            .await
+            .map_err(|e| format!("Failed to parse record details JSON: {}", e))
+    }
+
+    pub async fn refresh_collection_prices(
+        &self,
+        only_missing: Option<bool>,
+    ) -> Result<PriceRefreshResultDto, String> {
+        self.ensure_authenticated().await?;
+        let url = format!("{}/api/collection/prices/refresh", self.base_url);
+        let headers = self.build_auth_headers().await;
+
+        let only_missing_val = only_missing.unwrap_or(true);
+        let res = self
+            .http_client
+            .post(&url)
+            .headers(headers)
+            .query(&[("onlyMissing", only_missing_val.to_string())])
+            .send()
+            .await
+            .map_err(|e| format!("Request to /api/collection/prices/refresh failed: {}", e))?;
+
+        if !res.status().is_success() {
+            return Err(format!(
+                "Backend error {}: {}",
+                res.status(),
+                res.text().await.unwrap_or_default()
+            ));
+        }
+
+        res.json::<PriceRefreshResultDto>()
+            .await
+            .map_err(|e| format!("Failed to parse price refresh result JSON: {}", e))
+    }
+
+    pub async fn get_roon_status(&self) -> Result<RoonStatusDto, String> {
+        self.ensure_authenticated().await?;
+        let url = format!("{}/api/roon/status", self.base_url);
+        let headers = self.build_auth_headers().await;
+
+        let res = self
+            .http_client
+            .get(&url)
+            .headers(headers)
+            .send()
+            .await
+            .map_err(|e| format!("Request to /api/roon/status failed: {}", e))?;
+
+        if !res.status().is_success() {
+            return Err(format!(
+                "Backend error {}: {}",
+                res.status(),
+                res.text().await.unwrap_or_default()
+            ));
+        }
+
+        res.json::<RoonStatusDto>()
+            .await
+            .map_err(|e| format!("Failed to parse Roon status JSON response: {}", e))
+    }
 }

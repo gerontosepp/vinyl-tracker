@@ -9,6 +9,12 @@
 
 ## Unreleased
 
+- **MCP-Server Erweiterung: Zustandseinstufung, Marktpreis-Refresh & Roon-Status (`#107`)**:
+  - **`update_record_condition`**: Neues MCP-Tool zur Aktualisierung der Goldmine-Zustandseinstufung von Tonträger und Cover (`media_condition`, `sleeve_condition`) mit automatischer Discogs-Synchronisation (`PATCH /api/records/{id}/condition`).
+  - **`refresh_collection_prices`**: Neues MCP-Tool zum gezielten oder vollständigen Aktualisieren geschätzter Marktpreise (Min, Median) der Sammlung via Discogs (`POST /api/collection/prices/refresh`).
+  - **`get_roon_status`**: Neues MCP-Tool zur Detailabfrage des Roon-Integrationsstatus (Verbindung, Pairing, Core-Name, Host/Port, aktive Zone und Zonenauswahl).
+  - **Tools-Synchronisation & Tests**: Erweiterung der Testsuite auf 22 registrierte MCP-Tools sowie Aktualisierung der Dokumentation.
+
 - **MCP-Server Erweiterung: Sammlungs-Management & Roon-Zonenerkennung (`#106`)**:
   - **`add_to_collection`**: Neues MCP-Tool zur direkten Aufnahme von Alben via Discogs-Release-ID in die lokale Sammlung inklusive automatischem Discogs-Abgleich (`POST /api/collection/releases/{release_id}`).
   - **`log_record_listen`**: Neues MCP-Tool zum direkten Protokollieren von Hör-Events anhand der internen Record-ID oder Discogs-Release-ID (`POST /api/records/{id}/listen`), ohne Barcode-Synthetisierung.

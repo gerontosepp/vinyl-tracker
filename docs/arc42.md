@@ -36,7 +36,7 @@ The **Vinyl Tracker** is a personal web application designed for vinyl enthusias
     - **MCP Server**: Rust (`rmcp` v3.5 SDK, stdio JSON-RPC).
     - **Database**: PostgreSQL 16.
     - **Caching & Resilience**: `moka`, `governor` (Rust); Caffeine, Resilience4j (Java legacy).
-    - **Migrations**: `refinery` (Rust, Flyway-compatible) & Flyway (Java legacy).
+    - **Migrations**: `sqlx::migrate` (`backend/migrations/<n>_<name>.sql`, embedded at compile time, history in `_sqlx_migrations`). Existing refinery/Flyway histories are imported once on first start ([ADR-0017](adr/0017-datenbank-migrationen-mit-sqlx-migrate.md)).
     - **API Documentation**: RFC 7807 Problem Details; springdoc-openapi (Swagger UI on legacy).
     - **Containerization**: Docker & Docker Compose (`cargo-chef` multi-stage build).
 - **License**: MIT License (Open Source).
@@ -88,7 +88,7 @@ The system consists of three main containers:
 | :--- | :--- | :--- |
 | **Frontend** | Single Page Application handling UI, routing, and device integration (Camera & HID Scanner). | Angular 22, Tailwind CSS, html5-qrcode, ScannerService (HID listener) |
 | **Backend** | Core business logic, API endpoints, schedulers, and database interactions. | Java 25, Spring Boot, Spring Data JPA, Lombok |
-| **Database** | Persistent storage for users, records, and listening events. | PostgreSQL 16, Flyway |
+| **Database** | Persistent storage for users, records, and listening events. | PostgreSQL 16, `sqlx::migrate` |
 
 ### 5.2 Level 2: Backend Internals
 
@@ -245,6 +245,7 @@ Architectural decisions in Vinyl Tracker are maintained as formal **Architecture
 | [ADR-0014](adr/0014-spec-driven-development-mit-openspec.md) | 2026-10-19 | Spec-Driven Development (SDD) with OpenSpec and native Antigravity integration | `Accepted` |
 | [ADR-0015](adr/0015-automatisierte-ci-pipeline-ueberwachung-und-self-healing-agent.md) | 2026-10-19 | Automated CI pipeline monitoring and self-healing agent with GitHub CLI | `Accepted` |
 | [ADR-0016](adr/0016-vertrauenswuerdige-proxies-fuer-client-ip-ermittlung.md) | 2026-10-19 | Trusted proxies for client IP resolution (auth rate limiting) | `Accepted` |
+| [ADR-0017](adr/0017-datenbank-migrationen-mit-sqlx-migrate.md) | 2026-10-19 | Database migrations with `sqlx::migrate` instead of `refinery` | `Accepted` |
 
 ## 10. Quality Requirements
 

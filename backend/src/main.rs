@@ -35,14 +35,14 @@ async fn main() -> anyhow::Result<()> {
         backend_rs::db::sanitize_db_url(&config.database_url)
     );
 
-    // 4. Run database migrations
-    if let Err(e) = run_migrations(&config.database_url).await {
+    // 4. Initialize Database Pool
+    let pool = init_pool(&config).await?;
+
+    // 5. Run database migrations
+    if let Err(e) = run_migrations(&pool).await {
         tracing::error!("Migration failed: {e}");
         return Err(anyhow::anyhow!("Database migration failure: {e}"));
     }
-
-    // 5. Initialize Database Pool
-    let pool = init_pool(&config).await?;
 
     // 6. Assemble AppState and Router
     let state = AppState::new(pool, config.clone());

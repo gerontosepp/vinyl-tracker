@@ -14,10 +14,12 @@ use tower::ServiceExt;
 async fn setup_app() -> (axum::Router, AppState) {
     dotenvy::dotenv().ok();
     let config = Config::from_env();
-    let _ = backend_rs::db::migrations::run_migrations(&config.database_url).await;
     let pool = init_pool(&config)
         .await
         .expect("PostgreSQL must be accessible for integration tests");
+    backend_rs::db::migrations::run_migrations(&pool)
+        .await
+        .expect("Database migrations must succeed for integration tests");
     let state = AppState::new(pool, config);
     let app = create_app(state.clone());
     (app, state)

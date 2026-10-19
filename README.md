@@ -247,6 +247,7 @@ The project includes GitHub Actions workflows:
 - **Auto Release** (`.github/workflows/release.yml`):
   - Automatically creates a GitHub Release (with tag `v<version>` from `frontend/package.json` and auto-generated release notes) when a Pull Request to `main` is successfully merged.
   - Creating a release triggers the CI Pipeline's tag build, automatically publishing the new Docker images.
+- **Supply-Chain Hardening**: All third-party actions are pinned to full commit SHAs (with the release tag as comment). Dependabot (`.github/dependabot.yml`) proposes weekly grouped updates against `develop`. Workflows from fork PRs of external contributors require manual maintainer approval before they run on the self-hosted runners.
 
 ## Model Context Protocol (MCP) Server
 

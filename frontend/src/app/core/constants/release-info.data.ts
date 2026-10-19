@@ -12,7 +12,17 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "tag": "In Entwicklung",
     "isCurrent": false,
     "isUnreleased": true,
-    "items": []
+    "items": [
+      {
+        "title": "Aufgeräumte Seitenleiste (`#148`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "**Kein doppelter Einstieg mehr**: Das Zahnrad unten in der Desktop-Seitenleiste entfällt; die Einstellungen öffnen sich wie bisher über den Eintrag „Profil“. Die mobile Ansicht bleibt unverändert.",
+          "**Scanner-Test unter „Profil“**: Ein Test-Scan auf der Einstellungsseite bleibt jetzt auch unter `/profile` auf der Seite, statt zum Dashboard zu springen."
+        ]
+      }
+    ]
   },
   {
     "version": "v0.10.1",

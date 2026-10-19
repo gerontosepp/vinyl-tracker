@@ -194,8 +194,8 @@ export class ScannerService {
     this.playBeep();
 
     const currentUrl = this.router?.url || '';
-    // If currently on settings page, stay there so user can test and inspect scan
-    if (currentUrl.includes('/settings')) {
+    // If currently on settings page (/settings or /profile), stay there so user can test and inspect scan
+    if (currentUrl.includes('/settings') || currentUrl.includes('/profile')) {
       return;
     }
 

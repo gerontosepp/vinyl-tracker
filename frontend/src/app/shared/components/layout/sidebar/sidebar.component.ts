@@ -6,7 +6,6 @@ import {
   LucideHome,
   LucideDisc,
   LucideUser,
-  LucideSettings,
   LucideScanLine,
 } from '@lucide/angular';
 
@@ -20,7 +19,6 @@ import {
     LucideHome,
     LucideDisc,
     LucideUser,
-    LucideSettings,
     LucideScanLine,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -96,23 +94,6 @@ import {
           <span class="mt-1.5 text-xs tracking-wide">{{ 'nav.scan' | translate }}</span>
         </button>
       </nav>
-
-      <!-- Settings -->
-      <button
-        routerLink="/settings"
-        (click)="scannerService.closeScanner()"
-        routerLinkActive
-        #rlaSettings="routerLinkActive"
-        [attr.aria-label]="'nav.settings' | translate"
-        [class]="
-          'p-4 transition-colors rounded-xl hover:bg-slate-100/50 dark:hover:bg-slate-800/50 mb-2 cursor-pointer ' +
-          (rlaSettings.isActive
-            ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/20'
-            : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300')
-        "
-      >
-        <svg lucideSettings [size]="24"></svg>
-      </button>
     </aside>
   `,
 })

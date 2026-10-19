@@ -9,6 +9,10 @@
 
 ## Unreleased
 
+- **Fix: Versionsanzeige im Tab „Versionshinweise“ (`#143`)**:
+  - **Korrekte Version**: Das Badge im Einstellungs-Tab „Versionshinweise“ zeigte seit v0.8.0 eine veraltete Version.
+  - **Eine Quelle für alle Versionsanzeigen**: Kopfleiste, Login, Registrierung und Versionshinweise lesen `APP_VERSION`, das `scripts/sync-release-info.js` aus `frontend/package.json` erzeugt; `release.sh` ersetzt keine Versionen mehr in Komponenten. Ein Unit-Test prüft, dass `APP_VERSION` zur `package.json` passt.
+
 ---
 
 ## v0.10.0 (2026-10-19)

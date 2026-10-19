@@ -32,6 +32,13 @@ describe('SidebarComponent', () => {
     expect(component).toBeTruthy();
   });
 
+  it('should not render a separate settings button (settings are reached via Profile)', () => {
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.querySelector('[routerLink="/settings"], [ng-reflect-router-link="/settings"]')).toBeNull();
+    expect(el.querySelector('svg[lucideSettings]')).toBeNull();
+    expect(el.querySelector('a[href="/profile"]')).toBeTruthy();
+  });
+
   it('should emit scanClick output when scan button is clicked', () => {
     vi.spyOn(component.scanClick, 'emit').mockReturnValue(undefined);
 

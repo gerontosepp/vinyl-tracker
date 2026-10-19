@@ -9,6 +9,10 @@
 
 ## Unreleased
 
+- **Aufgeräumte Seitenleiste (`#148`)**:
+  - **Kein doppelter Einstieg mehr**: Das Zahnrad unten in der Desktop-Seitenleiste entfällt; die Einstellungen öffnen sich wie bisher über den Eintrag „Profil“. Die mobile Ansicht bleibt unverändert.
+  - **Scanner-Test unter „Profil“**: Ein Test-Scan auf der Einstellungsseite bleibt jetzt auch unter `/profile` auf der Seite, statt zum Dashboard zu springen.
+
 ---
 
 ## v0.10.1 (2026-10-19)

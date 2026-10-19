@@ -235,6 +235,13 @@ Architectural decisions in Vinyl Tracker are maintained as formal **Architecture
 | [ADR-0004](adr/0004-aead-aes-256-gcm-kryptografie-fuer-tokens.md) | 2026-10-17 | Cryptographic modernization to authenticated AES-256-GCM (AEAD) for Discogs tokens | `Accepted` |
 | [ADR-0005](adr/0005-direkte-roon-core-integration-via-websocket-moo.md) | 2026-10-17 | Direct Roon Core integration via WebSockets and binary MOO/1 protocol | `Accepted` |
 | [ADR-0006](adr/0006-rust-test-coverage-enforcement-mit-cargo-llvm-cov.md) | 2026-10-18 | Automated Rust test coverage enforcement in CI pipeline via `cargo-llvm-cov` (>= 80%) | `Accepted` |
+| [ADR-0007](adr/0007-hardware-scanner-integration-ueber-keyboard-wedge.md) | 2026-10-12 | Eyoyo EY-009P & hardware scanner integration via global HID keyboard wedge listener | `Accepted` |
+| [ADR-0008](adr/0008-zustandsbasierte-marktwert-ermittlung-nach-goldmine-standard.md) | 2026-10-14 | Condition-based market valuation and caching following Goldmine standard | `Accepted` |
+| [ADR-0009](adr/0009-natuerliche-kuenstlersortierung-mit-kallax-collation.md) | 2026-10-18 | Natural artist sorting with article normalization and Kallax shelving collation | `Accepted` |
+| [ADR-0010](adr/0010-serverseitige-vektor-pdf-generierung-via-printpdf.md) | 2026-10-15 | Server-side vector PDF generation via `printpdf` and `fast_qr` instead of headless browser | `Accepted` |
+| [ADR-0011](adr/0011-dreiteilige-sammlungs-export-und-backup-strategie.md) | 2026-10-18 | Three-tier collection export and backup strategy (CSV, JSON, PDF) | `Accepted` |
+| [ADR-0012](adr/0012-ssrf-geschuetzter-image-proxy-fuer-album-cover.md) | 2026-10-15 | Image proxy with Server-Side Request Forgery (SSRF) protection for album covers | `Accepted` |
+| [ADR-0013](adr/0013-multi-architektur-container-builds-via-cargo-chef-und-buildplatform.md) | 2026-10-15 | Multi-architecture container builds via native compilation (`$BUILDPLATFORM`) and `cargo-chef` | `Accepted` |
 
 ## 10. Quality Requirements
 

@@ -26,7 +26,7 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
         "typeLabel": "Refactor",
         "details": [
           "**Neues ADR-Verzeichnis (`docs/adr/`)**: Etablierung eines standardisierten Formats (MADR / Nygard) zur transparenten Nachvollziehbarkeit wesentlicher Architekturentscheidungen inklusive Vorlage.",
-          "**Initiale Dokumentation (ADR-0001 bis ADR-0006)**: Festhaltung der Kernentscheidungen bezüglich Rust-Backend-Migration, Angular 22 Frontend, nativem Rust MCP Server, AEAD AES-256-GCM Kryptografie, direkter Roon MOO/WebSocket Integration und automatisierter Rust-Testabdeckungsprüfung via `cargo-llvm-cov`.",
+          "**Umfassende Dokumentation (ADR-0001 bis ADR-0013)**: Festhaltung von 13 Kernentscheidungen bezüglich Rust-Backend-Migration, Angular 22 Frontend, nativem Rust MCP Server, AEAD AES-256-GCM Kryptografie, direkter Roon MOO/WebSocket Integration, Rust-Testabdeckungsprüfung (`cargo-llvm-cov`), Hardware-Scanner-Integration (HID Keyboard Wedge), zustandsbasierter Goldmine-Marktwertermittlung, natürlicher Kallax-Sortierung, serverseitiger Vektor-PDF-Generierung (`printpdf`), dreiteiliger Export-Strategie (CSV, JSON, PDF), SSRF-geschütztem Image-Proxy sowie optimierten Multi-Arch-Container-Builds (`cargo-chef` & `$BUILDPLATFORM`).",
           "**Synchronisation**: Verknüpfung in `README.md` und `docs/arc42.md` (Kapitel 9)."
         ]
       },

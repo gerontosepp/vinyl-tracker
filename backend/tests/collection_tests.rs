@@ -1123,15 +1123,248 @@ async fn test_collection_export_endpoints() {
     let mut pdf_doc = lopdf::Document::load_mem(&pdf_bytes).expect("Valid PDF");
     pdf_doc.decompress();
     let mut full_text = String::new();
-    for (_, object) in pdf_doc.objects.iter() {
-        if let lopdf::Object::Stream(stream) = object {
-            if let Ok(text) = String::from_utf8(stream.content.clone()) {
-                full_text.push_str(&text);
-            }
+    for object in pdf_doc.objects.values() {
+        if let lopdf::Object::Stream(stream) = object
+            && let Ok(text) = String::from_utf8(stream.content.clone())
+        {
+            full_text.push_str(&text);
         }
     }
     assert!(full_text.contains("Vinyl Tracker - Collection Catalog & Insurance Report"));
     assert!(full_text.contains(&username));
     assert!(full_text.contains("Pink Floyd"));
     assert!(full_text.contains("The Dark Side of the Moon"));
+}
+
+#[tokio::test]
+async fn test_collection_sync_service_full_workflow() {
+    use axum::{
+        Router,
+        extract::Path,
+        routing::{delete, get, post},
+    };
+    use backend_rs::{
+        clients::discogs::DiscogsClient, models::user::AppUser,
+        services::collection_sync::CollectionSyncService,
+    };
+
+    let (app, state) = setup_app().await;
+    let (user_id, _username, _cookie) = create_authenticated_user(&app).await;
+
+    // 1. Spawning mock Discogs HTTP Server
+    let mock_discogs = Router::new()
+        .route(
+            "/users/{username}/collection/fields",
+            get(|| async {
+                axum::Json(json!({
+                    "fields": [
+                        {"id": 1, "name": "Media Condition"},
+                        {"id": 2, "name": "Sleeve Condition"}
+                    ]
+                }))
+            }),
+        )
+        .route(
+            "/users/{username}/collection/folders/0/releases",
+            get(|| async {
+                axum::Json(json!({
+                    "pagination": {
+                        "page": 1,
+                        "pages": 1,
+                        "per_page": 100,
+                        "items": 1
+                    },
+                    "releases": [{
+                        "id": 98765,
+                        "instance_id": 555,
+                        "date_added": "2026-02-01T12:00:00Z",
+                        "basic_information": {
+                            "id": 98765,
+                            "title": "A Love Supreme",
+                            "year": 1965,
+                            "artists": [{"name": "John Coltrane"}],
+                            "genres": ["Jazz"],
+                            "styles": ["Hard Bop"],
+                            "formats": [{"name": "Vinyl", "descriptions": ["LP"]}],
+                            "labels": [{"name": "Impulse!", "catno": "AS-77"}],
+                            "thumb": "https://img.discogs.com/supreme.jpg"
+                        },
+                        "notes": [
+                            {"field_id": 1, "value": "Near Mint (NM or M-)"},
+                            {"field_id": 2, "value": "Very Good Plus (VG+)"}
+                        ]
+                    }]
+                }))
+            }),
+        )
+        .route(
+            "/users/{username}/collection/folders/0/releases/{id}",
+            post(|| async {
+                (
+                    StatusCode::CREATED,
+                    axum::Json(json!({
+                        "instance_id": 777,
+                        "resource_url": "https://api.discogs.com/release/98765"
+                    })),
+                )
+            }),
+        )
+        .route(
+            "/users/{username}/collection/folders/0/releases/{id}/instances/{instance_id}",
+            delete(|| async { StatusCode::NO_CONTENT }),
+        )
+        .route(
+            "/marketplace/price_suggestions/{id}",
+            get(|| async {
+                axum::Json(json!({
+                    "Near Mint (NM or M-)": {
+                        "currency": "EUR",
+                        "value": 55.00
+                    },
+                    "Very Good Plus (VG+)": {
+                        "currency": "EUR",
+                        "value": 35.00
+                    }
+                }))
+            }),
+        )
+        .route(
+            "/releases/{id}",
+            get(|Path(id): Path<i64>| async move {
+                axum::Json(json!({
+                    "id": id,
+                    "title": "A Love Supreme",
+                    "artists": [{"name": "John Coltrane"}],
+                    "year": 1965,
+                    "genres": ["Jazz"],
+                    "styles": ["Hard Bop"],
+                    "formats": [{"name": "Vinyl", "descriptions": ["LP"]}],
+                    "labels": [{"name": "Impulse!", "catno": "AS-77"}],
+                    "thumb": "https://img.discogs.com/supreme.jpg"
+                }))
+            }),
+        );
+
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("Failed to bind ephemeral mock port");
+    let addr = listener.local_addr().unwrap();
+    tokio::spawn(async move {
+        axum::serve(listener, mock_discogs).await.unwrap();
+    });
+
+    let mock_client =
+        DiscogsClient::with_base_url(format!("http://{addr}"), "sync-test/1.0".to_string());
+
+    // 2. Test user without token fails
+    let user_no_token = sqlx::query_as::<_, AppUser>(
+        "SELECT id, username, password, discogs_username, discogs_token, roon_host, roon_port, roon_zone_id, roon_zone_name, roon_token FROM app_user WHERE id = $1",
+    )
+    .bind(user_id)
+    .fetch_one(&state.pool)
+    .await
+    .unwrap();
+
+    let err_sync = CollectionSyncService::sync_collection(
+        &state.pool,
+        &mock_client,
+        &state.crypto,
+        &user_no_token,
+    )
+    .await;
+    assert!(
+        err_sync.is_err(),
+        "Sync should fail without configured Discogs username"
+    );
+
+    // 3. Configure Discogs credentials
+    let enc_token = state.crypto.encrypt("mock_token_123");
+    sqlx::query("UPDATE app_user SET discogs_username = $1, discogs_token = $2 WHERE id = $3")
+        .bind("coltrane_fan")
+        .bind(&enc_token)
+        .bind(user_id)
+        .execute(&state.pool)
+        .await
+        .unwrap();
+
+    let user_with_token = sqlx::query_as::<_, AppUser>(
+        "SELECT id, username, password, discogs_username, discogs_token, roon_host, roon_port, roon_zone_id, roon_zone_name, roon_token FROM app_user WHERE id = $1",
+    )
+    .bind(user_id)
+    .fetch_one(&state.pool)
+    .await
+    .unwrap();
+
+    // 4. Run sync_collection
+    let sync_res = CollectionSyncService::sync_collection(
+        &state.pool,
+        &mock_client,
+        &state.crypto,
+        &user_with_token,
+    )
+    .await
+    .unwrap();
+    assert_eq!(sync_res.status, "SUCCESS");
+    assert_eq!(sync_res.added, 1);
+    assert_eq!(sync_res.total, 1);
+
+    // Verify item in DB
+    let item_row = sqlx::query("SELECT id, media_condition, sleeve_condition FROM collection_item WHERE user_id = $1 AND instance_id = 555")
+        .bind(user_id)
+        .fetch_one(&state.pool)
+        .await
+        .unwrap();
+    let media_cond: Option<String> = item_row.get("media_condition");
+    assert_eq!(media_cond.as_deref(), Some("Near Mint (NM or M-)"));
+
+    // 5. Test refresh_collection_prices
+    let price_res = CollectionSyncService::refresh_collection_prices(
+        &state.pool,
+        &mock_client,
+        &state.crypto,
+        &user_with_token,
+        false,
+    )
+    .await
+    .unwrap();
+    assert_eq!(price_res.updated_count, 1);
+
+    // 6. Test add_release_and_sync
+    let add_res = CollectionSyncService::add_release_and_sync(
+        &state.pool,
+        &mock_client,
+        &state.crypto,
+        &user_with_token,
+        98765,
+    )
+    .await
+    .unwrap();
+    assert_eq!(add_res.added, 1);
+
+    // 7. Test remove_release
+    let rem_res = CollectionSyncService::remove_release(
+        &state.pool,
+        &mock_client,
+        &state.crypto,
+        &user_with_token,
+        98765,
+        Some(777),
+    )
+    .await;
+    assert!(rem_res.is_ok(), "Removing release should succeed");
+
+    // 8. Test remove_release for not found
+    let rem_err = CollectionSyncService::remove_release(
+        &state.pool,
+        &mock_client,
+        &state.crypto,
+        &user_with_token,
+        999999,
+        None,
+    )
+    .await;
+    assert!(
+        rem_err.is_err(),
+        "Removing non-existent record should return error"
+    );
 }

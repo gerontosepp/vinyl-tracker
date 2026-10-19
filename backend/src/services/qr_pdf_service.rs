@@ -382,11 +382,11 @@ mod tests {
         let mut doc = lopdf::Document::load_mem(&pdf).expect("Valid PDF");
         doc.decompress();
         let mut full_text = String::new();
-        for (_, object) in doc.objects.iter() {
-            if let lopdf::Object::Stream(stream) = object {
-                if let Ok(text) = String::from_utf8(stream.content.clone()) {
-                    full_text.push_str(&text);
-                }
+        for object in doc.objects.values() {
+            if let lopdf::Object::Stream(stream) = object
+                && let Ok(text) = String::from_utf8(stream.content.clone())
+            {
+                full_text.push_str(&text);
             }
         }
         // Ensure spaces are preserved (NOT replaced with !)

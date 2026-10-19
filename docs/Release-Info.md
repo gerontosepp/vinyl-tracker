@@ -9,6 +9,11 @@
 
 ## Unreleased
 
+- **Qualitätssicherung & CI: Enforce >= 80% Testabdeckung für Rust-Backend (`#111`)**:
+  - **Verbindliches Coverage-Gate**: Integration von `cargo-llvm-cov` in die CI-Pipeline (`.github/workflows/ci.yml`) mit dem Schwellenwert `--fail-under-lines 80`. Fällt die Zeilenabdeckung unter 80 %, schlägt der Workflow `backend-test` fehl.
+  - **Umfassende Testausweitung**: Steigerung der Rust-Zeilenabdeckung von 66,8 % auf **81,04 %** durch umfassende Unit- und Integrationstests für Discogs-Client-Endpunkte, `CollectionSyncService`, `ScanService` (QR-Formate, Barcode-Fallbacks, Collection-Matching) und `RecordService` (CRUD, Zustandseinstufung, Preisschätzungen).
+  - **Regel-Aktualisierung**: Verankerung des Mindestschwellenwerts von 80 % in `.agent/rules/quality_standards.md`.
+
 - **Design & Typografie: Umstellung auf Google Font Inter Tight**:
   - **Neue UI-Typografie**: Umstellung der primären serifenlosen Schriftfamilie (`--font-sans`) von *Outfit* auf *Inter Tight* (Schriftschnitte 300, 400, 500, 600, 700) in `index.html` und `styles.css`.
   - **Bessere Informationsdichte**: Die kompaktere Laufweite von *Inter Tight* verbessert die Lesbarkeit und Platzausnutzung in Albenlisten, Tabellen und Metadaten-Badges.

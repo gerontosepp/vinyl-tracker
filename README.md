@@ -109,10 +109,11 @@ The application requires environment variables for configuration (database crede
     - `AUTH_COOKIE_NAME`, `AUTH_COOKIE_MAX_AGE_SECONDS`, `AUTH_COOKIE_SECURE`, `AUTH_COOKIE_SAME_SITE` (controls the backend HttpOnly session cookie used for authentication).
     - `AUTH_RATE_LIMIT_FOR_PERIOD` (optional rate limit for authentication endpoints; default: `10` requests per minute per IP).
     - `TRUSTED_PROXIES` (optional comma-separated IPs/CIDRs of reverse proxies whose `X-Forwarded-For` / `X-Real-IP` headers are trusted for client IP detection; default: empty = headers ignored. The production compose files set `172.16.0.0/12,192.168.0.0/16` for the bundled nginx. See [ADR-0016](docs/adr/0016-vertrauenswuerdige-proxies-fuer-client-ip-ermittlung.md)).
+    - `REQUEST_TIMEOUT_SECS` / `LONG_REQUEST_TIMEOUT_SECS` (optional server-side request timeouts; defaults `30` / `300` seconds. The long timeout applies to Discogs sync, price refresh, collection export and QR-code PDF generation. Exceeded requests return HTTP 503 as `ProblemDetail`).
 
     Authentication note: The frontend uses backend-managed HttpOnly cookies by default and supports a Bearer token fallback for environments where cookie propagation is constrained. Public auth endpoints (`/login`, `/register`, `/reset-password`) are protected against brute force via per-client-IP rate limiting (`governor`), and enforce a minimum password length of 8 characters.
    
-    API error note: Backend validation and runtime failures are returned as structured `ProblemDetail` JSON payloads. Rate limit violations return HTTP 429 (`Too Many Requests`).
+    API error note: Backend validation and runtime failures are returned as structured `ProblemDetail` JSON payloads. Rate limit violations return HTTP 429 (`Too Many Requests`), request timeouts HTTP 503 (`Service Unavailable`). On `SIGTERM` (e.g. `docker stop`) the backend shuts down gracefully and lets in-flight requests finish.
 
 ### 3. Start the Application
 

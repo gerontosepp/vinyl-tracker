@@ -9,6 +9,10 @@
 
 ## Unreleased
 
+- **Backend-Robustheit: Request-Timeouts & Graceful Shutdown (`#123`)**:
+  - **Zweistufige Request-Timeouts**: Standard-Anfragen werden nach `REQUEST_TIMEOUT_SECS` (Default 30 s) abgebrochen, lang laufende Operationen (Discogs-Sync, Preis-Refresh, Export, QR-PDF) erst nach `LONG_REQUEST_TIMEOUT_SECS` (Default 300 s, abgestimmt auf nginx). Überschreitungen liefern HTTP 503 als `ProblemDetail`.
+  - **Graceful Shutdown**: Bei `SIGTERM`/`Ctrl+C` nimmt das Backend keine neuen Verbindungen mehr an und beendet laufende Anfragen sauber; `stop_grace_period: 30s` in den Produktions-Compose-Dateien.
+
 - **Security: Fälschungssicheres Auth-Rate-Limiting & gehärtete Produktions-Ports (`#121`)**:
   - **Keine Umgehung per Header-Spoofing mehr**: `X-Forwarded-For` / `X-Real-IP` werden nur noch ausgewertet, wenn die Anfrage von einem vertrauenswürdigen Proxy (`TRUSTED_PROXIES`, CIDR-Liste) stammt. `X-Forwarded-For` wird von rechts nach links ausgewertet, vom Client vorangestellte Adressen werden ignoriert ([ADR-0016](adr/0016-vertrauenswuerdige-proxies-fuer-client-ip-ermittlung.md)).
   - **Eigenes Kontingent pro Client**: Das Backend ermittelt die TCP-Peer-Adresse (`ConnectInfo`), statt alle Anfragen ohne Forwarding-Header einem gemeinsamen `127.0.0.1`-Bucket zuzuordnen.

@@ -30,6 +30,8 @@ pub struct Config {
     pub auth_rate_limit_for_period: u32,
     /// Proxies whose `X-Forwarded-For` / `X-Real-IP` headers are trusted (`TRUSTED_PROXIES`).
     pub trusted_proxies: Vec<IpNet>,
+    pub request_timeout_secs: u64,
+    pub long_request_timeout_secs: u64,
 }
 
 impl Config {
@@ -140,6 +142,17 @@ impl Config {
         let trusted_proxies =
             parse_trusted_proxies(&env::var("TRUSTED_PROXIES").unwrap_or_default());
 
+        let request_timeout_secs = env::var("REQUEST_TIMEOUT_SECS")
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(30);
+
+        // Discogs sync, price refresh and PDF/CSV exports; aligned with nginx proxy_read_timeout
+        let long_request_timeout_secs = env::var("LONG_REQUEST_TIMEOUT_SECS")
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(300);
+
         Self {
             app_env,
             host,
@@ -166,6 +179,8 @@ impl Config {
             auth_cookie_domain,
             auth_rate_limit_for_period,
             trusted_proxies,
+            request_timeout_secs,
+            long_request_timeout_secs,
         }
     }
 

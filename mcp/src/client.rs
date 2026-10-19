@@ -353,7 +353,9 @@ impl VinylApiClient {
         let url = format!("{}/api/scan", self.base_url);
         let headers = self.build_auth_headers().await;
 
-        let payload = serde_json::json!({ "barcode": barcode });
+        let payload = ScanRequest {
+            barcode: barcode.to_string(),
+        };
 
         let res = self
             .http_client
@@ -529,7 +531,7 @@ impl VinylApiClient {
             .map_err(|e| format!("Failed to parse top records JSON: {}", e))
     }
 
-    pub async fn get_collection_value(&self) -> Result<CollectionValueDto, String> {
+    pub async fn get_collection_value(&self) -> Result<CollectionValueResponse, String> {
         self.ensure_authenticated().await?;
         let url = format!("{}/api/analytics/collection/value", self.base_url);
         let headers = self.build_auth_headers().await;
@@ -550,12 +552,12 @@ impl VinylApiClient {
             ));
         }
 
-        res.json::<CollectionValueDto>()
+        res.json::<CollectionValueResponse>()
             .await
             .map_err(|e| format!("Failed to parse collection value JSON: {}", e))
     }
 
-    pub async fn get_genre_breakdown(&self) -> Result<serde_json::Value, String> {
+    pub async fn get_genre_breakdown(&self) -> Result<Vec<GenreBreakdownItem>, String> {
         self.ensure_authenticated().await?;
         let url = format!("{}/api/analytics/collection/genres", self.base_url);
         let headers = self.build_auth_headers().await;
@@ -576,7 +578,7 @@ impl VinylApiClient {
             ));
         }
 
-        res.json::<serde_json::Value>()
+        res.json::<Vec<GenreBreakdownItem>>()
             .await
             .map_err(|e| format!("Failed to parse genre breakdown JSON: {}", e))
     }
@@ -674,16 +676,16 @@ impl VinylApiClient {
     pub async fn play_on_roon(
         &self,
         args: &PlayRecordOnRoonArgs,
-    ) -> Result<RoonPlayResponse, String> {
+    ) -> Result<RoonPlayResponseDto, String> {
         self.ensure_authenticated().await?;
         let url = format!("{}/api/roon/play", self.base_url);
         let headers = self.build_auth_headers().await;
 
-        let payload = serde_json::json!({
-            "artist": args.artist,
-            "title": args.title,
-            "zoneId": args.zone_id,
-        });
+        let payload = RoonPlayRequestDto {
+            artist: args.artist.clone(),
+            title: args.title.clone(),
+            zone_id: args.zone_id.clone(),
+        };
 
         let res = self
             .http_client
@@ -702,7 +704,7 @@ impl VinylApiClient {
             ));
         }
 
-        res.json::<RoonPlayResponse>()
+        res.json::<RoonPlayResponseDto>()
             .await
             .map_err(|e| format!("Failed to parse Roon play JSON response: {}", e))
     }
@@ -742,10 +744,10 @@ impl VinylApiClient {
         let url = format!("{}/api/records/{}/condition", self.base_url, id);
         let headers = self.build_auth_headers().await;
 
-        let payload = serde_json::json!({
-            "mediaCondition": args.media_condition,
-            "sleeveCondition": args.sleeve_condition,
-        });
+        let payload = UpdateConditionRequestDto {
+            media_condition: args.media_condition.clone(),
+            sleeve_condition: args.sleeve_condition.clone(),
+        };
 
         let res = self
             .http_client

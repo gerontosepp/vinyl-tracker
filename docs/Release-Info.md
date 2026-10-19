@@ -9,6 +9,12 @@
 
 ## Unreleased
 
+- **MCP Server: Gemeinsame API-Typen mit dem Backend – fünf Tools repariert (`#131`)**:
+  - **Behobene Fehler**: `sync_collection` und `add_to_collection` meldeten trotz erfolgreichem Sync einen Fehler; `get_top_records`, `get_collection_value` sowie die Ressourcen `vinyl://stats/overview` und `vinyl://collection/value` schlugen beim Einlesen der Backend-Antwort fehl; `scan_barcode` verlor die erkannte Platte und die Discogs-Vorschläge.
+  - **Neue Crate `vinyl-api-types`** (`backend/crates/vinyl-api-types`): Backend und MCP-Server nutzen dieselben Request-/Response-Typen; Vertragstests schreiben das JSON-Format der API fest. Das API-Format selbst bleibt unverändert.
+  - **Vertragstests im MCP-Server** gegen einen Mock-Backend-Server mit echten Backend-Antworten.
+  - ⚠️ **MCP-Binary und Backend müssen aus derselben Version stammen.**
+
 - **Backend: Datenbank-Migrationen mit `sqlx::migrate` (`#128`)**:
   - **Ein DB-Stack statt zwei**: Migrationen laufen über `sqlx::migrate` und den bestehenden Connection-Pool; `refinery` und `tokio-postgres` entfallen ([ADR-0017](adr/0017-datenbank-migrationen-mit-sqlx-migrate.md)).
   - **Automatische Übernahme bestehender Datenbanken**: Beim ersten Start wird der Stand aus `refinery_schema_history`, `flyway_schema_history` oder per Schema-Erkennung nach `_sqlx_migrations` übernommen – ohne bereits angewendete Migrationen erneut auszuführen. Die Alt-Tabellen bleiben erhalten.

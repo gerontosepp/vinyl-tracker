@@ -77,7 +77,7 @@ Einfach entpacken und den Pfad in deiner `mcp_config.json` eintragen.
 ### Option B: Aus dem Quellcode bauen
 #### Voraussetzungen
 - **Rust Toolchain:** Version 1.88+ (z. B. via `rustup` oder Homebrew `brew install rust`)
-- **Vinyl Tracker Backend:** Laufendes Spring Boot Backend (z. B. via Docker `docker compose up -d` oder lokal auf Port 8080)
+- **Vinyl Tracker Backend:** Laufendes Rust/Axum-Backend (z. B. via Docker `docker compose up -d` oder lokal auf Port 8080) **aus derselben Version** wie der MCP-Server – beide nutzen die gemeinsamen API-Typen aus `backend/crates/vinyl-api-types`, daher muss der vollständige Repo-Checkout zum Bauen vorhanden sein
 
 ### 1. Repository-Verzeichnis aufrufen
 ```bash

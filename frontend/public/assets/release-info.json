@@ -7,6 +7,17 @@
     "isUnreleased": true,
     "items": [
       {
+        "title": "MCP Server: Gemeinsame API-Typen mit dem Backend – fünf Tools repariert (`#131`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "**Behobene Fehler**: `sync_collection` und `add_to_collection` meldeten trotz erfolgreichem Sync einen Fehler; `get_top_records`, `get_collection_value` sowie die Ressourcen `vinyl://stats/overview` und `vinyl://collection/value` schlugen beim Einlesen der Backend-Antwort fehl; `scan_barcode` verlor die erkannte Platte und die Discogs-Vorschläge.",
+          "**Neue Crate `vinyl-api-types`** (`backend/crates/vinyl-api-types`): Backend und MCP-Server nutzen dieselben Request-/Response-Typen; Vertragstests schreiben das JSON-Format der API fest. Das API-Format selbst bleibt unverändert.",
+          "**Vertragstests im MCP-Server** gegen einen Mock-Backend-Server mit echten Backend-Antworten.",
+          "⚠️ **MCP-Binary und Backend müssen aus derselben Version stammen.**"
+        ]
+      },
+      {
         "title": "Backend: Datenbank-Migrationen mit `sqlx::migrate` (`#128`)",
         "type": "feat",
         "typeLabel": "Feature",

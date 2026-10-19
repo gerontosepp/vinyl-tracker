@@ -20,6 +20,14 @@ This skill defines the complete operational procedure for processing a GitHub is
 2. **Clarify Requirements & Acceptance Criteria**:
    - Identify affected components (`backend`, `frontend`, `db/migration`, `discogs`, `roon`, `mcp`).
    - If requirements or UX details are ambiguous, clarify with the user (e.g. via `ask_question`).
+3. **Spec-Driven Planning via OpenSpec**:
+   - For non-trivial features, API additions, or architectural changes, initialize an OpenSpec change proposal:
+     ```bash
+     ./scripts/opsx.sh change new <ISSUE_ID>-<short-description>
+     ```
+     (or invoke `/opsx:propose "<short-description>"`).
+   - Draft `proposal.md`, delta specifications under `specs/`, and the step-by-step checklist `tasks.md`.
+   - Align the specification and acceptance criteria with the user before starting production implementation.
 
 ---
 
@@ -111,25 +119,31 @@ Update project documentation immediately alongside code changes (see [`documenta
 
 Once the user approves:
 
-1. **Conventional Commit**:
+1. **Archive OpenSpec Change (if applicable)**:
+   ```bash
+   ./scripts/opsx.sh archive <ISSUE_ID>-<short-description>
+   ```
+   This merges delta specifications into the persistent domain specifications under `openspec/specs/`.
+
+2. **Conventional Commit**:
    ```bash
    git add .
    git commit -m "feat(scope): <short description> (#<ISSUE_ID>)"
    ```
 
-2. **Merge into `develop` with `--no-ff`**:
+3. **Merge into `develop` with `--no-ff`**:
    ```bash
    git checkout develop
    git pull origin develop
    git merge feat/<ISSUE_ID>-<short-description> --no-ff -m "Merge branch 'feat/<ISSUE_ID>-<short-description>' into develop"
    ```
 
-3. **Push to Remote**:
+4. **Push to Remote**:
    ```bash
    git push origin develop
    ```
 
-4. **Delete Local Feature Branch**:
+5. **Delete Local Feature Branch**:
    ```bash
    git branch -d feat/<ISSUE_ID>-<short-description>
    ```

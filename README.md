@@ -2,7 +2,7 @@
 
 A personal vinyl record tracking application that allows users to scan barcodes, identify records via Discogs, and log listening sessions.
 
-Release history: [Release-Info](docs/Release-Info.md) | Architecture: [arc42](docs/arc42.md) | [ADRs](docs/adr/README.md) | [Rust-Migration Lastenheft](docs/rust-migration-lastenheft.md)
+Release history: [Release-Info](docs/Release-Info.md) | Architecture: [arc42](docs/arc42.md) | [ADRs](docs/adr/README.md) | [OpenSpec](openspec/) | [Rust-Migration Lastenheft](docs/rust-migration-lastenheft.md)
 
 ## Architecture
 

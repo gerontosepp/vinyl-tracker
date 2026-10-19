@@ -1,26 +1,45 @@
-# Spezifikation: Roon Core Audio-Integration (Roon)
+# Roon Core Audio-Integration (Roon)
 
-## 1. Übersicht & Zielsetzung
+## Purpose
 Ermöglicht die direkte Steuerung von Multi-Room-Wiedergabesystemen über einen lokalen Roon Core. Schallplatten aus der Vinyl Tracker Sammlung können direkt auf aktiven Roon-Audiozonen gestartet oder überwacht werden.
 
----
+## Requirements
 
-## 2. Kernfunktionen & Anforderungen
+### Requirement: MOO-Protokollanbindung und Pairing
+Das Backend kommuniziert direkt über das native MOO (Messages Object Oriented) Protokoll via WebSockets mit dem Roon Core mit Heartbeat und automatischer Wiederverbindung.
 
-### 2.1 Anbindung & Protokoll
-* Das Backend kommuniziert direkt über das native **MOO (Messages Object Oriented) Protokoll** via WebSockets mit dem Roon Core:
-  - Verbindungsaufbau: TCP/WebSocket zu Host und Port des Roon Core (Standard: Port 9330 bzw. 9100).
-  - Pairing: Einmalige Autorisierung in den Roon-Einstellungen mit persistenter Token-Speicherung (verschlüsselt mit AEAD AES-256-GCM).
-  - Heartbeat & Auto-Reconnect: Überwachung der WebSocket-Verbindung mit automatischem Reconnect bei Verbindungsabriss.
+#### Scenario: Verbindungsaufbau zum Roon Core
+- **WHEN** die Roon-Verbindung initialisiert wird
+- **THEN** baut das Backend eine WebSocket-Verbindung zum konfigurierten Roon Core auf und speichert den Autorisierungs-Token verschlüsselt.
 
-### 2.2 Zonen-Erkennung & Status
-* Endpunkt `GET /api/roon/zones` bzw. MCP `get_roon_zones`:
-  - Listet alle im Roon Core konfigurierten Zonen mit Namen, Zonen-ID, Lautstärke und aktuellem Playback-Zustand (`playing`, `paused`, `stopped`).
-* Endpunkt `GET /api/roon/status` bzw. MCP `get_roon_status`:
-  - Gibt Auskunft über Verbindungsstatus, Pairing-Zustand, Name des Roon Cores und die aktuell ausgewählte Standard-Zone.
+### Requirement: Zonen-Erkennung und Statusabfrage
+Das System stellt Endpunkte zur Abfrage aller aktiven Audiozonen und des Core-Verbindungsstatus bereit (`GET /api/roon/zones` und `GET /api/roon/status`).
 
-### 2.3 Wiedergabe-Steuerung (Playback)
-* Endpunkt `POST /api/roon/play` bzw. MCP `play_record_on_roon`:
-  - Nimmt eine `record_id` oder Discogs `release_id` sowie optional eine `zone_id` entgegen.
-  - Sucht in der Roon-Bibliothek nach dem entsprechenden Album anhand von Künstler, Titel und Metadaten.
-  - Startet die Wiedergabe auf der Zielzone und protokolliert parallel ein Hör-Event im Vinyl Tracker.
+#### Scenario: Zonen auflisten
+- **WHEN** der Client oder das MCP-Tool `GET /api/roon/zones` anfragt
+- **THEN** gibt das Backend die Liste aller verfügbaren Roon-Zonen mit ID, Name und Wiedergabestatus zurück.
+
+### Requirement: Album-Wiedergabe auf Roon-Zone
+Das System MUST die Wiedergabe eines Albums auf einer angegebenen oder der hinterlegten Standard-Zone starten (`POST /api/roon/play`).
+
+#### Scenario: Album abspielen
+- **WHEN** ein Abspielbefehl mit Record-ID und optionaler Zone-ID gesendet wird
+- **THEN** durchsucht das System die Roon-Bibliothek nach dem Album, startet die Wiedergabe auf der Zielzone und protokolliert parallel ein Hör-Event.
+
+#### Scenario: Album mit expliziter Zone abspielen
+- **GIVEN** Roon ist verbunden und mehrere Zonen existieren
+- **WHEN** ein Abspielbefehl mit Record-ID und expliziter `zone_id` gesendet wird
+- **THEN** startet das System die Wiedergabe auf der angegebenen Zielzone.
+
+#### Scenario: Album mit Standard-Zone abspielen
+- **GIVEN** ein Abspielbefehl wird ohne `zone_id` gesendet
+- **WHEN** die Standard-Zone des Nutzers konfiguriert ist
+- **THEN** startet das System die Wiedergabe auf der Standard-Zone.
+
+### Requirement: Dynamische Zonenauswahl im Frontend
+Das Record-Detail-Modal MUST dem Nutzer verfügbare Roon-Zonen zur Auswahl anbieten und die zuletzt verwendete Zone für die laufende Sitzung beibehalten.
+
+#### Scenario: Zonenauswahl im Detail-Modal anzeigen
+- **GIVEN** der Nutzer öffnet die Detailansicht eines Albums bei verbundenem Roon Core
+- **WHEN** der Nutzer das Zonen-Auswahlmenü aufruft
+- **THEN** werden alle aktiven Roon-Zonen aufgelistet und die Standard- bzw. gemerkte Zone hervorgehoben.

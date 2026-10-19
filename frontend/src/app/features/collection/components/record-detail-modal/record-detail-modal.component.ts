@@ -1,15 +1,26 @@
-import { Component, input, output, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, input, output, inject, signal, computed, ChangeDetectionStrategy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../../core/services/api.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { LanguageService } from '../../../../core/services/language.service';
-import { CollectionRelease, RecordDetailDto } from '../../../../core/types';
-import { LucideExternalLink, LucideX, LucideHeadphones, LucideCheck, LucidePlay, LucideTrash2 } from '@lucide/angular';
+import { AuthService } from '../../../../core/services/auth.service';
+import { CollectionRelease, RecordDetailDto, RoonZone } from '../../../../core/types';
+import {
+  LucideExternalLink,
+  LucideX,
+  LucideHeadphones,
+  LucideCheck,
+  LucidePlay,
+  LucideTrash2,
+  LucideChevronDown,
+} from '@lucide/angular';
 import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
 import { LocalizedDatePipe } from '../../../../core/pipes/localized-date.pipe';
 import { getErrorMessage } from '../../../../core/utils/error';
 import { getConditionShortCode, MEDIA_CONDITION_OPTIONS, SLEEVE_CONDITION_OPTIONS } from '../../utils/condition.util';
+
+export const ROON_LAST_ZONE_KEY = 'vinyl_last_roon_zone_id';
 
 @Component({
   selector: 'app-record-detail-modal',
@@ -25,14 +36,16 @@ import { getConditionShortCode, MEDIA_CONDITION_OPTIONS, SLEEVE_CONDITION_OPTION
     LucideCheck,
     LucidePlay,
     LucideTrash2,
+    LucideChevronDown,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './record-detail-modal.component.html',
 })
-export class RecordDetailModalComponent {
+export class RecordDetailModalComponent implements OnInit {
   readonly apiService = inject(ApiService);
   readonly toastService = inject(ToastService);
   readonly languageService = inject(LanguageService);
+  readonly authService = inject(AuthService);
   readonly getConditionShortCode = getConditionShortCode;
   readonly mediaConditionOptions = MEDIA_CONDITION_OPTIONS;
   readonly sleeveConditionOptions = SLEEVE_CONDITION_OPTIONS;
@@ -52,9 +65,87 @@ export class RecordDetailModalComponent {
   readonly isUpdatingCondition = signal<boolean>(false);
   readonly isRemoving = signal<boolean>(false);
   readonly showDeleteConfirm = signal<boolean>(false);
+
+  readonly roonZones = signal<RoonZone[]>([]);
+  readonly selectedZoneId = signal<string | null>(null);
+  readonly isZoneDropdownOpen = signal<boolean>(false);
+  readonly isLoadingZones = signal<boolean>(false);
+
+  readonly selectedZone = computed(() => {
+    const id = this.selectedZoneId();
+    return this.roonZones().find((z) => z.zoneId === id) || null;
+  });
+  readonly hasMultipleZones = computed(() => this.roonZones().length > 1);
+
   readonly currentMediaCondition = computed(() => this.detail()?.media_condition || this.record()?.media_condition || '');
   readonly currentSleeveCondition = computed(() => this.detail()?.sleeve_condition || this.record()?.sleeve_condition || '');
   private justListenedTimeout?: ReturnType<typeof setTimeout>;
+
+  ngOnInit(): void {
+    if (this.authService.user()?.roonHost) {
+      this.loadRoonZones();
+    }
+  }
+
+  loadRoonZones(): void {
+    this.isLoadingZones.set(true);
+    this.apiService.getRoonZones().subscribe({
+      next: (zones) => {
+        const zoneList = zones || [];
+        this.roonZones.set(zoneList);
+        this.isLoadingZones.set(false);
+        this.initSelectedZone(zoneList);
+      },
+      error: () => {
+        this.isLoadingZones.set(false);
+      },
+    });
+  }
+
+  private initSelectedZone(zones: RoonZone[]): void {
+    if (!zones.length) return;
+
+    try {
+      const lastSessionZoneId = sessionStorage.getItem(ROON_LAST_ZONE_KEY);
+      if (lastSessionZoneId && zones.some((z) => z.zoneId === lastSessionZoneId)) {
+        this.selectedZoneId.set(lastSessionZoneId);
+        return;
+      }
+    } catch {
+      // Ignore sessionStorage exceptions
+    }
+
+    const userDefaultZoneId = this.authService.user()?.roonZoneId;
+    if (userDefaultZoneId && zones.some((z) => z.zoneId === userDefaultZoneId)) {
+      this.selectedZoneId.set(userDefaultZoneId);
+      return;
+    }
+
+    this.selectedZoneId.set(zones[0].zoneId);
+  }
+
+  toggleZoneDropdown(): void {
+    this.isZoneDropdownOpen.update((v) => !v);
+  }
+
+  closeZoneDropdown(): void {
+    this.isZoneDropdownOpen.set(false);
+  }
+
+  selectZone(zoneId: string): void {
+    this.selectedZoneId.set(zoneId);
+    try {
+      sessionStorage.setItem(ROON_LAST_ZONE_KEY, zoneId);
+    } catch {
+      // Ignore
+    }
+    this.closeZoneDropdown();
+  }
+
+  selectAndPlay(zoneId: string): void {
+    this.selectZone(zoneId);
+    this.onPlayOnRoon();
+  }
 
   promptDelete(): void {
     this.showDeleteConfirm.set(true);
@@ -93,21 +184,22 @@ export class RecordDetailModalComponent {
     });
   }
 
-
-
   onPlayOnRoon(): void {
     const rec = this.record();
     const det = this.detail();
     const artist = det?.artist || rec?.basic_information?.artists?.[0]?.name;
     const title = det?.title || rec?.basic_information?.title;
+    const zoneId = this.selectedZoneId() || undefined;
 
     if (!artist || !title || this.isPlayingOnRoon()) return;
 
     this.isPlayingOnRoon.set(true);
-    this.apiService.playOnRoon({ artist, title }).subscribe({
+    this.apiService.playOnRoon({ artist, title, zoneId }).subscribe({
       next: () => {
         this.isPlayingOnRoon.set(false);
-        this.toastService.showToast(`Wiedergabe auf Roon gestartet: ${artist} - ${title} 🎶`, 'success');
+        const zoneName = this.selectedZone()?.name;
+        const targetSuffix = zoneName ? ` (${zoneName})` : '';
+        this.toastService.showToast(`Wiedergabe auf Roon gestartet${targetSuffix}: ${artist} - ${title} 🎶`, 'success');
       },
       error: (err) => {
         this.isPlayingOnRoon.set(false);

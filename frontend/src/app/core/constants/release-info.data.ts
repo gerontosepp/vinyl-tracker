@@ -3,7 +3,7 @@
 import { ReleaseEntry } from '../models/release-info.model';
 
 // Application version from frontend/package.json – single source for all version badges.
-export const APP_VERSION = '0.10.0';
+export const APP_VERSION = '0.10.1';
 
 export const RELEASE_INFO_DATA: ReleaseEntry[] = [
   {
@@ -12,6 +12,14 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "tag": "In Entwicklung",
     "isCurrent": false,
     "isUnreleased": true,
+    "items": []
+  },
+  {
+    "version": "v0.10.1",
+    "rawHeader": "v0.10.1 (2026-10-19)",
+    "date": "2026-10-19",
+    "isCurrent": true,
+    "isUnreleased": false,
     "items": [
       {
         "title": "Fix: Formatierung in den Versionshinweisen (`#145`)",
@@ -37,7 +45,7 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "version": "v0.10.0",
     "rawHeader": "v0.10.0 (2026-10-19)",
     "date": "2026-10-19",
-    "isCurrent": true,
+    "isCurrent": false,
     "isUnreleased": false,
     "items": [
       {

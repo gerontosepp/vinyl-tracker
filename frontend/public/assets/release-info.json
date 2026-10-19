@@ -7,6 +7,16 @@
     "isUnreleased": true,
     "items": [
       {
+        "title": "Tooling & Dev-Ops: Auto-Reconnect für Dozzle Log Viewer (`scripts/open_dozzle.sh`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "**Automatischer Reconnect**: Kontinuierliche Überwachungsschleife, die Verbindungsabbrüche, SSH-Terminierungen oder Socket-Timeouts im Hintergrund erkennt und den SSH-Tunnel zu Dozzle (`localhost:8888`) ohne Benutzereingriff automatisch neu aufbaut.",
+          "**Verbindungs-Keepalive**: Konfiguration von `ServerAliveInterval=10`, `ServerAliveCountMax=2`, `TCPKeepAlive=yes` und `ExitOnForwardFailure=yes` zur schnellen Erkennung toter TCP-Verbindungen (z. B. nach Standby / Ruhezustand).",
+          "**Aktiver Health-Probe & Stale-Socket-Bereinigung**: Automatische Erkennung und Bereinigung blockierter / toter Altprozesse sowie neues Diagnoseflag `--status`."
+        ]
+      },
+      {
         "title": "Architektur-Dokumentation: Einführung von Architecture Decision Records (ADRs)",
         "type": "refactor",
         "typeLabel": "Refactor",

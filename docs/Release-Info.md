@@ -9,6 +9,11 @@
 
 ## Unreleased
 
+- **Tooling & Dev-Ops: Auto-Reconnect für Dozzle Log Viewer (`scripts/open_dozzle.sh`)**:
+  - **Automatischer Reconnect**: Kontinuierliche Überwachungsschleife, die Verbindungsabbrüche, SSH-Terminierungen oder Socket-Timeouts im Hintergrund erkennt und den SSH-Tunnel zu Dozzle (`localhost:8888`) ohne Benutzereingriff automatisch neu aufbaut.
+  - **Verbindungs-Keepalive**: Konfiguration von `ServerAliveInterval=10`, `ServerAliveCountMax=2`, `TCPKeepAlive=yes` und `ExitOnForwardFailure=yes` zur schnellen Erkennung toter TCP-Verbindungen (z. B. nach Standby / Ruhezustand).
+  - **Aktiver Health-Probe & Stale-Socket-Bereinigung**: Automatische Erkennung und Bereinigung blockierter / toter Altprozesse sowie neues Diagnoseflag `--status`.
+
 - **Architektur-Dokumentation: Einführung von Architecture Decision Records (ADRs)**:
   - **Neues ADR-Verzeichnis (`docs/adr/`)**: Etablierung eines standardisierten Formats (MADR / Nygard) zur transparenten Nachvollziehbarkeit wesentlicher Architekturentscheidungen inklusive Vorlage.
   - **Initiale Dokumentation (ADR-0001 bis ADR-0006)**: Festhaltung der Kernentscheidungen bezüglich Rust-Backend-Migration, Angular 22 Frontend, nativem Rust MCP Server, AEAD AES-256-GCM Kryptografie, direkter Roon MOO/WebSocket Integration und automatisierter Rust-Testabdeckungsprüfung via `cargo-llvm-cov`.

@@ -13,7 +13,7 @@ Vinyl Tracker — a personal vinyl record tracking app. Users scan barcodes / QR
 - `mcp/` — Rust MCP server (`rmcp`) exposing the REST API as MCP tools/resources/prompts.
 - `openspec/` — spec-driven development: living specs (`specs/`) and changes (`changes/`, archived after merge).
 - `docker/` — production & registry Docker Compose configurations (`docker-compose.prod.yml`, `docker-compose.registry.yml`).
-- `scripts/` — operational automation scripts (`deploy_proxmox.sh`, `push-images.sh`, `release.sh`, `update_docker.sh`).
+- `scripts/` — operational automation scripts (`deploy_proxmox.sh`, `backup_db.sh`, `push-images.sh`, `release.sh`, `update_docker.sh`).
 - `docs/` — `DEPLOYMENT.md`, `arc42.md` (architecture), `Release-Info.md`, `CLAUDE.md`.
 - `.agent/rules/` — coding/quality/documentation conventions.
 - `certs/` — local mkcert SSL certs (HTTPS required for webcam barcode scanning).

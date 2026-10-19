@@ -23,7 +23,7 @@ describe('TopRecordsComponent', () => {
 
   beforeEach(async () => {
     mockApiService = {
-      getProxiedImageUrl: jasmine.createSpy('getProxiedImageUrl').and.callFake((url: string) => url),
+      getProxiedImageUrl: vi.fn().mockName('getProxiedImageUrl').mockImplementation((url: string) => url),
     };
 
     await TestBed.configureTestingModule({
@@ -49,20 +49,20 @@ describe('TopRecordsComponent', () => {
   it('should display top 5 records by default and toggle showAll', () => {
     // By default: capped at 5
     expect(component.visibleData().length).toBe(5);
-    expect(component.showAll()).toBeFalse();
+    expect(component.showAll()).toBe(false);
 
     // Toggle show more
     component.toggleShowAll();
     fixture.detectChanges();
 
-    expect(component.showAll()).toBeTrue();
+    expect(component.showAll()).toBe(true);
     expect(component.visibleData().length).toBe(7);
 
     // Toggle back to show less
     component.toggleShowAll();
     fixture.detectChanges();
 
-    expect(component.showAll()).toBeFalse();
+    expect(component.showAll()).toBe(false);
     expect(component.visibleData().length).toBe(5);
   });
 
@@ -86,6 +86,6 @@ describe('TopRecordsComponent', () => {
 
     const plays = fixture.nativeElement.querySelectorAll('span');
     const playTexts = Array.from(plays).map((p: any) => p.textContent);
-    expect(playTexts.some((t: string) => t.includes('20'))).toBeTrue();
+    expect(playTexts.some((t: string) => t.includes('20'))).toBe(true);
   });
 });

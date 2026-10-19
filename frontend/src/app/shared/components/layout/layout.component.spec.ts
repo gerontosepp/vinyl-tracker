@@ -14,7 +14,8 @@ import { Component, signal, NO_ERRORS_SCHEMA, ChangeDetectionStrategy } from '@a
   changeDetection: ChangeDetectionStrategy.Eager,
   template: ''
 })
-class MockSidebarComponent {}
+class MockSidebarComponent {
+}
 
 @Component({
   selector: 'app-bottom-nav',
@@ -22,7 +23,8 @@ class MockSidebarComponent {}
   changeDetection: ChangeDetectionStrategy.Eager,
   template: ''
 })
-class MockBottomNavComponent {}
+class MockBottomNavComponent {
+}
 
 @Component({
   selector: 'app-top-menu-bar',
@@ -30,7 +32,8 @@ class MockBottomNavComponent {}
   changeDetection: ChangeDetectionStrategy.Eager,
   template: ''
 })
-class MockTopMenuBarComponent {}
+class MockTopMenuBarComponent {
+}
 
 describe('LayoutComponent', () => {
   let component: LayoutComponent;
@@ -44,13 +47,13 @@ describe('LayoutComponent', () => {
       isSyncing: signal(false)
     };
     mockScannerService = {
-      openScanner: jasmine.createSpy('openScanner'),
-      closeScanner: jasmine.createSpy('closeScanner'),
+      openScanner: vi.fn().mockName('openScanner'),
+      closeScanner: vi.fn().mockName('closeScanner'),
       showScanner: signal(false)
     };
     mockRouter = {
       url: '/collection',
-      navigate: jasmine.createSpy('navigate')
+      navigate: vi.fn().mockName('navigate')
     };
 
     await TestBed.configureTestingModule({
@@ -62,7 +65,7 @@ describe('LayoutComponent', () => {
       ],
       schemas: [NO_ERRORS_SCHEMA]
     })
-    .overrideComponent(LayoutComponent, {
+      .overrideComponent(LayoutComponent, {
       remove: {
         imports: [SidebarComponent, BottomNavComponent, TopMenuBarComponent]
       },
@@ -70,7 +73,7 @@ describe('LayoutComponent', () => {
         imports: [MockSidebarComponent, MockBottomNavComponent, MockTopMenuBarComponent]
       }
     })
-    .compileComponents();
+      .compileComponents();
 
     fixture = TestBed.createComponent(LayoutComponent);
     component = fixture.componentInstance;
@@ -89,7 +92,7 @@ describe('LayoutComponent', () => {
 
   it('should handle scan by opening scanner and NOT navigating if already on dashboard', () => {
     mockRouter.url = '/';
-    mockRouter.navigate.calls.reset();
+    mockRouter.navigate.mockClear();
     component.handleScan();
     expect(mockScannerService.openScanner).toHaveBeenCalled();
     expect(mockRouter.navigate).not.toHaveBeenCalled();

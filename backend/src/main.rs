@@ -35,14 +35,14 @@ async fn main() -> anyhow::Result<()> {
         backend_rs::db::sanitize_db_url(&config.database_url)
     );
 
-    // 4. Run database migrations
-    if let Err(e) = run_migrations(&config.database_url).await {
+    // 4. Initialize Database Pool
+    let pool = init_pool(&config).await?;
+
+    // 5. Run database migrations
+    if let Err(e) = run_migrations(&pool).await {
         tracing::error!("Migration failed: {e}");
         return Err(anyhow::anyhow!("Database migration failure: {e}"));
     }
-
-    // 5. Initialize Database Pool
-    let pool = init_pool(&config).await?;
 
     // 6. Assemble AppState and Router
     let state = AppState::new(pool, config.clone());
@@ -56,6 +56,46 @@ async fn main() -> anyhow::Result<()> {
     let listener = tokio::net::TcpListener::bind(addr).await?;
     tracing::info!("Axum server successfully bound to http://{}", addr);
 
-    axum::serve(listener, app).await?;
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .with_graceful_shutdown(shutdown_signal())
+    .await?;
+
+    tracing::info!("Server shut down gracefully");
     Ok(())
+}
+
+/// Resolves on Ctrl+C or SIGTERM (sent by `docker stop`), letting in-flight requests finish.
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        if let Err(e) = tokio::signal::ctrl_c().await {
+            tracing::error!("Failed to install Ctrl+C handler: {e}");
+            std::future::pending::<()>().await;
+        }
+    };
+
+    #[cfg(unix)]
+    let terminate = async {
+        match tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate()) {
+            Ok(mut signal) => {
+                signal.recv().await;
+            }
+            Err(e) => {
+                tracing::error!("Failed to install SIGTERM handler: {e}");
+                std::future::pending::<()>().await;
+            }
+        }
+    };
+
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+
+    tokio::select! {
+        () = ctrl_c => {},
+        () = terminate => {},
+    }
+
+    tracing::info!("Shutdown signal received, draining in-flight requests...");
 }

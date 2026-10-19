@@ -10,7 +10,7 @@ describe('CollectionCardListComponent', () => {
 
   beforeEach(async () => {
     mockApiService = {
-      getProxiedImageUrl: jasmine.createSpy('getProxiedImageUrl').and.callFake((url: string) => url),
+      getProxiedImageUrl: vi.fn().mockName('getProxiedImageUrl').mockImplementation((url: string) => url),
     };
 
     await TestBed.configureTestingModule({
@@ -40,7 +40,7 @@ describe('CollectionCardListComponent', () => {
     fixture.componentRef.setInput('releases', [mockRelease]);
     fixture.detectChanges();
 
-    spyOn(component.openDetail, 'emit');
+    vi.spyOn(component.openDetail, 'emit').mockReturnValue(undefined);
 
     const card = fixture.nativeElement.querySelector('.group');
     expect(card).toBeTruthy();

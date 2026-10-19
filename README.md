@@ -1,8 +1,8 @@
-# Vinyl Tracker v0.9.0
+# Vinyl Tracker v0.10.0
 
 A personal vinyl record tracking application that allows users to scan barcodes, identify records via Discogs, and log listening sessions.
 
-Release history: [Release-Info](docs/Release-Info.md) | Architecture: [arc42](docs/arc42.md) | [Rust-Migration Lastenheft](docs/rust-migration-lastenheft.md)
+Release history: [Release-Info](docs/Release-Info.md) | Architecture: [arc42](docs/arc42.md) | [ADRs](docs/adr/README.md) | [OpenSpec](openspec/) | [Rust-Migration Lastenheft](docs/rust-migration-lastenheft.md)
 
 ## Architecture
 
@@ -19,8 +19,8 @@ The project follows a modern containerized micro-architecture:
 ### Backend
 - **Framework / Runtime**: Axum 0.8, Tokio 1.x, Tower-HTTP
 - **Language**: Rust (2024 edition)
-- **Database Access**: PostgreSQL via `sqlx` with automatic migrations (`refinery`, Flyway-compatible)
-- **Features**: JWT-Auth (HMAC-SHA256, BCrypt, Argon2/PBKDF2), Discogs REST Client with rate-limiting (`governor`) & caching (`moka`), SSRF-protected image proxy, Roon MOO WebSocket Engine & SOOD discovery, native vector-based QR-Code & PDF generation (`fast_qr`, `printpdf`).
+- **Database Access**: PostgreSQL via `sqlx` with automatic, embedded migrations (`sqlx::migrate`, files `backend/migrations/<n>_<name>.sql`; existing refinery/Flyway histories are imported automatically)
+- **Features**: JWT-Auth (HMAC-SHA256 tokens, BCrypt password hashing), AES-256-GCM encryption of Discogs tokens (PBKDF2-derived key), Discogs REST Client with rate-limiting (`governor`) & caching (`moka`), SSRF-protected image proxy, Roon MOO WebSocket Engine & SOOD discovery, native vector-based QR-Code & PDF generation (`fast_qr`, `printpdf`).
 - **Location**: `backend/` directory.
 
 ### Database
@@ -31,6 +31,7 @@ The project follows a modern containerized micro-architecture:
 - **Language**: Rust
 - **Framework**: `rmcp` (v3.5) official MCP SDK
 - **Communication**: REST client against the Backend over stdio JSON-RPC.
+- **API Contract**: Request/response types are shared with the backend via the crate `vinyl-api-types` (`backend/crates/vinyl-api-types`), so MCP and backend always agree on the JSON format. Use an MCP binary built from the same version as the backend.
 - **Location**: `mcp/` directory.
 
 ### Infrastructure
@@ -40,7 +41,7 @@ The project follows a modern containerized micro-architecture:
 ## Features
 
 - **Eyoyo EY-009P & Hardware Scanner Support**: Seamless, hands-free 1D barcode and 2D QR code scanning via global HID Keyboard Wedge listener. Configurable scanner modes (*Externer Hardware-Scanner*, *Interner Kamera-Scanner*, *Hybrid*), optional audio feedback (beep), live scanner testing area in Settings, and battery-friendly operation (camera stays powered off in hardware mode).
-- **Model Context Protocol (MCP)**: Native Rust MCP server with 15 tools to query your vinyl collection, trigger local Roon playback, get random recommendations, view unplayed records, fetch album tracklists, search Discogs, log listen events, and inspect analytics from AI assistants (Antigravity IDE, Claude Desktop, Cursor).
+- **Model Context Protocol (MCP)**: Native Rust MCP server with 23 tools, `vinyl://` resources and prompts to query and manage your vinyl collection, add releases, update Goldmine condition grading, refresh market values, inspect Roon status and audio zones, trigger local Roon playback, get random recommendations, view unplayed records, fetch album tracklists, search Discogs, log listen events directly or via barcode, and inspect analytics from AI assistants (Antigravity IDE, Claude Desktop, Cursor).
 - **Roon Control & Local Playback**: Direct integration with the official Roon API (WebSocket MOO/1 protocol). Configure your local Roon Core in Settings, select playback zones, and trigger playback ("Auf Roon abspielen" / Play Now) directly from the record detail modal or via the MCP tool `play_record_on_roon`.
 - **Random Record Recommendations**: Get random vinyl suggestions (`/api/collection/random`) with optional genre filter and "unplayed only" mode.
 - **Unplayed Records ("Shelf of Shame")**: Dedicated endpoint (`/api/collection/unplayed`) to quickly find and listen to albums you have never played.
@@ -59,8 +60,8 @@ The project follows a modern containerized micro-architecture:
 - **Data Management**: Reset your entire listening history with a single click from Settings (with confirmation dialog to prevent accidental deletions).
 - **In-App Release Notes & Changes**: Transparent in-app changelog in Profile & Settings displaying release highlights, bug fixes, and milestones directly from `docs/Release-Info.md` with interactive version accordions and live search.
 - **Modern UI**: Fully responsive, mobile-first design with dark mode, glassmorphism, and smooth micro-animations.
-- **Resilient API**: Robust Discogs integration with **Resilience4j** rate-limiting (60 req/min) and automatic retries with exponential backoff.
-- **Performance Caching**: Optimized release metadata retrieval using **Caffeine** local caching.
+- **Resilient API**: Discogs integration with client-side rate limiting via `governor` (60 req/min) and server-side request timeouts.
+- **Performance Caching**: In-memory caching via `moka` for Discogs release metadata (24 h), price suggestions (1 h) and proxied cover images (24 h).
 - **Observability**: Built-in comprehensive API request and error logging tracking latency across the frontend and backend Docker containers.
 
 ## Deployment & Running
@@ -100,18 +101,34 @@ The application requires environment variables for configuration (database crede
     ```
 
 2.  **Configure Secrets**:
-    Open `.env` and set your own secure values:
-    - `VINYL_ENCRYPTION_PASSWORD` and `VINYL_ENCRYPTION_SALT` (for Discogs token encryption).
-    - `JWT_SECRET` (Required. Must be a strong key with at least 32 characters for securing user login sessions. Backend startup fails fast if missing/too short).
-    - `CORS_ALLOWED_ORIGINS` (Comma-separated allowlist, e.g. `https://localhost:5173,https://127.0.0.1:5173`).
-    - `CORS_ALLOW_CREDENTIALS` (`false` by default; set `true` only if cookie-based auth is required).
-    - `IMAGE_PROXY_ALLOWED_HOSTS` (Comma-separated allowlist for `/api/proxy/image`, e.g. `i.discogs.com,s.discogs.com,api.discogs.com`).
-    - `AUTH_COOKIE_NAME`, `AUTH_COOKIE_MAX_AGE_SECONDS`, `AUTH_COOKIE_SECURE`, `AUTH_COOKIE_SAME_SITE` (controls the backend HttpOnly session cookie used for authentication).
-    - `AUTH_RATE_LIMIT_FOR_PERIOD` (optional rate limit for authentication endpoints; default: `10` requests per minute per IP).
+    Open `.env` and set your own secure values for at least `JWT_SECRET`, `VINYL_ENCRYPTION_PASSWORD`, `VINYL_ENCRYPTION_SALT` and `POSTGRES_PASSWORD`. All backend settings:
 
-    Authentication note: The frontend uses backend-managed HttpOnly cookies by default and supports a Bearer token fallback for environments where cookie propagation is constrained. Public auth endpoints (`/login`, `/register`, `/reset-password`) are protected against brute force via Resilience4j rate limiting, and enforce a minimum password length of 8 characters.
+    | Variable | Default | Purpose |
+    | :--- | :--- | :--- |
+    | `JWT_SECRET` | dev key (rejected if `APP_ENV=production`) | **Required**, >= 32 characters; startup fails if shorter. |
+    | `JWT_EXPIRATION_SECS` | `604800` (7 days) | Lifetime of issued JWTs. The session also ends when the auth cookie expires (`AUTH_COOKIE_MAX_AGE_SECONDS`). |
+    | `VINYL_ENCRYPTION_PASSWORD` / `VINYL_ENCRYPTION_SALT` | insecure built-in dev values | Key material for encrypting Discogs tokens (AES-256-GCM). **Set in production**; changing them makes stored tokens unreadable. |
+    | `APP_ENV` (alias `ENVIRONMENT`) | `development` | `production` enables `Secure` cookies by default and rejects the dev `JWT_SECRET`. |
+    | `HOST` / `PORT` | `0.0.0.0` / `8080` | Bind address of the backend. |
+    | `DATABASE_URL` | built from `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_HOST` (`localhost`), `POSTGRES_PORT` (`5432`) | PostgreSQL connection. |
+    | `DATABASE_MAX_CONNECTIONS` / `DATABASE_MIN_CONNECTIONS` | `20` / `5` | Connection pool size. |
+    | `DATABASE_ACQUIRE_TIMEOUT_SECS` / `DATABASE_IDLE_TIMEOUT_SECS` | `5` / `600` | Pool timeouts. |
+    | `DATABASE_CONNECT_RETRIES` / `DATABASE_CONNECT_RETRY_INTERVAL_SECS` | `15` / `2` | Connection retries at startup. |
+    | `CORS_ALLOWED_ORIGINS` | `http://localhost:5173,https://localhost:5173,http://localhost:3000,http://127.0.0.1:5173` | Comma-separated allowlist (no wildcard). |
+    | `CORS_ALLOW_CREDENTIALS` | `true` | Must stay `true`: the frontend authenticates with the HttpOnly session cookie. |
+    | `AUTH_COOKIE_NAME` / `AUTH_COOKIE_MAX_AGE_SECONDS` | `vinyl_token` / `86400` | HttpOnly session cookie. |
+    | `AUTH_COOKIE_SECURE` / `AUTH_COOKIE_SAME_SITE` | `true` if `APP_ENV=production`, else `false` / `Lax` | Cookie flags (`Secure` requires HTTPS). |
+    | `AUTH_COOKIE_PATH` / `AUTH_COOKIE_DOMAIN` | `/` / unset | Cookie scope. |
+    | `AUTH_RATE_LIMIT_FOR_PERIOD` | `10` | Auth requests per minute per client IP (login, register, reset-password). |
+    | `TRUSTED_PROXIES` | empty (headers ignored) | Comma-separated IPs/CIDRs whose `X-Forwarded-For` / `X-Real-IP` are trusted. Production compose files set `172.16.0.0/12,192.168.0.0/16` for the bundled nginx ([ADR-0016](docs/adr/0016-vertrauenswuerdige-proxies-fuer-client-ip-ermittlung.md)). |
+    | `REQUEST_TIMEOUT_SECS` / `LONG_REQUEST_TIMEOUT_SECS` | `30` / `300` | Server-side request timeouts; the long one applies to Discogs sync, price refresh, export and QR-code PDFs. |
+    | `IMAGE_PROXY_ALLOWED_HOSTS` | `i.discogs.com,s.discogs.com,api.discogs.com` | Allowlist for `/api/proxy/image` (SSRF protection). |
+    | `DISCOGS_USER_AGENT` / `DISCOGS_API_BASE_URL` | `VinylTracker/1.0 (+https://github.com/gerontosepp/vinyl-tracker)` / `https://api.discogs.com` | Discogs client settings. |
+    | `RUST_LOG` | `backend_rs=info,tower_http=info,axum=info` | Log filter (`tracing`). |
+
+    Authentication note: The frontend uses backend-managed HttpOnly cookies by default and supports a Bearer token fallback for environments where cookie propagation is constrained. Public auth endpoints (`/login`, `/register`, `/reset-password`) are protected against brute force via per-client-IP rate limiting (`governor`), and enforce a minimum password length of 8 characters.
    
-    API error note: Backend validation and runtime failures are returned as structured `ProblemDetail` JSON payloads. Rate limit violations return HTTP 429 (`Too Many Requests`).
+    API error note: Backend validation and runtime failures are returned as structured `ProblemDetail` JSON payloads. Rate limit violations return HTTP 429 (`Too Many Requests`), request timeouts HTTP 503 (`Service Unavailable`). On `SIGTERM` (e.g. `docker stop`) the backend shuts down gracefully and lets in-flight requests finish.
 
 ### 3. Start the Application
 
@@ -134,13 +151,13 @@ The application requires environment variables for configuration (database crede
      ```bash
      docker compose -f docker/docker-compose.prod.yml up --build -d
      ```
-   *Optimized build, no hot-reloading, runs on port 80.*
+   *Optimized build, no hot-reloading, runs on port 80. Backend (`8080`) and PostgreSQL (`5432`) are only published on `127.0.0.1`; external clients must use the nginx endpoint (`http://<host>/api`).*
 
    👉 **[See Detailed Deployment Guide](docs/DEPLOYMENT.md)** for server setup, public images, and HTTPS requirements.
 
-2. **Access the App**:
-   - **Frontend**: [https://localhost:5173](https://localhost:5173) (or `https://<YOUR_IP>:5173`)
-   - **Backend API**: [http://localhost:8080](http://localhost:8080)
+3. **Access the App**:
+   - **Development** (`docker compose up`): Frontend [https://localhost:5173](https://localhost:5173) (or `https://<YOUR_IP>:5173`), Backend API [http://localhost:8080](http://localhost:8080).
+   - **Production compose**: Frontend and API via nginx on port 80 (`http://<host>/`, API under `http://<host>/api`); terminate HTTPS in front of it (see [DEPLOYMENT.md](docs/DEPLOYMENT.md)).
 
 ## User Guide
 
@@ -198,14 +215,14 @@ cd frontend
 npm install
 npm test
 ```
-*Note: Unit tests strictly enforce >80% code coverage via karma.conf.js for statements, lines, branches, and functions.*
+*Note: Unit tests (Vitest) strictly enforce >=80% code coverage for statements, lines, branches, and functions (thresholds in `angular.json`). Run `npm test -- --watch=false --coverage` to check locally.*
 
 **Available NPM Scripts:**
 | Script | Description |
 | :--- | :--- |
 | `npm run dev` | Starts the Angular development server on port 5173 with proxy configuration |
 | `npm run build` | Builds the application for production |
-| `npm run test` | Runs unit tests (Karma/Jasmine) in headless mode with code coverage enforcement |
+| `npm run test` | Runs unit tests (Vitest + jsdom, no browser needed); add `-- --watch=false --coverage` for a single run with coverage enforcement |
 | `npm run test:e2e` | Runs end-to-end tests (Playwright) with automatic dev server bootstrap |
 
 Current high-risk regression coverage focuses on authentication, dashboard scanner access, and manual Discogs sync flows in Playwright plus backend negative-path tests for scan validation and ownership checks.
@@ -235,16 +252,17 @@ cargo run
 The project includes GitHub Actions workflows:
 - **CI Pipeline** (`.github/workflows/ci.yml`):
   - Automatically builds, tests and checks the Backend (Rust 2024 / Cargo).
-  - Builds and tests the Frontend (Node 24/Angular, Karma headless with strict >80% coverage check via `karma.conf.js`).
+  - Builds and tests the Frontend (Node 24/Angular, Vitest unit tests with strict >=80% coverage thresholds from `angular.json`).
   - Runs Playwright end-to-end tests for all critical user workflows.
   - Builds and tests the MCP Server (Rust/Cargo, `rmcp`).
   - Enforces linting and tests across all components.
-  - Runs on push and pull requests for `main`, `master`, and `develop`, plus release tags `v*.*.*` (which triggers building and pushing multi-arch Docker images to GHCR).
-  - **Self-Hosted Runner Support**: Optimized for local execution on Proxmox/Docker hosts (`[self-hosted, linux]`) with mounted Docker socket for integration tests and Playwright, eliminating queue bottlenecks.
-  - **Hybrid Multi-Platform Releases**: Daily CI runs locally on Proxmox, while release builds automatically provision GitHub-hosted Apple Silicon runners (`macos-latest`) to produce native macOS MCP server binaries.
+  - Runs on push and pull requests for `main` and `develop` (plus manual `workflow_dispatch`). Pushes to `main` additionally build and publish multi-arch Docker images (`linux/amd64`, `linux/arm64`) to GHCR.
+  - **Self-Hosted Runners**: Jobs run on self-hosted Linux ARM64 runners (`[self-hosted, linux]`, Docker containers with mounted Docker socket for the PostgreSQL test container and Playwright), see [DEPLOYMENT.md](docs/DEPLOYMENT.md).
+  - **Hybrid Multi-Platform Releases**: Release builds additionally use GitHub-hosted runners (`ubuntu-latest`, `macos-latest`) to produce native Linux and macOS MCP server binaries.
 - **Auto Release** (`.github/workflows/release.yml`):
   - Automatically creates a GitHub Release (with tag `v<version>` from `frontend/package.json` and auto-generated release notes) when a Pull Request to `main` is successfully merged.
-  - Creating a release triggers the CI Pipeline's tag build, automatically publishing the new Docker images.
+  - The Docker images for that release are published by the CI pipeline run of the merge push to `main`.
+- **Supply-Chain Hardening**: All third-party actions are pinned to full commit SHAs (with the release tag as comment). Dependabot (`.github/dependabot.yml`) proposes weekly grouped updates against `develop`. Workflows from fork PRs of external contributors require manual maintainer approval before they run on the self-hosted runners.
 
 ## Model Context Protocol (MCP) Server
 

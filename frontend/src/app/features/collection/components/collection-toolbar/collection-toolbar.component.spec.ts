@@ -23,45 +23,45 @@ describe('CollectionToolbarComponent', () => {
   });
 
   it('should emit searchChange on onSearchInput', () => {
-    spyOn(component.searchChange, 'emit');
+    vi.spyOn(component.searchChange, 'emit').mockReturnValue(undefined);
     component.onSearchInput('Beatles');
     expect(component.searchChange.emit).toHaveBeenCalledWith('Beatles');
   });
 
   it('should emit sortChange on onSortSelect', () => {
-    spyOn(component.sortChange, 'emit');
+    vi.spyOn(component.sortChange, 'emit').mockReturnValue(undefined);
     component.onSortSelect('year');
     expect(component.sortChange.emit).toHaveBeenCalledWith('year');
   });
 
   it('should emit perPageChange on onPerPageSelect', () => {
-    spyOn(component.perPageChange, 'emit');
+    vi.spyOn(component.perPageChange, 'emit').mockReturnValue(undefined);
     component.onPerPageSelect('40');
     expect(component.perPageChange.emit).toHaveBeenCalledWith(40);
   });
 
   it('should have hidden md:flex on selectPage button for responsive mobile hiding', () => {
     const selectPageBtn = fixture.nativeElement
-      .querySelector('button svg[lucidesquare], button svg[lucidechecksquare]')
+      .querySelector('button svg[lucideSquare], button svg[lucideCheckSquare]')
       ?.closest('button');
     expect(selectPageBtn).toBeTruthy();
-    expect(selectPageBtn?.classList.contains('hidden')).toBeTrue();
-    expect(selectPageBtn?.classList.contains('md:flex')).toBeTrue();
+    expect(selectPageBtn?.classList.contains('hidden')).toBe(true);
+    expect(selectPageBtn?.classList.contains('md:flex')).toBe(true);
   });
 
   it('should have hidden md:flex on downloadSelected container for responsive mobile hiding', () => {
     fixture.componentRef.setInput('selectedCount', 5);
     fixture.detectChanges();
 
-    const downloadBtn = fixture.nativeElement.querySelector('button svg[lucidedownload]')?.closest('button');
+    const downloadBtn = fixture.nativeElement.querySelector('button svg[lucideDownload]')?.closest('button');
     expect(downloadBtn).toBeTruthy();
     const container = downloadBtn.parentElement;
-    expect(container?.classList.contains('hidden')).toBeTrue();
-    expect(container?.classList.contains('md:flex')).toBeTrue();
+    expect(container?.classList.contains('hidden')).toBe(true);
+    expect(container?.classList.contains('md:flex')).toBe(true);
   });
 
   it('should emit categoryChange when category buttons are clicked', () => {
-    spyOn(component.categoryChange, 'emit');
+    vi.spyOn(component.categoryChange, 'emit').mockReturnValue(undefined);
     const buttons = fixture.nativeElement.querySelectorAll('div[aria-label="Kategorie Filter"] button');
     expect(buttons.length).toBe(3);
 
@@ -86,15 +86,15 @@ describe('CollectionToolbarComponent', () => {
   });
 
   it('should toggle genre dropdown when genre button is clicked', () => {
-    expect(component.isGenreDropdownOpen()).toBeFalse();
+    expect(component.isGenreDropdownOpen()).toBe(false);
     component.toggleGenreDropdown();
-    expect(component.isGenreDropdownOpen()).toBeTrue();
+    expect(component.isGenreDropdownOpen()).toBe(true);
     component.closeGenreDropdown();
-    expect(component.isGenreDropdownOpen()).toBeFalse();
+    expect(component.isGenreDropdownOpen()).toBe(false);
   });
 
   it('should emit genresChange when a genre is toggled', () => {
-    spyOn(component.genresChange, 'emit');
+    vi.spyOn(component.genresChange, 'emit').mockReturnValue(undefined);
     fixture.componentRef.setInput('selectedGenres', ['Rock']);
     component.toggleGenre('Jazz');
     expect(component.genresChange.emit).toHaveBeenCalledWith(['Rock', 'Jazz']);
@@ -104,13 +104,13 @@ describe('CollectionToolbarComponent', () => {
   });
 
   it('should emit empty array on clearGenres', () => {
-    spyOn(component.genresChange, 'emit');
+    vi.spyOn(component.genresChange, 'emit').mockReturnValue(undefined);
     component.clearGenres();
     expect(component.genresChange.emit).toHaveBeenCalledWith([]);
   });
 
   it('should emit yearsChange on year input and clearYears', () => {
-    spyOn(component.yearsChange, 'emit');
+    vi.spyOn(component.yearsChange, 'emit').mockReturnValue(undefined);
     component.onYearsInput('1970-1972, 1975');
     expect(component.yearsChange.emit).toHaveBeenCalledWith('1970-1972, 1975');
 
@@ -119,7 +119,7 @@ describe('CollectionToolbarComponent', () => {
   });
 
   it('should emit clearSelection when clear selection button is clicked', () => {
-    spyOn(component.clearSelection, 'emit');
+    vi.spyOn(component.clearSelection, 'emit').mockReturnValue(undefined);
     fixture.componentRef.setInput('selectedCount', 3);
     fixture.detectChanges();
 
@@ -130,38 +130,38 @@ describe('CollectionToolbarComponent', () => {
   });
 
   it('should emit downloadSelected when download button is clicked', () => {
-    spyOn(component.downloadSelected, 'emit');
+    vi.spyOn(component.downloadSelected, 'emit').mockReturnValue(undefined);
     fixture.componentRef.setInput('selectedCount', 3);
     fixture.detectChanges();
 
-    const downloadBtn = fixture.nativeElement.querySelector('button svg[lucidedownload]')?.closest('button');
+    const downloadBtn = fixture.nativeElement.querySelector('button svg[lucideDownload]')?.closest('button');
     expect(downloadBtn).toBeTruthy();
     downloadBtn.click();
     expect(component.downloadSelected.emit).toHaveBeenCalled();
   });
 
   it('should toggle and close notPlayed popover', () => {
-    expect(component.isNotPlayedPopoverOpen()).toBeFalse();
+    expect(component.isNotPlayedPopoverOpen()).toBe(false);
     component.toggleNotPlayedPopover();
-    expect(component.isNotPlayedPopoverOpen()).toBeTrue();
+    expect(component.isNotPlayedPopoverOpen()).toBe(true);
     component.closeNotPlayedPopover();
-    expect(component.isNotPlayedPopoverOpen()).toBeFalse();
+    expect(component.isNotPlayedPopoverOpen()).toBe(false);
   });
 
   it('should emit notPlayedSinceChange on onNotPlayedSinceSelect', () => {
-    spyOn(component.notPlayedSinceChange, 'emit');
+    vi.spyOn(component.notPlayedSinceChange, 'emit').mockReturnValue(undefined);
     component.onNotPlayedSinceSelect('2025-06-01');
     expect(component.notPlayedSinceChange.emit).toHaveBeenCalledWith('2025-06-01');
   });
 
   it('should emit toggleUnplayedOnly on onToggleUnplayedOnly', () => {
-    spyOn(component.toggleUnplayedOnly, 'emit');
+    vi.spyOn(component.toggleUnplayedOnly, 'emit').mockReturnValue(undefined);
     component.onToggleUnplayedOnly();
     expect(component.toggleUnplayedOnly.emit).toHaveBeenCalled();
   });
 
   it('should emit clearNotPlayedFilters on onClearNotPlayed', () => {
-    spyOn(component.clearNotPlayedFilters, 'emit');
+    vi.spyOn(component.clearNotPlayedFilters, 'emit').mockReturnValue(undefined);
     component.onClearNotPlayed();
     expect(component.clearNotPlayedFilters.emit).toHaveBeenCalled();
   });

@@ -17,16 +17,16 @@ describe('CollectionComponent', () => {
 
   beforeEach(async () => {
     mockApiService = {
-      getCollection: jasmine.createSpy('getCollection').and.returnValue(of({ releases: [], pagination: { page: 1, pages: 1, per_page: 50, items: 0, urls: {} } })),
-      getGenreBreakdown: jasmine.createSpy('getGenreBreakdown').and.returnValue(of([{ name: 'Rock', value: 10 }])),
-      getProxiedImageUrl: jasmine.createSpy('getProxiedImageUrl').and.callFake((url: string) => url),
-      exportCollection: jasmine.createSpy('exportCollection').and.returnValue(of(new Blob(['csv'], { type: 'text/csv' }))),
+      getCollection: vi.fn().mockName('getCollection').mockReturnValue(of({ releases: [], pagination: { page: 1, pages: 1, per_page: 50, items: 0, urls: {} } })),
+      getGenreBreakdown: vi.fn().mockName('getGenreBreakdown').mockReturnValue(of([{ name: 'Rock', value: 10 }])),
+      getProxiedImageUrl: vi.fn().mockName('getProxiedImageUrl').mockImplementation((url: string) => url),
+      exportCollection: vi.fn().mockName('exportCollection').mockReturnValue(of(new Blob(['csv'], { type: 'text/csv' }))),
     };
     mockAuthService = {
       isSyncing: signal(false)
     };
     mockToastService = {
-      showToast: jasmine.createSpy('showToast')
+      showToast: vi.fn().mockName('showToast')
     };
 
     await TestBed.configureTestingModule({
@@ -156,19 +156,7 @@ describe('CollectionComponent', () => {
       component.onSortChange('format');
       expect(component.sort()).toBe('format');
       expect(component.sortOrder()).toBe('asc');
-      expect(mockApiService.getCollection).toHaveBeenCalledWith(
-        1,
-        component.perPage(),
-        0,
-        'format',
-        'asc',
-        '',
-        'all',
-        [],
-        '',
-        undefined,
-        false
-      );
+      expect(mockApiService.getCollection).toHaveBeenCalledWith(1, component.perPage(), 0, 'format', 'asc', '', 'all', [], '', undefined, false);
     });
   });
 
@@ -179,31 +167,19 @@ describe('CollectionComponent', () => {
       component.onCategoryChange('cd');
       expect(component.category()).toBe('cd');
       expect(component.page()).toBe(1);
-      expect(mockApiService.getCollection).toHaveBeenCalledWith(
-        1,
-        component.perPage(),
-        0,
-        'artist',
-        'asc',
-        '',
-        'cd',
-        [],
-        '',
-        undefined,
-        false
-      );
+      expect(mockApiService.getCollection).toHaveBeenCalledWith(1, component.perPage(), 0, 'artist', 'asc', '', 'cd', [], '', undefined, false);
     });
 
     it('should ignore category change if already selected', () => {
       mockAuthService.user = signal({ username: 'testuser' });
-      mockApiService.getCollection.calls.reset();
+      mockApiService.getCollection.mockClear();
       component.onCategoryChange('all');
       expect(mockApiService.getCollection).not.toHaveBeenCalled();
     });
 
     it('should set totalItems from pagination items on loadData', () => {
       mockAuthService.user = signal({ username: 'testuser' });
-      mockApiService.getCollection.and.returnValue(of({
+      mockApiService.getCollection.mockReturnValue(of({
         releases: [],
         pagination: { page: 1, pages: 13, per_page: 50, items: 603, urls: {} }
       }));
@@ -219,19 +195,7 @@ describe('CollectionComponent', () => {
       component.onGenresChange(['Rock', 'Jazz']);
       expect(component.selectedGenres()).toEqual(['Rock', 'Jazz']);
       expect(component.page()).toBe(1);
-      expect(mockApiService.getCollection).toHaveBeenCalledWith(
-        1,
-        component.perPage(),
-        0,
-        'artist',
-        'asc',
-        '',
-        'all',
-        ['Rock', 'Jazz'],
-        '',
-        undefined,
-        false
-      );
+      expect(mockApiService.getCollection).toHaveBeenCalledWith(1, component.perPage(), 0, 'artist', 'asc', '', 'all', ['Rock', 'Jazz'], '', undefined, false);
     });
 
     it('should reset all filters on clearAllFilters', () => {
@@ -253,9 +217,9 @@ describe('CollectionComponent', () => {
       expect(component.debouncedYears()).toBe('');
       expect(component.search()).toBe('');
       expect(component.category()).toBe('all');
-      expect(component.showPlayedOnly()).toBeFalse();
+      expect(component.showPlayedOnly()).toBe(false);
       expect(component.notPlayedSince()).toBe('');
-      expect(component.unplayedOnly()).toBeFalse();
+      expect(component.unplayedOnly()).toBe(false);
     });
   });
 
@@ -267,22 +231,10 @@ describe('CollectionComponent', () => {
       component.onNotPlayedSinceChange('2025-06-01');
 
       expect(component.notPlayedSince()).toBe('2025-06-01');
-      expect(component.unplayedOnly()).toBeFalse();
-      expect(component.showPlayedOnly()).toBeFalse();
+      expect(component.unplayedOnly()).toBe(false);
+      expect(component.showPlayedOnly()).toBe(false);
       expect(component.page()).toBe(1);
-      expect(mockApiService.getCollection).toHaveBeenCalledWith(
-        1,
-        component.perPage(),
-        0,
-        'artist',
-        'asc',
-        '',
-        'all',
-        [],
-        '',
-        '2025-06-01',
-        false
-      );
+      expect(mockApiService.getCollection).toHaveBeenCalledWith(1, component.perPage(), 0, 'artist', 'asc', '', 'all', [], '', '2025-06-01', false);
     });
 
     it('should toggle unplayedOnly, reset notPlayedSince and showPlayedOnly, and reload data', () => {
@@ -291,23 +243,11 @@ describe('CollectionComponent', () => {
       component.notPlayedSince.set('2025-06-01');
       component.toggleUnplayedOnly();
 
-      expect(component.unplayedOnly()).toBeTrue();
+      expect(component.unplayedOnly()).toBe(true);
       expect(component.notPlayedSince()).toBe('');
-      expect(component.showPlayedOnly()).toBeFalse();
+      expect(component.showPlayedOnly()).toBe(false);
       expect(component.page()).toBe(1);
-      expect(mockApiService.getCollection).toHaveBeenCalledWith(
-        1,
-        component.perPage(),
-        0,
-        'artist',
-        'asc',
-        '',
-        'all',
-        [],
-        '',
-        undefined,
-        true
-      );
+      expect(mockApiService.getCollection).toHaveBeenCalledWith(1, component.perPage(), 0, 'artist', 'asc', '', 'all', [], '', undefined, true);
     });
 
     it('should clear unplayed filters on clearNotPlayedFilters', () => {
@@ -317,20 +257,8 @@ describe('CollectionComponent', () => {
       component.clearNotPlayedFilters();
 
       expect(component.notPlayedSince()).toBe('');
-      expect(component.unplayedOnly()).toBeFalse();
-      expect(mockApiService.getCollection).toHaveBeenCalledWith(
-        1,
-        component.perPage(),
-        0,
-        'artist',
-        'asc',
-        '',
-        'all',
-        [],
-        '',
-        undefined,
-        false
-      );
+      expect(component.unplayedOnly()).toBe(false);
+      expect(mockApiService.getCollection).toHaveBeenCalledWith(1, component.perPage(), 0, 'artist', 'asc', '', 'all', [], '', undefined, false);
     });
 
     it('should reset unplayed filters when showPlayedOnly is activated', () => {
@@ -341,22 +269,10 @@ describe('CollectionComponent', () => {
 
       component.toggleShowPlayedOnly();
 
-      expect(component.showPlayedOnly()).toBeTrue();
+      expect(component.showPlayedOnly()).toBe(true);
       expect(component.notPlayedSince()).toBe('');
-      expect(component.unplayedOnly()).toBeFalse();
-      expect(mockApiService.getCollection).toHaveBeenCalledWith(
-        1,
-        component.perPage(),
-        1,
-        'artist',
-        'asc',
-        '',
-        'all',
-        [],
-        '',
-        undefined,
-        false
-      );
+      expect(component.unplayedOnly()).toBe(false);
+      expect(mockApiService.getCollection).toHaveBeenCalledWith(1, component.perPage(), 1, 'artist', 'asc', '', 'all', [], '', undefined, false);
     });
   });
 
@@ -401,12 +317,10 @@ describe('CollectionComponent', () => {
 
   describe('clearSelection', () => {
     it('should clear all items in selectedItems', () => {
-      component.selectedItems.set(
-        new Map([
-          [1, { id: 1, title: 'Album 1', artist: 'Artist 1' }],
-          [2, { id: 2, title: 'Album 2', artist: 'Artist 2' }],
-        ])
-      );
+      component.selectedItems.set(new Map([
+        [1, { id: 1, title: 'Album 1', artist: 'Artist 1' }],
+        [2, { id: 2, title: 'Album 2', artist: 'Artist 2' }],
+      ]));
       expect(component.selectedCount()).toBe(2);
 
       component.clearSelection();
@@ -480,7 +394,7 @@ describe('CollectionComponent', () => {
       expect(component.releases().length).toBe(1);
       expect(component.releases()[0].id).toBe(102);
       expect(component.totalItems()).toBe(1);
-      expect(component.selectedItems().has(101)).toBeFalse();
+      expect(component.selectedItems().has(101)).toBe(false);
     });
   });
 });

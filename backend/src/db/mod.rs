@@ -24,19 +24,41 @@ pub async fn init_pool(config: &Config) -> Result<PgPool, AppError> {
         config.database_min_connections
     );
 
-    let pool = PgPoolOptions::new()
-        .max_connections(config.database_max_connections)
-        .min_connections(config.database_min_connections)
-        .acquire_timeout(Duration::from_secs(config.database_acquire_timeout_secs))
-        .idle_timeout(Duration::from_secs(config.database_idle_timeout_secs))
-        .connect(&config.database_url)
-        .await
-        .map_err(|e| {
-            tracing::error!(
-                "Failed to connect connection pool to database at {sanitized_url}: {e}"
-            );
-            AppError::Database(e)
-        })?;
+    let max_retries: u32 = std::env::var("DATABASE_CONNECT_RETRIES")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(15);
+    let retry_delay_secs: u64 = std::env::var("DATABASE_CONNECT_RETRY_INTERVAL_SECS")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(2);
+
+    let mut attempt: u32 = 0;
+    let pool = loop {
+        attempt += 1;
+        let result = PgPoolOptions::new()
+            .max_connections(config.database_max_connections)
+            .min_connections(config.database_min_connections)
+            .acquire_timeout(Duration::from_secs(config.database_acquire_timeout_secs))
+            .idle_timeout(Duration::from_secs(config.database_idle_timeout_secs))
+            .connect(&config.database_url)
+            .await;
+        match result {
+            Ok(pool) => break pool,
+            Err(e) if attempt < max_retries => {
+                tracing::warn!(
+                    "Failed to connect to database at {sanitized_url} (attempt {attempt}/{max_retries}): {e}. Retrying in {retry_delay_secs}s..."
+                );
+                tokio::time::sleep(Duration::from_secs(retry_delay_secs)).await;
+            }
+            Err(e) => {
+                tracing::error!(
+                    "Failed to connect connection pool to database at {sanitized_url} after {attempt} attempts: {e}"
+                );
+                return Err(AppError::Database(e));
+            }
+        }
+    };
 
     // Verify connectivity with a quick ping
     sqlx::query("SELECT 1").execute(&pool).await.map_err(|e| {

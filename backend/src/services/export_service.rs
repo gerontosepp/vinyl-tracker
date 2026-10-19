@@ -1014,11 +1014,11 @@ mod tests {
         doc.decompress();
 
         let mut full_text = String::new();
-        for (_, object) in doc.objects.iter() {
-            if let lopdf::Object::Stream(stream) = object {
-                if let Ok(text) = String::from_utf8(stream.content.clone()) {
-                    full_text.push_str(&text);
-                }
+        for object in doc.objects.values() {
+            if let lopdf::Object::Stream(stream) = object
+                && let Ok(text) = String::from_utf8(stream.content.clone())
+            {
+                full_text.push_str(&text);
             }
         }
 

@@ -60,33 +60,31 @@ describe('DashboardComponent', () => {
         username: 'testuser',
       }),
       isSyncing: signal(false),
-      logout: jasmine.createSpy('logout').and.returnValue(Promise.resolve()),
+      logout: vi.fn().mockName('logout').mockResolvedValue(undefined),
     };
 
     mockApiService = {
-      getRecentListens: jasmine.createSpy('getRecentListens').and.returnValue(of(mockListens)),
-      getTopRecords: jasmine.createSpy('getTopRecords').and.returnValue(of(mockTops)),
-      getCollectionValue: jasmine.createSpy('getCollectionValue').and.returnValue(of(mockValue)),
-      getGenreBreakdown: jasmine.createSpy('getGenreBreakdown').and.returnValue(of(mockGenres)),
-      getCollection: jasmine.createSpy('getCollection').and.returnValue(
-        of({ releases: [], pagination: { total: 0, items: 0, pages: 1, page: 1, per_page: 1 } })
-      ),
-      deleteScan: jasmine.createSpy('deleteScan').and.returnValue(of(void 0)),
+      getRecentListens: vi.fn().mockName('getRecentListens').mockReturnValue(of(mockListens)),
+      getTopRecords: vi.fn().mockName('getTopRecords').mockReturnValue(of(mockTops)),
+      getCollectionValue: vi.fn().mockName('getCollectionValue').mockReturnValue(of(mockValue)),
+      getGenreBreakdown: vi.fn().mockName('getGenreBreakdown').mockReturnValue(of(mockGenres)),
+      getCollection: vi.fn().mockName('getCollection').mockReturnValue(of({ releases: [], pagination: { total: 0, items: 0, pages: 1, page: 1, per_page: 1 } })),
+      deleteScan: vi.fn().mockName('deleteScan').mockReturnValue(of(void 0)),
     };
 
     mockToastService = {
-      showToast: jasmine.createSpy('showToast'),
+      showToast: vi.fn().mockName('showToast'),
     };
 
     mockScannerService = {
       scanLogged: signal(0),
       showScanner: signal(false),
-      closeScanner: jasmine.createSpy('closeScanner'),
+      closeScanner: vi.fn().mockName('closeScanner'),
     };
 
     mockLanguageService = {
       language: signal('en'),
-      translate: jasmine.createSpy('translate').and.callFake((key: string) => {
+      translate: vi.fn().mockName('translate').mockImplementation((key: string) => {
         const dict: Record<string, string> = {
           'dashboard.all': 'All',
           'dashboard.days7': '7 Days',
@@ -119,14 +117,8 @@ describe('DashboardComponent', () => {
     expect(component).toBeTruthy();
     expect(component.startDate()).toBe(component.sevenDaysAgoString);
     expect(component.endDate()).toBe(component.todayString);
-    expect(mockApiService.getRecentListens).toHaveBeenCalledWith(
-      component.sevenDaysAgoString,
-      component.todayString
-    );
-    expect(mockApiService.getTopRecords).toHaveBeenCalledWith(
-      component.sevenDaysAgoString,
-      component.todayString
-    );
+    expect(mockApiService.getRecentListens).toHaveBeenCalledWith(component.sevenDaysAgoString, component.todayString);
+    expect(mockApiService.getTopRecords).toHaveBeenCalledWith(component.sevenDaysAgoString, component.todayString);
     expect(component.recentListens()).toEqual(mockListens);
     expect(component.topRecords()).toEqual(mockTops);
     expect(component.collectionValue()).toEqual(mockValue);
@@ -134,46 +126,34 @@ describe('DashboardComponent', () => {
   });
 
   it('should filter by today when setFilterToday is called', () => {
-    mockApiService.getRecentListens.calls.reset();
-    mockApiService.getTopRecords.calls.reset();
+    mockApiService.getRecentListens.mockClear();
+    mockApiService.getTopRecords.mockClear();
 
     component.setFilterToday();
 
     expect(component.startDate()).toBe(component.todayString);
     expect(component.endDate()).toBe(component.todayString);
-    expect(mockApiService.getRecentListens).toHaveBeenCalledWith(
-      component.todayString,
-      component.todayString
-    );
-    expect(mockApiService.getTopRecords).toHaveBeenCalledWith(
-      component.todayString,
-      component.todayString
-    );
+    expect(mockApiService.getRecentListens).toHaveBeenCalledWith(component.todayString, component.todayString);
+    expect(mockApiService.getTopRecords).toHaveBeenCalledWith(component.todayString, component.todayString);
   });
 
   it('should filter by last 7 days when setFilterSevenDays is called', () => {
     // First change to today
     component.setFilterToday();
-    mockApiService.getRecentListens.calls.reset();
-    mockApiService.getTopRecords.calls.reset();
+    mockApiService.getRecentListens.mockClear();
+    mockApiService.getTopRecords.mockClear();
 
     component.setFilterSevenDays();
 
     expect(component.startDate()).toBe(component.sevenDaysAgoString);
     expect(component.endDate()).toBe(component.todayString);
-    expect(mockApiService.getRecentListens).toHaveBeenCalledWith(
-      component.sevenDaysAgoString,
-      component.todayString
-    );
-    expect(mockApiService.getTopRecords).toHaveBeenCalledWith(
-      component.sevenDaysAgoString,
-      component.todayString
-    );
+    expect(mockApiService.getRecentListens).toHaveBeenCalledWith(component.sevenDaysAgoString, component.todayString);
+    expect(mockApiService.getTopRecords).toHaveBeenCalledWith(component.sevenDaysAgoString, component.todayString);
   });
 
   it('should reset filter when setFilterAll is called', () => {
-    mockApiService.getRecentListens.calls.reset();
-    mockApiService.getTopRecords.calls.reset();
+    mockApiService.getRecentListens.mockClear();
+    mockApiService.getTopRecords.mockClear();
 
     component.setFilterAll();
 
@@ -184,32 +164,29 @@ describe('DashboardComponent', () => {
   });
 
   it('should update dates when onStartDateChange or onEndDateChange is called', () => {
-    mockApiService.getRecentListens.calls.reset();
+    mockApiService.getRecentListens.mockClear();
     component.onStartDateChange('2026-10-01');
     expect(component.startDate()).toBe('2026-10-01');
     expect(mockApiService.getRecentListens).toHaveBeenCalledWith('2026-10-01', component.todayString);
 
-    mockApiService.getRecentListens.calls.reset();
+    mockApiService.getRecentListens.mockClear();
     component.onEndDateChange('2026-10-05');
     expect(component.endDate()).toBe('2026-10-05');
     expect(mockApiService.getRecentListens).toHaveBeenCalledWith('2026-10-01', '2026-10-05');
   });
 
   it('should delete a scan when confirmed', async () => {
-    spyOn(window, 'confirm').and.returnValue(true);
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
 
     await component.handleDelete(1);
 
     expect(mockApiService.deleteScan).toHaveBeenCalledWith(1);
-    expect(mockToastService.showToast).toHaveBeenCalledWith(
-      'Scan deleted successfully',
-      'success'
-    );
+    expect(mockToastService.showToast).toHaveBeenCalledWith('Scan deleted successfully', 'success');
     expect(component.recentListens().length).toBe(0);
   });
 
   it('should not delete a scan when cancelled in confirmation', async () => {
-    spyOn(window, 'confirm').and.returnValue(false);
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
 
     await component.handleDelete(1);
 
@@ -218,8 +195,8 @@ describe('DashboardComponent', () => {
   });
 
   it('should handle delete error gracefully', async () => {
-    spyOn(window, 'confirm').and.returnValue(true);
-    mockApiService.deleteScan.and.returnValue(throwError(() => new Error('Delete failed')));
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    mockApiService.deleteScan.mockReturnValue(throwError(() => new Error('Delete failed')));
 
     await component.handleDelete(1);
 

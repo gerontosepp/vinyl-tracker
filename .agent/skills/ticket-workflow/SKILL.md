@@ -20,6 +20,14 @@ This skill defines the complete operational procedure for processing a GitHub is
 2. **Clarify Requirements & Acceptance Criteria**:
    - Identify affected components (`backend`, `frontend`, `db/migration`, `discogs`, `roon`, `mcp`).
    - If requirements or UX details are ambiguous, clarify with the user (e.g. via `ask_question`).
+3. **Spec-Driven Planning via OpenSpec**:
+   - For non-trivial features, API additions, or architectural changes, initialize an OpenSpec change proposal:
+     ```bash
+     ./scripts/opsx.sh change new <ISSUE_ID>-<short-description>
+     ```
+     (or invoke `/opsx:propose "<short-description>"`).
+   - Draft `proposal.md`, delta specifications under `specs/`, and the step-by-step checklist `tasks.md`.
+   - Align the specification and acceptance criteria with the user before starting production implementation.
 
 ---
 
@@ -51,11 +59,11 @@ Apply the mandatory project rules defined in `.agent/rules/`:
   - Layered architecture (Routes -> Services -> Models / SQLx queries).
   - Rust 2024 edition, Axum 0.8, Tokio 1.x & SQLx 0.8.
   - Strict UTC date/time handling (`chrono::DateTime<Utc>`).
-  - Angular 19 standalone components with Signals and Tailwind CSS.
+  - Angular 22 standalone components with Signals and Tailwind CSS.
   - Multi-language support via `LanguageService` (maintain both `de` and `en` keys).
   - Structured error details via `ProblemDetail` (RFC 7807) and user-friendly toasts.
 - **Database Changes**:
-  - Follow the [`database-migrations`](../database-migrations/SKILL.md) skill for Refinery migrations.
+  - Follow the [`database-migrations`](../database-migrations/SKILL.md) skill for `sqlx::migrate` migrations.
 
 ---
 
@@ -65,9 +73,9 @@ Before requesting user verification, all tests must pass locally:
 
 1. **Backend Formatting, Tests & Linter**:
    ```bash
-   cargo fmt --manifest-path backend/Cargo.toml -- --check
+   cargo fmt --manifest-path backend/Cargo.toml --all -- --check
    cargo test --manifest-path backend/Cargo.toml
-   cargo clippy --manifest-path backend/Cargo.toml -- -D warnings
+   cargo clippy --manifest-path backend/Cargo.toml --all-targets -- -D warnings
    ```
    - Add/update unit and integration tests for all modified logic.
    - Fix formatting issues with `cargo fmt --manifest-path backend/Cargo.toml` if needed.
@@ -75,19 +83,20 @@ Before requesting user verification, all tests must pass locally:
 2. **Frontend Tests & Build**:
    ```bash
    cd frontend
-   npm test -- --watch=false
+   npm test -- --watch=false --coverage
    npm run build
    cd ..
    ```
-   - Ensure all Karma/Jasmine tests pass and zero TypeScript errors exist.
+   - Ensure all Vitest tests pass, coverage stays >= 80 % and zero TypeScript errors exist.
 
 ---
 
 ## 5. Live Documentation Sync
 
 Update project documentation immediately alongside code changes (see [`documentation_standards.md`](../../rules/documentation_standards.md)):
+- **`docs/adr/`**: If the ticket introduces an architectural decision, library/framework selection, security concept, or cross-cutting pattern, create an ADR (`docs/adr/XXXX-<titel>.md`), update `docs/adr/README.md`, and link it in `docs/arc42.md` Section 9.
 - **`README.md`**: Update if features, configuration, endpoints, or UI behavior changed.
-- **`docs/Release-Info.md`**: Add summary bullet points under `## Unreleased`.
+- **`docs/Release-Info.md`**: Add summary bullet points under `## Unreleased` (and run `node scripts/sync-release-info.js`).
 - **`docs/arc42.md`**: Update if architecture, domain models, or database schemas changed.
 
 ---
@@ -110,25 +119,31 @@ Update project documentation immediately alongside code changes (see [`documenta
 
 Once the user approves:
 
-1. **Conventional Commit**:
+1. **Archive OpenSpec Change (if applicable)**:
+   ```bash
+   ./scripts/opsx.sh archive <ISSUE_ID>-<short-description>
+   ```
+   This merges delta specifications into the persistent domain specifications under `openspec/specs/`.
+
+2. **Conventional Commit**:
    ```bash
    git add .
    git commit -m "feat(scope): <short description> (#<ISSUE_ID>)"
    ```
 
-2. **Merge into `develop` with `--no-ff`**:
+3. **Merge into `develop` with `--no-ff`**:
    ```bash
    git checkout develop
    git pull origin develop
    git merge feat/<ISSUE_ID>-<short-description> --no-ff -m "Merge branch 'feat/<ISSUE_ID>-<short-description>' into develop"
    ```
 
-3. **Push to Remote**:
+4. **Push to Remote**:
    ```bash
    git push origin develop
    ```
 
-4. **Delete Local Feature Branch**:
+5. **Delete Local Feature Branch**:
    ```bash
    git branch -d feat/<ISSUE_ID>-<short-description>
    ```

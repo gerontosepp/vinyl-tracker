@@ -1,3 +1,4 @@
+import type { MockedObject } from "vitest";
 import { TestBed } from '@angular/core/testing';
 import { HttpClient, provideHttpClient, withInterceptors, withXhr } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
@@ -10,16 +11,22 @@ import { LanguageService } from '../services/language.service';
 describe('authInterceptor', () => {
   let httpClient: HttpClient;
   let httpMock: HttpTestingController;
-  let mockRouter: jasmine.SpyObj<Router>;
-  let mockAuthService: jasmine.SpyObj<AuthService>;
-  let mockToastService: jasmine.SpyObj<ToastService>;
+  let mockRouter: MockedObject<Router>;
+  let mockAuthService: MockedObject<AuthService>;
+  let mockToastService: MockedObject<ToastService>;
 
   beforeEach(() => {
     resetSessionExpiryThrottle();
 
-    mockRouter = jasmine.createSpyObj<Router>('Router', ['navigate']);
-    mockAuthService = jasmine.createSpyObj<AuthService>('AuthService', ['clearSession']);
-    mockToastService = jasmine.createSpyObj<ToastService>('ToastService', ['showToast']);
+    mockRouter = {
+      navigate: vi.fn().mockName("Router.navigate")
+    } as unknown as MockedObject<Router>;
+    mockAuthService = {
+      clearSession: vi.fn().mockName("AuthService.clearSession")
+    } as unknown as MockedObject<AuthService>;
+    mockToastService = {
+      showToast: vi.fn().mockName("ToastService.showToast")
+    } as unknown as MockedObject<ToastService>;
 
     TestBed.configureTestingModule({
       providers: [
@@ -46,7 +53,7 @@ describe('authInterceptor', () => {
     httpClient.get('/api/test').subscribe();
 
     const req = httpMock.expectOne('/api/test');
-    expect(req.request.headers.has('Authorization')).toBeFalse();
+    expect(req.request.headers.has('Authorization')).toBe(false);
     req.flush({});
   });
 
@@ -56,13 +63,13 @@ describe('authInterceptor', () => {
     httpClient.get('/api/test').subscribe();
 
     const req = httpMock.expectOne('/api/test');
-    expect(req.request.headers.has('Authorization')).toBeTrue();
+    expect(req.request.headers.has('Authorization')).toBe(true);
     expect(req.request.headers.get('Authorization')).toBe('Bearer my-dummy-token');
     req.flush({});
   });
 
   it('should log request latency on success', () => {
-    spyOn(console, 'info');
+    vi.spyOn(console, 'info').mockReturnValue(undefined);
     httpClient.get('/api/test').subscribe();
 
     const req = httpMock.expectOne('/api/test');
@@ -72,8 +79,8 @@ describe('authInterceptor', () => {
   });
 
   it('should log request latency and error on failure', () => {
-    spyOn(console, 'error');
-    httpClient.get('/api/test').subscribe({ error: () => {} });
+    vi.spyOn(console, 'error').mockReturnValue(undefined);
+    httpClient.get('/api/test').subscribe({ error: () => { } });
 
     const req = httpMock.expectOne('/api/test');
     req.error(new ErrorEvent('Network error'), { status: 500 });
@@ -84,39 +91,33 @@ describe('authInterceptor', () => {
   it('should handle 401 error: clear token, clear user session, show toast, and redirect to /login', () => {
     localStorage.setItem('vinyl_auth_token', 'expired-token');
 
-    httpClient.get('/api/collection').subscribe({ error: () => {} });
+    httpClient.get('/api/collection').subscribe({ error: () => { } });
 
     const req = httpMock.expectOne('/api/collection');
     req.flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
 
     expect(localStorage.getItem('vinyl_auth_token')).toBeNull();
     expect(mockAuthService.clearSession).toHaveBeenCalled();
-    expect(mockToastService.showToast).toHaveBeenCalledWith(
-      jasmine.stringMatching(/abgelaufen|expired/i),
-      'error'
-    );
+    expect(mockToastService.showToast).toHaveBeenCalledWith(expect.stringMatching(/abgelaufen|expired/i), 'error');
     expect(mockRouter.navigate).toHaveBeenCalledWith(['/login']);
   });
 
   it('should handle 403 error: clear token, clear user session, show toast, and redirect to /login', () => {
     localStorage.setItem('vinyl_auth_token', 'forbidden-token');
 
-    httpClient.get('/api/analytics/recent').subscribe({ error: () => {} });
+    httpClient.get('/api/analytics/recent').subscribe({ error: () => { } });
 
     const req = httpMock.expectOne('/api/analytics/recent');
     req.flush('Forbidden', { status: 403, statusText: 'Forbidden' });
 
     expect(localStorage.getItem('vinyl_auth_token')).toBeNull();
     expect(mockAuthService.clearSession).toHaveBeenCalled();
-    expect(mockToastService.showToast).toHaveBeenCalledWith(
-      jasmine.stringMatching(/abgelaufen|expired/i),
-      'error'
-    );
+    expect(mockToastService.showToast).toHaveBeenCalledWith(expect.stringMatching(/abgelaufen|expired/i), 'error');
     expect(mockRouter.navigate).toHaveBeenCalledWith(['/login']);
   });
 
   it('should not redirect or clear session on 401/403 for public login endpoint', () => {
-    httpClient.post('/api/users/login', { username: 'test', password: 'wrong' }).subscribe({ error: () => {} });
+    httpClient.post('/api/users/login', { username: 'test', password: 'wrong' }).subscribe({ error: () => { } });
 
     const req = httpMock.expectOne('/api/users/login');
     req.flush('Bad credentials', { status: 401, statusText: 'Unauthorized' });
@@ -127,7 +128,7 @@ describe('authInterceptor', () => {
   });
 
   it('should not redirect or clear session on 401/403 for public register endpoint', () => {
-    httpClient.post('/api/users/register', { username: 'test', password: 'pwd' }).subscribe({ error: () => {} });
+    httpClient.post('/api/users/register', { username: 'test', password: 'pwd' }).subscribe({ error: () => { } });
 
     const req = httpMock.expectOne('/api/users/register');
     req.flush('Forbidden', { status: 403, statusText: 'Forbidden' });
@@ -138,8 +139,8 @@ describe('authInterceptor', () => {
   });
 
   it('should throttle duplicate session expiration alerts from multiple requests', () => {
-    httpClient.get('/api/endpoint-1').subscribe({ error: () => {} });
-    httpClient.get('/api/endpoint-2').subscribe({ error: () => {} });
+    httpClient.get('/api/endpoint-1').subscribe({ error: () => { } });
+    httpClient.get('/api/endpoint-2').subscribe({ error: () => { } });
 
     const req1 = httpMock.expectOne('/api/endpoint-1');
     const req2 = httpMock.expectOne('/api/endpoint-2');

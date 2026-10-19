@@ -8,10 +8,214 @@
     "items": []
   },
   {
+    "version": "v0.10.0",
+    "rawHeader": "v0.10.0 (2026-10-19)",
+    "date": "2026-10-19",
+    "isCurrent": true,
+    "isUnreleased": false,
+    "items": [
+      {
+        "title": "Betrieb: Datenbank-Backup-Skript (`scripts/backup_db.sh`, `#139`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "**Geprüfte Backups**: `pg_dump` im Custom-Format aus dem laufenden PostgreSQL-Container, Prüfung per `pg_restore --list` auf alle Kerntabellen, atomares Schreiben (keine halben Dateien).",
+          "**Aufbewahrung**: Backups älter als 14 Tage werden automatisch gelöscht (`BACKUP_RETENTION_DAYS`); geeignet für nächtliche Cron-Jobs.",
+          "**Wiederherstellung**: `--restore <datei>` mit Sicherheitsabfrage, stoppt das Backend vorher.",
+          "**Automatisch vor Updates**: `deploy_proxmox.sh` sichert die Datenbank vor jedem Update und bricht bei einem fehlgeschlagenen Backup ab (`SKIP_DB_BACKUP=1` zum Überspringen); die Fallback-`.env` des Skripts setzt `CORS_ALLOW_CREDENTIALS=true`."
+        ]
+      },
+      {
+        "title": "Dokumentation an den aktuellen Stand angeglichen (`#137`)",
+        "type": "docs",
+        "typeLabel": "Docs",
+        "details": [
+          "**Agent-Skills korrigiert**: Migrations-Skill nutzt die sqlx-Namenskonvention (`10_…sql` statt `V10__…`), Dependency-, Pipeline- und Ticket-Skills nennen Angular 22, Vitest und kein `--legacy-peer-deps` mehr.",
+          "**arc42 für das Rust-Backend neu gefasst**: Bausteinsicht (Routes/Services/Clients), Sicherheit, Validierung, Fehlerbehandlung, Logging und Delivery ohne Spring-/Java-Altlasten.",
+          "**Vollständige Konfigurationsreferenz** aller Backend-Umgebungsvariablen im README; `CORS_ALLOW_CREDENTIALS` einheitlich `true`.",
+          "**Deployment-Anleitung**: Hinweise zu `TRUSTED_PROXIES` hinter Reverse Proxies, aktueller Runner-Aufbau (Hetzner, ARM64), wirkungslose Spring-Variablen entfernt.",
+          "**Versionen**: MCP-Server auf `0.9.0` angeglichen, `release.sh` hebt künftig alle Cargo-Manifeste an; CI testet gegen PostgreSQL 16 wie die Compose-Dateien."
+        ]
+      },
+      {
+        "title": "Frontend: Unit-Tests mit Vitest statt Karma/Jasmine (`#134`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "**Neuer Test-Runner**: Angular-Builder `@angular/build:unit-test` mit Vitest und `jsdom` – Unit-Tests laufen ohne Browser; alle 227 Tests migriert ([ADR-0018](adr/0018-frontend-unit-tests-mit-vitest.md)).",
+          "**Coverage-Gate unverändert streng**: ≥ 80 % für Statements, Branches, Functions und Lines, jetzt direkt in `angular.json` konfiguriert.",
+          "**Saubere Abhängigkeiten**: `--legacy-peer-deps` aus Dockerfile und CI entfernt; Karma-/Jasmine-Pakete entfernt; die CI installiert für Unit-Tests keinen Chrome mehr."
+        ]
+      },
+      {
+        "title": "MCP Server: Gemeinsame API-Typen mit dem Backend – fünf Tools repariert (`#131`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "**Behobene Fehler**: `sync_collection` und `add_to_collection` meldeten trotz erfolgreichem Sync einen Fehler; `get_top_records`, `get_collection_value` sowie die Ressourcen `vinyl://stats/overview` und `vinyl://collection/value` schlugen beim Einlesen der Backend-Antwort fehl; `scan_barcode` verlor die erkannte Platte und die Discogs-Vorschläge.",
+          "**Neue Crate `vinyl-api-types`** (`backend/crates/vinyl-api-types`): Backend und MCP-Server nutzen dieselben Request-/Response-Typen; Vertragstests schreiben das JSON-Format der API fest. Das API-Format selbst bleibt unverändert.",
+          "**Vertragstests im MCP-Server** gegen einen Mock-Backend-Server mit echten Backend-Antworten.",
+          "⚠️ **MCP-Binary und Backend müssen aus derselben Version stammen.**"
+        ]
+      },
+      {
+        "title": "Backend: Datenbank-Migrationen mit `sqlx::migrate` (`#128`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "**Ein DB-Stack statt zwei**: Migrationen laufen über `sqlx::migrate` und den bestehenden Connection-Pool; `refinery` und `tokio-postgres` entfallen ([ADR-0017](adr/0017-datenbank-migrationen-mit-sqlx-migrate.md)).",
+          "**Automatische Übernahme bestehender Datenbanken**: Beim ersten Start wird der Stand aus `refinery_schema_history`, `flyway_schema_history` oder per Schema-Erkennung nach `_sqlx_migrations` übernommen – ohne bereits angewendete Migrationen erneut auszuführen. Die Alt-Tabellen bleiben erhalten.",
+          "**Schutz vor parallelen Läufen**: Migrationen laufen unter PostgreSQL-Advisory-Lock.",
+          "**Neue Dateinamen**: `backend/migrations/<n>_<name>.sql` (statt `V<n>__<name>.sql`).",
+          "⚠️ **Vor dem Update empfohlen**: Datenbank-Backup per `pg_dump`."
+        ]
+      },
+      {
+        "title": "CI-Sicherheit: Actions auf Commit-SHAs gepinnt & Dependabot (`#125`)",
+        "type": "security",
+        "typeLabel": "Security",
+        "details": [
+          "**Lieferketten-Schutz**: Alle GitHub Actions in `ci.yml` und `release.yml` sind auf vollständige Commit-SHAs gepinnt (Release-Tag als Kommentar). Ein umgehängter Tag kann so keinen fremden Code mehr auf den Self-hosted-Runnern ausführen.",
+          "**Automatische Updates**: Dependabot (`.github/dependabot.yml`) schlägt wöchentlich gruppierte Action-Updates gegen `develop` vor."
+        ]
+      },
+      {
+        "title": "Backend-Robustheit: Request-Timeouts & Graceful Shutdown (`#123`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "**Zweistufige Request-Timeouts**: Standard-Anfragen werden nach `REQUEST_TIMEOUT_SECS` (Default 30 s) abgebrochen, lang laufende Operationen (Discogs-Sync, Preis-Refresh, Export, QR-PDF) erst nach `LONG_REQUEST_TIMEOUT_SECS` (Default 300 s, abgestimmt auf nginx). Überschreitungen liefern HTTP 503 als `ProblemDetail`.",
+          "**Graceful Shutdown**: Bei `SIGTERM`/`Ctrl+C` nimmt das Backend keine neuen Verbindungen mehr an und beendet laufende Anfragen sauber; `stop_grace_period: 30s` in den Produktions-Compose-Dateien."
+        ]
+      },
+      {
+        "title": "Security: Fälschungssicheres Auth-Rate-Limiting & gehärtete Produktions-Ports (`#121`)",
+        "type": "security",
+        "typeLabel": "Security",
+        "details": [
+          "**Keine Umgehung per Header-Spoofing mehr**: `X-Forwarded-For` / `X-Real-IP` werden nur noch ausgewertet, wenn die Anfrage von einem vertrauenswürdigen Proxy (`TRUSTED_PROXIES`, CIDR-Liste) stammt. `X-Forwarded-For` wird von rechts nach links ausgewertet, vom Client vorangestellte Adressen werden ignoriert ([ADR-0016](adr/0016-vertrauenswuerdige-proxies-fuer-client-ip-ermittlung.md)).",
+          "**Eigenes Kontingent pro Client**: Das Backend ermittelt die TCP-Peer-Adresse (`ConnectInfo`), statt alle Anfragen ohne Forwarding-Header einem gemeinsamen `127.0.0.1`-Bucket zuzuordnen.",
+          "**Backend & Datenbank nur noch lokal erreichbar**: In `docker-compose.prod.yml` und `docker-compose.registry.yml` sind Port `8080` und `5432` nur noch auf `127.0.0.1` gebunden; externer Zugriff ausschließlich über nginx."
+        ]
+      },
+      {
+        "title": "Roon Multi-Room Audio: Dynamische Zonenauswahl beim Abspielen (`#67`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "**Interaktiver Zonen-Split-Button**: Der Abspiel-Button im Record-Detail-Modal bietet nun ein Dropdown zur Auswahl aller im Roon Core aktiven Audiozonen (z. B. Wohnzimmer, Büro, Kopfhörer) inklusive aktuellem Wiedergabestatus.",
+          "**Intelligente Vorbelegung & Session-Memory**: Automatische Vorauswahl der in den Benutzereinstellungen hinterlegten Standard-Zone sowie temporäres Merken der zuletzt gewählten Zone in der Browser-Sitzung (`sessionStorage`).",
+          "**Backend-Routing**: Zuverlässige Weiterleitung der gewählten `zone_id` an `POST /api/roon/play` mit nahtlosem Fallback auf die Standard-Zone.",
+          "**Vollständige Lokalisierung**: Alle neuen UI-Elemente und Meldungen sind in Deutsch und Englisch verfügbar (`LanguageService`)."
+        ]
+      },
+      {
+        "title": "MCP Server: Unterstützung für Ressourcen (`vinyl://`), Prompts und Sammlungs-Export (`#108`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "**Tool `export_collection`**: Neues MCP-Tool für KI-Assistenten zum Exportieren der kompletten Vinyl- und CD-Sammlung im strukturierten Format (`json` oder `csv`).",
+          "**MCP-Ressourcen (`vinyl://`)**:",
+          "`vinyl://collection/summary`: Aggregierte Kennzahlen zu Gesamtbestand, Formatverteilung (Vinyl vs. CD), ungespielten Alben und Top-Genres.",
+          "`vinyl://collection/value`: Schätzwerte des Sammlungsmarktwerts (Minimum, Median, Maximum) via Discogs Marketplace.",
+          "`vinyl://stats/overview`: Überblick über jüngste Hör-Events und meistgespielte Alben.",
+          "**MCP-Prompts**:",
+          "`recommend_record`: Interaktive Prompt-Vorlage zur kuratierten Albenempfehlung basierend auf Wunsch-Genre und Stimmung.",
+          "`grading_audit`: Geführter Workflow zur Überprüfung und Einstufung unbewerteter Alben nach Goldmine-Kriterien (Mint bis Poor).",
+          "**Protokoll-Fähigkeiten**: Volle Deklaration der Server-Capabilities für Tools, Resources und Prompts via `rmcp` SDK."
+        ]
+      },
+      {
+        "title": "Qualitätssicherung & CI: Enforce >= 80% Testabdeckung für Rust-Backend (`#111`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "**Verbindliches Coverage-Gate**: Integration von `cargo-llvm-cov` in die CI-Pipeline (`.github/workflows/ci.yml`) mit dem Schwellenwert `--fail-under-lines 80`. Fällt die Zeilenabdeckung unter 80 %, schlägt der Workflow `backend-test` fehl.",
+          "**Umfassende Testausweitung**: Steigerung der Rust-Zeilenabdeckung von 66,8 % auf **81,04 %** durch umfassende Unit- und Integrationstests für Discogs-Client-Endpunkte, `CollectionSyncService`, `ScanService` (QR-Formate, Barcode-Fallbacks, Collection-Matching) und `RecordService` (CRUD, Zustandseinstufung, Preisschätzungen).",
+          "**Regel-Aktualisierung**: Verankerung des Mindestschwellenwerts von 80 % in `.agent/rules/quality_standards.md`."
+        ]
+      },
+      {
+        "title": "Design & Typografie: Umstellung auf Google Font Inter Tight",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "**Neue UI-Typografie**: Umstellung der primären serifenlosen Schriftfamilie (`--font-sans`) von *Outfit* auf *Inter Tight* (Schriftschnitte 300, 400, 500, 600, 700) in `index.html` und `styles.css`.",
+          "**Bessere Informationsdichte**: Die kompaktere Laufweite von *Inter Tight* verbessert die Lesbarkeit und Platzausnutzung in Albenlisten, Tabellen und Metadaten-Badges."
+        ]
+      },
+      {
+        "title": "Tooling & Dev-Ops: Auto-Reconnect für Dozzle Log Viewer (`scripts/open_dozzle.sh`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "**Automatischer Reconnect**: Kontinuierliche Überwachungsschleife, die Verbindungsabbrüche, SSH-Terminierungen oder Socket-Timeouts im Hintergrund erkennt und den SSH-Tunnel zu Dozzle (`localhost:8888`) ohne Benutzereingriff automatisch neu aufbaut.",
+          "**Verbindungs-Keepalive**: Konfiguration von `ServerAliveInterval=10`, `ServerAliveCountMax=2`, `TCPKeepAlive=yes` und `ExitOnForwardFailure=yes` zur schnellen Erkennung toter TCP-Verbindungen (z. B. nach Standby / Ruhezustand).",
+          "**Aktiver Health-Probe & Stale-Socket-Bereinigung**: Automatische Erkennung und Bereinigung blockierter / toter Altprozesse sowie neues Diagnoseflag `--status`."
+        ]
+      },
+      {
+        "title": "Methodik & Entwicklung: Einführung von OpenSpec für Spec-Driven Development (SDD)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "**OpenSpec-Integration (`openspec/`)**: Etablierung des `@fission-ai/openspec`-Frameworks zur strukturierten Vorab-Spezifikation und Planung von Features via `proposal.md`, Delta-Spezifikationen (`specs/`) und Checklisten (`tasks.md`).",
+          "**Native Antigravity-Unterstützung**: Automatisch generierte Agenten-Workflows (`.agents/workflows/`) und Skills (`.agents/skills/`) zur Unterstützung von `/opsx-propose`, `/opsx-apply` und `/opsx-archive`.",
+          "**Initiale System-Baseline**: Festhaltung von 5 Domänen-Spezifikationen (`collection`, `market-valuation`, `scanner`, `roon`, `mcp`) als lebender Source of Truth.",
+          "**CLI-Wrapper (`scripts/opsx.sh`)**: Lokales Hilfsskript zur komfortablen Ausführung von OpenSpec-Befehlen."
+        ]
+      },
+      {
+        "title": "Tooling & Dev-Ops: CI Pipeline-Healer & Watchdog (`scripts/watch_pipeline.sh`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "**Automatisierte CI-Überwachung**: Kontinuierliches oder bedarfsgesteuertes Monitoring aller GitHub Actions Runs via GitHub CLI (`gh run list`) mit OS-Benachrichtigungen bei Fehlschlägen.",
+          "**Automatisierte Log-Diagnose**: Direkte Extraktion fehlerhafter Steps und Fehlermeldungen via `gh run view <ID> --log-failed` (Option `--heal [ID]`).",
+          "**Self-Healing Agent Skill (`.agent/skills/pipeline-healer/`)**: Standardisierter Agenten-Leitfaden zur automatischen Klassifikation, lokalen Reproduktion und Behebung von Fehlern in den Bereichen Rust-Formatting, Clippy-Lints, Unit-/Integrationstests, Coverage-Gate (< 80%), Angular Karma Tests und Production-Builds inklusive Re-Run-Validierung.",
+          "**Architektur-Entscheidung**: Dokumentiert in ADR-0015."
+        ]
+      },
+      {
+        "title": "Architektur-Dokumentation: Einführung von Architecture Decision Records (ADRs)",
+        "type": "refactor",
+        "typeLabel": "Refactor",
+        "details": [
+          "**Neues ADR-Verzeichnis (`docs/adr/`)**: Etablierung eines standardisierten Formats (MADR / Nygard) zur transparenten Nachvollziehbarkeit wesentlicher Architekturentscheidungen inklusive Vorlage.",
+          "**Umfassende Dokumentation (ADR-0001 bis ADR-0015)**: Festhaltung von 15 Kernentscheidungen bezüglich Rust-Backend-Migration, Angular 22 Frontend, nativem Rust MCP Server, AEAD AES-256-GCM Kryptografie, direkter Roon MOO/WebSocket Integration, Rust-Testabdeckungsprüfung (`cargo-llvm-cov`), Hardware-Scanner-Integration (HID Keyboard Wedge), zustandsbasierter Goldmine-Marktwertermittlung, natürlicher Kallax-Sortierung, serverseitiger Vektor-PDF-Generierung (`printpdf`), dreiteiliger Export-Strategie (CSV, JSON, PDF), SSRF-geschütztem Image-Proxy, Multi-Arch-Container-Builds (`cargo-chef` & `$BUILDPLATFORM`), Spec-Driven Development via OpenSpec (ADR-0014) sowie dem CI-Pipeline-Healer & Watchdog (ADR-0015).",
+          "**Regel- & Workflow-Verankerung**: ADRs sind ab sofort fester Bestandteil der Projektregeln (`.agent/rules/documentation_standards.md`), des Ticket-Workflows (`.agent/skills/ticket-workflow/`) und des neuen Skills `adr-management`.",
+          "**Synchronisation**: Verknüpfung in `README.md` und `docs/arc42.md` (Kapitel 9)."
+        ]
+      },
+      {
+        "title": "MCP-Server Erweiterung: Zustandseinstufung, Marktpreis-Refresh & Roon-Status (`#107`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "**`update_record_condition`**: Neues MCP-Tool zur Aktualisierung der Goldmine-Zustandseinstufung von Tonträger und Cover (`media_condition`, `sleeve_condition`) mit automatischer Discogs-Synchronisation (`PATCH /api/records/{id}/condition`).",
+          "**`refresh_collection_prices`**: Neues MCP-Tool zum gezielten oder vollständigen Aktualisieren geschätzter Marktpreise (Min, Median) der Sammlung via Discogs (`POST /api/collection/prices/refresh`).",
+          "**`get_roon_status`**: Neues MCP-Tool zur Detailabfrage des Roon-Integrationsstatus (Verbindung, Pairing, Core-Name, Host/Port, aktive Zone und Zonenauswahl).",
+          "**Tools-Synchronisation & Tests**: Erweiterung der Testsuite auf 22 registrierte MCP-Tools sowie Aktualisierung der Dokumentation."
+        ]
+      },
+      {
+        "title": "MCP-Server Erweiterung: Sammlungs-Management & Roon-Zonenerkennung (`#106`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "**`add_to_collection`**: Neues MCP-Tool zur direkten Aufnahme von Alben via Discogs-Release-ID in die lokale Sammlung inklusive automatischem Discogs-Abgleich (`POST /api/collection/releases/{release_id}`).",
+          "**`log_record_listen`**: Neues MCP-Tool zum direkten Protokollieren von Hör-Events anhand der internen Record-ID oder Discogs-Release-ID (`POST /api/records/{id}/listen`), ohne Barcode-Synthetisierung.",
+          "**`get_roon_zones`**: Neues MCP-Tool zur Abfrage verfügbarer aktiver Roon-Audiozonen und Ausgaberäume (`GET /api/roon/zones`) für gezieltes Multi-Room-Playback.",
+          "**Tools-Synchronisation & Tests**: Ergänzung von `remove_from_collection`, `add_to_collection`, `log_record_listen` und `get_roon_zones` in der Tool-Registrierungs-Testsuite (19 registrierte Tools) sowie Dokumentation in `mcp/README.md`."
+        ]
+      }
+    ]
+  },
+  {
     "version": "v0.9.0",
     "rawHeader": "v0.9.0 (2026-10-18)",
     "date": "2026-10-18",
-    "isCurrent": true,
+    "isCurrent": false,
     "isUnreleased": false,
     "items": [
       {

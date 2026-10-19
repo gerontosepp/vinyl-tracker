@@ -28,22 +28,28 @@ jobs:
         working-directory: ./backend
 
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         fetch-depth: 0
 
     - name: Set up Rust toolchain
-      uses: dtolnay/rust-toolchain@stable
+      uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master (no release tags)
       with:
-        components: clippy, rustfmt
+        toolchain: stable
+        components: clippy, rustfmt, llvm-tools-preview
+
+    - name: Install cargo-llvm-cov
+      uses: taiki-e/install-action@8cca0918f8471c33515202b73f56ab27f2bed283 # v2.87.29
+      with:
+        tool: cargo-llvm-cov
 
     - name: Rust Cache
-      uses: Swatinem/rust-cache@v2
+      uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
       with:
         workspaces: "./backend -> ./backend/target"
 
     - name: Check Formatting
-      run: cargo fmt -- --check
+      run: cargo fmt --all -- --check
 
     - name: Run Cargo Check
       run: cargo check
@@ -61,7 +67,7 @@ jobs:
           -e POSTGRES_USER=vinyl_user \
           -e POSTGRES_PASSWORD=vinyl_password \
           -p 127.0.0.1::5432 \
-          postgres:17-alpine
+          postgres:16-alpine
 
         # Wait until PostgreSQL process is ready
         for i in {1..30}; do
@@ -127,7 +133,7 @@ jobs:
         echo "DATABASE_URL=$SELECTED_URL" >> $GITHUB_ENV
         echo "Configured DATABASE_URL in GITHUB_ENV: $SELECTED_URL"
 
-    - name: Run Backend Integration & Unit Tests
+    - name: Run Backend Tests & Enforce Coverage (>= 80%)
       env:
         CARGO_BUILD_JOBS: 2
         JWT_SECRET: superSecretDevelopmentKeyDoNotUseInProduction123!
@@ -135,7 +141,7 @@ jobs:
         VINYL_ENCRYPTION_SALT: 5c074494c45680a7
       run: |
         echo "Running tests with DATABASE_URL: $DATABASE_URL"
-        cargo test --verbose
+        cargo llvm-cov --summary-only --fail-under-lines 80
 
     - name: Stop PostgreSQL Test Container
       if: always()
@@ -151,35 +157,26 @@ jobs:
         working-directory: ./frontend
 
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         fetch-depth: 0
     
     - name: Set up Node.js
-      uses: actions/setup-node@v6
+      uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
       with:
         node-version: '24'
         cache: 'npm'
         cache-dependency-path: frontend/package-lock.json
 
-    - name: Set up Chrome
-      id: setup-chrome
-      uses: browser-actions/setup-chrome@v2
-      with:
-        chrome-version: stable
-        install-dependencies: true
-
     - name: Install Dependencies
-      run: npm ci --legacy-peer-deps
+      run: npm ci
 
-    - name: Run Karma Unit Tests
-      # Runs Angular Karma unit tests with > 80% coverage check enforced via karma.conf.js
-      env:
-        CHROME_BIN: ${{ steps.setup-chrome.outputs.chrome-path }}
-      run: npm run test -- --watch=false --code-coverage --browsers=ChromeHeadlessCI
+    - name: Run Vitest Unit Tests
+      # Angular unit-test builder (Vitest + jsdom) with >= 80% coverage thresholds from angular.json
+      run: npm run test -- --watch=false --coverage
 
     - name: Cache Playwright Browsers
-      uses: actions/cache@v4
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       id: playwright-cache
       with:
         path: ~/.cache/ms-playwright
@@ -215,22 +212,23 @@ jobs:
         working-directory: ./mcp
 
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         fetch-depth: 0
 
     - name: Set up Rust toolchain
-      uses: dtolnay/rust-toolchain@stable
+      uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master (no release tags)
       with:
+        toolchain: stable
         components: clippy, rustfmt
 
     - name: Rust Cache
-      uses: Swatinem/rust-cache@v2
+      uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
       with:
         workspaces: "./mcp -> ./mcp/target"
 
     - name: Check Formatting
-      run: cargo fmt -- --check
+      run: cargo fmt --all -- --check
 
     - name: Run Cargo Check
       run: cargo check
@@ -248,7 +246,7 @@ jobs:
       packages: write
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
@@ -260,13 +258,13 @@ jobs:
           echo "Project version is $VERSION"
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -274,7 +272,7 @@ jobs:
 
       - name: Extract metadata (tags, labels) for Backend
         id: meta_backend
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
           images: ghcr.io/${{ github.repository_owner }}/vinyl-tracker-backend
           tags: |
@@ -282,7 +280,7 @@ jobs:
             type=raw,value=v${{ steps.project_version.outputs.VERSION }}
 
       - name: Build and Push Backend Image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: ./backend
           platforms: linux/amd64,linux/arm64
@@ -295,7 +293,7 @@ jobs:
 
       - name: Extract metadata (tags, labels) for Frontend
         id: meta_frontend
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
           images: ghcr.io/${{ github.repository_owner }}/vinyl-tracker-frontend
           tags: |
@@ -303,7 +301,7 @@ jobs:
             type=raw,value=v${{ steps.project_version.outputs.VERSION }}
 
       - name: Build and Push Frontend Image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: ./frontend
           target: production
@@ -325,7 +323,7 @@ jobs:
       contents: read
     steps:
       - name: Cleanup old container images (multi-arch safe)
-        uses: dataaxiom/ghcr-cleanup-action@v1
+        uses: dataaxiom/ghcr-cleanup-action@d52806a0dc70b430571a37da1fde39733ffd640f # v1.2.2
         with:
           packages: 'vinyl-tracker-backend,vinyl-tracker-frontend'
           token: ${{ secrets.GITHUB_TOKEN }}

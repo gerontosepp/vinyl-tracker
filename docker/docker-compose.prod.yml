@@ -21,6 +21,8 @@ services:
     build: ../backend
     container_name: vinyl-backend-prod
     restart: always
+    # Time for graceful shutdown to drain in-flight requests before SIGKILL
+    stop_grace_period: 30s
     environment:
       HOST: 0.0.0.0
       PORT: 8080
@@ -34,9 +36,12 @@ services:
       AUTH_COOKIE_MAX_AGE_SECONDS: ${AUTH_COOKIE_MAX_AGE_SECONDS:-86400}
       AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-true}
       AUTH_COOKIE_SAME_SITE: ${AUTH_COOKIE_SAME_SITE:-Lax}
+      # Forwarding headers (X-Forwarded-For) are only honoured from these proxies (nginx in the Docker network)
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-172.16.0.0/12,192.168.0.0/16}
       RUST_LOG: info,backend_rs=info,tower_http=info
     ports:
-      - "8080:8080"
+      # Loopback only: external clients must go through nginx (port 80); local tools (e.g. MCP server) keep access
+      - "127.0.0.1:8080:8080"
     depends_on:
       postgres:
         condition: service_healthy

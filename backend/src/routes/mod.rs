@@ -6,6 +6,7 @@ pub mod proxy;
 pub mod records;
 pub mod roon;
 pub mod scan;
+pub mod timeout;
 pub mod users;
 
 use crate::{error::ProblemDetail, state::AppState};
@@ -18,6 +19,8 @@ use axum::{
     response::IntoResponse,
     routing::get,
 };
+use std::time::Duration;
+use timeout::{RequestTimeouts, request_timeout_middleware};
 use tower_http::{
     cors::{AllowOrigin, CorsLayer},
     trace::TraceLayer,
@@ -68,7 +71,13 @@ pub fn create_app(state: AppState) -> Router {
         cors = cors.allow_origin(AllowOrigin::list(origins));
     }
 
-    // 2. Build Router
+    // 2. Request timeouts (standard vs. long-running Discogs/export routes)
+    let timeouts = RequestTimeouts {
+        standard: Duration::from_secs(state.config.request_timeout_secs),
+        long_running: Duration::from_secs(state.config.long_request_timeout_secs),
+    };
+
+    // 3. Build Router
     Router::new()
         // Actuator endpoints (nested under /actuator)
         .nest("/actuator", actuator::router())
@@ -91,6 +100,10 @@ pub fn create_app(state: AppState) -> Router {
         // API root / ping
         .route("/api/ping", get(|| async { "pong" }))
         .fallback(fallback_handler)
+        .layer(axum::middleware::from_fn_with_state(
+            timeouts,
+            request_timeout_middleware,
+        ))
         .layer(TraceLayer::new_for_http())
         .layer(cors)
         .with_state(state)

@@ -288,6 +288,32 @@ impl VinylApiClient {
             .map_err(|e| format!("Failed to parse sync result JSON: {}", e))
     }
 
+    pub async fn add_to_collection(&self, release_id: i64) -> Result<SyncResultDto, String> {
+        self.ensure_authenticated().await?;
+        let url = format!("{}/api/collection/releases/{}", self.base_url, release_id);
+        let headers = self.build_auth_headers().await;
+
+        let res = self
+            .http_client
+            .post(&url)
+            .headers(headers)
+            .send()
+            .await
+            .map_err(|e| format!("Request to add release to collection failed: {}", e))?;
+
+        if !res.status().is_success() {
+            return Err(format!(
+                "Backend error {}: {}",
+                res.status(),
+                res.text().await.unwrap_or_default()
+            ));
+        }
+
+        res.json::<SyncResultDto>()
+            .await
+            .map_err(|e| format!("Failed to parse sync result JSON: {}", e))
+    }
+
     pub async fn remove_from_collection(
         &self,
         release_id: i64,
@@ -327,7 +353,9 @@ impl VinylApiClient {
         let url = format!("{}/api/scan", self.base_url);
         let headers = self.build_auth_headers().await;
 
-        let payload = serde_json::json!({ "barcode": barcode });
+        let payload = ScanRequest {
+            barcode: barcode.to_string(),
+        };
 
         let res = self
             .http_client
@@ -351,6 +379,32 @@ impl VinylApiClient {
         res.json::<ScanResultDto>()
             .await
             .map_err(|e| format!("Failed to parse scan result: {}", e))
+    }
+
+    pub async fn log_record_listen(&self, id: i64) -> Result<RecordDetailDto, String> {
+        self.ensure_authenticated().await?;
+        let url = format!("{}/api/records/{}/listen", self.base_url, id);
+        let headers = self.build_auth_headers().await;
+
+        let res = self
+            .http_client
+            .post(&url)
+            .headers(headers)
+            .send()
+            .await
+            .map_err(|e| format!("Request to /api/records/{}/listen failed: {}", id, e))?;
+
+        if !res.status().is_success() {
+            return Err(format!(
+                "Backend error {}: {}",
+                res.status(),
+                res.text().await.unwrap_or_default()
+            ));
+        }
+
+        res.json::<RecordDetailDto>()
+            .await
+            .map_err(|e| format!("Failed to parse record detail JSON: {}", e))
     }
 
     pub async fn delete_scan(&self, id: i64) -> Result<String, String> {
@@ -477,7 +531,7 @@ impl VinylApiClient {
             .map_err(|e| format!("Failed to parse top records JSON: {}", e))
     }
 
-    pub async fn get_collection_value(&self) -> Result<CollectionValueDto, String> {
+    pub async fn get_collection_value(&self) -> Result<CollectionValueResponse, String> {
         self.ensure_authenticated().await?;
         let url = format!("{}/api/analytics/collection/value", self.base_url);
         let headers = self.build_auth_headers().await;
@@ -498,12 +552,12 @@ impl VinylApiClient {
             ));
         }
 
-        res.json::<CollectionValueDto>()
+        res.json::<CollectionValueResponse>()
             .await
             .map_err(|e| format!("Failed to parse collection value JSON: {}", e))
     }
 
-    pub async fn get_genre_breakdown(&self) -> Result<serde_json::Value, String> {
+    pub async fn get_genre_breakdown(&self) -> Result<Vec<GenreBreakdownItem>, String> {
         self.ensure_authenticated().await?;
         let url = format!("{}/api/analytics/collection/genres", self.base_url);
         let headers = self.build_auth_headers().await;
@@ -524,7 +578,7 @@ impl VinylApiClient {
             ));
         }
 
-        res.json::<serde_json::Value>()
+        res.json::<Vec<GenreBreakdownItem>>()
             .await
             .map_err(|e| format!("Failed to parse genre breakdown JSON: {}", e))
     }
@@ -622,16 +676,16 @@ impl VinylApiClient {
     pub async fn play_on_roon(
         &self,
         args: &PlayRecordOnRoonArgs,
-    ) -> Result<RoonPlayResponse, String> {
+    ) -> Result<RoonPlayResponseDto, String> {
         self.ensure_authenticated().await?;
         let url = format!("{}/api/roon/play", self.base_url);
         let headers = self.build_auth_headers().await;
 
-        let payload = serde_json::json!({
-            "artist": args.artist,
-            "title": args.title,
-            "zoneId": args.zone_id,
-        });
+        let payload = RoonPlayRequestDto {
+            artist: args.artist.clone(),
+            title: args.title.clone(),
+            zone_id: args.zone_id.clone(),
+        };
 
         let res = self
             .http_client
@@ -650,8 +704,154 @@ impl VinylApiClient {
             ));
         }
 
-        res.json::<RoonPlayResponse>()
+        res.json::<RoonPlayResponseDto>()
             .await
             .map_err(|e| format!("Failed to parse Roon play JSON response: {}", e))
+    }
+
+    pub async fn get_roon_zones(&self) -> Result<Vec<RoonZoneDto>, String> {
+        self.ensure_authenticated().await?;
+        let url = format!("{}/api/roon/zones", self.base_url);
+        let headers = self.build_auth_headers().await;
+
+        let res = self
+            .http_client
+            .get(&url)
+            .headers(headers)
+            .send()
+            .await
+            .map_err(|e| format!("Request to /api/roon/zones failed: {}", e))?;
+
+        if !res.status().is_success() {
+            return Err(format!(
+                "Backend error {}: {}",
+                res.status(),
+                res.text().await.unwrap_or_default()
+            ));
+        }
+
+        res.json::<Vec<RoonZoneDto>>()
+            .await
+            .map_err(|e| format!("Failed to parse Roon zones JSON response: {}", e))
+    }
+
+    pub async fn update_record_condition(
+        &self,
+        id: i64,
+        args: &UpdateRecordConditionArgs,
+    ) -> Result<RecordDetailDto, String> {
+        self.ensure_authenticated().await?;
+        let url = format!("{}/api/records/{}/condition", self.base_url, id);
+        let headers = self.build_auth_headers().await;
+
+        let payload = UpdateConditionRequestDto {
+            media_condition: args.media_condition.clone(),
+            sleeve_condition: args.sleeve_condition.clone(),
+        };
+
+        let res = self
+            .http_client
+            .patch(&url)
+            .headers(headers)
+            .json(&payload)
+            .send()
+            .await
+            .map_err(|e| format!("Request to /api/records/{}/condition failed: {}", id, e))?;
+
+        if !res.status().is_success() {
+            return Err(format!(
+                "Backend error {}: {}",
+                res.status(),
+                res.text().await.unwrap_or_default()
+            ));
+        }
+
+        res.json::<RecordDetailDto>()
+            .await
+            .map_err(|e| format!("Failed to parse record details JSON: {}", e))
+    }
+
+    pub async fn refresh_collection_prices(
+        &self,
+        only_missing: Option<bool>,
+    ) -> Result<PriceRefreshResultDto, String> {
+        self.ensure_authenticated().await?;
+        let url = format!("{}/api/collection/prices/refresh", self.base_url);
+        let headers = self.build_auth_headers().await;
+
+        let only_missing_val = only_missing.unwrap_or(true);
+        let res = self
+            .http_client
+            .post(&url)
+            .headers(headers)
+            .query(&[("onlyMissing", only_missing_val.to_string())])
+            .send()
+            .await
+            .map_err(|e| format!("Request to /api/collection/prices/refresh failed: {}", e))?;
+
+        if !res.status().is_success() {
+            return Err(format!(
+                "Backend error {}: {}",
+                res.status(),
+                res.text().await.unwrap_or_default()
+            ));
+        }
+
+        res.json::<PriceRefreshResultDto>()
+            .await
+            .map_err(|e| format!("Failed to parse price refresh result JSON: {}", e))
+    }
+
+    pub async fn get_roon_status(&self) -> Result<RoonStatusDto, String> {
+        self.ensure_authenticated().await?;
+        let url = format!("{}/api/roon/status", self.base_url);
+        let headers = self.build_auth_headers().await;
+
+        let res = self
+            .http_client
+            .get(&url)
+            .headers(headers)
+            .send()
+            .await
+            .map_err(|e| format!("Request to /api/roon/status failed: {}", e))?;
+
+        if !res.status().is_success() {
+            return Err(format!(
+                "Backend error {}: {}",
+                res.status(),
+                res.text().await.unwrap_or_default()
+            ));
+        }
+
+        res.json::<RoonStatusDto>()
+            .await
+            .map_err(|e| format!("Failed to parse Roon status JSON response: {}", e))
+    }
+
+    pub async fn export_collection(&self, format: &str) -> Result<String, String> {
+        self.ensure_authenticated().await?;
+        let url = format!("{}/api/collection/export", self.base_url);
+        let headers = self.build_auth_headers().await;
+
+        let res = self
+            .http_client
+            .get(&url)
+            .headers(headers)
+            .query(&[("format", format)])
+            .send()
+            .await
+            .map_err(|e| format!("Request to /api/collection/export failed: {}", e))?;
+
+        if !res.status().is_success() {
+            return Err(format!(
+                "Backend export error {}: {}",
+                res.status(),
+                res.text().await.unwrap_or_default()
+            ));
+        }
+
+        res.text()
+            .await
+            .map_err(|e| format!("Failed to read export response body: {}", e))
     }
 }

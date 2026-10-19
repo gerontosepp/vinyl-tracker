@@ -2,7 +2,7 @@
 
 Ein hochperformanter **Model Context Protocol (MCP) Server** in Rust, der die Dienste des **Vinyl Tracker Backends** vollständig für KI-Assistenten (Antigravity IDE, Claude Desktop, Cursor etc.) bereitstellt.
 
-Der Server implementiert **Option 1 (REST-Client)**: Er kommuniziert direkt über die REST-API mit dem Spring Boot Backend. Dadurch werden alle zentralen Validierungs-, Synchronisations- (Discogs API) und Caching-Mechanismen des Backends wiederverwendet.
+Der Server implementiert **Option 1 (REST-Client)**: Er kommuniziert direkt über die REST-API mit dem Vinyl Tracker Backend (Rust/Axum). Dadurch werden alle zentralen Validierungs-, Synchronisations- (Discogs API) und Caching-Mechanismen des Backends wiederverwendet.
 
 ---
 
@@ -12,6 +12,7 @@ Der Server implementiert **Option 1 (REST-Client)**: Er kommuniziert direkt übe
 - **Robuste Authentifizierung:** Unterstützt automatischen Login via Benutzername & Passwort mit Token-Lifecycle-Management sowie direkte JWT-Bearer-Tokens.
 - **Kompakt & Null-Overhead:** Native Binärdatei (~10 MB), startet in Millisekunden und benötigt keine Runtime-Interpreter (Python/Node).
 - **Saubere Standard-I/O-Trennung:** Protokoll-Nachrichten laufen strikt über `stdout`, strukturierte Logs und Fehlermeldungen über `stderr`.
+- **Ressourcen & Prompts:** Unterstützt MCP-Ressourcen (`vinyl://`) und interaktive LLM-Prompts (Empfehlungen & Grading-Audits).
 
 ---
 
@@ -21,7 +22,10 @@ Der Server implementiert **Option 1 (REST-Client)**: Er kommuniziert direkt übe
 | :--- | :--- | :--- |
 | `get_user_collection` | Ruft die persönliche Vinyl-Sammlung ab | `page` (int), `per_page` (int), `sort` (`artist`, `listens`, `addedAt`), `sort_order` (`asc`, `desc`), `min_plays` (int), `search` (str) |
 | `sync_collection` | Startet den bidirektionalen Abgleich mit Discogs | *keine* |
+| `add_to_collection` | Fügt ein Album via Discogs-Release-ID zur Sammlung hinzu und gleicht ab | `release_id` (int) |
+| `remove_from_collection` | Entfernt ein Album aus der Sammlung und von Discogs | `release_id` (int), `instance_id` (int, optional) |
 | `scan_barcode` | Protokolliert ein Hör-Event via Barcode oder QR-Code | `barcode` (str, z. B. `discogs-id:12345` oder UPC/EAN) |
+| `log_record_listen` | Protokolliert ein Hör-Event direkt per Record-ID oder Release-ID | `id` (int) |
 | `delete_scan` | Löscht ein einzelnes Hör-Event | `id` (int) |
 | `reset_all_listens` | Setzt alle Hör-Events des Nutzers zurück | *keine* |
 | `get_recent_listens` | Historie der zuletzt gehörten Platten | `from` (YYYY-MM-DD), `to` (YYYY-MM-DD) |
@@ -33,7 +37,31 @@ Der Server implementiert **Option 1 (REST-Client)**: Er kommuniziert direkt übe
 | `get_unplayed_records` | Ungespielte Platten der Sammlung ("Shelf of Shame") | `page` (int), `per_page` (int) |
 | `get_record_details` | Vollständige Album-Details mit Tracklist, Formaten, Labels & Play-History | `id` (int, interne Record-ID oder Discogs-Release-ID) |
 | `search_discogs` | Globale Discogs-Datenbanksuche nach Alben/Künstlern | `query` (str), `type` (str, optional), `page` (int), `per_page` (int) |
+| `get_roon_zones` | Ruft aktive Roon-Audiozonen und Ausgaberäume ab | *keine* |
+| `get_roon_status` | Prüft Verbindungs- und Pairing-Status des lokalen Roon Cores | *keine* |
 | `play_record_on_roon` | Startet direkte Wiedergabe ('Play Now') eines Albums auf einem konfigurierten Roon Core | `artist` (str), `title` (str), `zone_id` (str, optional) |
+| `update_record_condition` | Aktualisiert die Goldmine-Zustandseinstufung (Media/Sleeve) einer Platte | `id` (int), `media_condition` (str, optional), `sleeve_condition` (str, optional) |
+| `refresh_collection_prices` | Aktualisiert Discogs-Marktpreise (Min, Median) der Sammlung | `only_missing` (bool, optional, default `true`) |
+| `export_collection` | Exportiert die komplette Nutzersammlung als strukturierte Daten | `format` (`json` oder `csv`) |
+
+---
+
+## 📦 Bereitgestellte MCP-Ressourcen
+
+| URI | Name | MIME-Type | Beschreibung |
+| :--- | :--- | :--- | :--- |
+| `vinyl://collection/summary` | `collection_summary` | `application/json` | Gesamtübersicht der Sammlung (Gesamtzahl, Vinyl vs. CD, ungespielte Alben, Genreverteilung) |
+| `vinyl://collection/value` | `collection_value` | `application/json` | Schätzwerte der Sammlung nach Discogs-Marktplatz (Minimum, Median, Maximum) |
+| `vinyl://stats/overview` | `stats_overview` | `application/json` | Zusammenfassung der Hörstatistiken (Top-Platten und jüngste Hör-Events) |
+
+---
+
+## 💡 Bereitgestellte MCP-Prompts
+
+| Prompt-Name | Beschreibung | Argumente |
+| :--- | :--- | :--- |
+| `recommend_record` | Kuratierte Empfehlungsvorlage für Vinyl-Alben basierend auf Genre und Stimmung | `genre` (str, optional), `mood` (str, optional) |
+| `grading_audit` | Interaktive Prüfung und Einstufung unbewerteter Alben nach Goldmine-Standard | `limit` (int, optional, Standard: 10) |
 
 ---
 
@@ -49,7 +77,7 @@ Einfach entpacken und den Pfad in deiner `mcp_config.json` eintragen.
 ### Option B: Aus dem Quellcode bauen
 #### Voraussetzungen
 - **Rust Toolchain:** Version 1.88+ (z. B. via `rustup` oder Homebrew `brew install rust`)
-- **Vinyl Tracker Backend:** Laufendes Spring Boot Backend (z. B. via Docker `docker compose up -d` oder lokal auf Port 8080)
+- **Vinyl Tracker Backend:** Laufendes Rust/Axum-Backend (z. B. via Docker `docker compose up -d` oder lokal auf Port 8080) **aus derselben Version** wie der MCP-Server – beide nutzen die gemeinsamen API-Typen aus `backend/crates/vinyl-api-types`, daher muss der vollständige Repo-Checkout zum Bauen vorhanden sein
 
 ### 1. Repository-Verzeichnis aufrufen
 ```bash

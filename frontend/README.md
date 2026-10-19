@@ -1,8 +1,8 @@
 # Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.27.
+This project uses [Angular CLI](https://github.com/angular/angular-cli) 22.
 
-This is the Angular 19 PWA frontend for Vinyl Tracker (the frontend built and deployed by Docker Compose). See the [root README](../README.md) for full setup, SSL, and Docker instructions.
+This is the Angular 22 PWA frontend for Vinyl Tracker (the frontend built and deployed by Docker Compose). See the [root README](../README.md) for full setup, SSL, and Docker instructions.
 
 ## Development server
 
@@ -40,13 +40,14 @@ This will compile your project and store the build artifacts in the `dist/` dire
 
 ## Running unit tests
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+To execute unit tests with [Vitest](https://vitest.dev) (Angular `unit-test` builder, `jsdom`), use the following command:
 
 ```bash
-npm test
+npm test                              # watch mode
+npm test -- --watch=false --coverage  # single run with >=80% coverage thresholds
 ```
 
-The project enforces >80% code coverage for core services, utilities, and components.
+The project enforces >=80% code coverage for core services, utilities, and components.
 
 ## Running end-to-end tests
 

@@ -9,6 +9,12 @@
 
 ## Unreleased
 
+- **Betrieb: Datenbank-Backup-Skript (`scripts/backup_db.sh`, `#139`)**:
+  - **Geprüfte Backups**: `pg_dump` im Custom-Format aus dem laufenden PostgreSQL-Container, Prüfung per `pg_restore --list` auf alle Kerntabellen, atomares Schreiben (keine halben Dateien).
+  - **Aufbewahrung**: Backups älter als 14 Tage werden automatisch gelöscht (`BACKUP_RETENTION_DAYS`); geeignet für nächtliche Cron-Jobs.
+  - **Wiederherstellung**: `--restore <datei>` mit Sicherheitsabfrage, stoppt das Backend vorher.
+  - **Automatisch vor Updates**: `deploy_proxmox.sh` sichert die Datenbank vor jedem Update und bricht bei einem fehlgeschlagenen Backup ab (`SKIP_DB_BACKUP=1` zum Überspringen); die Fallback-`.env` des Skripts setzt `CORS_ALLOW_CREDENTIALS=true`.
+
 - **Dokumentation an den aktuellen Stand angeglichen (`#137`)**:
   - **Agent-Skills korrigiert**: Migrations-Skill nutzt die sqlx-Namenskonvention (`10_…sql` statt `V10__…`), Dependency-, Pipeline- und Ticket-Skills nennen Angular 22, Vitest und kein `--legacy-peer-deps` mehr.
   - **arc42 für das Rust-Backend neu gefasst**: Bausteinsicht (Routes/Services/Clients), Sicherheit, Validierung, Fehlerbehandlung, Logging und Delivery ohne Spring-/Java-Altlasten.

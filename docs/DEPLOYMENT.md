@@ -75,7 +75,7 @@ wget https://raw.githubusercontent.com/gerontosepp/vinyl-tracker/main/.env.examp
       IMAGE_TAG=latest
       ```
 5.  **Datenbank-Migrationen**:
-    Das Backend führt beim Start automatisch alle ausstehenden Migrationen aus (`sqlx::migrate`, Historie in `_sqlx_migrations`). Bestehende Datenbanken mit `refinery_schema_history` oder `flyway_schema_history` werden beim ersten Start automatisch übernommen, ohne Migrationen erneut auszuführen ([ADR-0017](adr/0017-datenbank-migrationen-mit-sqlx-migrate.md)). Erstellen Sie vor Updates trotzdem ein Backup (`docker exec vinyl-postgres-prod pg_dump -U <user> <db> > backup.sql`).
+    Das Backend führt beim Start automatisch alle ausstehenden Migrationen aus (`sqlx::migrate`, Historie in `_sqlx_migrations`). Bestehende Datenbanken mit `refinery_schema_history` oder `flyway_schema_history` werden beim ersten Start automatisch übernommen, ohne Migrationen erneut auszuführen ([ADR-0017](adr/0017-datenbank-migrationen-mit-sqlx-migrate.md)). Erstellen Sie vor Updates trotzdem ein Backup (siehe [Datenbank-Backup](#datenbank-backup--wiederherstellung)).
 6.  **Weitere Backend-Einstellungen**:
     Alle Umgebungsvariablen des Backends mit Defaults sind im [README](../README.md#2-setup-environment-variables) aufgeführt. Für den Produktivbetrieb wichtig: `APP_ENV=production` (aktiviert `Secure`-Cookies und verbietet den Entwicklungs-`JWT_SECRET`) sowie eigene Werte für `VINYL_ENCRYPTION_PASSWORD`/`VINYL_ENCRYPTION_SALT`.
 7.  **Logging**:
@@ -104,6 +104,27 @@ docker compose -f docker/docker-compose.registry.yml up -d
 *Images werden standardmäßig als `latest` gezogen.*
 
 Die Anwendung läuft nun auf **Port 80** der Zielmaschine.
+
+### Datenbank-Backup & Wiederherstellung
+
+Das Skript `scripts/backup_db.sh` sichert die Datenbank aus dem laufenden Container `vinyl-postgres-prod` per `pg_dump` (komprimiertes Custom-Format), prüft das Backup (lesbar, enthält `app_user`, `record_cache`, `collection_item`, `listen_event`) und löscht Backups, die älter als 14 Tage sind. Zugangsdaten werden aus dem Container gelesen – kein Passwort nötig.
+
+```bash
+# Backup erstellen (z. B. vor jedem Update)
+./scripts/backup_db.sh                      # -> ./backups/vinyl-<datum>-<zeit>.dump
+
+# Nächtlich per Cron (03:00 Uhr)
+0 3 * * * cd /opt/vinyl-tracker && ./scripts/backup_db.sh >> backups/backup.log 2>&1
+
+# Wiederherstellen (stoppt das Backend, fragt nach Bestätigung)
+./scripts/backup_db.sh --restore backups/vinyl-<datum>-<zeit>.dump
+```
+
+`./scripts/deploy_proxmox.sh` erstellt vor jedem Update automatisch ein solches Backup (nach dem Herunterladen der neuen Images, vor dem Stoppen der alten Container). Schlägt das Backup fehl, bricht das Deployment ab; mit `SKIP_DB_BACKUP=1` lässt sich der Schritt bewusst überspringen. Bei einer Erstinstallation (noch keine Datenbank) entfällt er automatisch.
+
+Anpassbar über Umgebungsvariablen: `VINYL_DB_CONTAINER`, `VINYL_BACKEND_CONTAINER`, `BACKUP_DIR` (Default `./backups`), `BACKUP_RETENTION_DAYS` (Default `14`, `0` = alle behalten). Kopieren Sie Backups zusätzlich auf ein anderes System (z. B. per `scp` oder `rsync`) – ein Backup auf demselben Server schützt nicht vor dessen Ausfall.
+
+Nach einem Restore die zum Backup passende Anwendungsversion starten (`./scripts/deploy_proxmox.sh <version>`). Da `--restore` auch `_sqlx_migrations` zurücksetzt, findet eine ältere Version ihre Migrationshistorie unverändert vor.
 
 ## 5. Deployment hinter einem Reverse Proxy (z.B. Proxmox)
 

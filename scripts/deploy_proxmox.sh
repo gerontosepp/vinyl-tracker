@@ -10,6 +10,9 @@ set -e
 #   ./scripts/deploy_proxmox.sh                     # Deploy latest version from default GHCR
 #   ./scripts/deploy_proxmox.sh v0.9.0              # Deploy specific version v0.9.0
 #   ./scripts/deploy_proxmox.sh latest myuser/      # Custom registry prefix
+#
+# Before an update, a verified database backup is created via scripts/backup_db.sh
+# (skip with SKIP_DB_BACKUP=1). A failed backup aborts the deployment.
 # ==============================================================================
 
 # Output Colors
@@ -70,7 +73,7 @@ VINYL_ENCRYPTION_PASSWORD=changeit-for-production-use-23948239048
 VINYL_ENCRYPTION_SALT=5c074494c45680a7
 JWT_SECRET=superSecretDevelopmentKeyDoNotUseInProduction123!
 CORS_ALLOWED_ORIGINS=https://localhost:5173,https://127.0.0.1:5173
-CORS_ALLOW_CREDENTIALS=false
+CORS_ALLOW_CREDENTIALS=true
 IMAGE_PROXY_ALLOWED_HOSTS=i.discogs.com,s.discogs.com,api.discogs.com
 AUTH_COOKIE_NAME=vinyl_token
 AUTH_COOKIE_MAX_AGE_SECONDS=86400
@@ -148,6 +151,20 @@ export VERSION_TAG="${VERSION}"
 
 echo "Pulling latest container images..."
 $DOCKER_COMPOSE_CMD --env-file .env -f "$COMPOSE_FILE" pull || echo -e "${YELLOW}Warning: Pull skipped or using local images.${NC}"
+
+# Back up the existing database before containers are replaced (no-op on first installation)
+DB_CONTAINER_ID=$($DOCKER_COMPOSE_CMD --env-file .env -f "$COMPOSE_FILE" ps -q postgres 2>/dev/null || true)
+if [ "${SKIP_DB_BACKUP:-0}" = "1" ]; then
+    echo -e "${YELLOW}Database backup skipped (SKIP_DB_BACKUP=1).${NC}"
+elif [ -z "$DB_CONTAINER_ID" ]; then
+    echo "No running database container found – skipping backup (first installation)."
+elif [ ! -x "scripts/backup_db.sh" ]; then
+    echo -e "${YELLOW}Warning: scripts/backup_db.sh not found – skipping database backup.${NC}"
+else
+    echo "Creating database backup before update..."
+    VINYL_DB_CONTAINER="$DB_CONTAINER_ID" ./scripts/backup_db.sh \
+        || { echo -e "${RED}Error: Database backup failed – deployment aborted. Use SKIP_DB_BACKUP=1 to override.${NC}"; exit 1; }
+fi
 
 echo "Stopping existing containers..."
 $DOCKER_COMPOSE_CMD --env-file .env -f "$COMPOSE_FILE" down --remove-orphans || true

@@ -19,6 +19,9 @@ playwright-report/
 .settings/
 *.class
 
+# Database backups (scripts/backup_db.sh)
+backups/
+
 # Secrets
 .secrets.local
 curl_output_*

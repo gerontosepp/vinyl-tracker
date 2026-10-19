@@ -1,0 +1,14 @@
+version: 2
+updates:
+  # Keeps SHA-pinned GitHub Actions up to date (the "# vX.Y.Z" comments are updated alongside the SHA)
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    target-branch: "develop"
+    schedule:
+      interval: "weekly"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+    commit-message:
+      prefix: "chore(ci)"

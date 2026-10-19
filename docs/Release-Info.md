@@ -9,6 +9,10 @@
 
 ## Unreleased
 
+- **CI-Sicherheit: Actions auf Commit-SHAs gepinnt & Dependabot (`#125`)**:
+  - **Lieferketten-Schutz**: Alle GitHub Actions in `ci.yml` und `release.yml` sind auf vollständige Commit-SHAs gepinnt (Release-Tag als Kommentar). Ein umgehängter Tag kann so keinen fremden Code mehr auf den Self-hosted-Runnern ausführen.
+  - **Automatische Updates**: Dependabot (`.github/dependabot.yml`) schlägt wöchentlich gruppierte Action-Updates gegen `develop` vor.
+
 - **Backend-Robustheit: Request-Timeouts & Graceful Shutdown (`#123`)**:
   - **Zweistufige Request-Timeouts**: Standard-Anfragen werden nach `REQUEST_TIMEOUT_SECS` (Default 30 s) abgebrochen, lang laufende Operationen (Discogs-Sync, Preis-Refresh, Export, QR-PDF) erst nach `LONG_REQUEST_TIMEOUT_SECS` (Default 300 s, abgestimmt auf nginx). Überschreitungen liefern HTTP 503 als `ProblemDetail`.
   - **Graceful Shutdown**: Bei `SIGTERM`/`Ctrl+C` nimmt das Backend keine neuen Verbindungen mehr an und beendet laufende Anfragen sauber; `stop_grace_period: 30s` in den Produktions-Compose-Dateien.

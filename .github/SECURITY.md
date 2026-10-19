@@ -6,8 +6,8 @@ Only the latest released version of Vinyl Tracker receives active security updat
 
 | Version | Supported          |
 | :---    | :---               |
-| 2.4.x   | :white_check_mark: |
-| < 2.4.0 | :x:                |
+| 0.9.x   | :white_check_mark: |
+| < 0.9.0 | :x:                |
 
 ## Reporting a Vulnerability
 

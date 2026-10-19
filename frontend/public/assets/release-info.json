@@ -7,6 +7,15 @@
     "isUnreleased": true,
     "items": [
       {
+        "title": "CI-Sicherheit: Actions auf Commit-SHAs gepinnt & Dependabot (`#125`)",
+        "type": "security",
+        "typeLabel": "Security",
+        "details": [
+          "**Lieferketten-Schutz**: Alle GitHub Actions in `ci.yml` und `release.yml` sind auf vollständige Commit-SHAs gepinnt (Release-Tag als Kommentar). Ein umgehängter Tag kann so keinen fremden Code mehr auf den Self-hosted-Runnern ausführen.",
+          "**Automatische Updates**: Dependabot (`.github/dependabot.yml`) schlägt wöchentlich gruppierte Action-Updates gegen `develop` vor."
+        ]
+      },
+      {
         "title": "Backend-Robustheit: Request-Timeouts & Graceful Shutdown (`#123`)",
         "type": "feat",
         "typeLabel": "Feature",

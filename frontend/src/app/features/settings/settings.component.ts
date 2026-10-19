@@ -14,6 +14,7 @@ import { getErrorMessage } from '../../core/utils/error';
 import { RoonStatus } from '../../core/types';
 import { LucideDownload, LucideLogOut, LucideSettings, LucideHistory } from '@lucide/angular';
 import { ReleaseNotesComponent } from './components/release-notes/release-notes.component';
+import { APP_VERSION } from '../../core/constants/release-info.data';
 
 @Component({
   selector: 'app-settings',
@@ -75,7 +76,7 @@ import { ReleaseNotesComponent } from './components/release-notes/release-notes.
               <span
                 class="text-[10px] font-mono font-extrabold px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300"
               >
-                v0.8.0
+                v{{ appVersion }}
               </span>
             </button>
           </div>
@@ -609,6 +610,8 @@ export class SettingsComponent {
   readonly scannerService = inject(ScannerService);
   private readonly toastService = inject(ToastService);
   private readonly router = inject(Router);
+
+  readonly appVersion = APP_VERSION;
 
   discogsUsername = this.authService.user()?.discogsUsername || '';
   token = '';

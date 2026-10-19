@@ -1,7 +1,9 @@
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ReleaseInfoService } from '../../../../core/services/release-info.service';
 import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
+import { InlineMarkdownPipe } from '../../../../core/pipes/inline-markdown.pipe';
 import { ChangeType, ReleaseEntry } from '../../../../core/models/release-info.model';
 import {
   LucideHistory,
@@ -16,7 +18,9 @@ import {
   standalone: true,
   imports: [
     FormsModule,
+    NgTemplateOutlet,
     TranslatePipe,
+    InlineMarkdownPipe,
     LucideHistory,
     LucideChevronDown,
     LucideChevronUp,
@@ -197,11 +201,11 @@ import {
                         </span>
                         <div class="flex-1">
                           <h4 class="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 leading-snug">
-                            {{ item.title }}
+                            <ng-container *ngTemplateOutlet="inlineMarkdown; context: { $implicit: item.title }" />
                           </h4>
                           @if (item.summary) {
                             <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">
-                              {{ item.summary }}
+                              <ng-container *ngTemplateOutlet="inlineMarkdown; context: { $implicit: item.summary }" />
                             </p>
                           }
                         </div>
@@ -212,7 +216,7 @@ import {
                         <ul class="pl-4 space-y-1.5 text-xs text-slate-600 dark:text-slate-400 list-disc marker:text-indigo-400 dark:marker:text-indigo-500">
                           @for (detail of item.details; track detail) {
                             <li class="leading-relaxed">
-                              {{ detail }}
+                              <ng-container *ngTemplateOutlet="inlineMarkdown; context: { $implicit: detail }" />
                             </li>
                           }
                         </ul>
@@ -242,6 +246,25 @@ import {
         }
       </div>
     </div>
+
+    <!-- Inline Markdown (bold, italic, code) from Release-Info.md, rendered without innerHTML -->
+    <ng-template #inlineMarkdown let-text>
+      @for (seg of text | inlineMarkdown; track $index) {
+        @if (seg.code) {
+          <code
+            class="px-1 py-px rounded bg-slate-100 dark:bg-slate-800 text-[0.95em] font-mono text-slate-800 dark:text-slate-200"
+            [class.font-bold]="seg.bold"
+            [class.italic]="seg.italic"
+          >{{ seg.text }}</code>
+        } @else if (seg.bold) {
+          <strong class="font-bold text-slate-800 dark:text-slate-200" [class.italic]="seg.italic">{{ seg.text }}</strong>
+        } @else if (seg.italic) {
+          <em>{{ seg.text }}</em>
+        } @else {
+          <span>{{ seg.text }}</span>
+        }
+      }
+    </ng-template>
   `
 })
 export class ReleaseNotesComponent {

@@ -1,5 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { ReleaseInfoService } from './release-info.service';
+import { APP_VERSION } from '../constants/release-info.data';
+import packageJson from '../../../../package.json';
 
 describe('ReleaseInfoService', () => {
   let service: ReleaseInfoService;
@@ -13,6 +15,10 @@ describe('ReleaseInfoService', () => {
 
   it('should be created', () => {
     expect(service).toBeTruthy();
+  });
+
+  it('should expose APP_VERSION in sync with package.json (run `npm run sync:releases` if this fails)', () => {
+    expect(APP_VERSION).toBe(packageJson.version);
   });
 
   it('should load initial releases', () => {

@@ -43,6 +43,38 @@ describe('ReleaseNotesComponent', () => {
     expect(badge?.textContent).toContain(releaseInfoService.currentRelease()?.version || 'v0.8.0');
   });
 
+  it('should render inline markdown of release items as elements instead of raw markers', () => {
+    releaseInfoService.releases.set([
+      {
+        version: 'v9.9.9',
+        rawHeader: 'v9.9.9',
+        isCurrent: true,
+        isUnreleased: false,
+        items: [
+          {
+            title: 'Tooling (`scripts/watch_pipeline.sh`)',
+            type: 'feat',
+            details: ['**Automatisierte CI-Überwachung**: via `gh run list` für *alle* Runs'],
+          },
+        ],
+      },
+    ]);
+    releaseInfoService.expandAll();
+    fixture.detectChanges();
+
+    const el: HTMLElement = fixture.nativeElement;
+    const title = el.querySelector('h4');
+    expect(title?.textContent?.trim()).toBe('Tooling (scripts/watch_pipeline.sh)');
+    expect(title?.querySelector('code')?.textContent).toBe('scripts/watch_pipeline.sh');
+
+    const detail = el.querySelector('li');
+    expect(detail?.textContent?.trim()).toBe('Automatisierte CI-Überwachung: via gh run list für alle Runs');
+    expect(detail?.querySelector('strong')?.textContent).toBe('Automatisierte CI-Überwachung');
+    expect(detail?.querySelector('code')?.textContent).toBe('gh run list');
+    expect(detail?.querySelector('em')?.textContent).toBe('alle');
+    expect(detail?.textContent).not.toMatch(/[*`]/);
+  });
+
   it('should render releases list', () => {
     const el: HTMLElement = fixture.nativeElement;
     const versionBadges = el.querySelectorAll('span.font-mono');

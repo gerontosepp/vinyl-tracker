@@ -9,6 +9,7 @@ import { of, throwError } from 'rxjs';
 import { signal, NO_ERRORS_SCHEMA } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { RoonStatus } from '../../core/types';
+import { APP_VERSION } from '../../core/constants/release-info.data';
 
 describe('SettingsComponent', () => {
   let component: SettingsComponent;
@@ -178,6 +179,11 @@ describe('SettingsComponent', () => {
 
     component.scannerService.clearLastScannedCode();
     expect(component.scannerService.lastScannedCode()).toBeNull();
+  });
+
+  it('should show the current app version on the release notes tab', () => {
+    const badges = Array.from<HTMLElement>(fixture.nativeElement.querySelectorAll('button span'));
+    expect(badges.some((el) => el.textContent?.trim() === `v${APP_VERSION}`)).toBe(true);
   });
 
   it('should switch tabs and render the release notes / changes section', () => {

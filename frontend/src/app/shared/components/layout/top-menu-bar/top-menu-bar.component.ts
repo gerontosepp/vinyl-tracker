@@ -4,6 +4,7 @@ import { AuthService } from '../../../../core/services/auth.service';
 import { LanguageService } from '../../../../core/services/language.service';
 import { ScannerService } from '../../../../core/services/scanner.service';
 import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
+import { APP_VERSION } from '../../../../core/constants/release-info.data';
 import { LucideLogOut, LucideSettings, LucideGlobe } from '@lucide/angular';
 
 @Component({
@@ -87,7 +88,7 @@ export class TopMenuBarComponent {
   readonly scannerService = inject(ScannerService);
   private readonly router = inject(Router);
 
-  readonly appVersion = '0.10.0';
+  readonly appVersion = APP_VERSION;
 
   toggleLanguage(): void {
     const current = this.languageService.language();

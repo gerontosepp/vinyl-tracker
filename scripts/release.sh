@@ -28,11 +28,6 @@ echo "Updating Frontend to $NEW_VERSION..."
 sedi "s/\"version\": \"$CURRENT_VERSION\"/\"version\": \"$NEW_VERSION\"/" frontend/package.json
 sedi "s/\"version\": \"$CURRENT_VERSION\"/\"version\": \"$NEW_VERSION\"/" frontend/package-lock.json 2>/dev/null || true
 
-# Update versions in Angular component files
-sedi "s/appVersion = '$CURRENT_VERSION'/appVersion = '$NEW_VERSION'/" frontend/src/app/shared/components/layout/top-menu-bar/top-menu-bar.component.ts
-sedi "s/v$CURRENT_VERSION/v$NEW_VERSION/g" frontend/src/app/features/auth/login/login.component.ts
-sedi "s/v$CURRENT_VERSION/v$NEW_VERSION/g" frontend/src/app/features/auth/register/register.component.ts
-
 echo "Updating Backend, shared API types and MCP server to $NEW_VERSION..."
 # Update Cargo.toml versions (backend workspace incl. vinyl-api-types, MCP server)
 for manifest in backend/Cargo.toml backend/crates/vinyl-api-types/Cargo.toml mcp/Cargo.toml; do
@@ -45,15 +40,12 @@ echo "Updating README.md to v$NEW_VERSION..."
 # Update the first line of README.md to "# Vinyl Tracker v$NEW_VERSION"
 sedi "1s/.*/# Vinyl Tracker v$NEW_VERSION/" README.md
 
-echo "Syncing release info..."
+echo "Syncing release info and APP_VERSION for the frontend version badges..."
 node scripts/sync-release-info.js
 
 echo "Committing changes..."
 git add frontend/package.json frontend/package-lock.json backend/Cargo.toml backend/Cargo.lock README.md \
     backend/crates/vinyl-api-types/Cargo.toml mcp/Cargo.toml mcp/Cargo.lock \
-    frontend/src/app/shared/components/layout/top-menu-bar/top-menu-bar.component.ts \
-    frontend/src/app/features/auth/login/login.component.ts \
-    frontend/src/app/features/auth/register/register.component.ts \
     frontend/src/app/core/constants/release-info.data.ts \
     frontend/public/assets/release-info.json
 git commit -m "chore(release): bump version to $NEW_VERSION"

@@ -11,6 +11,18 @@
 
 ---
 
+## v0.10.1 (2026-10-19)
+
+- **Fix: Formatierung in den Versionshinweisen (`#145`)**:
+  - **Lesbare Hervorhebungen**: Fett, kursiv und Code aus der Release-Info werden im Tab „Versionshinweise“ formatiert dargestellt statt als `**`- und Backtick-Zeichen; Links erscheinen mit ihrem Text.
+  - **Sicher ohne HTML**: Neue Pipe `inlineMarkdown` zerlegt den Text in Abschnitte, die das Template als Elemente rendert – kein `innerHTML`, keine neue Abhängigkeit.
+
+- **Fix: Versionsanzeige im Tab „Versionshinweise“ (`#143`)**:
+  - **Korrekte Version**: Das Badge im Einstellungs-Tab „Versionshinweise“ zeigte seit v0.8.0 eine veraltete Version.
+  - **Eine Quelle für alle Versionsanzeigen**: Kopfleiste, Login, Registrierung und Versionshinweise lesen `APP_VERSION`, das `scripts/sync-release-info.js` aus `frontend/package.json` erzeugt; `release.sh` ersetzt keine Versionen mehr in Komponenten. Ein Unit-Test prüft, dass `APP_VERSION` zur `package.json` passt.
+
+---
+
 ## v0.10.0 (2026-10-19)
 
 - **Betrieb: Datenbank-Backup-Skript (`scripts/backup_db.sh`, `#139`)**:

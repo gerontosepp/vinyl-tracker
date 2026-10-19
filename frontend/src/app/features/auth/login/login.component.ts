@@ -2,6 +2,7 @@ import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/cor
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth.service';
+import { APP_VERSION } from '../../../core/constants/release-info.data';
 
 @Component({
   selector: 'app-login',
@@ -28,7 +29,7 @@ import { AuthService } from '../../../core/services/auth.service';
             <span
               class="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full"
             >
-              v0.10.0
+              v{{ appVersion }}
             </span>
           </div>
         </div>
@@ -92,6 +93,7 @@ import { AuthService } from '../../../core/services/auth.service';
 })
 export class LoginComponent {
   readonly authService = inject(AuthService);
+  readonly appVersion = APP_VERSION;
   private readonly router = inject(Router);
 
   username = '';

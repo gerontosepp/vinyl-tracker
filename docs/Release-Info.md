@@ -9,6 +9,10 @@
 
 ## Unreleased
 
+---
+
+## v0.10.0 (2026-10-19)
+
 - **Betrieb: Datenbank-Backup-Skript (`scripts/backup_db.sh`, `#139`)**:
   - **Geprüfte Backups**: `pg_dump` im Custom-Format aus dem laufenden PostgreSQL-Container, Prüfung per `pg_restore --list` auf alle Kerntabellen, atomares Schreiben (keine halben Dateien).
   - **Aufbewahrung**: Backups älter als 14 Tage werden automatisch gelöscht (`BACKUP_RETENTION_DAYS`); geeignet für nächtliche Cron-Jobs.

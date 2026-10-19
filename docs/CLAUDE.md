@@ -39,7 +39,7 @@ cargo build --release        # build optimized release binary
 ```bash
 npm run dev       # ng serve on port 5173 with API proxy
 npm run build     # production build
-npm test          # Karma/Jasmine unit tests, headless (>80% coverage expected)
+npm test          # Vitest unit tests (jsdom); `-- --watch=false --coverage` enforces >=80% coverage
 npm run test:e2e  # Playwright — requires the stack running locally
 ```
 Run a single Playwright test: `npx playwright test <file> -g "<title>"`.

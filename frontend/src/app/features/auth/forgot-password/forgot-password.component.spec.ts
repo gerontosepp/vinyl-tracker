@@ -1,3 +1,4 @@
+import type { MockedObject } from "vitest";
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ForgotPasswordComponent } from './forgot-password.component';
 import { ApiService } from '../../../core/services/api.service';
@@ -8,13 +9,17 @@ import { of, throwError } from 'rxjs';
 describe('ForgotPasswordComponent', () => {
   let component: ForgotPasswordComponent;
   let fixture: ComponentFixture<ForgotPasswordComponent>;
-  let apiService: jasmine.SpyObj<ApiService>;
-  let toastService: jasmine.SpyObj<ToastService>;
+  let apiService: MockedObject<ApiService>;
+  let toastService: MockedObject<ToastService>;
   let router: Router;
 
   beforeEach(async () => {
-    const apiSpy = jasmine.createSpyObj('ApiService', ['resetPassword']);
-    const toastSpy = jasmine.createSpyObj('ToastService', ['showToast']);
+    const apiSpy = {
+      resetPassword: vi.fn().mockName("ApiService.resetPassword")
+    };
+    const toastSpy = {
+      showToast: vi.fn().mockName("ToastService.showToast")
+    };
 
     await TestBed.configureTestingModule({
       imports: [ForgotPasswordComponent],
@@ -27,10 +32,10 @@ describe('ForgotPasswordComponent', () => {
 
     fixture = TestBed.createComponent(ForgotPasswordComponent);
     component = fixture.componentInstance;
-    apiService = TestBed.inject(ApiService) as jasmine.SpyObj<ApiService>;
-    toastService = TestBed.inject(ToastService) as jasmine.SpyObj<ToastService>;
+    apiService = TestBed.inject(ApiService) as MockedObject<ApiService>;
+    toastService = TestBed.inject(ToastService) as MockedObject<ToastService>;
     router = TestBed.inject(Router);
-    spyOn(router, 'navigate');
+    vi.spyOn(router, 'navigate').mockResolvedValue(true);
     fixture.detectChanges();
   });
 
@@ -68,21 +73,12 @@ describe('ForgotPasswordComponent', () => {
     component.confirmPassword = 'validPassword123!';
     component.discogsToken = 'my_discogs_token_123';
 
-    apiService.resetPassword.and.returnValue(
-      of({ id: 1, username: 'testuser' })
-    );
+    apiService.resetPassword.mockReturnValue(of({ id: 1, username: 'testuser' }));
 
     await component.handleSubmit();
 
-    expect(apiService.resetPassword).toHaveBeenCalledWith(
-      'testuser',
-      'validPassword123!',
-      'my_discogs_token_123'
-    );
-    expect(toastService.showToast).toHaveBeenCalledWith(
-      'Password reset successfully. Please sign in.',
-      'success'
-    );
+    expect(apiService.resetPassword).toHaveBeenCalledWith('testuser', 'validPassword123!', 'my_discogs_token_123');
+    expect(toastService.showToast).toHaveBeenCalledWith('Password reset successfully. Please sign in.', 'success');
     expect(router.navigate).toHaveBeenCalledWith(['/login']);
     expect(component.error()).toBe('');
   });
@@ -93,12 +89,10 @@ describe('ForgotPasswordComponent', () => {
     component.confirmPassword = 'validPassword123!';
     component.discogsToken = 'wrong_token';
 
-    apiService.resetPassword.and.returnValue(
-      throwError(() => ({
-        status: 401,
-        error: { detail: 'Invalid verification credentials for password reset.' },
-      }))
-    );
+    apiService.resetPassword.mockReturnValue(throwError(() => ({
+      status: 401,
+      error: { detail: 'Invalid verification credentials for password reset.' },
+    })));
 
     await component.handleSubmit();
 

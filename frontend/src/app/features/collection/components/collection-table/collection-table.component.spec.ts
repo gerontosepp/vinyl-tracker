@@ -32,7 +32,7 @@ describe('CollectionTableComponent', () => {
 
   beforeEach(async () => {
     mockApiService = {
-      getProxiedImageUrl: jasmine.createSpy('getProxiedImageUrl').and.callFake((url: string) => url),
+      getProxiedImageUrl: vi.fn().mockName('getProxiedImageUrl').mockImplementation((url: string) => url),
     };
 
     await TestBed.configureTestingModule({
@@ -55,7 +55,7 @@ describe('CollectionTableComponent', () => {
   });
 
   it('Column 1: should emit toggleSelection when clicking checkbox cell', () => {
-    spyOn(component.toggleSelection, 'emit');
+    vi.spyOn(component.toggleSelection, 'emit').mockReturnValue(undefined);
     const row = fixture.nativeElement.querySelector('tbody tr');
     const cells = row.querySelectorAll('td');
 
@@ -64,7 +64,7 @@ describe('CollectionTableComponent', () => {
   });
 
   it('Column 2: should emit openDetail when clicking cover cell', () => {
-    spyOn(component.openDetail, 'emit');
+    vi.spyOn(component.openDetail, 'emit').mockReturnValue(undefined);
     const row = fixture.nativeElement.querySelector('tbody tr');
     const cells = row.querySelectorAll('td');
 
@@ -73,8 +73,8 @@ describe('CollectionTableComponent', () => {
   });
 
   it('Column 3: should do nothing when clicking format cell', () => {
-    spyOn(component.openDetail, 'emit');
-    spyOn(component.toggleSelection, 'emit');
+    vi.spyOn(component.openDetail, 'emit').mockReturnValue(undefined);
+    vi.spyOn(component.toggleSelection, 'emit').mockReturnValue(undefined);
     const row = fixture.nativeElement.querySelector('tbody tr');
     const cells = row.querySelectorAll('td');
 
@@ -84,7 +84,7 @@ describe('CollectionTableComponent', () => {
   });
 
   it('Column 4: should emit openDetail when clicking artist cell', () => {
-    spyOn(component.openDetail, 'emit');
+    vi.spyOn(component.openDetail, 'emit').mockReturnValue(undefined);
     const row = fixture.nativeElement.querySelector('tbody tr');
     const cells = row.querySelectorAll('td');
 
@@ -93,7 +93,7 @@ describe('CollectionTableComponent', () => {
   });
 
   it('Column 5: should emit openDetail when clicking title cell', () => {
-    spyOn(component.openDetail, 'emit');
+    vi.spyOn(component.openDetail, 'emit').mockReturnValue(undefined);
     const row = fixture.nativeElement.querySelector('tbody tr');
     const cells = row.querySelectorAll('td');
 
@@ -102,8 +102,8 @@ describe('CollectionTableComponent', () => {
   });
 
   it('Column 6: should do nothing when clicking genre cell', () => {
-    spyOn(component.openDetail, 'emit');
-    spyOn(component.toggleSelection, 'emit');
+    vi.spyOn(component.openDetail, 'emit').mockReturnValue(undefined);
+    vi.spyOn(component.toggleSelection, 'emit').mockReturnValue(undefined);
     const row = fixture.nativeElement.querySelector('tbody tr');
     const cells = row.querySelectorAll('td');
 
@@ -113,8 +113,8 @@ describe('CollectionTableComponent', () => {
   });
 
   it('Column 7: should do nothing when clicking year cell', () => {
-    spyOn(component.openDetail, 'emit');
-    spyOn(component.toggleSelection, 'emit');
+    vi.spyOn(component.openDetail, 'emit').mockReturnValue(undefined);
+    vi.spyOn(component.toggleSelection, 'emit').mockReturnValue(undefined);
     const row = fixture.nativeElement.querySelector('tbody tr');
     const cells = row.querySelectorAll('td');
 
@@ -124,8 +124,8 @@ describe('CollectionTableComponent', () => {
   });
 
   it('Column 8: should render condition badges if available', () => {
-    spyOn(component.openDetail, 'emit');
-    spyOn(component.toggleSelection, 'emit');
+    vi.spyOn(component.openDetail, 'emit').mockReturnValue(undefined);
+    vi.spyOn(component.toggleSelection, 'emit').mockReturnValue(undefined);
     const row = fixture.nativeElement.querySelector('tbody tr');
     const cells = row.querySelectorAll('td');
 
@@ -135,8 +135,8 @@ describe('CollectionTableComponent', () => {
   });
 
   it('Column 9: should do nothing when clicking price cell', () => {
-    spyOn(component.openDetail, 'emit');
-    spyOn(component.toggleSelection, 'emit');
+    vi.spyOn(component.openDetail, 'emit').mockReturnValue(undefined);
+    vi.spyOn(component.toggleSelection, 'emit').mockReturnValue(undefined);
     const row = fixture.nativeElement.querySelector('tbody tr');
     const cells = row.querySelectorAll('td');
 
@@ -146,8 +146,8 @@ describe('CollectionTableComponent', () => {
   });
 
   it('Column 10: should do nothing when clicking plays cell', () => {
-    spyOn(component.openDetail, 'emit');
-    spyOn(component.toggleSelection, 'emit');
+    vi.spyOn(component.openDetail, 'emit').mockReturnValue(undefined);
+    vi.spyOn(component.toggleSelection, 'emit').mockReturnValue(undefined);
     const row = fixture.nativeElement.querySelector('tbody tr');
     const cells = row.querySelectorAll('td');
 
@@ -157,8 +157,8 @@ describe('CollectionTableComponent', () => {
   });
 
   it('Column 11: should do nothing when clicking last played at cell', () => {
-    spyOn(component.openDetail, 'emit');
-    spyOn(component.toggleSelection, 'emit');
+    vi.spyOn(component.openDetail, 'emit').mockReturnValue(undefined);
+    vi.spyOn(component.toggleSelection, 'emit').mockReturnValue(undefined);
     const row = fixture.nativeElement.querySelector('tbody tr');
     const cells = row.querySelectorAll('td');
 

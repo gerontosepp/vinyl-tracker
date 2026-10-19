@@ -42,33 +42,33 @@ describe('SettingsComponent', () => {
       }),
       isLoading: signal(false),
       isSyncing: signal(false),
-      updateDiscogs: jasmine.createSpy('updateDiscogs').and.returnValue(Promise.resolve()),
-      performSync: jasmine.createSpy('performSync'),
-      resetAllListens: jasmine.createSpy('resetAllListens').and.returnValue(Promise.resolve()),
-      logout: jasmine.createSpy('logout').and.returnValue(Promise.resolve()),
+      updateDiscogs: vi.fn().mockName('updateDiscogs').mockResolvedValue(undefined),
+      performSync: vi.fn().mockName('performSync'),
+      resetAllListens: vi.fn().mockName('resetAllListens').mockResolvedValue(undefined),
+      logout: vi.fn().mockName('logout').mockResolvedValue(undefined),
     };
 
     mockApiService = {
-      getRoonStatus: jasmine.createSpy('getRoonStatus').and.returnValue(of(mockRoonStatus)),
-      getRoonZones: jasmine.createSpy('getRoonZones').and.returnValue(of(mockRoonStatus.zones)),
-      updateRoonSettings: jasmine.createSpy('updateRoonSettings').and.returnValue(of(mockRoonStatus)),
-      downloadQrCodes: jasmine.createSpy('downloadQrCodes').and.returnValue(of(new Blob())),
-      exportCollection: jasmine.createSpy('exportCollection').and.returnValue(of(new Blob(['test'], { type: 'text/csv' }))),
+      getRoonStatus: vi.fn().mockName('getRoonStatus').mockReturnValue(of(mockRoonStatus)),
+      getRoonZones: vi.fn().mockName('getRoonZones').mockReturnValue(of(mockRoonStatus.zones)),
+      updateRoonSettings: vi.fn().mockName('updateRoonSettings').mockReturnValue(of(mockRoonStatus)),
+      downloadQrCodes: vi.fn().mockName('downloadQrCodes').mockReturnValue(of(new Blob())),
+      exportCollection: vi.fn().mockName('exportCollection').mockReturnValue(of(new Blob(['test'], { type: 'text/csv' }))),
     };
 
     mockThemeService = {
       theme: signal('dark'),
-      setTheme: jasmine.createSpy('setTheme'),
+      setTheme: vi.fn().mockName('setTheme'),
     };
 
     mockLanguageService = {
       language: signal('de'),
-      setLanguage: jasmine.createSpy('setLanguage'),
+      setLanguage: vi.fn().mockName('setLanguage'),
       translate: (key: string) => key,
     };
 
     mockToastService = {
-      showToast: jasmine.createSpy('showToast'),
+      showToast: vi.fn().mockName('showToast'),
     };
 
     await TestBed.configureTestingModule({
@@ -109,67 +109,58 @@ describe('SettingsComponent', () => {
       roonZoneId: 'z1',
       roonZoneName: 'Living Room',
     });
-    expect(component.isSavingRoon()).toBeFalse();
-    expect(mockToastService.showToast).toHaveBeenCalledWith(
-      'Roon-Einstellungen gespeichert!',
-      'success'
-    );
+    expect(component.isSavingRoon()).toBe(false);
+    expect(mockToastService.showToast).toHaveBeenCalledWith('Roon-Einstellungen gespeichert!', 'success');
   });
 
   it('should handle error when saving Roon settings fails', () => {
-    mockApiService.updateRoonSettings.and.returnValue(throwError(() => new Error('Save error')));
+    mockApiService.updateRoonSettings.mockReturnValue(throwError(() => new Error('Save error')));
 
     component.handleSaveRoon();
 
-    expect(component.isSavingRoon()).toBeFalse();
-    expect(mockToastService.showToast).toHaveBeenCalledWith(
-      'Fehler beim Speichern der Roon-Einstellungen',
-      'error'
-    );
+    expect(component.isSavingRoon()).toBe(false);
+    expect(mockToastService.showToast).toHaveBeenCalledWith('Fehler beim Speichern der Roon-Einstellungen', 'error');
   });
 
   it('should refresh Roon zones', () => {
     const updatedZones = [{ zoneId: 'z3', name: 'Garden', state: 'stopped' }];
-    mockApiService.getRoonZones.and.returnValue(of(updatedZones));
+    mockApiService.getRoonZones.mockReturnValue(of(updatedZones));
 
     component.handleRefreshZones();
 
     expect(mockApiService.getRoonZones).toHaveBeenCalled();
-    expect(component.isLoadingZones()).toBeFalse();
+    expect(component.isLoadingZones()).toBe(false);
     expect(component.roonStatus()?.zones).toEqual(updatedZones);
     expect(mockToastService.showToast).toHaveBeenCalledWith('Roon-Zonen aktualisiert', 'success');
   });
 
   it('should download QR codes when confirmed', async () => {
-    spyOn(window, 'confirm').and.returnValue(true);
-    spyOn<any>(component, 'downloadBlob').and.callFake(() => {});
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    vi.spyOn(component as any, 'downloadBlob').mockImplementation(() => { });
 
     await component.handleDownloadQrCodes();
 
     expect(mockApiService.downloadQrCodes).toHaveBeenCalled();
-    expect(component.isDownloadingQr()).toBeFalse();
-    expect(mockToastService.showToast).toHaveBeenCalledWith(
-      'QR codes generated successfully',
-      'success'
-    );
+    expect(component.isDownloadingQr()).toBe(false);
+    expect(mockToastService.showToast).toHaveBeenCalledWith('QR codes generated successfully', 'success');
   });
 
   it('should not download QR codes when confirmation cancelled', async () => {
-    spyOn(window, 'confirm').and.returnValue(false);
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
 
     await component.handleDownloadQrCodes();
 
     expect(mockApiService.downloadQrCodes).not.toHaveBeenCalled();
-    expect(component.isDownloadingQr()).toBeFalse();
+    expect(component.isDownloadingQr()).toBe(false);
   });
 
   it('should handle error during QR code download', async () => {
-    spyOn(window, 'confirm').and.returnValue(true);
-    mockApiService.downloadQrCodes.and.returnValue(throwError(() => new Error('Download failed')));
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    mockApiService.downloadQrCodes.mockReturnValue(throwError(() => new Error('Download failed')));
 
     await component.handleDownloadQrCodes();
 
-    expect(component.isDownloadingQr()).toBeFalse();
+    expect(component.isDownloadingQr()).toBe(false);
     expect(mockToastService.showToast).toHaveBeenCalledWith('Download failed', 'error');
   });
 
@@ -178,7 +169,7 @@ describe('SettingsComponent', () => {
     expect(component.scannerService.scannerMode()).toBe('hybrid');
 
     component.scannerService.setSoundFeedback(false);
-    expect(component.scannerService.soundFeedback()).toBeFalse();
+    expect(component.scannerService.soundFeedback()).toBe(false);
   });
 
   it('should display and clear scanner test result', () => {
@@ -208,20 +199,17 @@ describe('SettingsComponent', () => {
   });
 
   it('should export collection in specified format', async () => {
-    spyOn<any>(component, 'downloadBlob').and.callFake(() => {});
+    vi.spyOn(component as any, 'downloadBlob').mockImplementation(() => { });
 
     await component.handleExportCollection('pdf');
 
     expect(mockApiService.exportCollection).toHaveBeenCalledWith('pdf');
     expect(component.isExporting()).toBeNull();
-    expect(mockToastService.showToast).toHaveBeenCalledWith(
-      'settings.exportSuccess',
-      'success'
-    );
+    expect(mockToastService.showToast).toHaveBeenCalledWith('settings.exportSuccess', 'success');
   });
 
   it('should handle error during collection export', async () => {
-    mockApiService.exportCollection.and.returnValue(throwError(() => new Error('Export error')));
+    mockApiService.exportCollection.mockReturnValue(throwError(() => new Error('Export error')));
 
     await component.handleExportCollection('csv');
 

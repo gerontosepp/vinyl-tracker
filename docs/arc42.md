@@ -248,10 +248,11 @@ Architectural decisions in Vinyl Tracker are maintained as formal **Architecture
 | [ADR-0015](adr/0015-automatisierte-ci-pipeline-ueberwachung-und-self-healing-agent.md) | 2026-10-19 | Automated CI pipeline monitoring and self-healing agent with GitHub CLI | `Accepted` |
 | [ADR-0016](adr/0016-vertrauenswuerdige-proxies-fuer-client-ip-ermittlung.md) | 2026-10-19 | Trusted proxies for client IP resolution (auth rate limiting) | `Accepted` |
 | [ADR-0017](adr/0017-datenbank-migrationen-mit-sqlx-migrate.md) | 2026-10-19 | Database migrations with `sqlx::migrate` instead of `refinery` | `Accepted` |
+| [ADR-0018](adr/0018-frontend-unit-tests-mit-vitest.md) | 2026-10-19 | Frontend unit tests with Vitest instead of Karma/Jasmine | `Accepted` |
 
 ## 10. Quality Requirements
 
-- **Test Coverage**: Strict requirement of >80% line coverage for both Backend (JaCoCo) and Frontend (Karma/Jasmine). Enforced in CI/CD via `karma.conf.js` global threshold checks and JaCoCo maven verification.
+- **Test Coverage**: Strict requirement of >=80% line coverage for both Backend (`cargo llvm-cov --fail-under-lines 80`) and Frontend (Vitest via `@angular/build:unit-test`, thresholds for statements/branches/functions/lines in `angular.json`). Both are enforced in the CI pipeline.
 - **End-to-End Testing**: Automated Playwright E2E test suite covering authentication, navigation, dashboard scanner access, and Discogs sync flows, executed on every PR/push in the CI pipeline.
 - **Dependency Hygiene**: Backend dependencies are checked in CI against Sonatype OSS Index; findings are reported to an audit artifact (`ossindex-audit.json`) with the current configuration set to non-blocking (`fail=false`).
 - **Test Execution Split**: Unit tests run via Surefire during `test`, while integration tests run via Failsafe during `verify`. This improves local feedback speed while keeping full validation in CI.

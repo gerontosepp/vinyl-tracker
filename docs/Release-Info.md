@@ -9,6 +9,11 @@
 
 ## Unreleased
 
+- **Frontend: Unit-Tests mit Vitest statt Karma/Jasmine (`#134`)**:
+  - **Neuer Test-Runner**: Angular-Builder `@angular/build:unit-test` mit Vitest und `jsdom` – Unit-Tests laufen ohne Browser; alle 227 Tests migriert ([ADR-0018](adr/0018-frontend-unit-tests-mit-vitest.md)).
+  - **Coverage-Gate unverändert streng**: ≥ 80 % für Statements, Branches, Functions und Lines, jetzt direkt in `angular.json` konfiguriert.
+  - **Saubere Abhängigkeiten**: `--legacy-peer-deps` aus Dockerfile und CI entfernt; Karma-/Jasmine-Pakete entfernt; die CI installiert für Unit-Tests keinen Chrome mehr.
+
 - **MCP Server: Gemeinsame API-Typen mit dem Backend – fünf Tools repariert (`#131`)**:
   - **Behobene Fehler**: `sync_collection` und `add_to_collection` meldeten trotz erfolgreichem Sync einen Fehler; `get_top_records`, `get_collection_value` sowie die Ressourcen `vinyl://stats/overview` und `vinyl://collection/value` schlugen beim Einlesen der Backend-Antwort fehl; `scan_barcode` verlor die erkannte Platte und die Discogs-Vorschläge.
   - **Neue Crate `vinyl-api-types`** (`backend/crates/vinyl-api-types`): Backend und MCP-Server nutzen dieselben Request-/Response-Typen; Vertragstests schreiben das JSON-Format der API fest. Das API-Format selbst bleibt unverändert.

@@ -32,8 +32,8 @@ describe('ToastComponent', () => {
 
     const closeBtn = compiled.querySelector('button');
     expect(closeBtn).toBeTruthy();
-    
-    spyOn(toastService, 'removeToast');
+
+    vi.spyOn(toastService, 'removeToast').mockReturnValue(undefined);
     closeBtn?.click();
     expect(toastService.removeToast).toHaveBeenCalled();
   });

@@ -168,21 +168,12 @@ jobs:
         cache: 'npm'
         cache-dependency-path: frontend/package-lock.json
 
-    - name: Set up Chrome
-      id: setup-chrome
-      uses: browser-actions/setup-chrome@48ad923757ca74d66703209fe939badbdf80f2f4 # v2.2.0
-      with:
-        chrome-version: stable
-        install-dependencies: true
-
     - name: Install Dependencies
-      run: npm ci --legacy-peer-deps
+      run: npm ci
 
-    - name: Run Karma Unit Tests
-      # Runs Angular Karma unit tests with > 80% coverage check enforced via karma.conf.js
-      env:
-        CHROME_BIN: ${{ steps.setup-chrome.outputs.chrome-path }}
-      run: npm run test -- --watch=false --code-coverage --browsers=ChromeHeadlessCI
+    - name: Run Vitest Unit Tests
+      # Angular unit-test builder (Vitest + jsdom) with >= 80% coverage thresholds from angular.json
+      run: npm run test -- --watch=false --coverage
 
     - name: Cache Playwright Browsers
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0

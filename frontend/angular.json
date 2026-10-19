@@ -78,25 +78,22 @@
           "builder": "@angular/build:extract-i18n"
         },
         "test": {
-          "builder": "@angular/build:karma",
+          "builder": "@angular/build:unit-test",
           "options": {
-            "karmaConfig": "karma.conf.js",
-            "polyfills": [
-              "zone.js",
-              "zone.js/testing"
-            ],
+            "runner": "vitest",
             "tsConfig": "tsconfig.spec.json",
-            "assets": [
-              {
-                "glob": "**/*",
-                "input": "public"
-              }
+            "coverageReporters": [
+              "html",
+              "text-summary",
+              "lcovonly"
             ],
-            "styles": [
-              "src/styles.css"
-            ],
-            "scripts": [],
-            "codeCoverageExclude": [
+            "coverageThresholds": {
+              "statements": 80,
+              "branches": 80,
+              "functions": 80,
+              "lines": 80
+            },
+            "coverageExclude": [
               "src/app/features/**/*",
               "src/app/core/services/api.service.ts",
               "src/app/core/services/auth.service.ts",

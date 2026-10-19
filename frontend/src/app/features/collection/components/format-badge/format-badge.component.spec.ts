@@ -30,12 +30,12 @@ describe('FormatBadgeComponent', () => {
     fixture.componentRef.setInput('compact', false);
     fixture.detectChanges();
 
-    const icons = fixture.nativeElement.querySelectorAll('svg[lucidediscalbum]');
+    const icons = fixture.nativeElement.querySelectorAll('svg[lucideDiscAlbum]');
     expect(icons.length).toBe(2);
 
     const container = fixture.nativeElement.querySelector('div[title]');
     expect(container).toBeTruthy();
-    expect(container.classList.contains('bg-cyan-50')).toBeTrue();
+    expect(container.classList.contains('bg-cyan-50')).toBe(true);
   });
 
   it('should render double_cd compact badge with 2CD label on mobile', () => {
@@ -52,7 +52,7 @@ describe('FormatBadgeComponent', () => {
     fixture.componentRef.setInput('compact', false);
     fixture.detectChanges();
 
-    const icons = fixture.nativeElement.querySelectorAll('svg[lucidedisc]');
+    const icons = fixture.nativeElement.querySelectorAll('svg[lucideDisc]');
     expect(icons.length).toBe(2);
   });
 });

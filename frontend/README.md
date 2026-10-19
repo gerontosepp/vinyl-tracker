@@ -40,13 +40,14 @@ This will compile your project and store the build artifacts in the `dist/` dire
 
 ## Running unit tests
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+To execute unit tests with [Vitest](https://vitest.dev) (Angular `unit-test` builder, `jsdom`), use the following command:
 
 ```bash
-npm test
+npm test                              # watch mode
+npm test -- --watch=false --coverage  # single run with >=80% coverage thresholds
 ```
 
-The project enforces >80% code coverage for core services, utilities, and components.
+The project enforces >=80% code coverage for core services, utilities, and components.
 
 ## Running end-to-end tests
 

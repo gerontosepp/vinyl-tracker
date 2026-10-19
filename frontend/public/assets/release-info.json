@@ -7,6 +7,22 @@
     "isUnreleased": true,
     "items": [
       {
+        "title": "MCP Server: Unterstützung für Ressourcen (`vinyl://`), Prompts und Sammlungs-Export (`#108`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "**Tool `export_collection`**: Neues MCP-Tool für KI-Assistenten zum Exportieren der kompletten Vinyl- und CD-Sammlung im strukturierten Format (`json` oder `csv`).",
+          "**MCP-Ressourcen (`vinyl://`)**:",
+          "`vinyl://collection/summary`: Aggregierte Kennzahlen zu Gesamtbestand, Formatverteilung (Vinyl vs. CD), ungespielten Alben und Top-Genres.",
+          "`vinyl://collection/value`: Schätzwerte des Sammlungsmarktwerts (Minimum, Median, Maximum) via Discogs Marketplace.",
+          "`vinyl://stats/overview`: Überblick über jüngste Hör-Events und meistgespielte Alben.",
+          "**MCP-Prompts**:",
+          "`recommend_record`: Interaktive Prompt-Vorlage zur kuratierten Albenempfehlung basierend auf Wunsch-Genre und Stimmung.",
+          "`grading_audit`: Geführter Workflow zur Überprüfung und Einstufung unbewerteter Alben nach Goldmine-Kriterien (Mint bis Poor).",
+          "**Protokoll-Fähigkeiten**: Volle Deklaration der Server-Capabilities für Tools, Resources und Prompts via `rmcp` SDK."
+        ]
+      },
+      {
         "title": "Qualitätssicherung & CI: Enforce >= 80% Testabdeckung für Rust-Backend (`#111`)",
         "type": "feat",
         "typeLabel": "Feature",

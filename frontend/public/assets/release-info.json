@@ -37,12 +37,23 @@
         ]
       },
       {
+        "title": "Tooling & Dev-Ops: CI Pipeline-Healer & Watchdog (`scripts/watch_pipeline.sh`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "**Automatisierte CI-Überwachung**: Kontinuierliches oder bedarfsgesteuertes Monitoring aller GitHub Actions Runs via GitHub CLI (`gh run list`) mit OS-Benachrichtigungen bei Fehlschlägen.",
+          "**Automatisierte Log-Diagnose**: Direkte Extraktion fehlerhafter Steps und Fehlermeldungen via `gh run view <ID> --log-failed` (Option `--heal [ID]`).",
+          "**Self-Healing Agent Skill (`.agent/skills/pipeline-healer/`)**: Standardisierter Agenten-Leitfaden zur automatischen Klassifikation, lokalen Reproduktion und Behebung von Fehlern in den Bereichen Rust-Formatting, Clippy-Lints, Unit-/Integrationstests, Coverage-Gate (< 80%), Angular Karma Tests und Production-Builds inklusive Re-Run-Validierung.",
+          "**Architektur-Entscheidung**: Dokumentiert in ADR-0015."
+        ]
+      },
+      {
         "title": "Architektur-Dokumentation: Einführung von Architecture Decision Records (ADRs)",
         "type": "refactor",
         "typeLabel": "Refactor",
         "details": [
           "**Neues ADR-Verzeichnis (`docs/adr/`)**: Etablierung eines standardisierten Formats (MADR / Nygard) zur transparenten Nachvollziehbarkeit wesentlicher Architekturentscheidungen inklusive Vorlage.",
-          "**Umfassende Dokumentation (ADR-0001 bis ADR-0014)**: Festhaltung von 14 Kernentscheidungen bezüglich Rust-Backend-Migration, Angular 22 Frontend, nativem Rust MCP Server, AEAD AES-256-GCM Kryptografie, direkter Roon MOO/WebSocket Integration, Rust-Testabdeckungsprüfung (`cargo-llvm-cov`), Hardware-Scanner-Integration (HID Keyboard Wedge), zustandsbasierter Goldmine-Marktwertermittlung, natürlicher Kallax-Sortierung, serverseitiger Vektor-PDF-Generierung (`printpdf`), dreiteiliger Export-Strategie (CSV, JSON, PDF), SSRF-geschütztem Image-Proxy, Multi-Arch-Container-Builds (`cargo-chef` & `$BUILDPLATFORM`) sowie Spec-Driven Development via OpenSpec (ADR-0014).",
+          "**Umfassende Dokumentation (ADR-0001 bis ADR-0015)**: Festhaltung von 15 Kernentscheidungen bezüglich Rust-Backend-Migration, Angular 22 Frontend, nativem Rust MCP Server, AEAD AES-256-GCM Kryptografie, direkter Roon MOO/WebSocket Integration, Rust-Testabdeckungsprüfung (`cargo-llvm-cov`), Hardware-Scanner-Integration (HID Keyboard Wedge), zustandsbasierter Goldmine-Marktwertermittlung, natürlicher Kallax-Sortierung, serverseitiger Vektor-PDF-Generierung (`printpdf`), dreiteiliger Export-Strategie (CSV, JSON, PDF), SSRF-geschütztem Image-Proxy, Multi-Arch-Container-Builds (`cargo-chef` & `$BUILDPLATFORM`), Spec-Driven Development via OpenSpec (ADR-0014) sowie dem CI-Pipeline-Healer & Watchdog (ADR-0015).",
           "**Regel- & Workflow-Verankerung**: ADRs sind ab sofort fester Bestandteil der Projektregeln (`.agent/rules/documentation_standards.md`), des Ticket-Workflows (`.agent/skills/ticket-workflow/`) und des neuen Skills `adr-management`.",
           "**Synchronisation**: Verknüpfung in `README.md` und `docs/arc42.md` (Kapitel 9)."
         ]

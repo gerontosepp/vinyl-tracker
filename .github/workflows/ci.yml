@@ -35,7 +35,10 @@ jobs:
     - name: Set up Rust toolchain
       uses: dtolnay/rust-toolchain@stable
       with:
-        components: clippy, rustfmt
+        components: clippy, rustfmt, llvm-tools-preview
+
+    - name: Install cargo-llvm-cov
+      uses: taiki-e/install-action@cargo-llvm-cov
 
     - name: Rust Cache
       uses: Swatinem/rust-cache@v2
@@ -127,7 +130,7 @@ jobs:
         echo "DATABASE_URL=$SELECTED_URL" >> $GITHUB_ENV
         echo "Configured DATABASE_URL in GITHUB_ENV: $SELECTED_URL"
 
-    - name: Run Backend Integration & Unit Tests
+    - name: Run Backend Tests & Enforce Coverage (>= 80%)
       env:
         CARGO_BUILD_JOBS: 2
         JWT_SECRET: superSecretDevelopmentKeyDoNotUseInProduction123!
@@ -135,7 +138,7 @@ jobs:
         VINYL_ENCRYPTION_SALT: 5c074494c45680a7
       run: |
         echo "Running tests with DATABASE_URL: $DATABASE_URL"
-        cargo test --verbose
+        cargo llvm-cov --summary-only --fail-under-lines 80
 
     - name: Stop PostgreSQL Test Container
       if: always()

@@ -7,6 +7,16 @@
     "isUnreleased": true,
     "items": [
       {
+        "title": "Qualitätssicherung & CI: Enforce >= 80% Testabdeckung für Rust-Backend (`#111`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "**Verbindliches Coverage-Gate**: Integration von `cargo-llvm-cov` in die CI-Pipeline (`.github/workflows/ci.yml`) mit dem Schwellenwert `--fail-under-lines 80`. Fällt die Zeilenabdeckung unter 80 %, schlägt der Workflow `backend-test` fehl.",
+          "**Umfassende Testausweitung**: Steigerung der Rust-Zeilenabdeckung von 66,8 % auf **81,04 %** durch umfassende Unit- und Integrationstests für Discogs-Client-Endpunkte, `CollectionSyncService`, `ScanService` (QR-Formate, Barcode-Fallbacks, Collection-Matching) und `RecordService` (CRUD, Zustandseinstufung, Preisschätzungen).",
+          "**Regel-Aktualisierung**: Verankerung des Mindestschwellenwerts von 80 % in `.agent/rules/quality_standards.md`."
+        ]
+      },
+      {
         "title": "Design & Typografie: Umstellung auf Google Font Inter Tight",
         "type": "feat",
         "typeLabel": "Feature",

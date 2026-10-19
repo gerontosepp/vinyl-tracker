@@ -129,4 +129,46 @@ mod tests {
         assert!(validate_goldmine_condition("VG+").is_ok());
         assert!(validate_goldmine_condition("fantasy_grade").is_err());
     }
+
+    #[test]
+    fn test_extract_suggested_price() {
+        let mut map = HashMap::new();
+        assert_eq!(extract_suggested_price(&map, None), None);
+
+        map.insert(
+            "Very Good Plus (VG+)".to_string(),
+            DiscogsPriceSuggestion {
+                currency: "EUR".to_string(),
+                value: 25.50,
+            },
+        );
+        map.insert(
+            "Near Mint (NM or M-)".to_string(),
+            DiscogsPriceSuggestion {
+                currency: "EUR".to_string(),
+                value: 40.00,
+            },
+        );
+
+        // Exact condition match
+        assert_eq!(extract_suggested_price(&map, Some("NM")), Some(40.00));
+
+        // Fallback to VG+
+        assert_eq!(extract_suggested_price(&map, Some("Fair (F)")), Some(25.50));
+
+        // Remove VG+ and test next canonical fallback
+        map.remove("Very Good Plus (VG+)");
+        assert_eq!(extract_suggested_price(&map, Some("Fair (F)")), Some(40.00));
+
+        // Test non-canonical key with positive value
+        let mut custom_map = HashMap::new();
+        custom_map.insert(
+            "CustomGrade".to_string(),
+            DiscogsPriceSuggestion {
+                currency: "USD".to_string(),
+                value: 12.00,
+            },
+        );
+        assert_eq!(extract_suggested_price(&custom_map, None), Some(12.00));
+    }
 }

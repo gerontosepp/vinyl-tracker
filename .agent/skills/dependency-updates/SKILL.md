@@ -25,15 +25,20 @@ cd ..
    The project targets Rust 2024 edition (`edition = "2024"`).
 2. **Axum & Tower**:
    Ensure compatibility between `axum` (0.8) and `tower-http` (0.6).
-3. **Database Drivers**:
-   `sqlx` (0.8) with `tokio-postgres` and `refinery` (0.8) for database schema migrations.
+3. **Database Driver**:
+   `sqlx` (0.8) is the only PostgreSQL driver; schema migrations run via `sqlx::migrate!` (feature `migrate`). Do not reintroduce `tokio-postgres`/`refinery`.
+4. **Workspace**:
+   `backend/` is a Cargo workspace including `crates/vinyl-api-types` (shared with the MCP server in `mcp/`, which has its own `Cargo.toml`/`Cargo.lock` – update and test it separately).
 
 ### Backend Validation
-After updating [`backend/Cargo.toml`](../../../backend/Cargo.toml):
+After updating [`backend/Cargo.toml`](../../../backend/Cargo.toml) or [`mcp/Cargo.toml`](../../../mcp/Cargo.toml):
 ```bash
 cd backend
 cargo test
-cargo clippy -- -D warnings
+cargo clippy --all-targets -- -D warnings
+cd ../mcp
+cargo test
+cargo clippy --all-targets -- -D warnings
 cd ..
 ```
 
@@ -49,15 +54,16 @@ cd ..
 
 ### Known Frontend Constraints & Guidelines
 1. **Angular Major Version**:
-   The project is built on Angular 19 (`@angular/*` ^19.2.x, `@angular/cli` ^19.2.x). Do not bump to Angular 20+ without a planned framework migration.
+   The project is built on Angular 22 (`@angular/*` ^22.x, `@angular/cli` ^22.x). Do not bump to the next major version without a planned framework migration.
 2. **NPM 12 Remote Fetching**:
    When using npm 12+, remote tarball downloads may be restricted by default. Use `--allow-remote=all`:
    ```bash
    cd frontend
-   npm update --legacy-peer-deps --allow-remote=all
+   npm update --allow-remote=all
    cd ..
    ```
 3. **Security Audit & Transitive Vulnerabilities**:
+   Do not add `--legacy-peer-deps`: peer dependency conflicts must be resolved, not hidden (Dockerfile and CI install without it).
    Run audit fix for non-breaking transitive vulnerability patches:
    ```bash
    cd frontend
@@ -85,6 +91,6 @@ docker compose build
 1. Record updated libraries in [`docs/Release-Info.md`](../../../docs/Release-Info.md).
 2. Commit with Conventional Commits:
    ```bash
-   git add backend/pom.xml frontend/package.json frontend/package-lock.json docs/Release-Info.md
+   git add backend/Cargo.toml backend/Cargo.lock mcp/Cargo.toml mcp/Cargo.lock frontend/package.json frontend/package-lock.json docs/Release-Info.md
    git commit -m "chore: update backend and frontend project dependencies"
    ```

@@ -33,10 +33,13 @@ sedi "s/appVersion = '$CURRENT_VERSION'/appVersion = '$NEW_VERSION'/" frontend/s
 sedi "s/v$CURRENT_VERSION/v$NEW_VERSION/g" frontend/src/app/features/auth/login/login.component.ts
 sedi "s/v$CURRENT_VERSION/v$NEW_VERSION/g" frontend/src/app/features/auth/register/register.component.ts
 
-echo "Updating Backend to $NEW_VERSION..."
-# Update Cargo.toml version
-sedi "s/^version = \".*\"/version = \"$NEW_VERSION\"/" backend/Cargo.toml
+echo "Updating Backend, shared API types and MCP server to $NEW_VERSION..."
+# Update Cargo.toml versions (backend workspace incl. vinyl-api-types, MCP server)
+for manifest in backend/Cargo.toml backend/crates/vinyl-api-types/Cargo.toml mcp/Cargo.toml; do
+    sedi "s/^version = \".*\"/version = \"$NEW_VERSION\"/" "$manifest"
+done
 (cd backend && cargo check >/dev/null 2>&1 || true)
+(cd mcp && cargo check >/dev/null 2>&1 || true)
 
 echo "Updating README.md to v$NEW_VERSION..."
 # Update the first line of README.md to "# Vinyl Tracker v$NEW_VERSION"
@@ -47,6 +50,7 @@ node scripts/sync-release-info.js
 
 echo "Committing changes..."
 git add frontend/package.json frontend/package-lock.json backend/Cargo.toml backend/Cargo.lock README.md \
+    backend/crates/vinyl-api-types/Cargo.toml mcp/Cargo.toml mcp/Cargo.lock \
     frontend/src/app/shared/components/layout/top-menu-bar/top-menu-bar.component.ts \
     frontend/src/app/features/auth/login/login.component.ts \
     frontend/src/app/features/auth/register/register.component.ts \

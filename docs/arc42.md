@@ -30,14 +30,13 @@ The **Vinyl Tracker** is a personal web application designed for vinyl enthusias
 ## 2. Architecture Constraints
 
 - **Technology Stack**:
-    - **Primary Backend**: Rust (Axum 0.8, Tokio, Tower-HTTP, SQLx).
-    - **Legacy Backend**: Java 25+ (Spring Boot 4.0+).
+    - **Backend**: Rust 2024 (Axum 0.8, Tokio, Tower-HTTP, SQLx 0.8). The former Spring Boot backend was replaced ([ADR-0001](adr/0001-backend-migration-spring-boot-zu-rust-axum.md)).
     - **Frontend**: Angular 22 (TypeScript, Signals, Tailwind CSS).
     - **MCP Server**: Rust (`rmcp` v3.5 SDK, stdio JSON-RPC).
     - **Database**: PostgreSQL 16.
-    - **Caching & Resilience**: `moka`, `governor` (Rust); Caffeine, Resilience4j (Java legacy).
+    - **Caching & Rate Limiting**: `moka` (in-memory caches), `governor` (Discogs client and auth endpoints).
     - **Migrations**: `sqlx::migrate` (`backend/migrations/<n>_<name>.sql`, embedded at compile time, history in `_sqlx_migrations`). Existing refinery/Flyway histories are imported once on first start ([ADR-0017](adr/0017-datenbank-migrationen-mit-sqlx-migrate.md)).
-    - **API Documentation**: RFC 7807 Problem Details; springdoc-openapi (Swagger UI on legacy).
+    - **API Errors**: RFC 7807 Problem Details (`AppError` → `ProblemDetail`). No OpenAPI/Swagger endpoint.
     - **Containerization**: Docker & Docker Compose (`cargo-chef` multi-stage build).
 - **License**: MIT License (Open Source).
 - **Deployment**: Self-hosted via Docker Compose.
@@ -67,15 +66,15 @@ graph LR
 ### 3.2 Technical Context
 - **Protocol**: HTTP/HTTPS (REST), WebSocket (MOO/1 protocol for Roon Core).
 - **Format**: JSON, PDF (for exports).
-- **Security**: JWT-based authentication with backend-managed HttpOnly cookies as primary mechanism and Bearer header fallback for constrained environments; BCrypt password hashing and AES encryption for Discogs API tokens.
+- **Security**: JWT-based authentication with backend-managed HttpOnly cookies as primary mechanism and Bearer header fallback for constrained environments; BCrypt password hashing and AES-256-GCM encryption for Discogs API tokens.
 
 ## 4. Solution Strategy
 
 - **Micro-Architecture**: Separation of Frontend (SPA) and Backend (REST API) to allow independent scaling and technology evolution.
 - **Container-First**: The entire application is packaged as Docker containers to ensure consistent environments from development to production.
 - **External Integration**: Rely on Discogs for rich metadata instead of building a proprietary database.
-- **Resilience Strategy**: Use Resilience4j to strictly adhere to Discogs API rate limits (60 requests per minute) and handle transient network issues via smart retries.
-- **Caching Strategy**: Implement Caffeine-based local caching for frequently accessed, static metadata (e.g., release details) to reduce external API dependency and improve latency.
+- **Resilience Strategy**: A `governor` rate limiter keeps the Discogs client within the API limit (60 requests per minute); server-side request timeouts (30 s / 300 s for long-running Discogs operations) bound hanging upstream calls. There are no automatic retries.
+- **Caching Strategy**: `moka` in-memory caches for Discogs release details (24 h), price suggestions (1 h) and proxied cover images (24 h); prices and formats are additionally persisted in `record_cache`.
 - **Testing**: rigorous automated testing (Unit & Integration) enforced by CI pipelines.
 
 ## 5. Building Block View
@@ -94,13 +93,14 @@ The system consists of three main containers:
 
 ### 5.2 Level 2: Backend Internals
 
-The Backend follows a layered architecture:
+The backend (`backend/src/`) follows a strict layered architecture (see `.agent/rules/coding_standards.md`):
 
-- **Controller Layer**: Handles HTTP requests (`ScanController`, `AppUserController`, `AnalyticsController`, `CollectionController`, `RecordController`, `DiscogsController`, `RoonController`).
-- **Service Layer**: Business logic and orchestration (`ScanService`, `DiscogsApiClient`, `CollectionQueryService`, `CollectionSyncService`, `TokenEncryptionService`, `QrCodeService`, `PdfService`, `RecordService`, `DiscogsService`, `RoonApiService`, `DefaultRoonClient`). `ScanService` is responsible for both creating listen events and bulk-deleting all listen events for the authenticated user. `RoonApiService` coordinates WebSocket MOO/1 protocol connections to Roon Core, extension pairing, and browse-and-play actions.
-- **Repository Layer**: Data access interface (`RecordRepository`, `ListenEventRepository`, `AppUserRepository`, `CollectionItemRepository`). `ListenEventRepository` provides user-scoped queries for recent history, analytics aggregation, and bulk deletion.
-- **Model Layer**: Domain entities (`AppUser`, `Record`, `ListenEvent`). `AppUser` includes configured Roon host, port, default playback zone, and paired token.
-- **DTO Layer**: Request/response payloads are modeled with explicit DTO classes instead of generic maps. Example: scan responses use `ScanDto.Result`, and Roon operations use `RoonSettingsDto`, `RoonStatusDto`, `RoonZoneDto`, and `RoonPlayRequestDto`.
+- **Routes** (`routes/`): Axum routers and handlers per area – `users`, `collection`, `records`, `scan`, `analytics`, `discogs`, `roon`, `proxy`, `actuator` (health/info). Handlers parse requests, resolve the user via the `CurrentUser` extractor and delegate to services. Cross-cutting layers: CORS, `TraceLayer`, request timeouts (`routes/timeout.rs`) and the per-IP auth rate limit.
+- **Services** (`services/`): Business logic and data access with SQLx queries (no separate repository layer) – `user_service`, `collection_query`, `collection_sync`, `record_service`, `scan_service`, `analytics_service`, `marketplace` (condition-based pricing), `export_service` (CSV/JSON/PDF), `qr_pdf_service` (`printpdf`, `fast_qr`), `image_proxy` (SSRF-protected), `crypto_service` (AES-256-GCM), `roon/` (SOOD discovery, WebSocket MOO/1 client, pairing, browse-and-play).
+- **Clients** (`clients/discogs.rs`): `reqwest`-based Discogs API client with `governor` rate limiting and `moka` caches.
+- **Models** (`models/`): Domain types (e.g. `AppUser` with `sqlx::FromRow`) and backend-internal DTOs. REST request/response DTOs shared with the MCP server live in the workspace crate `vinyl-api-types` and are re-exported here.
+- **Infrastructure**: `auth/` (JWT, `CurrentUser` extractor, client IP resolution), `db/` (connection pool with startup retries, `sqlx::migrate` migrations), `config.rs` (environment configuration), `state.rs` (`AppState` shared by all handlers), `error.rs` (`AppError` → RFC 7807 `ProblemDetail`).
+- **Persistence model**: Tables `app_user`, `record_cache` (+ `record_genres`), `collection_item` (user ↔ record incl. media/sleeve condition) and `listen_event`. Play counts and "last played" timestamps are computed from `listen_event`.
 
 ## 6. Runtime View
 
@@ -120,8 +120,8 @@ The Backend follows a layered architecture:
 1.  **User** selects a record from their collection.
 2.  **User** clicks "Play".
 3.  **Backend** receives `POST /api/records/{id}/listen`.
-4.  **Backend** creates a new `ListenEvent` with the current timestamp.
-5.  **Backend** updates the `playCount` and `lastPlayed` fields on the `Record`.
+4.  **Backend** inserts a new row into `listen_event` with the current UTC timestamp.
+5.  Play count and last-played time are derived from `listen_event` on the next read; no counters are stored on the record.
 
 ### 6.3 Scenario: Generating QR Codes
 1.  **User** clicks "Download QR Codes PDF" in Settings.
@@ -138,11 +138,10 @@ The Backend follows a layered architecture:
 2.  **User** clicks "Reset All Listens" in the Data Management section.
 3.  **Frontend** presents a confirmation dialog because the action is destructive and irreversible.
 4.  **Frontend** sends `DELETE /api/scan/all` for the authenticated user after confirmation.
-5.  **Backend** resolves the authenticated user from the security context.
-6.  **ScanService** loads the user entity and delegates the deletion to `ListenEventRepository`.
-7.  **ListenEventRepository** deletes all `ListenEvent` rows belonging to that user in a single bulk operation.
-8.  **Backend** returns a typed JSON response containing success state, message, and deleted event count.
-9.  **Frontend** displays the result as a success or failure toast message.
+5.  **Backend** resolves the authenticated user via the `CurrentUser` extractor.
+6.  **`scan_service`** deletes all `listen_event` rows belonging to that user in a single SQL statement.
+7.  **Backend** returns a typed JSON response (`ResetResultDto`) containing success state, message, and deleted event count.
+8.  **Frontend** displays the result as a success or failure toast message.
 
 ### 6.5 Scenario: Hardware Barcode Scanning (Eyoyo EY-009P / HID)
 1.  **User** pairs the Eyoyo EY-009P via Bluetooth or 2.4 GHz USB receiver and selects *Hardware Scanner* mode in Settings.
@@ -157,16 +156,16 @@ The Backend follows a layered architecture:
 3.  **Frontend** updates the selection count and displays the "Drucken (N)" and "Auswahl aufheben" buttons in the toolbar.
 4.  **User** clicks "Drucken (N)".
 5.  **Frontend** posts selected item metadata to `POST /api/collection/qr-codes/selected`.
-6.  **Backend** `PdfService` generates a tailored PDF document for only the selected releases.
+6.  **Backend** `qr_pdf_service` generates a tailored PDF document for only the selected releases.
 7.  **Frontend** streams the binary blob and prompts a file download.
 
 ### 6.7 Scenario: Editing Media & Sleeve Condition with Discogs Sync
 1.  **User** opens the record detail modal for an album in their collection.
 2.  **User** selects a Goldmine grading (e.g. *Mint (M)*, *Near Mint (NM or M-)*, *Very Good Plus (VG+)*) from the Media Condition or Sleeve Condition dropdown.
 3.  **Frontend** sends `PATCH /api/records/{id}/condition` with the selected values.
-4.  **Backend** `RecordService` persists the updated condition in the `collection_item` table.
-5.  If Media Condition changed, **RecordService** recalculates the estimated market price from Discogs price suggestions and updates `record_cache.median_price`.
-6.  **Backend** `DiscogsApiClient` synchronizes the custom fields to the user's Discogs collection instance (`POST /users/{username}/collection/folders/0/releases/{release_id}/instances/{instance_id}/fields/{field_id}`).
+4.  **Backend** `record_service` persists the updated condition in the `collection_item` table.
+5.  If Media Condition changed, **`record_service`** recalculates the estimated market price from Discogs price suggestions and updates `record_cache.median_price`.
+6.  **Backend** `DiscogsClient` (`clients/discogs.rs`) synchronizes the custom fields to the user's Discogs collection instance (`POST /users/{username}/collection/folders/0/releases/{release_id}/instances/{instance_id}/fields/{field_id}`).
 7.  **Backend** returns the updated `RecordDetailDto`.
 8.  **Frontend** updates the modal, live condition badges, estimated value, and collection view reactively.
 
@@ -181,49 +180,47 @@ The system is deployed as a multi-container Docker application orchestrated by D
 
 **Docker Compose Structure**:
 - `postgres`: Database service containing the `vinyl_tracker` data. Includes a robust `pg_isready` healthcheck.
-- `backend`: Java application, strictly depends on `postgres` being in a `service_healthy` state to prevent startup failures. Exposed on port 8080.
-- `frontend`: Nginx (Production, port 80) or Angular dev-server (Development, port 5173). Serves the built Angular PWA.
+- `backend`: Rust/Axum binary (minimal Debian image), depends on `postgres` being `service_healthy`; runs migrations on startup and shuts down gracefully on `SIGTERM`. Port 8080 (production compose: bound to `127.0.0.1` only).
+- `frontend`: Nginx (Production, port 80, proxies `/api` to the backend) or Angular dev-server (Development, port 5173). Serves the built Angular PWA.
 
 ## 8. Cross-cutting Concepts
 
 ### 8.1 Security
 - **Authentication**: JWT-based authentication. Backend issues and verifies an HttpOnly auth cookie for normal request flows; frontend additionally supports `Authorization: Bearer` fallback when cookie propagation is not available.
-- **Rate Limiting & Brute-Force Protection**: Public authentication endpoints (`/api/users/login`, `/api/users/register`, `/api/users/reset-password`) are protected against brute-force attacks via Resilience4j `RateLimiter` (`AuthRateLimitingInterceptor` & `AuthRateLimiterService`). Limits are enforced per client IP (configurable via `AUTH_RATE_LIMIT_FOR_PERIOD`, default 10 requests/minute). Requests exceeding the limit immediately receive HTTP 429 (`TOO_MANY_REQUESTS`) formatted as RFC-7807 `ProblemDetail`.
+- **Rate Limiting & Brute-Force Protection**: Public authentication endpoints (`/api/users/login`, `/api/users/register`, `/api/users/reset-password`) are protected by a keyed `governor` rate limiter (`auth_rate_limit_middleware`). Limits are enforced per client IP (configurable via `AUTH_RATE_LIMIT_FOR_PERIOD`, default 10 requests/minute). The client IP is the TCP peer; `X-Forwarded-For` / `X-Real-IP` are only honoured from `TRUSTED_PROXIES` ([ADR-0016](adr/0016-vertrauenswuerdige-proxies-fuer-client-ip-ermittlung.md)). Requests exceeding the limit receive HTTP 429 as RFC-7807 `ProblemDetail`.
 - **Data Protection**:
-    - User passwords are hashed with **BCrypt** (which embeds a cryptographically secure random salt directly into the hash string; the redundant database `salt` column was removed in Flyway `V5`).
-    - Sensitive external tokens (Discogs PAT) are encrypted using **AES-256** (via Spring Security Crypto) with a salt and key defined in environment variables.
-- **Dependency Security**: The backend provides an opt-in Maven profile `security-online` that audits dependencies against the Sonatype OSS Index online service during `verify`.
+    - User passwords are hashed with **BCrypt** (`bcrypt` crate; the salt is embedded in the hash, the former `salt` column was dropped in migration `5`).
+    - Discogs tokens are encrypted with **AES-256-GCM** (key derived via PBKDF2-HMAC-SHA256 from `VINYL_ENCRYPTION_PASSWORD`/`VINYL_ENCRYPTION_SALT`); legacy AES-CBC values from the Java era are still decrypted ([ADR-0004](adr/0004-aead-aes-256-gcm-kryptografie-fuer-tokens.md)).
+- **Network Exposure**: In the production compose files backend (8080) and PostgreSQL (5432) are only bound to `127.0.0.1`; external access goes through nginx.
+- **Supply Chain**: GitHub Actions are pinned to commit SHAs and updated by Dependabot; fork PR workflows require maintainer approval.
 
 ### 8.2 Validation
-- Input validation using Jakarta Validation API (`@Valid`, `@NotNull`, `@NotBlank`, `@NotEmpty`, `@Size`, etc.) across all controllers and DTOs, including QR code generation requests (`QrCodeRequest`).
-- **Password Policy**: User passwords must be at least 8 characters long (up to 128), enforced in backend DTOs and frontend registration/reset forms.
+- Request bodies are deserialized into typed DTOs (Serde); malformed JSON is rejected by Axum before reaching a handler. Business validation happens explicitly in the services and returns `AppError::BadRequest` (HTTP 400).
+- **Password Policy**: User passwords must be at least 8 characters long, enforced in `user_service` (register, reset) and in the frontend forms.
 - Destructive user actions in the UI require an explicit confirmation step before the backend request is issued.
 
 ### 8.3 Error Handling
-- Global exception handling in Spring Boot (`@ControllerAdvice`) returns RFC-7807 style `ProblemDetail` JSON payloads (including title, detail, status and timestamp) for API errors.
-- **Specific Integration Exceptions**: Replaced generic `RuntimeException` throws in the `DiscogsService` with a tailored hierarchy:
-    - `DiscogsTokenException` (HTTP 422) for encryption and token-level issues.
-    - `DiscogsApiException` (HTTP 502) for external API communication failures.
-    - `RoonApiException` (HTTP 502) for Roon Core WebSocket and playback execution errors.
-    - `CollectionSyncException` (HTTP 500) for batch synchronization errors.
-    - `PdfGenerationException` (HTTP 500) for PDF and QR code compilation failures.
-- Endpoint-specific failure paths in analytics endpoints are aligned to the same ProblemDetail structure.
-- Lightweight success responses for scan-related endpoints are returned as typed DTOs instead of ad-hoc maps, improving schema clarity across backend and frontend.
+- All handlers return `Result<_, AppError>`. `AppError` (`backend/src/error.rs`) maps to RFC-7807 `ProblemDetail` JSON (`type`, `title`, `status`, `detail`, optional `instance`):
+    - `BadRequest` → 400, `Unauthorized` → 401, `Forbidden` → 403, `NotFound` → 404, `Conflict` → 409, `TooManyRequests` → 429
+    - `Timeout` → 503 (request exceeded `REQUEST_TIMEOUT_SECS` / `LONG_REQUEST_TIMEOUT_SECS`)
+    - `Database`, `Migration`, `Config`, `Internal` → 500 (details are logged; database errors are not exposed to the client)
+- Failures of external integrations (Discogs, Roon) are currently reported as `Internal` (HTTP 500) with a descriptive message.
+- Unknown routes return a 404 `ProblemDetail` via the router fallback.
+- Lightweight success responses (e.g. scan, reset) are typed DTOs instead of ad-hoc maps.
 
 ### 8.4 Observability & Logging
-- **Backend Logging**: A global `HandlerInterceptor` tracks HTTP request execution times, final status codes, and implicitly catches and logs thrown exceptions for all `/api/**` endpoints.
+- **Backend Logging**: Structured text logs via `tracing` (filter `RUST_LOG`); `tower_http::TraceLayer` logs every HTTP request with status and latency, `AppError` logs server-side failures.
 - **Frontend Logging**: 
     - **Browser Environment**: An Angular `HttpInterceptorFn` (`authInterceptor`) logs request latencies and response statuses transparently into the browser console.
     - **Container Proxy**: The frontend Docker container (Nginx in production, Angular dev-server in development) intercepts proxy API traffic and logs metrics matching the backend console format for centralized Docker monitoring.
 
 ### 8.5 API Documentation
-- The backend exposes an OpenAPI 3 specification and interactive Swagger UI via `springdoc-openapi` (`/v3/api-docs` and `/swagger-ui.html`).
-- These endpoints are permitted without authentication in `SecurityConfig`, but are **disabled in production** through the `SPRINGDOC_API_DOCS_ENABLED=false` and `SPRINGDOC_SWAGGER_UI_ENABLED=false` environment variables set in `docker/docker-compose.prod.yml`, so the schema is not exposed on public deployments.
+- The REST API has no OpenAPI/Swagger endpoint. The contract is defined by the Rust DTOs in `backend/crates/vinyl-api-types` (pinned by JSON contract tests) and the backend-internal models; the MCP server uses the same crate.
 
 ### 8.6 Delivery Workflow
 - **Branch Strategy**: The project uses a simplified flow with two main branches: `develop` (for new features) and `main` (for stable releases). Development happens in temporary feature branches that are merged into `develop`.
 - **Versioning**: Before merging into `main`, version bumps across the frontend, backend, and documentation are automated via the `./scripts/release.sh` script on the `develop` branch.
-- **Continuous Deployment (CD)**: Releases are managed via GitHub Releases. Creating a new GitHub Release (e.g. `v1.5.0`) pointing to `main` issues a Git Tag. The GitHub Actions CI pipeline listens to tags matching `v*.*.*`, runs backend tests and the `security-online` dependency audit, builds the frontend and backend Docker Images, tags them appropriately (`latest` and `v1.5.0`), and pushes them to the GitHub Container Registry (GHCR).
+- **Continuous Deployment (CD)**: Merging `develop` into `main` triggers the CI pipeline on `main`, which (after all tests) builds multi-arch frontend and backend Docker images, tags them `latest` and `v<version>` (from `frontend/package.json`) and pushes them to GHCR. In parallel, `release.yml` creates the GitHub Release `v<version>` with generated notes and attaches native MCP server binaries (Linux, macOS).
 
 ## 9. Architecture Decisions
 
@@ -254,15 +251,15 @@ Architectural decisions in Vinyl Tracker are maintained as formal **Architecture
 
 - **Test Coverage**: Strict requirement of >=80% line coverage for both Backend (`cargo llvm-cov --fail-under-lines 80`) and Frontend (Vitest via `@angular/build:unit-test`, thresholds for statements/branches/functions/lines in `angular.json`). Both are enforced in the CI pipeline.
 - **End-to-End Testing**: Automated Playwright E2E test suite covering authentication, navigation, dashboard scanner access, and Discogs sync flows, executed on every PR/push in the CI pipeline.
-- **Dependency Hygiene**: Backend dependencies are checked in CI against Sonatype OSS Index; findings are reported to an audit artifact (`ossindex-audit.json`) with the current configuration set to non-blocking (`fail=false`).
-- **Test Execution Split**: Unit tests run via Surefire during `test`, while integration tests run via Failsafe during `verify`. This improves local feedback speed while keeping full validation in CI.
+- **Dependency Hygiene**: Dependabot proposes weekly updates for GitHub Actions; npm installs run without `--legacy-peer-deps` so peer conflicts surface. (No automated vulnerability audit for Rust crates yet.)
+- **Static Checks**: `cargo fmt --all -- --check` and `cargo clippy --all-targets -- -D warnings` for backend and MCP server; TypeScript strict build for the frontend.
 - **Responsiveness**: The UI must adapt to mobile screens (< 768px) for usable barcode scanning on phones.
-- **Performance**: API responses should be < 200ms (excluding external Discogs calls). Heavily accessed database relationships (e.g. `user_id` on collections, `discogs_id` on records) are backed by explicit B-tree indexes applied via Flyway to prevent query degradation as dataset sizes grow. The `Record.genres` `@ElementCollection` is fetched `LAZY` with a Hibernate `@BatchSize(50)` to avoid per-row genre queries (N+1) when listing collections and computing analytics. Release pricing (`lowest_price`, `median_price`) and media format (`format`) are cached directly in the `record_cache` table via Flyway migrations `V3`, `V4`, and `V9` to avoid repeated remote marketplace lookups.
+- **Performance**: API responses should be < 200ms (excluding external Discogs calls). Heavily accessed relationships (e.g. `user_id` on collections and listen events, `discogs_id` on records) are backed by explicit B-tree indexes (migration `2`). Collection listing, filtering and sorting run as SQL queries in `collection_query` instead of per-row lookups. Release pricing (`lowest_price`, `median_price`) and media format (`format`) are persisted in `record_cache` (migrations `3`, `4`, `9`) to avoid repeated remote marketplace lookups.
 
 ## 11. Risks and Technical Debt
 
 - **Discogs Dependency**: The core scanning feature relies heavily on the Discogs API availability and rate limits.
-    - *Mitigation*: Implement caching or manual entry fallback (future feature).
+    - *Mitigation*: Rate limiting and `moka` caches reduce API calls; a manual entry fallback is a possible future feature.
 - **HTTPS Requirement**: Barcode scanning requires a secure context (HTTPS/localhost).
     - *Mitigation*: `mkcert` workflow documented for local development. Production setup requires a reverse proxy with SSL (e.g., Traefik/Nginx).
 

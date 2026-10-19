@@ -13,11 +13,11 @@ Die Zielmaschine benötigt:
 Die Zielmaschine benötigt Zugriff auf die Docker Images. Sie haben zwei Möglichkeiten:
 
 ### Option A: Automatisiert via CI/CD (Empfohlen)
-Dieses Projekt ist mit GitHub Actions so konfiguriert, dass es automatisch Images baut und in die **GitHub Container Registry (GHCR)** pusht, sobald Änderungen in den `main`-Branch gemergt werden oder ein Release-Tag erstellt wird.
+Dieses Projekt ist mit GitHub Actions so konfiguriert, dass es automatisch Images baut und in die **GitHub Container Registry (GHCR)** pusht, sobald Änderungen in den `main`-Branch gemergt werden.
 
-Die GitHub Actions CI Pipeline führt automatisch Tests und Linting für das Rust-Backend (`cargo test`, `cargo clippy`) sowie die Unit- und E2E-Tests für das Frontend aus. Anschließend werden Multi-Arch Docker-Images gebaut und publiziert.
+Die GitHub Actions CI Pipeline führt automatisch Tests, Linting und Coverage-Prüfung für das Rust-Backend (`cargo test`, `cargo clippy`, `cargo llvm-cov`) und den MCP-Server sowie die Unit- (Vitest) und E2E-Tests (Playwright) für das Frontend aus. Anschließend werden Multi-Arch Docker-Images gebaut und publiziert.
 
-1.  Mergen Sie Ihre fertigen Features aus `develop` in den `main` Branch (oder erstellen Sie ein Release-Tag).
+1.  Mergen Sie Ihre fertigen Features aus `develop` in den `main` Branch.
 2.  Die GitHub Actions "CI Pipeline" baut und testet das Projekt vollautomatisch.
 3.  Die Images stehen öffentlich (**Public**) unter folgenden Adressen bereit:
     - `ghcr.io/gerontosepp/vinyl-tracker-backend:latest` (oder z.B. `:v0.7.0`)
@@ -76,12 +76,10 @@ wget https://raw.githubusercontent.com/gerontosepp/vinyl-tracker/main/.env.examp
       ```
 5.  **Datenbank-Migrationen**:
     Das Backend führt beim Start automatisch alle ausstehenden Migrationen aus (`sqlx::migrate`, Historie in `_sqlx_migrations`). Bestehende Datenbanken mit `refinery_schema_history` oder `flyway_schema_history` werden beim ersten Start automatisch übernommen, ohne Migrationen erneut auszuführen ([ADR-0017](adr/0017-datenbank-migrationen-mit-sqlx-migrate.md)). Erstellen Sie vor Updates trotzdem ein Backup (`docker exec vinyl-postgres-prod pg_dump -U <user> <db> > backup.sql`).
-6.  **OpenAPI / Swagger-Dokumentation**:
-    In Produktionsumgebungen ist die API-Dokumentation standardmäßig deaktiviert, um API-Details nicht ungeschützt offenzulegen. Gesteuert wird dies über die Umgebungsvariablen:
-    - `SPRINGDOC_API_DOCS_ENABLED=false`
-    - `SPRINGDOC_SWAGGER_UI_ENABLED=false`
-7.  **Strukturiertes JSON-Logging**:
-    Durch das Setzen von `SPRING_PROFILES_ACTIVE=prod` in der Docker Compose Konfiguration wird die Logausgabe des Backends auf JSON-Format umgestellt. Dies erleichtert das automatische Einlesen, Filtern und Durchsuchen der Logs durch Log-Aggregatoren (z.B. Loki, Logstash, Fluentd).
+6.  **Weitere Backend-Einstellungen**:
+    Alle Umgebungsvariablen des Backends mit Defaults sind im [README](../README.md#2-setup-environment-variables) aufgeführt. Für den Produktivbetrieb wichtig: `APP_ENV=production` (aktiviert `Secure`-Cookies und verbietet den Entwicklungs-`JWT_SECRET`) sowie eigene Werte für `VINYL_ENCRYPTION_PASSWORD`/`VINYL_ENCRYPTION_SALT`.
+7.  **Logging**:
+    Das Backend schreibt Text-Logs über `tracing` nach stdout (`docker logs vinyl-backend-prod`). Der Detailgrad wird über `RUST_LOG` gesteuert (in den Prod-Compose-Dateien: `info,backend_rs=info,tower_http=info`). Eine OpenAPI-/Swagger-Oberfläche stellt das Backend nicht bereit.
 
 ## 4. Anwendung starten
 
@@ -129,13 +127,18 @@ Für den produktiven Einsatz auf einem Server (z.B. als Docker-VM unter Proxmox)
    - Wähle "Request a new SSL Certificate".
    - Aktiviere "Force SSL".
    - Speichern. Nginx Proxy Manager besorgt nun via Let's Encrypt ein gültiges Zertifikat.
-5. **CORS in `.env` konfigurieren**:
-   Tragen Sie Ihre Domain in der `.env`-Datei auf dem Server ein:
+5. **`.env` auf dem Server anpassen**:
    ```env
-   CORS_ALLOWED_ORIGINS=https://vinyl.meinedomain.de,https://localhost:5173,https://127.0.0.1:5173
+   # Cookies nur über HTTPS (Default bei APP_ENV=production)
+   APP_ENV=production
+   AUTH_COOKIE_SECURE=true
+   # IP des Reverse Proxys ergänzen, falls er nicht in den Docker-Netzen liegt
+   TRUSTED_PROXIES=172.16.0.0/12,192.168.0.0/16,<IP-des-Reverse-Proxys>
    ```
    > [!IMPORTANT]
-   > Moderne Browser senden bei POST-Anfragen (Login, Registrierung) stets einen `Origin`-Header. Wenn Ihre Domain nicht in `CORS_ALLOWED_ORIGINS` hinterlegt ist, blockiert Spring Boot die Anfrage mit einem HTTP `403 Invalid CORS request` Fehler.
+   > Das Login-Rate-Limit arbeitet pro Client-IP. Steht die IP des Reverse Proxys nicht in `TRUSTED_PROXIES`, teilen sich alle Benutzer das Kontingent des Proxys ([ADR-0016](adr/0016-vertrauenswuerdige-proxies-fuer-client-ip-ermittlung.md)).
+   >
+   > `CORS_ALLOWED_ORIGINS` ist hier nicht nötig: Frontend und API werden über nginx unter derselben Domain ausgeliefert (gleicher Origin). Die Liste ist nur relevant, wenn das Frontend von einem anderen Origin auf die API zugreift (z. B. Entwicklungsserver auf `https://localhost:5173`).
 
 Ab jetzt erreicht jedes Gerät (auch dein Smartphone) die App über `https://vinyl.meinedomain.de` mit einem zu 100% gültigen und vertrauenswürdigen Zertifikat. Der Kamera-Zugriff für das Barcode-Scanning wird ohne Warnungen gestattet!
 
@@ -144,83 +147,38 @@ Für die reine Entwicklung auf einem lokalen Laptop ohne eigene Domain wird weit
 
 ---
 
-## 6. Eigener CI/CD Runner auf Proxmox (Self-Hosted Runner)
+## 6. Eigene CI/CD Runner (Self-Hosted Runner)
 
-Um Build- und Testzeiten zu minimieren und GitHub-Warteschlangen für die Testcontainers- und Playwright-Suites zu vermeiden, unterstützt Vinyl Tracker den Betrieb eines **Self-Hosted GitHub Actions Runners** auf Proxmox (z. B. in einer dedizierten Docker-VM oder einem LXC-Container).
+Die CI-Jobs (`runs-on: [self-hosted, linux]`) laufen auf selbst betriebenen GitHub-Actions-Runnern. Aktuell sind das Docker-Container auf Hetzner-Cloud-Servern (ARM64, Labels `self-hosted,Linux,ARM64,cax21`); jeder Linux-Docker-Host (z. B. auch eine Proxmox-VM) eignet sich.
 
 ### Architektur & Hybrid-CI
-- **Alltägliche Builds (Commits & PRs)**: Laufen direkt auf dem Proxmox-Runner (`[self-hosted, linux]`).
-  - Java 25 & Maven 3.9.9 via GitHub Actions Cache
-  - Testcontainers startet echte PostgreSQL-Instanzen über den gemounteten Docker-Socket (`/var/run/docker.sock`)
-  - Node 24, Chrome Headless & Playwright E2E-Tests
-  - Rust Toolchain & MCP Server Tests
-- **Multi-Plattform Releases**: Bei Release-Tags (`v*.*.*`) startet GitHub zusätzlich Cloud-Runner (`macos-latest` Apple Silicon) für native macOS MCP-Binaries.
+- **Alltägliche Builds (Commits & PRs)**: Laufen auf den Self-Hosted-Runnern.
+  - Rust-Toolchain (Backend inkl. `cargo-llvm-cov`, MCP-Server); ein PostgreSQL-Testcontainer wird über den gemounteten Docker-Socket (`/var/run/docker.sock`) gestartet.
+  - Node 24, Vitest-Unit-Tests (`jsdom`, kein Browser nötig) und Playwright-E2E-Tests (eigenes Chromium).
+  - Drei Jobs (Backend, Frontend, MCP) laufen parallel, wenn genügend Runner frei sind.
+- **Image-Publish**: Pushes auf `main` bauen Multi-Arch-Images (`linux/amd64`, `linux/arm64`) und veröffentlichen sie in GHCR.
+- **Releases** (`release.yml`, beim Merge eines PRs nach `main`): GitHub-Release plus GitHub-gehostete Runner (`ubuntu-latest`, `macos-latest`) für native MCP-Binaries.
 
-### Sicherheitshinweis (Wichtig bei öffentlichen Repositories)
-In einem öffentlichen Repository könnten fremde Forks ohne Freigabe bösartigen Code auf Ihrem heimischen Server ausführen. Aktivieren Sie zwingend:
-1. Im GitHub-Repo: **Settings** → **Actions** → **General**
-2. Unter **Fork pull request workflows**: **"Require approval for all outside collaborators"** auswählen und speichern.
+### Sicherheitshinweise (Wichtig bei öffentlichen Repositories)
+1. Im GitHub-Repo unter **Settings** → **Actions** → **General** → **Fork pull request workflows** die Freigabe für alle externen Mitwirkenden verlangen (aktuell aktiv: `all_external_contributors`).
+2. Alle Actions sind auf Commit-SHAs gepinnt; Dependabot hält sie aktuell.
+3. Der gemountete Docker-Socket gibt Jobs Root-Rechte auf dem Host. Empfohlen sind **ephemere Runner** (ein frischer Container pro Job, z. B. `EPHEMERAL=true` mit `docker run --rm` über systemd) und ein **fine-grained PAT** nur für dieses Repository mit der Berechtigung `Administration: Read and write`.
 
-### Runner mit Docker Compose einrichten (Multi-Runner für parallele Jobs)
-Verwenden Sie die Vorlage [`docker/docker-compose.runner.yml`](../docker/docker-compose.runner.yml):
-
-```yaml
-services:
-  github-runner-01:
-    image: myoung34/github-runner:ubuntu-noble
-    container_name: proxmox-github-runner-01
-    restart: unless-stopped
-    environment:
-      REPO_URL: "https://github.com/gerontosepp/vinyl-tracker"
-      RUNNER_TOKEN: "${RUNNER_TOKEN:-}"
-      ACCESS_TOKEN: "${ACCESS_TOKEN:-}"
-      RUNNER_NAME: "${RUNNER_NAME_01:-proxmox-runner-01}"
-      RUNNER_WORKDIR: "/_work"
-      RUNNER_GROUP: "default"
-      LABELS: "self-hosted,linux,x64,proxmox"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - runner-work-01:/_work
-
-  github-runner-02:
-    image: myoung34/github-runner:ubuntu-noble
-    container_name: proxmox-github-runner-02
-    restart: unless-stopped
-    environment:
-      REPO_URL: "https://github.com/gerontosepp/vinyl-tracker"
-      RUNNER_TOKEN: "${RUNNER_TOKEN:-}"
-      ACCESS_TOKEN: "${ACCESS_TOKEN:-}"
-      RUNNER_NAME: "${RUNNER_NAME_02:-proxmox-runner-02}"
-      RUNNER_WORKDIR: "/_work"
-      RUNNER_GROUP: "default"
-      LABELS: "self-hosted,linux,x64,proxmox"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - runner-work-02:/_work
-
-volumes:
-  runner-work-01:
-  runner-work-02:
-```
+### Runner mit Docker Compose einrichten
+Vorlage: [`docker/docker-compose.runner.yml`](../docker/docker-compose.runner.yml) (Image `myoung34/github-runner:ubuntu-noble`, zwei Runner für parallele Jobs). Namen und Labels in der Vorlage an den eigenen Host anpassen.
 
 > **Wichtiger Hinweis zum Image:** Verwenden Sie `ubuntu-noble` (Ubuntu 24.04 LTS). Das veraltete `latest` (Ubuntu 20.04) wird von modernen Versionen von Playwright und Node.js nicht mehr unterstützt.
 
-### Inbetriebnahme auf dem Proxmox-Host:
+### Inbetriebnahme auf dem Runner-Host
 1. **Token holen**:
-   - **Option A (Empfohlen für Dauerbetrieb)**: GitHub Personal Access Token (Classic) mit Scope `repo` erzeugen und als `ACCESS_TOKEN` eintragen. Dieser läuft nicht nach 1 Stunde ab.
-   - **Option B**: Auf GitHub unter **Settings** → **Actions** → **Runners** → **New runner** einen temporären Registrierungstoken kopieren und als `RUNNER_TOKEN` eintragen (Hinweis: Gilt 1 Stunde für Registrierungen).
+   - **Option A (Empfohlen für Dauerbetrieb)**: Fine-grained Personal Access Token (Repository `vinyl-tracker`, Berechtigung `Administration: Read and write`) als `ACCESS_TOKEN` eintragen. Damit holt sich der Runner selbst Registrierungs-Tokens.
+   - **Option B**: Auf GitHub unter **Settings** → **Actions** → **Runners** → **New runner** einen temporären Registrierungstoken kopieren und als `RUNNER_TOKEN` eintragen (gilt nur 1 Stunde).
 2. **Starten**:
    ```bash
-   # Beide Runner (01 und 02) starten:
-   RUNNER_TOKEN="<DEIN_TOKEN>" docker compose -f docker/docker-compose.runner.yml up -d
-
-   # Oder gezielt nur den zweiten Runner starten:
-   RUNNER_TOKEN="<DEIN_TOKEN>" docker compose -f docker/docker-compose.runner.yml up -d github-runner-02
-
-   # Logs prüfen:
+   ACCESS_TOKEN="<DEIN_TOKEN>" docker compose -f docker/docker-compose.runner.yml up -d
    docker compose -f docker/docker-compose.runner.yml logs -f
    ```
-3. Sobald `Listening for Jobs` in den Logs erscheint, ist der Runner aktiv und nimmt Jobs entgegen. Beide Runner bearbeiten Jobs vollkommen unabhängig und parallel.
+3. Sobald `Listening for Jobs` in den Logs erscheint, ist der Runner aktiv. Status aller Runner: **Settings** → **Actions** → **Runners**.
 
 ### Live-Logüberwachung mit Dozzle
 Wenn auf dem Runner-Server Dozzle (auf Port 8888) läuft, kann mit folgendem Skript ein SSH-Tunnel aufgebaut und das Dozzle-Dashboard direkt in einem minimalen App-Browserfenster gestartet werden:

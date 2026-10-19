@@ -67,7 +67,7 @@ jobs:
           -e POSTGRES_USER=vinyl_user \
           -e POSTGRES_PASSWORD=vinyl_password \
           -p 127.0.0.1::5432 \
-          postgres:17-alpine
+          postgres:16-alpine
 
         # Wait until PostgreSQL process is ready
         for i in {1..30}; do

@@ -7,6 +7,18 @@
     "isUnreleased": true,
     "items": [
       {
+        "title": "Dokumentation an den aktuellen Stand angeglichen (`#137`)",
+        "type": "docs",
+        "typeLabel": "Docs",
+        "details": [
+          "**Agent-Skills korrigiert**: Migrations-Skill nutzt die sqlx-Namenskonvention (`10_…sql` statt `V10__…`), Dependency-, Pipeline- und Ticket-Skills nennen Angular 22, Vitest und kein `--legacy-peer-deps` mehr.",
+          "**arc42 für das Rust-Backend neu gefasst**: Bausteinsicht (Routes/Services/Clients), Sicherheit, Validierung, Fehlerbehandlung, Logging und Delivery ohne Spring-/Java-Altlasten.",
+          "**Vollständige Konfigurationsreferenz** aller Backend-Umgebungsvariablen im README; `CORS_ALLOW_CREDENTIALS` einheitlich `true`.",
+          "**Deployment-Anleitung**: Hinweise zu `TRUSTED_PROXIES` hinter Reverse Proxies, aktueller Runner-Aufbau (Hetzner, ARM64), wirkungslose Spring-Variablen entfernt.",
+          "**Versionen**: MCP-Server auf `0.9.0` angeglichen, `release.sh` hebt künftig alle Cargo-Manifeste an; CI testet gegen PostgreSQL 16 wie die Compose-Dateien."
+        ]
+      },
+      {
         "title": "Frontend: Unit-Tests mit Vitest statt Karma/Jasmine (`#134`)",
         "type": "feat",
         "typeLabel": "Feature",

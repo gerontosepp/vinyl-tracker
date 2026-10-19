@@ -59,11 +59,11 @@ Apply the mandatory project rules defined in `.agent/rules/`:
   - Layered architecture (Routes -> Services -> Models / SQLx queries).
   - Rust 2024 edition, Axum 0.8, Tokio 1.x & SQLx 0.8.
   - Strict UTC date/time handling (`chrono::DateTime<Utc>`).
-  - Angular 19 standalone components with Signals and Tailwind CSS.
+  - Angular 22 standalone components with Signals and Tailwind CSS.
   - Multi-language support via `LanguageService` (maintain both `de` and `en` keys).
   - Structured error details via `ProblemDetail` (RFC 7807) and user-friendly toasts.
 - **Database Changes**:
-  - Follow the [`database-migrations`](../database-migrations/SKILL.md) skill for Refinery migrations.
+  - Follow the [`database-migrations`](../database-migrations/SKILL.md) skill for `sqlx::migrate` migrations.
 
 ---
 
@@ -73,9 +73,9 @@ Before requesting user verification, all tests must pass locally:
 
 1. **Backend Formatting, Tests & Linter**:
    ```bash
-   cargo fmt --manifest-path backend/Cargo.toml -- --check
+   cargo fmt --manifest-path backend/Cargo.toml --all -- --check
    cargo test --manifest-path backend/Cargo.toml
-   cargo clippy --manifest-path backend/Cargo.toml -- -D warnings
+   cargo clippy --manifest-path backend/Cargo.toml --all-targets -- -D warnings
    ```
    - Add/update unit and integration tests for all modified logic.
    - Fix formatting issues with `cargo fmt --manifest-path backend/Cargo.toml` if needed.
@@ -83,11 +83,11 @@ Before requesting user verification, all tests must pass locally:
 2. **Frontend Tests & Build**:
    ```bash
    cd frontend
-   npm test -- --watch=false
+   npm test -- --watch=false --coverage
    npm run build
    cd ..
    ```
-   - Ensure all Karma/Jasmine tests pass and zero TypeScript errors exist.
+   - Ensure all Vitest tests pass, coverage stays >= 80 % and zero TypeScript errors exist.
 
 ---
 

@@ -1,8 +1,8 @@
 # Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.27.
+This project uses [Angular CLI](https://github.com/angular/angular-cli) 22.
 
-This is the Angular 19 PWA frontend for Vinyl Tracker (the frontend built and deployed by Docker Compose). See the [root README](../README.md) for full setup, SSL, and Docker instructions.
+This is the Angular 22 PWA frontend for Vinyl Tracker (the frontend built and deployed by Docker Compose). See the [root README](../README.md) for full setup, SSL, and Docker instructions.
 
 ## Development server
 

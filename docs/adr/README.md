@@ -24,6 +24,7 @@ Als Format dient der bewährte Standard für Architecture Decision Records (ange
 | [ADR-0012](0012-ssrf-geschuetzter-image-proxy-fuer-album-cover.md) | 2026-10-15 | Image-Proxy mit Server-Side Request Forgery (SSRF) Schutz für Album-Cover | `Accepted` |
 | [ADR-0013](0013-multi-architektur-container-builds-via-cargo-chef-und-buildplatform.md) | 2026-10-15 | Multi-Architektur Container-Builds via Native Compilation (`$BUILDPLATFORM`) & `cargo-chef` | `Accepted` |
 | [ADR-0014](0014-spec-driven-development-mit-openspec.md) | 2026-10-19 | Spec-Driven Development (SDD) mit OpenSpec und nativer Antigravity-Integration | `Accepted` |
+| [ADR-0015](0015-automatisierte-ci-pipeline-ueberwachung-und-self-healing-agent.md) | 2026-10-19 | Automatisierte CI-Pipeline-Überwachung und Self-Healing-Agent mit GitHub CLI | `Accepted` |
 
 ---
 

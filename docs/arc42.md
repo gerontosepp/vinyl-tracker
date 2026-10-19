@@ -243,6 +243,7 @@ Architectural decisions in Vinyl Tracker are maintained as formal **Architecture
 | [ADR-0012](adr/0012-ssrf-geschuetzter-image-proxy-fuer-album-cover.md) | 2026-10-15 | Image proxy with Server-Side Request Forgery (SSRF) protection for album covers | `Accepted` |
 | [ADR-0013](adr/0013-multi-architektur-container-builds-via-cargo-chef-und-buildplatform.md) | 2026-10-15 | Multi-architecture container builds via native compilation (`$BUILDPLATFORM`) and `cargo-chef` | `Accepted` |
 | [ADR-0014](adr/0014-spec-driven-development-mit-openspec.md) | 2026-10-19 | Spec-Driven Development (SDD) with OpenSpec and native Antigravity integration | `Accepted` |
+| [ADR-0015](adr/0015-automatisierte-ci-pipeline-ueberwachung-und-self-healing-agent.md) | 2026-10-19 | Automated CI pipeline monitoring and self-healing agent with GitHub CLI | `Accepted` |
 
 ## 10. Quality Requirements
 

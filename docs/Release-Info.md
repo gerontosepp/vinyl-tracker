@@ -9,6 +9,10 @@
 
 ## Unreleased
 
+---
+
+## v0.10.1 (2026-10-19)
+
 - **Fix: Formatierung in den Versionshinweisen (`#145`)**:
   - **Lesbare Hervorhebungen**: Fett, kursiv und Code aus der Release-Info werden im Tab „Versionshinweise“ formatiert dargestellt statt als `**`- und Backtick-Zeichen; Links erscheinen mit ihrem Text.
   - **Sicher ohne HTML**: Neue Pipe `inlineMarkdown` zerlegt den Text in Abschnitte, die das Template als Elemente rendert – kein `innerHTML`, keine neue Abhängigkeit.

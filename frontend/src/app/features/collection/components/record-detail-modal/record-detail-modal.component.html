@@ -67,22 +67,83 @@
                 }
               </button>
 
-              <button
-                type="button"
-                id="play-on-roon-btn"
-                (click)="onPlayOnRoon()"
-                [disabled]="isPlayingOnRoon() || loading()"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/30 hover:bg-purple-100 dark:hover:bg-purple-900/50 border border-purple-200 dark:border-purple-800 active:scale-95 transition-all shadow-sm hover:shadow disabled:opacity-50 cursor-pointer"
-                title="Album auf Roon abspielen"
-              >
-                @if (isPlayingOnRoon()) {
-                  <div class="w-3.5 h-3.5 border-2 border-purple-600 dark:border-purple-400 border-t-transparent rounded-full animate-spin"></div>
-                  <span>Startet...</span>
-                } @else {
-                  <svg lucidePlay [size]="14" class="fill-current"></svg>
-                  <span>Auf Roon abspielen</span>
+              <div class="relative inline-flex items-center">
+                <button
+                  type="button"
+                  id="play-on-roon-btn"
+                  (click)="onPlayOnRoon()"
+                  [disabled]="isPlayingOnRoon() || loading()"
+                  [class]="'inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/30 hover:bg-purple-100 dark:hover:bg-purple-900/50 border border-purple-200 dark:border-purple-800 active:scale-95 transition-all shadow-xs hover:shadow-sm disabled:opacity-50 cursor-pointer ' + (hasMultipleZones() ? 'rounded-l-xl border-r-0' : 'rounded-xl')"
+                  [title]="selectedZone() ? ('record.playOnRoon' | translate) + ' (' + selectedZone()?.name + ')' : ('record.playOnRoon' | translate)"
+                >
+                  @if (isPlayingOnRoon()) {
+                    <div class="w-3.5 h-3.5 border-2 border-purple-600 dark:border-purple-400 border-t-transparent rounded-full animate-spin"></div>
+                    <span>{{ 'record.playingOnRoon' | translate }}</span>
+                  } @else {
+                    <svg lucidePlay [size]="14" class="fill-current"></svg>
+                    <span>{{ 'record.playOnRoon' | translate }}</span>
+                    @if (selectedZone()) {
+                      <span class="max-w-[120px] truncate text-[11px] font-normal opacity-85 border-l border-purple-300 dark:border-purple-700/60 pl-1.5 ml-0.5">
+                        {{ selectedZone()?.name }}
+                      </span>
+                    }
+                  }
+                </button>
+
+                @if (hasMultipleZones()) {
+                  <button
+                    type="button"
+                    id="roon-zone-dropdown-btn"
+                    (click)="toggleZoneDropdown()"
+                    [disabled]="isPlayingOnRoon() || loading()"
+                    class="inline-flex items-center justify-center px-2 py-1.5 rounded-r-xl text-xs font-semibold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/30 hover:bg-purple-100 dark:hover:bg-purple-900/50 border border-purple-200 dark:border-purple-800 active:scale-95 transition-all shadow-xs hover:shadow-sm disabled:opacity-50 cursor-pointer"
+                    [title]="'record.selectZone' | translate"
+                  >
+                    <svg
+                      lucideChevronDown
+                      [size]="14"
+                      [class]="'transition-transform duration-200 ' + (isZoneDropdownOpen() ? 'rotate-180' : '')"
+                    ></svg>
+                  </button>
                 }
-              </button>
+
+                @if (isZoneDropdownOpen()) {
+                  <div class="fixed inset-0 z-30" (click)="closeZoneDropdown()"></div>
+                  <div
+                    class="absolute right-0 sm:left-0 top-full mt-1.5 w-60 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 z-40 p-2 flex flex-col gap-1 animate-in fade-in slide-in-from-top-2 duration-150"
+                  >
+                    <div class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
+                      <span>{{ 'record.selectZone' | translate }}</span>
+                    </div>
+                    <div class="max-h-52 overflow-y-auto space-y-0.5 py-0.5">
+                      @for (zone of roonZones(); track zone.zoneId) {
+                        <button
+                          type="button"
+                          (click)="selectAndPlay(zone.zoneId)"
+                          class="w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl text-left text-xs transition-colors cursor-pointer hover:bg-purple-50 dark:hover:bg-purple-900/30"
+                          [class.bg-purple-100]="zone.zoneId === selectedZoneId()"
+                          [class.dark:bg-purple-900/50]="zone.zoneId === selectedZoneId()"
+                        >
+                          <div class="flex flex-col min-w-0">
+                            <span class="font-semibold text-slate-800 dark:text-slate-100 truncate">
+                              {{ zone.name }}
+                            </span>
+                            <span class="text-[10px] text-slate-400 capitalize">
+                              {{ zone.state }}
+                              @if (zone.zoneId === authService.user()?.roonZoneId) {
+                                • {{ 'record.defaultZone' | translate }}
+                              }
+                            </span>
+                          </div>
+                          @if (zone.zoneId === selectedZoneId()) {
+                            <svg lucideCheck [size]="14" class="text-purple-600 dark:text-purple-400 shrink-0"></svg>
+                          }
+                        </button>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
             </div>
           </div>
         </div>

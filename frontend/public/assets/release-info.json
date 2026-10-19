@@ -7,6 +7,17 @@
     "isUnreleased": true,
     "items": [
       {
+        "title": "Roon Multi-Room Audio: Dynamische Zonenauswahl beim Abspielen (`#67`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "**Interaktiver Zonen-Split-Button**: Der Abspiel-Button im Record-Detail-Modal bietet nun ein Dropdown zur Auswahl aller im Roon Core aktiven Audiozonen (z. B. Wohnzimmer, Büro, Kopfhörer) inklusive aktuellem Wiedergabestatus.",
+          "**Intelligente Vorbelegung & Session-Memory**: Automatische Vorauswahl der in den Benutzereinstellungen hinterlegten Standard-Zone sowie temporäres Merken der zuletzt gewählten Zone in der Browser-Sitzung (`sessionStorage`).",
+          "**Backend-Routing**: Zuverlässige Weiterleitung der gewählten `zone_id` an `POST /api/roon/play` mit nahtlosem Fallback auf die Standard-Zone.",
+          "**Vollständige Lokalisierung**: Alle neuen UI-Elemente und Meldungen sind in Deutsch und Englisch verfügbar (`LanguageService`)."
+        ]
+      },
+      {
         "title": "MCP Server: Unterstützung für Ressourcen (`vinyl://`), Prompts und Sammlungs-Export (`#108`)",
         "type": "feat",
         "typeLabel": "Feature",

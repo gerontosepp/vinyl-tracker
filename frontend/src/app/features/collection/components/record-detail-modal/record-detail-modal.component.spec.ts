@@ -2,11 +2,12 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { registerLocaleData } from '@angular/common';
 import localeDe from '@angular/common/locales/de';
 import localeEn from '@angular/common/locales/en';
-import { RecordDetailModalComponent } from './record-detail-modal.component';
+import { RecordDetailModalComponent, ROON_LAST_ZONE_KEY } from './record-detail-modal.component';
 import { ApiService } from '../../../../core/services/api.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { LanguageService } from '../../../../core/services/language.service';
-import { NO_ERRORS_SCHEMA } from '@angular/core';
+import { AuthService } from '../../../../core/services/auth.service';
+import { NO_ERRORS_SCHEMA, signal } from '@angular/core';
 import { of, throwError } from 'rxjs';
 import { RecordDetailDto } from '../../../../core/types';
 
@@ -15,6 +16,7 @@ describe('RecordDetailModalComponent', () => {
   let fixture: ComponentFixture<RecordDetailModalComponent>;
   let mockApiService: any;
   let mockToastService: any;
+  let mockAuthService: any;
   let languageService: LanguageService;
 
   const mockDetail: RecordDetailDto = {
@@ -37,6 +39,8 @@ describe('RecordDetailModalComponent', () => {
   });
 
   beforeEach(async () => {
+    sessionStorage.removeItem(ROON_LAST_ZONE_KEY);
+
     mockApiService = {
       getProxiedImageUrl: jasmine.createSpy('getProxiedImageUrl').and.callFake((url: string) => url),
       logRecordListen: jasmine.createSpy('logRecordListen').and.returnValue(
@@ -44,6 +48,12 @@ describe('RecordDetailModalComponent', () => {
       ),
       playOnRoon: jasmine.createSpy('playOnRoon').and.returnValue(
         of({ success: true, message: 'Playback started' })
+      ),
+      getRoonZones: jasmine.createSpy('getRoonZones').and.returnValue(
+        of([
+          { zoneId: 'zone-living', name: 'Living Room', state: 'playing' },
+          { zoneId: 'zone-office', name: 'Office', state: 'stopped' },
+        ])
       ),
       updateRecordCondition: jasmine.createSpy('updateRecordCondition').and.returnValue(
         of({ ...mockDetail, media_condition: 'Mint (M)', median_price: 29.99 })
@@ -57,11 +67,23 @@ describe('RecordDetailModalComponent', () => {
       showToast: jasmine.createSpy('showToast'),
     };
 
+    mockAuthService = {
+      user: signal<any>({
+        id: 1,
+        username: 'test',
+        roonHost: '192.168.1.100',
+        roonPort: 9100,
+        roonZoneId: 'zone-living',
+        roonZoneName: 'Living Room',
+      }),
+    };
+
     await TestBed.configureTestingModule({
       imports: [RecordDetailModalComponent],
       providers: [
         { provide: ApiService, useValue: mockApiService },
         { provide: ToastService, useValue: mockToastService },
+        { provide: AuthService, useValue: mockAuthService },
         LanguageService,
       ],
       schemas: [NO_ERRORS_SCHEMA],
@@ -119,7 +141,7 @@ describe('RecordDetailModalComponent', () => {
     );
   });
 
-  it('should trigger play on Roon successfully', () => {
+  it('should trigger play on Roon successfully with selected zone', () => {
     fixture.componentRef.setInput('detail', mockDetail);
     fixture.detectChanges();
 
@@ -128,10 +150,46 @@ describe('RecordDetailModalComponent', () => {
     expect(mockApiService.playOnRoon).toHaveBeenCalledWith({
       artist: 'The Beatles',
       title: 'Abbey Road',
+      zoneId: 'zone-living',
     });
     expect(component.isPlayingOnRoon()).toBeFalse();
     expect(mockToastService.showToast).toHaveBeenCalledWith(
-      'Wiedergabe auf Roon gestartet: The Beatles - Abbey Road 🎶',
+      'Wiedergabe auf Roon gestartet (Living Room): The Beatles - Abbey Road 🎶',
+      'success'
+    );
+  });
+
+  it('should toggle zone dropdown and switch selected zone', () => {
+    expect(component.isZoneDropdownOpen()).toBeFalse();
+    component.toggleZoneDropdown();
+    expect(component.isZoneDropdownOpen()).toBeTrue();
+
+    component.selectZone('zone-office');
+    expect(component.selectedZoneId()).toBe('zone-office');
+    expect(sessionStorage.getItem(ROON_LAST_ZONE_KEY)).toBe('zone-office');
+    expect(component.isZoneDropdownOpen()).toBeFalse();
+  });
+
+  it('should restore last used zone from sessionStorage on init', () => {
+    sessionStorage.setItem(ROON_LAST_ZONE_KEY, 'zone-office');
+    component.loadRoonZones();
+    expect(component.selectedZoneId()).toBe('zone-office');
+  });
+
+  it('should select zone and play immediately when selectAndPlay is called', () => {
+    fixture.componentRef.setInput('detail', mockDetail);
+    fixture.detectChanges();
+
+    component.selectAndPlay('zone-office');
+
+    expect(component.selectedZoneId()).toBe('zone-office');
+    expect(mockApiService.playOnRoon).toHaveBeenCalledWith({
+      artist: 'The Beatles',
+      title: 'Abbey Road',
+      zoneId: 'zone-office',
+    });
+    expect(mockToastService.showToast).toHaveBeenCalledWith(
+      'Wiedergabe auf Roon gestartet (Office): The Beatles - Abbey Road 🎶',
       'success'
     );
   });

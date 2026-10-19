@@ -9,6 +9,10 @@
 
 ## Unreleased
 
+- **Design & Typografie: Umstellung auf Google Font Inter Tight**:
+  - **Neue UI-Typografie**: Umstellung der primären serifenlosen Schriftfamilie (`--font-sans`) von *Outfit* auf *Inter Tight* (Schriftschnitte 300, 400, 500, 600, 700) in `index.html` und `styles.css`.
+  - **Bessere Informationsdichte**: Die kompaktere Laufweite von *Inter Tight* verbessert die Lesbarkeit und Platzausnutzung in Albenlisten, Tabellen und Metadaten-Badges.
+
 - **Tooling & Dev-Ops: Auto-Reconnect für Dozzle Log Viewer (`scripts/open_dozzle.sh`)**:
   - **Automatischer Reconnect**: Kontinuierliche Überwachungsschleife, die Verbindungsabbrüche, SSH-Terminierungen oder Socket-Timeouts im Hintergrund erkennt und den SSH-Tunnel zu Dozzle (`localhost:8888`) ohne Benutzereingriff automatisch neu aufbaut.
   - **Verbindungs-Keepalive**: Konfiguration von `ServerAliveInterval=10`, `ServerAliveCountMax=2`, `TCPKeepAlive=yes` und `ExitOnForwardFailure=yes` zur schnellen Erkennung toter TCP-Verbindungen (z. B. nach Standby / Ruhezustand).

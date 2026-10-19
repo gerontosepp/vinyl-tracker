@@ -7,6 +7,15 @@
     "isUnreleased": true,
     "items": [
       {
+        "title": "Design & Typografie: Umstellung auf Google Font Inter Tight",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "**Neue UI-Typografie**: Umstellung der primären serifenlosen Schriftfamilie (`--font-sans`) von *Outfit* auf *Inter Tight* (Schriftschnitte 300, 400, 500, 600, 700) in `index.html` und `styles.css`.",
+          "**Bessere Informationsdichte**: Die kompaktere Laufweite von *Inter Tight* verbessert die Lesbarkeit und Platzausnutzung in Albenlisten, Tabellen und Metadaten-Badges."
+        ]
+      },
+      {
         "title": "Tooling & Dev-Ops: Auto-Reconnect für Dozzle Log Viewer (`scripts/open_dozzle.sh`)",
         "type": "feat",
         "typeLabel": "Feature",

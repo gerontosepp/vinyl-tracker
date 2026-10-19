@@ -1,10 +1,15 @@
+use axum::extract::ConnectInfo;
 use axum::{
     body::Body,
     http::{Method, Request, StatusCode, header},
 };
-use backend_rs::{config::Config, db::init_pool, routes::create_app, state::AppState};
+use backend_rs::{
+    auth::client_ip::parse_trusted_proxies, config::Config, db::init_pool, routes::create_app,
+    state::AppState,
+};
 use http_body_util::BodyExt;
 use serde_json::{Value, json};
+use std::net::SocketAddr;
 use tower::ServiceExt;
 
 async fn setup_app_with_config(config: Config) -> (axum::Router, AppState) {
@@ -674,28 +679,37 @@ async fn test_configurable_cookie_attributes() {
     assert!(clear_cookie.contains("Domain=example.com"));
 }
 
+fn login_request_from(peer: &str, forwarded_for: Option<&str>, payload: &Value) -> Request<Body> {
+    let mut builder = Request::builder()
+        .method(Method::POST)
+        .uri("/api/users/login")
+        .header(header::CONTENT_TYPE, "application/json")
+        .extension(ConnectInfo(SocketAddr::new(peer.parse().unwrap(), 40000)));
+    if let Some(forwarded_for) = forwarded_for {
+        builder = builder.header("x-forwarded-for", forwarded_for);
+    }
+    builder
+        .body(Body::from(serde_json::to_vec(payload).unwrap()))
+        .unwrap()
+}
+
 #[tokio::test]
 async fn test_auth_rate_limiting_returns_429() {
     let mut config = Config::from_env();
     config.auth_rate_limit_for_period = 3;
+    config.trusted_proxies = parse_trusted_proxies("172.16.0.0/12");
     let (app, _) = setup_app_with_config(config).await;
 
+    let proxy_ip = "172.18.0.3";
     let test_ip = "198.51.100.42";
     let login_payload = json!({
         "username": "non_existent_rate_limit_user",
         "password": "wrong_password_123"
     });
 
-    // Send 3 requests (within quota) -> returns 401 Unauthorized
+    // Send 3 requests (within quota) through the trusted proxy -> returns 401 Unauthorized
     for i in 1..=3 {
-        let req = Request::builder()
-            .method(Method::POST)
-            .uri("/api/users/login")
-            .header(header::CONTENT_TYPE, "application/json")
-            .header("x-forwarded-for", test_ip)
-            .body(Body::from(serde_json::to_vec(&login_payload).unwrap()))
-            .unwrap();
-
+        let req = login_request_from(proxy_ip, Some(test_ip), &login_payload);
         let res = app.clone().oneshot(req).await.unwrap();
         assert_eq!(
             res.status(),
@@ -704,15 +718,10 @@ async fn test_auth_rate_limiting_returns_429() {
         );
     }
 
-    // 4th request from same IP -> exceeds limit -> returns 429 Too Many Requests
-    let blocked_req = Request::builder()
-        .method(Method::POST)
-        .uri("/api/users/login")
-        .header(header::CONTENT_TYPE, "application/json")
-        .header("x-forwarded-for", test_ip)
-        .body(Body::from(serde_json::to_vec(&login_payload).unwrap()))
-        .unwrap();
-
+    // 4th request from same client IP -> exceeds limit -> returns 429 Too Many Requests,
+    // even if the client prepends a forged address to X-Forwarded-For
+    let forged_chain = format!("203.0.113.1, {test_ip}");
+    let blocked_req = login_request_from(proxy_ip, Some(&forged_chain), &login_payload);
     let blocked_res = app.clone().oneshot(blocked_req).await.unwrap();
     assert_eq!(blocked_res.status(), StatusCode::TOO_MANY_REQUESTS);
 
@@ -727,19 +736,39 @@ async fn test_auth_rate_limiting_returns_429() {
             .contains("Rate limit exceeded")
     );
 
-    // Request from another IP should NOT be blocked
-    let other_ip_req = Request::builder()
-        .method(Method::POST)
-        .uri("/api/users/login")
-        .header(header::CONTENT_TYPE, "application/json")
-        .header("x-forwarded-for", "198.51.100.99")
-        .body(Body::from(serde_json::to_vec(&login_payload).unwrap()))
-        .unwrap();
-
+    // Request from another client IP behind the same proxy should NOT be blocked
+    let other_ip_req = login_request_from(proxy_ip, Some("198.51.100.99"), &login_payload);
     let other_ip_res = app.clone().oneshot(other_ip_req).await.unwrap();
     assert_eq!(
         other_ip_res.status(),
         StatusCode::UNAUTHORIZED,
         "Different IP must not be rate limited"
     );
+}
+
+#[tokio::test]
+async fn test_auth_rate_limiting_ignores_spoofed_forwarded_for_from_untrusted_peer() {
+    let mut config = Config::from_env();
+    config.auth_rate_limit_for_period = 2;
+    config.trusted_proxies = parse_trusted_proxies("172.16.0.0/12");
+    let (app, _) = setup_app_with_config(config).await;
+
+    let attacker_ip = "203.0.113.66";
+    let login_payload = json!({
+        "username": "non_existent_spoofing_user",
+        "password": "wrong_password_123"
+    });
+
+    // Rotating X-Forwarded-For values must not reset the quota of a directly connected client
+    for i in 1..=3 {
+        let spoofed = format!("198.51.100.{i}");
+        let req = login_request_from(attacker_ip, Some(&spoofed), &login_payload);
+        let res = app.clone().oneshot(req).await.unwrap();
+        let expected = if i <= 2 {
+            StatusCode::UNAUTHORIZED
+        } else {
+            StatusCode::TOO_MANY_REQUESTS
+        };
+        assert_eq!(res.status(), expected, "Request {i} with spoofed header");
+    }
 }

@@ -16,6 +16,13 @@ Als Format dient der bewährte Standard für Architecture Decision Records (ange
 | [ADR-0004](0004-aead-aes-256-gcm-kryptografie-fuer-tokens.md) | 2026-10-17 | Kryptografie-Modernisierung auf authentifiziertes AES-256-GCM (AEAD) für Discogs-Tokens | `Accepted` |
 | [ADR-0005](0005-direkte-roon-core-integration-via-websocket-moo.md) | 2026-10-17 | Direkte Roon Core Integration via WebSocket und MOO/1 Protokoll | `Accepted` |
 | [ADR-0006](0006-rust-test-coverage-enforcement-mit-cargo-llvm-cov.md) | 2026-10-18 | Automatisierte Rust-Testabdeckungsprüfung in der CI-Pipeline via `cargo-llvm-cov` (>= 80%) | `Accepted` |
+| [ADR-0007](0007-hardware-scanner-integration-ueber-keyboard-wedge.md) | 2026-10-12 | Eyoyo EY-009P & Hardware-Scanner-Integration via globalem HID Keyboard Wedge Listener | `Accepted` |
+| [ADR-0008](0008-zustandsbasierte-marktwert-ermittlung-nach-goldmine-standard.md) | 2026-10-14 | Zustandsbasierte Marktwert-Ermittlung und Caching nach Goldmine-Standard | `Accepted` |
+| [ADR-0009](0009-natuerliche-kuenstlersortierung-mit-kallax-collation.md) | 2026-10-18 | Natürliche Künstlersortierung mit Artikel-Normalisierung und Kallax-Regal-Collation | `Accepted` |
+| [ADR-0010](0010-serverseitige-vektor-pdf-generierung-via-printpdf.md) | 2026-10-15 | Serverseitige Vektor-PDF-Generierung via `printpdf` und `fast_qr` statt Headless-Browser | `Accepted` |
+| [ADR-0011](0011-dreiteilige-sammlungs-export-und-backup-strategie.md) | 2026-10-18 | Dreiteilige Sammlungs-Export- und Backup-Strategie (CSV, JSON, PDF) | `Accepted` |
+| [ADR-0012](0012-ssrf-geschuetzter-image-proxy-fuer-album-cover.md) | 2026-10-15 | Image-Proxy mit Server-Side Request Forgery (SSRF) Schutz für Album-Cover | `Accepted` |
+| [ADR-0013](0013-multi-architektur-container-builds-via-cargo-chef-und-buildplatform.md) | 2026-10-15 | Multi-Architektur Container-Builds via Native Compilation (`$BUILDPLATFORM`) & `cargo-chef` | `Accepted` |
 
 ---
 

@@ -9,6 +9,9 @@
 
 ## Unreleased
 
+- **Fix: Kein leerer Abschnitt „Unreleased“ in den Versionshinweisen (`#151`)**:
+  - **Aufgeräumte Liste**: Der Abschnitt „Unreleased – In Entwicklung“ erscheint nur noch, wenn er Änderungen enthält – direkt nach einem Release ist er ausgeblendet, auch bei der Suche.
+
 - **Aufgeräumte Seitenleiste (`#148`)**:
   - **Kein doppelter Einstieg mehr**: Das Zahnrad unten in der Desktop-Seitenleiste entfällt; die Einstellungen öffnen sich wie bisher über den Eintrag „Profil“. Die mobile Ansicht bleibt unverändert.
   - **Scanner-Test unter „Profil“**: Ein Test-Scan auf der Einstellungsseite bleibt jetzt auch unter `/profile` auf der Seite, statt zum Dashboard zu springen.

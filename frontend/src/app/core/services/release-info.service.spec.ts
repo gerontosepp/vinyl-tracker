@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { ReleaseInfoService } from './release-info.service';
+import { ReleaseEntry } from '../models/release-info.model';
 import { APP_VERSION } from '../constants/release-info.data';
 import packageJson from '../../../../package.json';
 
@@ -29,6 +30,40 @@ describe('ReleaseInfoService', () => {
     expect(current?.version).toMatch(/^v\d+\.\d+\.\d+/);
     const v080 = list.find((r) => r.version === 'v0.8.0');
     expect(v080).toBeDefined();
+  });
+
+  describe('Unreleased section', () => {
+    const unreleased = (items: ReleaseEntry['items']): ReleaseEntry => ({
+      version: 'Unreleased',
+      rawHeader: 'Unreleased',
+      tag: 'In Entwicklung',
+      isCurrent: false,
+      isUnreleased: true,
+      items,
+    });
+    const released: ReleaseEntry = {
+      version: 'v1.0.0',
+      rawHeader: 'v1.0.0',
+      isCurrent: true,
+      isUnreleased: false,
+      items: [{ title: 'Feature', type: 'feat', details: [] }],
+    };
+
+    it('should hide an empty Unreleased section', () => {
+      service.releases.set([unreleased([]), released]);
+      expect(service.filteredReleases().map((r) => r.version)).toEqual(['v1.0.0']);
+    });
+
+    it('should hide an empty Unreleased section when searching for its tag', () => {
+      service.releases.set([unreleased([]), released]);
+      service.setSearchQuery('entwicklung');
+      expect(service.filteredReleases()).toEqual([]);
+    });
+
+    it('should show the Unreleased section once it has changes', () => {
+      service.releases.set([unreleased([{ title: 'Neu', type: 'fix', details: [] }]), released]);
+      expect(service.filteredReleases().map((r) => r.version)).toEqual(['Unreleased', 'v1.0.0']);
+    });
   });
 
   it('should return current release', () => {

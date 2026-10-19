@@ -22,7 +22,8 @@ export class ReleaseInfoService {
 
   readonly filteredReleases = computed(() => {
     const q = this.searchQuery().trim().toLowerCase();
-    const list = this.releases();
+    // An empty "Unreleased" section (right after a release) is not worth showing
+    const list = this.releases().filter((rel) => !rel.isUnreleased || rel.items.length > 0);
     if (!q) {
       return list;
     }

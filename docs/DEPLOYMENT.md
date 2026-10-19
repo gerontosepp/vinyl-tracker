@@ -74,8 +74,8 @@ wget https://raw.githubusercontent.com/gerontosepp/vinyl-tracker/main/.env.examp
       REGISTRY_PREFIX=meinbenutzer/
       IMAGE_TAG=latest
       ```
-5.  **Datenbank-Migrationen & Flyway Baselining**:
-    Wenn Sie die Anwendung gegen eine bereits existierende Datenbank deployen, stellen Sie sicher, dass `SPRING_FLYWAY_BASELINE_ON_MIGRATE=true` in Ihrer `.env` oder der Compose-Datei gesetzt ist (standardmäßig in `docker/docker-compose.registry.yml` und `docker/docker-compose.prod.yml` aktiviert), um die Datenbank korrekt zu initialisieren.
+5.  **Datenbank-Migrationen**:
+    Das Backend führt beim Start automatisch alle ausstehenden Migrationen aus (`sqlx::migrate`, Historie in `_sqlx_migrations`). Bestehende Datenbanken mit `refinery_schema_history` oder `flyway_schema_history` werden beim ersten Start automatisch übernommen, ohne Migrationen erneut auszuführen ([ADR-0017](adr/0017-datenbank-migrationen-mit-sqlx-migrate.md)). Erstellen Sie vor Updates trotzdem ein Backup (`docker exec vinyl-postgres-prod pg_dump -U <user> <db> > backup.sql`).
 6.  **OpenAPI / Swagger-Dokumentation**:
     In Produktionsumgebungen ist die API-Dokumentation standardmäßig deaktiviert, um API-Details nicht ungeschützt offenzulegen. Gesteuert wird dies über die Umgebungsvariablen:
     - `SPRINGDOC_API_DOCS_ENABLED=false`

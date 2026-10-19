@@ -7,6 +7,18 @@
     "isUnreleased": true,
     "items": [
       {
+        "title": "Backend: Datenbank-Migrationen mit `sqlx::migrate` (`#128`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "**Ein DB-Stack statt zwei**: Migrationen laufen über `sqlx::migrate` und den bestehenden Connection-Pool; `refinery` und `tokio-postgres` entfallen ([ADR-0017](adr/0017-datenbank-migrationen-mit-sqlx-migrate.md)).",
+          "**Automatische Übernahme bestehender Datenbanken**: Beim ersten Start wird der Stand aus `refinery_schema_history`, `flyway_schema_history` oder per Schema-Erkennung nach `_sqlx_migrations` übernommen – ohne bereits angewendete Migrationen erneut auszuführen. Die Alt-Tabellen bleiben erhalten.",
+          "**Schutz vor parallelen Läufen**: Migrationen laufen unter PostgreSQL-Advisory-Lock.",
+          "**Neue Dateinamen**: `backend/migrations/<n>_<name>.sql` (statt `V<n>__<name>.sql`).",
+          "⚠️ **Vor dem Update empfohlen**: Datenbank-Backup per `pg_dump`."
+        ]
+      },
+      {
         "title": "CI-Sicherheit: Actions auf Commit-SHAs gepinnt & Dependabot (`#125`)",
         "type": "security",
         "typeLabel": "Security",

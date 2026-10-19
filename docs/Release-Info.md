@@ -9,6 +9,13 @@
 
 ## Unreleased
 
+- **Backend: Datenbank-Migrationen mit `sqlx::migrate` (`#128`)**:
+  - **Ein DB-Stack statt zwei**: Migrationen laufen über `sqlx::migrate` und den bestehenden Connection-Pool; `refinery` und `tokio-postgres` entfallen ([ADR-0017](adr/0017-datenbank-migrationen-mit-sqlx-migrate.md)).
+  - **Automatische Übernahme bestehender Datenbanken**: Beim ersten Start wird der Stand aus `refinery_schema_history`, `flyway_schema_history` oder per Schema-Erkennung nach `_sqlx_migrations` übernommen – ohne bereits angewendete Migrationen erneut auszuführen. Die Alt-Tabellen bleiben erhalten.
+  - **Schutz vor parallelen Läufen**: Migrationen laufen unter PostgreSQL-Advisory-Lock.
+  - **Neue Dateinamen**: `backend/migrations/<n>_<name>.sql` (statt `V<n>__<name>.sql`).
+  - ⚠️ **Vor dem Update empfohlen**: Datenbank-Backup per `pg_dump`.
+
 - **CI-Sicherheit: Actions auf Commit-SHAs gepinnt & Dependabot (`#125`)**:
   - **Lieferketten-Schutz**: Alle GitHub Actions in `ci.yml` und `release.yml` sind auf vollständige Commit-SHAs gepinnt (Release-Tag als Kommentar). Ein umgehängter Tag kann so keinen fremden Code mehr auf den Self-hosted-Runnern ausführen.
   - **Automatische Updates**: Dependabot (`.github/dependabot.yml`) schlägt wöchentlich gruppierte Action-Updates gegen `develop` vor.

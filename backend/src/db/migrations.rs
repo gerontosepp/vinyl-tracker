@@ -1,295 +1,203 @@
-use super::sanitize_db_url;
 use crate::error::AppError;
-use chrono::Utc;
-use refinery::embed_migrations;
-use std::collections::HashSet;
-use std::error::Error;
-use std::time::Duration;
-use tokio_postgres::NoTls;
+use sqlx::{
+    PgConnection, PgPool,
+    migrate::{Migrate, Migrator},
+};
+use std::collections::BTreeSet;
 
-embed_migrations!("migrations");
+pub static MIGRATOR: Migrator = sqlx::migrate!("./migrations");
 
-/// Runs all database migrations, ensuring full compatibility with existing
-/// databases (both Flyway-managed and legacy Hibernate-created schemas).
-pub async fn run_migrations(database_url: &str) -> Result<(), AppError> {
-    let sanitized_url = sanitize_db_url(database_url);
-    tracing::info!("Connecting to database at {sanitized_url} for schema migration check...");
+/// Advisory lock key guarding the one-time baseline import (distinct from sqlx's own migration lock).
+const BASELINE_LOCK_KEY: i64 = 0x5649_4E59_4C42_4153; // "VINYLBAS"
 
-    let max_retries: u32 = std::env::var("DATABASE_CONNECT_RETRIES")
-        .ok()
-        .and_then(|v| v.parse().ok())
-        .unwrap_or(15);
-    let retry_delay_secs: u64 = std::env::var("DATABASE_CONNECT_RETRY_INTERVAL_SECS")
-        .ok()
-        .and_then(|v| v.parse().ok())
-        .unwrap_or(2);
-    let retry_delay = Duration::from_secs(retry_delay_secs);
+/// Runs all pending database migrations via `sqlx::migrate`.
+///
+/// On the first run against a database that was previously managed by refinery, Flyway or a
+/// legacy Hibernate schema, the already applied versions are imported into `_sqlx_migrations`
+/// so they are not executed again. The legacy history tables are left untouched.
+pub async fn run_migrations(pool: &PgPool) -> Result<(), AppError> {
+    let mut conn = pool.acquire().await?;
 
-    let mut attempt: u32 = 0;
+    // Concurrent `CREATE TABLE IF NOT EXISTS` can fail in PostgreSQL, so table creation
+    // and the baseline import both happen while holding the advisory lock.
+    sqlx::query("SELECT pg_advisory_lock($1)")
+        .bind(BASELINE_LOCK_KEY)
+        .execute(&mut *conn)
+        .await?;
+    let baseline_result = import_legacy_baseline(&mut conn).await;
+    sqlx::query("SELECT pg_advisory_unlock($1)")
+        .bind(BASELINE_LOCK_KEY)
+        .execute(&mut *conn)
+        .await?;
+    baseline_result?;
+    drop(conn);
 
-    let (mut client, connection) = loop {
-        attempt += 1;
-        match tokio_postgres::connect(database_url, NoTls).await {
-            Ok(res) => {
-                if attempt > 1 {
-                    tracing::info!(
-                        "Successfully connected to database at {sanitized_url} after {attempt} attempts."
-                    );
-                }
-                break res;
-            }
-            Err(e) => {
-                let cause = e
-                    .source()
-                    .map(|s| s.to_string())
-                    .unwrap_or_else(|| "none".to_string());
-                if attempt >= max_retries {
-                    return Err(AppError::Migration(format!(
-                        "Failed to connect to database at {sanitized_url} after {attempt} attempts: {e} (underlying error: {cause})"
-                    )));
-                }
-                tracing::warn!(
-                    "Failed to connect to database at {sanitized_url} (attempt {attempt}/{max_retries}): {e} (underlying error: {cause}). Retrying in {}s...",
-                    retry_delay_secs
-                );
-                tokio::time::sleep(retry_delay).await;
-            }
-        }
-    };
-
-    // Spawn the connection driver in the background
-    tokio::spawn(async move {
-        if let Err(e) = connection.await {
-            tracing::error!("PostgreSQL migration connection error: {e}");
-        }
-    });
-
-    // Ensure refinery_schema_history table exists
-    client
-        .execute(
-            "CREATE TABLE IF NOT EXISTS refinery_schema_history (
-                version INT4 PRIMARY KEY,
-                name VARCHAR(255),
-                applied_on VARCHAR(255),
-                checksum VARCHAR(255)
-            );",
-            &[],
-        )
+    let applied_before = applied_versions(pool).await?;
+    MIGRATOR
+        .run(pool)
         .await
-        .map_err(|e| {
-            AppError::Migration(format!("Failed to ensure refinery_schema_history: {e}"))
-        })?;
+        .map_err(|e| AppError::Migration(format!("Migration failed: {e}")))?;
+    let newly_applied: Vec<i64> = applied_versions(pool)
+        .await?
+        .difference(&applied_before)
+        .copied()
+        .collect();
 
-    let mut applied_versions: HashSet<i32> = HashSet::new();
-
-    // 1. Check if flyway_schema_history exists
-    let flyway_exists: bool = client
-        .query_one(
-            "SELECT EXISTS (
-                SELECT FROM information_schema.tables 
-                WHERE table_name = 'flyway_schema_history'
-            );",
-            &[],
-        )
-        .await
-        .map(|row| row.get(0))
-        .unwrap_or(false);
-
-    if flyway_exists {
-        tracing::info!(
-            "Found existing 'flyway_schema_history' table. Synchronizing Flyway migration state..."
-        );
-        let rows = client
-            .query(
-                "SELECT version FROM flyway_schema_history WHERE success = true;",
-                &[],
-            )
-            .await
-            .map_err(|e| {
-                AppError::Migration(format!("Failed to query flyway_schema_history: {e}"))
-            })?;
-
-        for row in rows {
-            let ver_str: String = row.get(0);
-            if let Ok(ver) = ver_str.parse::<i32>() {
-                applied_versions.insert(ver);
-            }
-        }
-    } else {
-        // 2. Fallback check for existing tables (e.g. from Hibernate or pre-existing setups)
-        let app_user_exists: bool = client
-            .query_one(
-                "SELECT EXISTS (
-                    SELECT FROM information_schema.tables 
-                    WHERE table_name = 'app_user'
-                );",
-                &[],
-            )
-            .await
-            .map(|row| row.get(0))
-            .unwrap_or(false);
-
-        if app_user_exists {
-            tracing::info!(
-                "Detected existing schema without Flyway history. Analyzing baseline version..."
-            );
-            // V1: app_user exists
-            applied_versions.insert(1);
-
-            // V2: indexes exist
-            let idx_exists: bool = client
-                .query_one(
-                    "SELECT EXISTS (
-                        SELECT FROM pg_indexes 
-                        WHERE indexname = 'idx_record_cache_discogs'
-                    );",
-                    &[],
-                )
-                .await
-                .map(|row| row.get(0))
-                .unwrap_or(false);
-            if idx_exists {
-                applied_versions.insert(2);
-            }
-
-            // V3: lowest_price column in record_cache
-            let lowest_price_exists: bool = client
-                .query_one(
-                    "SELECT EXISTS (
-                        SELECT FROM information_schema.columns 
-                        WHERE table_name = 'record_cache' AND column_name = 'lowest_price'
-                    );",
-                    &[],
-                )
-                .await
-                .map(|row| row.get(0))
-                .unwrap_or(false);
-            if lowest_price_exists {
-                applied_versions.insert(3);
-            }
-
-            // V4: format column in record_cache
-            let format_exists: bool = client
-                .query_one(
-                    "SELECT EXISTS (
-                        SELECT FROM information_schema.columns 
-                        WHERE table_name = 'record_cache' AND column_name = 'format'
-                    );",
-                    &[],
-                )
-                .await
-                .map(|row| row.get(0))
-                .unwrap_or(false);
-            if format_exists {
-                applied_versions.insert(4);
-            }
-
-            // V5: salt column dropped from app_user
-            let salt_exists: bool = client
-                .query_one(
-                    "SELECT EXISTS (
-                        SELECT FROM information_schema.columns 
-                        WHERE table_name = 'app_user' AND column_name = 'salt'
-                    );",
-                    &[],
-                )
-                .await
-                .map(|row| row.get(0))
-                .unwrap_or(false);
-            if !salt_exists {
-                applied_versions.insert(5);
-            }
-
-            // V6: roon_host column in app_user
-            let roon_exists: bool = client
-                .query_one(
-                    "SELECT EXISTS (
-                        SELECT FROM information_schema.columns 
-                        WHERE table_name = 'app_user' AND column_name = 'roon_host'
-                    );",
-                    &[],
-                )
-                .await
-                .map(|row| row.get(0))
-                .unwrap_or(false);
-            if roon_exists {
-                applied_versions.insert(6);
-                applied_versions.insert(7); // V7 format update belongs to same release
-            }
-
-            // V8: media_condition column in collection_item
-            let media_cond_exists: bool = client
-                .query_one(
-                    "SELECT EXISTS (
-                        SELECT FROM information_schema.columns 
-                        WHERE table_name = 'collection_item' AND column_name = 'media_condition'
-                    );",
-                    &[],
-                )
-                .await
-                .map(|row| row.get(0))
-                .unwrap_or(false);
-            if media_cond_exists {
-                applied_versions.insert(8);
-            }
-
-            // V9: median_price column in record_cache
-            let median_price_exists: bool = client
-                .query_one(
-                    "SELECT EXISTS (
-                        SELECT FROM information_schema.columns 
-                        WHERE table_name = 'record_cache' AND column_name = 'median_price'
-                    );",
-                    &[],
-                )
-                .await
-                .map(|row| row.get(0))
-                .unwrap_or(false);
-            if median_price_exists {
-                applied_versions.insert(9);
-            }
-
-            tracing::info!("Detected existing schema versions: {:?}", applied_versions);
-        }
-    }
-
-    // Populate refinery_schema_history for all detected applied versions
-    let runner = migrations::runner();
-    let now_str = Utc::now().to_rfc3339();
-
-    for m in runner.get_migrations() {
-        let ver = m.version() as i32;
-        if applied_versions.contains(&ver) {
-            let name = m.name();
-            let checksum = m.checksum().to_string();
-            client
-                .execute(
-                    "INSERT INTO refinery_schema_history (version, name, applied_on, checksum)
-                     VALUES ($1, $2, $3, $4)
-                     ON CONFLICT (version) DO NOTHING;",
-                    &[&ver, &name, &now_str, &checksum],
-                )
-                .await
-                .map_err(|e| {
-                    AppError::Migration(format!("Failed to record migration {ver}: {e}"))
-                })?;
-        }
-    }
-
-    // 3. Execute pending refinery migrations
-    let report = runner
-        .run_async(&mut client)
-        .await
-        .map_err(|e| AppError::Migration(format!("Refinery migration failed: {e}")))?;
-
-    let applied = report.applied_migrations();
-    if applied.is_empty() {
+    if newly_applied.is_empty() {
         tracing::info!("Database schema is up to date (no pending migrations).");
     } else {
-        for m in applied {
-            tracing::info!("Applied migration V{}__{}", m.version(), m.name());
+        for version in newly_applied {
+            tracing::info!("Applied migration V{version}");
         }
     }
 
     Ok(())
+}
+
+async fn applied_versions(pool: &PgPool) -> Result<BTreeSet<i64>, AppError> {
+    let mut conn = pool.acquire().await?;
+    let applied = conn
+        .list_applied_migrations()
+        .await
+        .map_err(|e| AppError::Migration(format!("Failed to list applied migrations: {e}")))?;
+    Ok(applied.into_iter().map(|m| m.version).collect())
+}
+
+async fn import_legacy_baseline(conn: &mut PgConnection) -> Result<(), AppError> {
+    conn.ensure_migrations_table()
+        .await
+        .map_err(|e| AppError::Migration(format!("Failed to ensure _sqlx_migrations: {e}")))?;
+
+    let already_tracked = conn
+        .list_applied_migrations()
+        .await
+        .map_err(|e| AppError::Migration(format!("Failed to list applied migrations: {e}")))?;
+    if !already_tracked.is_empty() {
+        return Ok(());
+    }
+
+    let legacy_versions = detect_legacy_versions(conn).await?;
+    if legacy_versions.is_empty() {
+        return Ok(());
+    }
+
+    tracing::info!(
+        "Importing legacy migration baseline into _sqlx_migrations: {legacy_versions:?}"
+    );
+    for migration in MIGRATOR
+        .iter()
+        .filter(|m| legacy_versions.contains(&m.version))
+    {
+        sqlx::query(
+            "INSERT INTO _sqlx_migrations (version, description, success, checksum, execution_time)
+             VALUES ($1, $2, TRUE, $3, 0)
+             ON CONFLICT (version) DO NOTHING",
+        )
+        .bind(migration.version)
+        .bind(migration.description.as_ref())
+        .bind(migration.checksum.as_ref())
+        .execute(&mut *conn)
+        .await?;
+    }
+
+    Ok(())
+}
+
+/// Determines which migrations a database already contains, in order of reliability:
+/// refinery history, Flyway history (Spring Boot era), or schema inspection.
+pub async fn detect_legacy_versions(conn: &mut PgConnection) -> Result<BTreeSet<i64>, AppError> {
+    if table_exists(conn, "refinery_schema_history").await? {
+        let versions: Vec<i32> = sqlx::query_scalar("SELECT version FROM refinery_schema_history")
+            .fetch_all(&mut *conn)
+            .await?;
+        if !versions.is_empty() {
+            tracing::info!(
+                "Found refinery_schema_history with {} entries.",
+                versions.len()
+            );
+            return Ok(versions.into_iter().map(i64::from).collect());
+        }
+    }
+
+    if table_exists(conn, "flyway_schema_history").await? {
+        let versions: Vec<Option<String>> =
+            sqlx::query_scalar("SELECT version FROM flyway_schema_history WHERE success = true")
+                .fetch_all(&mut *conn)
+                .await?;
+        let parsed: BTreeSet<i64> = versions
+            .into_iter()
+            .flatten()
+            .filter_map(|v| v.parse().ok())
+            .collect();
+        if !parsed.is_empty() {
+            tracing::info!("Found flyway_schema_history with versions {parsed:?}.");
+            return Ok(parsed);
+        }
+    }
+
+    if !table_exists(conn, "app_user").await? {
+        return Ok(BTreeSet::new());
+    }
+
+    tracing::info!("Detected existing schema without migration history. Analyzing baseline...");
+    let mut versions = BTreeSet::from([1]);
+    if index_exists(conn, "idx_record_cache_discogs").await? {
+        versions.insert(2);
+    }
+    if column_exists(conn, "record_cache", "lowest_price").await? {
+        versions.insert(3);
+    }
+    if column_exists(conn, "record_cache", "format").await? {
+        versions.insert(4);
+    }
+    if !column_exists(conn, "app_user", "salt").await? {
+        versions.insert(5);
+    }
+    if column_exists(conn, "app_user", "roon_host").await? {
+        versions.insert(6);
+        versions.insert(7); // V7 format update shipped in the same release as V6
+    }
+    if column_exists(conn, "collection_item", "media_condition").await? {
+        versions.insert(8);
+    }
+    if column_exists(conn, "record_cache", "median_price").await? {
+        versions.insert(9);
+    }
+    tracing::info!("Detected existing schema versions: {versions:?}");
+    Ok(versions)
+}
+
+async fn table_exists(conn: &mut PgConnection, table: &str) -> Result<bool, AppError> {
+    Ok(sqlx::query_scalar(
+        "SELECT EXISTS (SELECT FROM information_schema.tables
+                        WHERE table_schema = current_schema() AND table_name = $1)",
+    )
+    .bind(table)
+    .fetch_one(&mut *conn)
+    .await?)
+}
+
+async fn index_exists(conn: &mut PgConnection, index: &str) -> Result<bool, AppError> {
+    Ok(sqlx::query_scalar(
+        "SELECT EXISTS (SELECT FROM pg_indexes
+                        WHERE schemaname = current_schema() AND indexname = $1)",
+    )
+    .bind(index)
+    .fetch_one(&mut *conn)
+    .await?)
+}
+
+async fn column_exists(
+    conn: &mut PgConnection,
+    table: &str,
+    column: &str,
+) -> Result<bool, AppError> {
+    Ok(sqlx::query_scalar(
+        "SELECT EXISTS (SELECT FROM information_schema.columns
+                        WHERE table_schema = current_schema() AND table_name = $1 AND column_name = $2)",
+    )
+    .bind(table)
+    .bind(column)
+    .fetch_one(&mut *conn)
+    .await?)
 }

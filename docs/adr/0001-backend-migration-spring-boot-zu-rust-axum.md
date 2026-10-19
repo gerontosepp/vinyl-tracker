@@ -42,6 +42,8 @@ Ziel war eine schlanke, hochperformante, speichersichere und ressourceneffizient
 
 Das Backend wird vollständig in **Rust (Edition 2024)** unter Verwendung von **Axum 0.8**, **Tokio 1.x**, **SQLx 0.8 (PostgreSQL)** und **Refinery** für Datenbankmigrationen neu implementiert.
 
+> **Hinweis (2026-10-19):** Der Migrations-Teil dieser Entscheidung wurde durch [ADR-0017](0017-datenbank-migrationen-mit-sqlx-migrate.md) abgelöst – Migrationen laufen inzwischen über `sqlx::migrate` statt `refinery`.
+
 Die Architektur erzwingt eine strikte 3-Schichten-Trennung:
 1. `routes/`: HTTP-Routing, Parameter-Parsing, OpenAPI/RFC 7807 Fehler-Delegation.
 2. `services/`: Reine Geschäftslogik (Discogs-Sync, Zustandseinstufung, Roon-Steuerung, PDF-Generierung).

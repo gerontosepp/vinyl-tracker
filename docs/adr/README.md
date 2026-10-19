@@ -26,6 +26,7 @@ Als Format dient der bewährte Standard für Architecture Decision Records (ange
 | [ADR-0014](0014-spec-driven-development-mit-openspec.md) | 2026-10-19 | Spec-Driven Development (SDD) mit OpenSpec und nativer Antigravity-Integration | `Accepted` |
 | [ADR-0015](0015-automatisierte-ci-pipeline-ueberwachung-und-self-healing-agent.md) | 2026-10-19 | Automatisierte CI-Pipeline-Überwachung und Self-Healing-Agent mit GitHub CLI | `Accepted` |
 | [ADR-0016](0016-vertrauenswuerdige-proxies-fuer-client-ip-ermittlung.md) | 2026-10-19 | Vertrauenswürdige Proxies für die Client-IP-Ermittlung (Auth-Rate-Limiting) | `Accepted` |
+| [ADR-0017](0017-datenbank-migrationen-mit-sqlx-migrate.md) | 2026-10-19 | Datenbank-Migrationen mit `sqlx::migrate` statt `refinery` | `Accepted` |
 
 ---
 

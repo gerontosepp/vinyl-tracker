@@ -56,7 +56,7 @@ Key cross-cutting pieces:
 - **Discogs integration**: async `reqwest` client with exponential backoff and rate limiting. Per-user Discogs tokens encrypted via AES-256-GCM.
 - **Image proxy**: `/api/proxy/image` with host allowlist and 24h in-memory caching.
 - **Errors**: `AppError` returns RFC 7807 `ProblemDetail` JSON.
-- **DB schema**: Refinery migrations in `backend/migrations/` (`V#__*.sql`) executed on startup.
+- **DB schema**: `sqlx::migrate` migrations in `backend/migrations/` (`<n>_<name>.sql`, never edit shipped files – checksums are verified) executed on startup; legacy refinery/Flyway histories are imported once (ADR-0017).
 - **Logging**: `tracing` + `tracing-subscriber` structured logs.
 
 ## Frontend architecture (Angular)

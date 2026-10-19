@@ -1,5 +1,5 @@
 use crate::{
-    auth::CurrentUser,
+    auth::{CurrentUser, client_ip::resolve_client_ip},
     config::Config,
     error::AppError,
     models::user::{
@@ -10,13 +10,13 @@ use crate::{
 };
 use axum::{
     Json, Router,
-    extract::{Request, State},
+    extract::{ConnectInfo, Request, State},
     http::{HeaderMap, HeaderValue, StatusCode, header},
     middleware::Next,
     response::{IntoResponse, Response},
     routing::{get, post, put},
 };
-use std::net::IpAddr;
+use std::net::SocketAddr;
 
 pub fn make_auth_cookie(config: &Config, token: &str) -> HeaderValue {
     let mut parts = vec![
@@ -60,46 +60,16 @@ pub fn make_clearing_cookie(config: &Config) -> HeaderValue {
     })
 }
 
-fn extract_client_ip(req: &Request) -> IpAddr {
-    // 1. Check X-Forwarded-For header
-    if let Some(forwarded) = req
-        .headers()
-        .get("x-forwarded-for")
-        .and_then(|h| h.to_str().ok())
-        .and_then(|s| s.split(',').next())
-        .and_then(|s| s.trim().parse::<IpAddr>().ok())
-    {
-        return forwarded;
-    }
-
-    // 2. Check X-Real-IP header
-    if let Some(real_ip) = req
-        .headers()
-        .get("x-real-ip")
-        .and_then(|h| h.to_str().ok())
-        .and_then(|s| s.trim().parse::<IpAddr>().ok())
-    {
-        return real_ip;
-    }
-
-    // 3. Fallback to socket connection address if present in extensions
-    if let Some(connect_info) = req
-        .extensions()
-        .get::<axum::extract::ConnectInfo<std::net::SocketAddr>>()
-    {
-        return connect_info.0.ip();
-    }
-
-    // 4. Default fallback to localhost
-    IpAddr::V4(std::net::Ipv4Addr::new(127, 0, 0, 1))
-}
-
 pub async fn auth_rate_limit_middleware(
     State(state): State<AppState>,
     request: Request,
     next: Next,
 ) -> Result<Response, AppError> {
-    let client_ip = extract_client_ip(&request);
+    let peer = request
+        .extensions()
+        .get::<ConnectInfo<SocketAddr>>()
+        .map(|info| info.0.ip());
+    let client_ip = resolve_client_ip(peer, request.headers(), &state.config.trusted_proxies);
 
     if state.auth_rate_limiter.check_key(&client_ip).is_err() {
         return Err(AppError::TooManyRequests(

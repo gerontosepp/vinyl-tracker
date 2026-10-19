@@ -108,8 +108,9 @@ The application requires environment variables for configuration (database crede
     - `IMAGE_PROXY_ALLOWED_HOSTS` (Comma-separated allowlist for `/api/proxy/image`, e.g. `i.discogs.com,s.discogs.com,api.discogs.com`).
     - `AUTH_COOKIE_NAME`, `AUTH_COOKIE_MAX_AGE_SECONDS`, `AUTH_COOKIE_SECURE`, `AUTH_COOKIE_SAME_SITE` (controls the backend HttpOnly session cookie used for authentication).
     - `AUTH_RATE_LIMIT_FOR_PERIOD` (optional rate limit for authentication endpoints; default: `10` requests per minute per IP).
+    - `TRUSTED_PROXIES` (optional comma-separated IPs/CIDRs of reverse proxies whose `X-Forwarded-For` / `X-Real-IP` headers are trusted for client IP detection; default: empty = headers ignored. The production compose files set `172.16.0.0/12,192.168.0.0/16` for the bundled nginx. See [ADR-0016](docs/adr/0016-vertrauenswuerdige-proxies-fuer-client-ip-ermittlung.md)).
 
-    Authentication note: The frontend uses backend-managed HttpOnly cookies by default and supports a Bearer token fallback for environments where cookie propagation is constrained. Public auth endpoints (`/login`, `/register`, `/reset-password`) are protected against brute force via Resilience4j rate limiting, and enforce a minimum password length of 8 characters.
+    Authentication note: The frontend uses backend-managed HttpOnly cookies by default and supports a Bearer token fallback for environments where cookie propagation is constrained. Public auth endpoints (`/login`, `/register`, `/reset-password`) are protected against brute force via per-client-IP rate limiting (`governor`), and enforce a minimum password length of 8 characters.
    
     API error note: Backend validation and runtime failures are returned as structured `ProblemDetail` JSON payloads. Rate limit violations return HTTP 429 (`Too Many Requests`).
 
@@ -134,7 +135,7 @@ The application requires environment variables for configuration (database crede
      ```bash
      docker compose -f docker/docker-compose.prod.yml up --build -d
      ```
-   *Optimized build, no hot-reloading, runs on port 80.*
+   *Optimized build, no hot-reloading, runs on port 80. Backend (`8080`) and PostgreSQL (`5432`) are only published on `127.0.0.1`; external clients must use the nginx endpoint (`http://<host>/api`).*
 
    👉 **[See Detailed Deployment Guide](docs/DEPLOYMENT.md)** for server setup, public images, and HTTPS requirements.
 

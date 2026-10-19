@@ -1,3 +1,5 @@
+use crate::auth::client_ip::parse_trusted_proxies;
+use ipnet::IpNet;
 use std::env;
 
 #[derive(Debug, Clone)]
@@ -26,6 +28,8 @@ pub struct Config {
     pub auth_cookie_path: String,
     pub auth_cookie_domain: Option<String>,
     pub auth_rate_limit_for_period: u32,
+    /// Proxies whose `X-Forwarded-For` / `X-Real-IP` headers are trusted (`TRUSTED_PROXIES`).
+    pub trusted_proxies: Vec<IpNet>,
 }
 
 impl Config {
@@ -133,6 +137,9 @@ impl Config {
             .and_then(|s| s.parse().ok())
             .unwrap_or(10);
 
+        let trusted_proxies =
+            parse_trusted_proxies(&env::var("TRUSTED_PROXIES").unwrap_or_default());
+
         Self {
             app_env,
             host,
@@ -158,6 +165,7 @@ impl Config {
             auth_cookie_path,
             auth_cookie_domain,
             auth_rate_limit_for_period,
+            trusted_proxies,
         }
     }
 

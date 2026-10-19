@@ -48,6 +48,7 @@ governor = "0.10"
 moka = { version = "0.12", features = ["future"] }
 futures-util = "0.3"
 url = "2.5"
+ipnet = "2"
 
 # Error Handling
 thiserror = "2.0"

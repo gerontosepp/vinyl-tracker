@@ -9,6 +9,11 @@
 
 ## Unreleased
 
+- **Security: Fälschungssicheres Auth-Rate-Limiting & gehärtete Produktions-Ports (`#121`)**:
+  - **Keine Umgehung per Header-Spoofing mehr**: `X-Forwarded-For` / `X-Real-IP` werden nur noch ausgewertet, wenn die Anfrage von einem vertrauenswürdigen Proxy (`TRUSTED_PROXIES`, CIDR-Liste) stammt. `X-Forwarded-For` wird von rechts nach links ausgewertet, vom Client vorangestellte Adressen werden ignoriert ([ADR-0016](adr/0016-vertrauenswuerdige-proxies-fuer-client-ip-ermittlung.md)).
+  - **Eigenes Kontingent pro Client**: Das Backend ermittelt die TCP-Peer-Adresse (`ConnectInfo`), statt alle Anfragen ohne Forwarding-Header einem gemeinsamen `127.0.0.1`-Bucket zuzuordnen.
+  - **Backend & Datenbank nur noch lokal erreichbar**: In `docker-compose.prod.yml` und `docker-compose.registry.yml` sind Port `8080` und `5432` nur noch auf `127.0.0.1` gebunden; externer Zugriff ausschließlich über nginx.
+
 - **Roon Multi-Room Audio: Dynamische Zonenauswahl beim Abspielen (`#67`)**:
   - **Interaktiver Zonen-Split-Button**: Der Abspiel-Button im Record-Detail-Modal bietet nun ein Dropdown zur Auswahl aller im Roon Core aktiven Audiozonen (z. B. Wohnzimmer, Büro, Kopfhörer) inklusive aktuellem Wiedergabestatus.
   - **Intelligente Vorbelegung & Session-Memory**: Automatische Vorauswahl der in den Benutzereinstellungen hinterlegten Standard-Zone sowie temporäres Merken der zuletzt gewählten Zone in der Browser-Sitzung (`sessionStorage`).

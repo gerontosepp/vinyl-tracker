@@ -27,6 +27,7 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
         "details": [
           "**Neues ADR-Verzeichnis (`docs/adr/`)**: Etablierung eines standardisierten Formats (MADR / Nygard) zur transparenten Nachvollziehbarkeit wesentlicher Architekturentscheidungen inklusive Vorlage.",
           "**Umfassende Dokumentation (ADR-0001 bis ADR-0013)**: Festhaltung von 13 Kernentscheidungen bezüglich Rust-Backend-Migration, Angular 22 Frontend, nativem Rust MCP Server, AEAD AES-256-GCM Kryptografie, direkter Roon MOO/WebSocket Integration, Rust-Testabdeckungsprüfung (`cargo-llvm-cov`), Hardware-Scanner-Integration (HID Keyboard Wedge), zustandsbasierter Goldmine-Marktwertermittlung, natürlicher Kallax-Sortierung, serverseitiger Vektor-PDF-Generierung (`printpdf`), dreiteiliger Export-Strategie (CSV, JSON, PDF), SSRF-geschütztem Image-Proxy sowie optimierten Multi-Arch-Container-Builds (`cargo-chef` & `$BUILDPLATFORM`).",
+          "**Regel- & Workflow-Verankerung**: ADRs sind ab sofort fester Bestandteil der Projektregeln (`.agent/rules/documentation_standards.md`), des Ticket-Workflows (`.agent/skills/ticket-workflow/`) und des neuen Skills `adr-management`.",
           "**Synchronisation**: Verknüpfung in `README.md` und `docs/arc42.md` (Kapitel 9)."
         ]
       },

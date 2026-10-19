@@ -86,8 +86,9 @@ Before requesting user verification, all tests must pass locally:
 ## 5. Live Documentation Sync
 
 Update project documentation immediately alongside code changes (see [`documentation_standards.md`](../../rules/documentation_standards.md)):
+- **`docs/adr/`**: If the ticket introduces an architectural decision, library/framework selection, security concept, or cross-cutting pattern, create an ADR (`docs/adr/XXXX-<titel>.md`), update `docs/adr/README.md`, and link it in `docs/arc42.md` Section 9.
 - **`README.md`**: Update if features, configuration, endpoints, or UI behavior changed.
-- **`docs/Release-Info.md`**: Add summary bullet points under `## Unreleased`.
+- **`docs/Release-Info.md`**: Add summary bullet points under `## Unreleased` (and run `node scripts/sync-release-info.js`).
 - **`docs/arc42.md`**: Update if architecture, domain models, or database schemas changed.
 
 ---

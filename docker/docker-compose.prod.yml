@@ -21,6 +21,8 @@ services:
     build: ../backend
     container_name: vinyl-backend-prod
     restart: always
+    # Time for graceful shutdown to drain in-flight requests before SIGKILL
+    stop_grace_period: 30s
     environment:
       HOST: 0.0.0.0
       PORT: 8080

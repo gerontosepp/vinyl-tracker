@@ -36,6 +36,9 @@ pub enum AppError {
 
     #[error("Internal server error: {0}")]
     Internal(String),
+
+    #[error("Request timeout: {0}")]
+    Timeout(String),
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -101,6 +104,11 @@ impl IntoResponse for AppError {
             AppError::TooManyRequests(msg) => (
                 StatusCode::TOO_MANY_REQUESTS,
                 "Too Many Requests",
+                msg.clone(),
+            ),
+            AppError::Timeout(msg) => (
+                StatusCode::SERVICE_UNAVAILABLE,
+                "Service Unavailable",
                 msg.clone(),
             ),
             AppError::Internal(msg) => {

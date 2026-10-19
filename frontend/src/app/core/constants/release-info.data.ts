@@ -11,6 +11,15 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "isUnreleased": true,
     "items": [
       {
+        "title": "Backend-Robustheit: Request-Timeouts & Graceful Shutdown (`#123`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "**Zweistufige Request-Timeouts**: Standard-Anfragen werden nach `REQUEST_TIMEOUT_SECS` (Default 30 s) abgebrochen, lang laufende Operationen (Discogs-Sync, Preis-Refresh, Export, QR-PDF) erst nach `LONG_REQUEST_TIMEOUT_SECS` (Default 300 s, abgestimmt auf nginx). Überschreitungen liefern HTTP 503 als `ProblemDetail`.",
+          "**Graceful Shutdown**: Bei `SIGTERM`/`Ctrl+C` nimmt das Backend keine neuen Verbindungen mehr an und beendet laufende Anfragen sauber; `stop_grace_period: 30s` in den Produktions-Compose-Dateien."
+        ]
+      },
+      {
         "title": "Security: Fälschungssicheres Auth-Rate-Limiting & gehärtete Produktions-Ports (`#121`)",
         "type": "security",
         "typeLabel": "Security",

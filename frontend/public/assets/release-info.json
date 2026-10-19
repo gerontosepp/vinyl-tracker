@@ -7,6 +7,14 @@
     "isUnreleased": true,
     "items": [
       {
+        "title": "Fix: Kein leerer Abschnitt „Unreleased“ in den Versionshinweisen (`#151`)",
+        "type": "fix",
+        "typeLabel": "Fix",
+        "details": [
+          "**Aufgeräumte Liste**: Der Abschnitt „Unreleased – In Entwicklung“ erscheint nur noch, wenn er Änderungen enthält – direkt nach einem Release ist er ausgeblendet, auch bei der Suche."
+        ]
+      },
+      {
         "title": "Aufgeräumte Seitenleiste (`#148`)",
         "type": "feat",
         "typeLabel": "Feature",

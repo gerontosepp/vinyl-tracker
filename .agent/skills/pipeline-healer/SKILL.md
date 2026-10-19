@@ -97,15 +97,15 @@ git pull origin <BRANCH>
   2. Add targeted unit or integration tests in `backend/tests/` or in the module's `#[cfg(test)] mod tests`.
   3. Verify with `cargo test --manifest-path backend/Cargo.toml`.
 
-#### Category E: Frontend Karma Unit Tests (`npm test`)
-- **Symptom**: Step `Run Karma Unit Tests` failed in `frontend-test`.
+#### Category E: Frontend Vitest Unit Tests (`npm test`)
+- **Symptom**: Step `Run Vitest Unit Tests` failed in `frontend-test` (failing test or coverage below the 80 % thresholds in `angular.json`).
 - **Remedy**:
   1. Reproduce with compatible Node version:
      ```bash
      export PATH="$HOME/.nvm/versions/node/v24.22.0/bin:$PATH"
-     cd frontend && npm test -- --watch=false
+     cd frontend && npm test -- --watch=false --coverage
      ```
-  2. Inspect failed Jasmine assertions (`Expected ... to be ...`).
+  2. Inspect failed Vitest assertions (`AssertionError: expected ... to be ...`). Tests run in `jsdom`: browser APIs it lacks (e.g. `matchMedia`) must be stubbed with `vi.stubGlobal`.
   3. Fix the TypeScript component, signal, service, or test spec.
 
 #### Category F: Frontend Build & TypeScript Compile (`npm run build`)

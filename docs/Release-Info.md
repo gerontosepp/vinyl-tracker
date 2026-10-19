@@ -9,6 +9,13 @@
 
 ## Unreleased
 
+- **Dokumentation an den aktuellen Stand angeglichen (`#137`)**:
+  - **Agent-Skills korrigiert**: Migrations-Skill nutzt die sqlx-Namenskonvention (`10_…sql` statt `V10__…`), Dependency-, Pipeline- und Ticket-Skills nennen Angular 22, Vitest und kein `--legacy-peer-deps` mehr.
+  - **arc42 für das Rust-Backend neu gefasst**: Bausteinsicht (Routes/Services/Clients), Sicherheit, Validierung, Fehlerbehandlung, Logging und Delivery ohne Spring-/Java-Altlasten.
+  - **Vollständige Konfigurationsreferenz** aller Backend-Umgebungsvariablen im README; `CORS_ALLOW_CREDENTIALS` einheitlich `true`.
+  - **Deployment-Anleitung**: Hinweise zu `TRUSTED_PROXIES` hinter Reverse Proxies, aktueller Runner-Aufbau (Hetzner, ARM64), wirkungslose Spring-Variablen entfernt.
+  - **Versionen**: MCP-Server auf `0.9.0` angeglichen, `release.sh` hebt künftig alle Cargo-Manifeste an; CI testet gegen PostgreSQL 16 wie die Compose-Dateien.
+
 - **Frontend: Unit-Tests mit Vitest statt Karma/Jasmine (`#134`)**:
   - **Neuer Test-Runner**: Angular-Builder `@angular/build:unit-test` mit Vitest und `jsdom` – Unit-Tests laufen ohne Browser; alle 227 Tests migriert ([ADR-0018](adr/0018-frontend-unit-tests-mit-vitest.md)).
   - **Coverage-Gate unverändert streng**: ≥ 80 % für Statements, Branches, Functions und Lines, jetzt direkt in `angular.json` konfiguriert.

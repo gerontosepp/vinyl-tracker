@@ -9,6 +9,17 @@
 
 ## Unreleased
 
+- **MCP Server: Unterstützung für Ressourcen (`vinyl://`), Prompts und Sammlungs-Export (`#108`)**:
+  - **Tool `export_collection`**: Neues MCP-Tool für KI-Assistenten zum Exportieren der kompletten Vinyl- und CD-Sammlung im strukturierten Format (`json` oder `csv`).
+  - **MCP-Ressourcen (`vinyl://`)**:
+    - `vinyl://collection/summary`: Aggregierte Kennzahlen zu Gesamtbestand, Formatverteilung (Vinyl vs. CD), ungespielten Alben und Top-Genres.
+    - `vinyl://collection/value`: Schätzwerte des Sammlungsmarktwerts (Minimum, Median, Maximum) via Discogs Marketplace.
+    - `vinyl://stats/overview`: Überblick über jüngste Hör-Events und meistgespielte Alben.
+  - **MCP-Prompts**:
+    - `recommend_record`: Interaktive Prompt-Vorlage zur kuratierten Albenempfehlung basierend auf Wunsch-Genre und Stimmung.
+    - `grading_audit`: Geführter Workflow zur Überprüfung und Einstufung unbewerteter Alben nach Goldmine-Kriterien (Mint bis Poor).
+  - **Protokoll-Fähigkeiten**: Volle Deklaration der Server-Capabilities für Tools, Resources und Prompts via `rmcp` SDK.
+
 - **Qualitätssicherung & CI: Enforce >= 80% Testabdeckung für Rust-Backend (`#111`)**:
   - **Verbindliches Coverage-Gate**: Integration von `cargo-llvm-cov` in die CI-Pipeline (`.github/workflows/ci.yml`) mit dem Schwellenwert `--fail-under-lines 80`. Fällt die Zeilenabdeckung unter 80 %, schlägt der Workflow `backend-test` fehl.
   - **Umfassende Testausweitung**: Steigerung der Rust-Zeilenabdeckung von 66,8 % auf **81,04 %** durch umfassende Unit- und Integrationstests für Discogs-Client-Endpunkte, `CollectionSyncService`, `ScanService` (QR-Formate, Barcode-Fallbacks, Collection-Matching) und `RecordService` (CRUD, Zustandseinstufung, Preisschätzungen).

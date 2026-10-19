@@ -2,7 +2,7 @@
 
 Ein hochperformanter **Model Context Protocol (MCP) Server** in Rust, der die Dienste des **Vinyl Tracker Backends** vollständig für KI-Assistenten (Antigravity IDE, Claude Desktop, Cursor etc.) bereitstellt.
 
-Der Server implementiert **Option 1 (REST-Client)**: Er kommuniziert direkt über die REST-API mit dem Spring Boot Backend. Dadurch werden alle zentralen Validierungs-, Synchronisations- (Discogs API) und Caching-Mechanismen des Backends wiederverwendet.
+Der Server implementiert **Option 1 (REST-Client)**: Er kommuniziert direkt über die REST-API mit dem Vinyl Tracker Backend (Rust/Axum). Dadurch werden alle zentralen Validierungs-, Synchronisations- (Discogs API) und Caching-Mechanismen des Backends wiederverwendet.
 
 ---
 
@@ -12,6 +12,7 @@ Der Server implementiert **Option 1 (REST-Client)**: Er kommuniziert direkt übe
 - **Robuste Authentifizierung:** Unterstützt automatischen Login via Benutzername & Passwort mit Token-Lifecycle-Management sowie direkte JWT-Bearer-Tokens.
 - **Kompakt & Null-Overhead:** Native Binärdatei (~10 MB), startet in Millisekunden und benötigt keine Runtime-Interpreter (Python/Node).
 - **Saubere Standard-I/O-Trennung:** Protokoll-Nachrichten laufen strikt über `stdout`, strukturierte Logs und Fehlermeldungen über `stderr`.
+- **Ressourcen & Prompts:** Unterstützt MCP-Ressourcen (`vinyl://`) und interaktive LLM-Prompts (Empfehlungen & Grading-Audits).
 
 ---
 
@@ -41,6 +42,26 @@ Der Server implementiert **Option 1 (REST-Client)**: Er kommuniziert direkt übe
 | `play_record_on_roon` | Startet direkte Wiedergabe ('Play Now') eines Albums auf einem konfigurierten Roon Core | `artist` (str), `title` (str), `zone_id` (str, optional) |
 | `update_record_condition` | Aktualisiert die Goldmine-Zustandseinstufung (Media/Sleeve) einer Platte | `id` (int), `media_condition` (str, optional), `sleeve_condition` (str, optional) |
 | `refresh_collection_prices` | Aktualisiert Discogs-Marktpreise (Min, Median) der Sammlung | `only_missing` (bool, optional, default `true`) |
+| `export_collection` | Exportiert die komplette Nutzersammlung als strukturierte Daten | `format` (`json` oder `csv`) |
+
+---
+
+## 📦 Bereitgestellte MCP-Ressourcen
+
+| URI | Name | MIME-Type | Beschreibung |
+| :--- | :--- | :--- | :--- |
+| `vinyl://collection/summary` | `collection_summary` | `application/json` | Gesamtübersicht der Sammlung (Gesamtzahl, Vinyl vs. CD, ungespielte Alben, Genreverteilung) |
+| `vinyl://collection/value` | `collection_value` | `application/json` | Schätzwerte der Sammlung nach Discogs-Marktplatz (Minimum, Median, Maximum) |
+| `vinyl://stats/overview` | `stats_overview` | `application/json` | Zusammenfassung der Hörstatistiken (Top-Platten und jüngste Hör-Events) |
+
+---
+
+## 💡 Bereitgestellte MCP-Prompts
+
+| Prompt-Name | Beschreibung | Argumente |
+| :--- | :--- | :--- |
+| `recommend_record` | Kuratierte Empfehlungsvorlage für Vinyl-Alben basierend auf Genre und Stimmung | `genre` (str, optional), `mood` (str, optional) |
+| `grading_audit` | Interaktive Prüfung und Einstufung unbewerteter Alben nach Goldmine-Standard | `limit` (int, optional, Standard: 10) |
 
 ---
 

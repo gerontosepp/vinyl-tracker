@@ -2,8 +2,12 @@ use crate::client::VinylApiClient;
 use crate::models::*;
 use rmcp::{
     ServerHandler,
-    handler::server::{router::tool::ToolRouter, wrapper::Parameters},
-    tool, tool_handler, tool_router,
+    handler::server::{
+        router::{prompt::PromptRouter, tool::ToolRouter},
+        wrapper::Parameters,
+    },
+    model::{PromptMessage, Role},
+    prompt, prompt_handler, prompt_router, tool, tool_handler, tool_router,
 };
 use std::sync::Arc;
 
@@ -11,6 +15,7 @@ use std::sync::Arc;
 pub struct VinylMcpServer {
     client: Arc<VinylApiClient>,
     tool_router: ToolRouter<Self>,
+    prompt_router: PromptRouter<Self>,
 }
 
 impl VinylMcpServer {
@@ -18,6 +23,7 @@ impl VinylMcpServer {
         Self {
             client: Arc::new(client),
             tool_router: Self::tool_router(),
+            prompt_router: Self::prompt_router(),
         }
     }
 }
@@ -332,10 +338,253 @@ impl VinylMcpServer {
         serde_json::to_string_pretty(&status)
             .map_err(|e| format!("Failed to serialize Roon status: {}", e))
     }
+
+    /// Export the user's vinyl collection in JSON or CSV format.
+    #[tool(
+        name = "export_collection",
+        description = "Exports the user's complete vinyl collection data in structured 'json' or 'csv' format."
+    )]
+    async fn export_collection(
+        &self,
+        Parameters(args): Parameters<ExportCollectionArgs>,
+    ) -> Result<String, String> {
+        let fmt = args.format.trim().to_lowercase();
+        if fmt != "json" && fmt != "csv" {
+            return Err("Invalid export format. Only 'json' and 'csv' are supported.".to_string());
+        }
+        self.client.export_collection(&fmt).await
+    }
+}
+
+#[prompt_router]
+impl VinylMcpServer {
+    /// Interactive recommendation prompt based on collection contents, genre, and mood.
+    #[prompt(
+        name = "recommend_record",
+        description = "Provides a curated prompt template to recommend vinyl records from the user's collection tailored to an optional genre and mood."
+    )]
+    pub async fn recommend_record(
+        &self,
+        Parameters(args): Parameters<RecommendRecordPromptArgs>,
+    ) -> Vec<PromptMessage> {
+        let mut instructions = String::from(
+            "You are an expert vinyl record curator and audiophile. Recommend 2 to 3 vinyl records from the user's collection.\n",
+        );
+        if let Some(genre) = &args.genre {
+            instructions.push_str(&format!("Preferred Genre: {}\n", genre));
+        }
+        if let Some(mood) = &args.mood {
+            instructions.push_str(&format!("Desired Mood / Setting: {}\n", mood));
+        }
+        instructions.push_str(
+            "Use the `get_user_collection` or `get_random_record` tools if needed to explore unplayed records or specific genres before finalizing your recommendation.\nExplain the sonic characteristics, historical context, and why each album fits the mood.",
+        );
+
+        vec![PromptMessage::new_text(Role::User, instructions)]
+    }
+
+    /// Interactive grading audit prompt to identify and grade unrated records in the collection.
+    #[prompt(
+        name = "grading_audit",
+        description = "Audits the user's collection for records missing Goldmine media or sleeve condition gradings and guides the user through grading them."
+    )]
+    pub async fn grading_audit(
+        &self,
+        Parameters(args): Parameters<GradingAuditPromptArgs>,
+    ) -> Vec<PromptMessage> {
+        let limit = args.limit.unwrap_or(10);
+        let instructions = format!(
+            "You are a Goldmine grading assistant for Vinyl Tracker.\n\
+             1. Query the user's collection using `get_user_collection` (up to {} items).\n\
+             2. Identify albums that are missing `media_condition` or `sleeve_condition`.\n\
+             3. For each unrated record, fetch details via `get_record_details` and check Discogs price suggestions.\n\
+             4. Guide the user through standard Goldmine condition gradings: Mint (M), Near Mint (NM or M-), Very Good Plus (VG+), Very Good (VG), Good Plus (G+), Good (G), Fair (F), Poor (P).\n\
+             5. When the user confirms, offer to update the record condition using `update_record_condition`.",
+            limit
+        );
+
+        vec![PromptMessage::new_text(Role::User, instructions)]
+    }
 }
 
 #[tool_handler(router = self.tool_router)]
-impl ServerHandler for VinylMcpServer {}
+#[prompt_handler(router = self.prompt_router)]
+impl ServerHandler for VinylMcpServer {
+    fn get_info(&self) -> rmcp::model::ServerConfig {
+        rmcp::model::ServerConfig::new(
+            rmcp::model::ServerCapabilities::builder()
+                .enable_tools()
+                .enable_prompts()
+                .enable_resources()
+                .build(),
+        )
+        .with_server_info(rmcp::model::Implementation::from_build_env())
+        .with_instructions("Vinyl Tracker MCP Server providing collection tracking, hardware scanning, Roon playback, and collection intelligence.".to_string())
+    }
+
+    async fn list_resources(
+        &self,
+        _request: Option<rmcp::model::PaginatedRequestParams>,
+        _context: rmcp::service::RequestContext<rmcp::service::RoleServer>,
+    ) -> Result<rmcp::model::ListResourcesResult, rmcp::ErrorData> {
+        let resources = vec![
+            rmcp::model::Resource::new("vinyl://collection/summary", "collection_summary")
+                .with_title("Vinyl Collection Summary")
+                .with_description("Overview of the user's vinyl collection including total record count, format distribution (Vinyl vs CD), unplayed count, and top genres.")
+                .with_mime_type("application/json"),
+            rmcp::model::Resource::new("vinyl://collection/value", "collection_value")
+                .with_title("Collection Valuation")
+                .with_description("Estimated financial market value of the vinyl collection (minimum, median, maximum) according to Discogs Marketplace.")
+                .with_mime_type("application/json"),
+            rmcp::model::Resource::new("vinyl://stats/overview", "stats_overview")
+                .with_title("Listening Statistics Overview")
+                .with_description("Summary of recent playback scrobbles and top most played albums in the collection.")
+                .with_mime_type("application/json"),
+        ];
+
+        Ok(rmcp::model::ListResourcesResult {
+            resources,
+            ..Default::default()
+        })
+    }
+
+    async fn read_resource(
+        &self,
+        request: rmcp::model::ReadResourceRequestParams,
+        _context: rmcp::service::RequestContext<rmcp::service::RoleServer>,
+    ) -> Result<rmcp::model::ReadResourceResponse, rmcp::ErrorData> {
+        let uri = request.uri.as_str();
+        match uri {
+            "vinyl://collection/summary" => {
+                let collection_resp = self
+                    .client
+                    .get_collection(&crate::models::GetCollectionArgs {
+                        page: Some(1),
+                        per_page: Some(1),
+                        ..Default::default()
+                    })
+                    .await
+                    .map_err(|e| rmcp::ErrorData::internal_error(e, None))?;
+
+                let vinyl_resp = self
+                    .client
+                    .get_collection(&crate::models::GetCollectionArgs {
+                        page: Some(1),
+                        per_page: Some(1),
+                        category: Some("vinyl".to_string()),
+                        ..Default::default()
+                    })
+                    .await
+                    .map_err(|e| rmcp::ErrorData::internal_error(e, None))?;
+
+                let cd_resp = self
+                    .client
+                    .get_collection(&crate::models::GetCollectionArgs {
+                        page: Some(1),
+                        per_page: Some(1),
+                        category: Some("cd".to_string()),
+                        ..Default::default()
+                    })
+                    .await
+                    .map_err(|e| rmcp::ErrorData::internal_error(e, None))?;
+
+                let unplayed_resp = self
+                    .client
+                    .get_unplayed_records(&crate::models::GetUnplayedRecordsArgs {
+                        page: Some(1),
+                        per_page: Some(1),
+                    })
+                    .await
+                    .map_err(|e| rmcp::ErrorData::internal_error(e, None))?;
+
+                let genre_breakdown = self
+                    .client
+                    .get_genre_breakdown()
+                    .await
+                    .map_err(|e| rmcp::ErrorData::internal_error(e, None))?;
+
+                let summary_resource = crate::models::CollectionSummaryResource {
+                    total_records: collection_resp
+                        .pagination
+                        .as_ref()
+                        .map(|p| p.items as i64)
+                        .unwrap_or(0),
+                    vinyl_count: vinyl_resp
+                        .pagination
+                        .as_ref()
+                        .map(|p| p.items as i64)
+                        .unwrap_or(0),
+                    cd_count: cd_resp
+                        .pagination
+                        .as_ref()
+                        .map(|p| p.items as i64)
+                        .unwrap_or(0),
+                    unplayed_count: unplayed_resp
+                        .pagination
+                        .as_ref()
+                        .map(|p| p.items as i64)
+                        .unwrap_or(0),
+                    top_genres: genre_breakdown,
+                };
+
+                let text = serde_json::to_string_pretty(&summary_resource)
+                    .map_err(|e| rmcp::ErrorData::internal_error(e.to_string(), None))?;
+
+                let content = rmcp::model::ResourceContents::text(text, uri)
+                    .with_mime_type("application/json");
+
+                Ok(rmcp::model::ReadResourceResult::new(vec![content]).into())
+            }
+            "vinyl://collection/value" => {
+                let val_resp = self
+                    .client
+                    .get_collection_value()
+                    .await
+                    .map_err(|e| rmcp::ErrorData::internal_error(e, None))?;
+
+                let text = serde_json::to_string_pretty(&val_resp)
+                    .map_err(|e| rmcp::ErrorData::internal_error(e.to_string(), None))?;
+
+                let content = rmcp::model::ResourceContents::text(text, uri)
+                    .with_mime_type("application/json");
+
+                Ok(rmcp::model::ReadResourceResult::new(vec![content]).into())
+            }
+            "vinyl://stats/overview" => {
+                let top_records = self
+                    .client
+                    .get_top_records(None, None)
+                    .await
+                    .map_err(|e| rmcp::ErrorData::internal_error(e, None))?;
+                let top_5: Vec<_> = top_records.into_iter().take(5).collect();
+
+                let recent_listens = self
+                    .client
+                    .get_recent_listens(None, None)
+                    .await
+                    .map_err(|e| rmcp::ErrorData::internal_error(e, None))?;
+                let recent_5: Vec<_> = recent_listens.into_iter().take(5).collect();
+
+                let stats_json = serde_json::json!({
+                    "top_records": top_5,
+                    "recent_listens": recent_5,
+                });
+
+                let text = serde_json::to_string_pretty(&stats_json)
+                    .map_err(|e| rmcp::ErrorData::internal_error(e.to_string(), None))?;
+
+                let content = rmcp::model::ResourceContents::text(text, uri)
+                    .with_mime_type("application/json");
+
+                Ok(rmcp::model::ReadResourceResult::new(vec![content]).into())
+            }
+            _ => Err(rmcp::ErrorData::resource_not_found(
+                format!("Resource not found: {uri}"),
+                None,
+            )),
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -408,5 +657,32 @@ mod tests {
 
         let t22 = VinylMcpServer::get_roon_status_tool_attr();
         assert_eq!(t22.name, "get_roon_status");
+
+        let t23 = VinylMcpServer::export_collection_tool_attr();
+        assert_eq!(t23.name, "export_collection");
+    }
+
+    #[test]
+    fn test_prompts_registered() {
+        let p1 = VinylMcpServer::recommend_record_prompt_attr();
+        assert_eq!(p1.name, "recommend_record");
+
+        let p2 = VinylMcpServer::grading_audit_prompt_attr();
+        assert_eq!(p2.name, "grading_audit");
+    }
+
+    #[test]
+    fn test_server_capabilities_declared() {
+        let client = VinylApiClient::new(
+            "http://localhost:8080".to_string(),
+            None,
+            Some("user".to_string()),
+            Some("pass".to_string()),
+        );
+        let server = VinylMcpServer::new(client);
+        let config = server.get_info();
+        assert!(config.capabilities.tools.is_some());
+        assert!(config.capabilities.prompts.is_some());
+        assert!(config.capabilities.resources.is_some());
     }
 }

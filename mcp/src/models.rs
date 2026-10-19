@@ -130,7 +130,38 @@ pub struct SearchDiscogsArgs {
     pub per_page: Option<i32>,
 }
 
-// ============================================================================
+/// Arguments for exporting the user's vinyl collection.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub struct ExportCollectionArgs {
+    /// Export format: "json" or "csv"
+    pub format: String,
+}
+
+/// Arguments for the record recommendation prompt template.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, Default)]
+pub struct RecommendRecordPromptArgs {
+    /// Optional genre preference (e.g. "Jazz", "Electronic", "Rock")
+    pub genre: Option<String>,
+    /// Optional mood or listening context (e.g. "relaxing", "energetic", "focus", "evening")
+    pub mood: Option<String>,
+}
+
+/// Arguments for the grading audit prompt template.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, Default)]
+pub struct GradingAuditPromptArgs {
+    /// Optional maximum number of unrated records to audit (default: 10)
+    pub limit: Option<i32>,
+}
+
+/// Structured representation of the vinyl://collection/summary resource.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CollectionSummaryResource {
+    pub total_records: i64,
+    pub vinyl_count: i64,
+    pub cd_count: i64,
+    pub unplayed_count: i64,
+    pub top_genres: serde_json::Value,
+}
 // Backend API DTOs
 // ============================================================================
 
@@ -687,5 +718,24 @@ mod tests {
         assert_eq!(status.port, Some(9330));
         assert_eq!(status.zones.len(), 1);
         assert_eq!(status.zones[0].name, "Living Room");
+    }
+
+    #[test]
+    fn test_collection_summary_resource_serialization() {
+        let summary = CollectionSummaryResource {
+            total_records: 42,
+            vinyl_count: 30,
+            cd_count: 12,
+            unplayed_count: 5,
+            top_genres: serde_json::json!([{"genre": "Rock", "count": 20}]),
+        };
+
+        let json = serde_json::to_string(&summary).expect("serialize summary");
+        let parsed: CollectionSummaryResource =
+            serde_json::from_str(&json).expect("deserialize summary");
+        assert_eq!(parsed.total_records, 42);
+        assert_eq!(parsed.vinyl_count, 30);
+        assert_eq!(parsed.cd_count, 12);
+        assert_eq!(parsed.unplayed_count, 5);
     }
 }

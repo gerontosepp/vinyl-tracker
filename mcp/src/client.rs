@@ -825,4 +825,31 @@ impl VinylApiClient {
             .await
             .map_err(|e| format!("Failed to parse Roon status JSON response: {}", e))
     }
+
+    pub async fn export_collection(&self, format: &str) -> Result<String, String> {
+        self.ensure_authenticated().await?;
+        let url = format!("{}/api/collection/export", self.base_url);
+        let headers = self.build_auth_headers().await;
+
+        let res = self
+            .http_client
+            .get(&url)
+            .headers(headers)
+            .query(&[("format", format)])
+            .send()
+            .await
+            .map_err(|e| format!("Request to /api/collection/export failed: {}", e))?;
+
+        if !res.status().is_success() {
+            return Err(format!(
+                "Backend export error {}: {}",
+                res.status(),
+                res.text().await.unwrap_or_default()
+            ));
+        }
+
+        res.text()
+            .await
+            .map_err(|e| format!("Failed to read export response body: {}", e))
+    }
 }

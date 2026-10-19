@@ -18,9 +18,15 @@
   - **Verbindungs-Keepalive**: Konfiguration von `ServerAliveInterval=10`, `ServerAliveCountMax=2`, `TCPKeepAlive=yes` und `ExitOnForwardFailure=yes` zur schnellen Erkennung toter TCP-Verbindungen (z. B. nach Standby / Ruhezustand).
   - **Aktiver Health-Probe & Stale-Socket-Bereinigung**: Automatische Erkennung und Bereinigung blockierter / toter Altprozesse sowie neues Diagnoseflag `--status`.
 
+- **Methodik & Entwicklung: Einführung von OpenSpec für Spec-Driven Development (SDD)**:
+  - **OpenSpec-Integration (`openspec/`)**: Etablierung des `@fission-ai/openspec`-Frameworks zur strukturierten Vorab-Spezifikation und Planung von Features via `proposal.md`, Delta-Spezifikationen (`specs/`) und Checklisten (`tasks.md`).
+  - **Native Antigravity-Unterstützung**: Automatisch generierte Agenten-Workflows (`.agents/workflows/`) und Skills (`.agents/skills/`) zur Unterstützung von `/opsx-propose`, `/opsx-apply` und `/opsx-archive`.
+  - **Initiale System-Baseline**: Festhaltung von 5 Domänen-Spezifikationen (`collection`, `market-valuation`, `scanner`, `roon`, `mcp`) als lebender Source of Truth.
+  - **CLI-Wrapper (`scripts/opsx.sh`)**: Lokales Hilfsskript zur komfortablen Ausführung von OpenSpec-Befehlen.
+
 - **Architektur-Dokumentation: Einführung von Architecture Decision Records (ADRs)**:
   - **Neues ADR-Verzeichnis (`docs/adr/`)**: Etablierung eines standardisierten Formats (MADR / Nygard) zur transparenten Nachvollziehbarkeit wesentlicher Architekturentscheidungen inklusive Vorlage.
-  - **Umfassende Dokumentation (ADR-0001 bis ADR-0013)**: Festhaltung von 13 Kernentscheidungen bezüglich Rust-Backend-Migration, Angular 22 Frontend, nativem Rust MCP Server, AEAD AES-256-GCM Kryptografie, direkter Roon MOO/WebSocket Integration, Rust-Testabdeckungsprüfung (`cargo-llvm-cov`), Hardware-Scanner-Integration (HID Keyboard Wedge), zustandsbasierter Goldmine-Marktwertermittlung, natürlicher Kallax-Sortierung, serverseitiger Vektor-PDF-Generierung (`printpdf`), dreiteiliger Export-Strategie (CSV, JSON, PDF), SSRF-geschütztem Image-Proxy sowie optimierten Multi-Arch-Container-Builds (`cargo-chef` & `$BUILDPLATFORM`).
+  - **Umfassende Dokumentation (ADR-0001 bis ADR-0014)**: Festhaltung von 14 Kernentscheidungen bezüglich Rust-Backend-Migration, Angular 22 Frontend, nativem Rust MCP Server, AEAD AES-256-GCM Kryptografie, direkter Roon MOO/WebSocket Integration, Rust-Testabdeckungsprüfung (`cargo-llvm-cov`), Hardware-Scanner-Integration (HID Keyboard Wedge), zustandsbasierter Goldmine-Marktwertermittlung, natürlicher Kallax-Sortierung, serverseitiger Vektor-PDF-Generierung (`printpdf`), dreiteiliger Export-Strategie (CSV, JSON, PDF), SSRF-geschütztem Image-Proxy, Multi-Arch-Container-Builds (`cargo-chef` & `$BUILDPLATFORM`) sowie Spec-Driven Development via OpenSpec (ADR-0014).
   - **Regel- & Workflow-Verankerung**: ADRs sind ab sofort fester Bestandteil der Projektregeln (`.agent/rules/documentation_standards.md`), des Ticket-Workflows (`.agent/skills/ticket-workflow/`) und des neuen Skills `adr-management`.
   - **Synchronisation**: Verknüpfung in `README.md` und `docs/arc42.md` (Kapitel 9).
 

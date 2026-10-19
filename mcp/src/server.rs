@@ -52,8 +52,8 @@ impl VinylMcpServer {
     async fn sync_collection(&self) -> Result<String, String> {
         let result = self.client.sync_collection().await?;
         Ok(format!(
-            "Sync completed successfully: {} added, {} removed.",
-            result.added_count, result.removed_count
+            "Sync completed successfully: {} added, {} updated, {} removed ({} records in total).",
+            result.added, result.updated, result.removed, result.total
         ))
     }
 
@@ -68,8 +68,8 @@ impl VinylMcpServer {
     ) -> Result<String, String> {
         let result = self.client.add_to_collection(args.release_id).await?;
         Ok(format!(
-            "Successfully added release {} to collection. Sync result: {} added, {} removed.",
-            args.release_id, result.added_count, result.removed_count
+            "Successfully added release {} to collection. Sync result: {} added, {} updated, {} removed ({} records in total).",
+            args.release_id, result.added, result.updated, result.removed, result.total
         ))
     }
 
@@ -504,26 +504,10 @@ impl ServerHandler for VinylMcpServer {
                     .map_err(|e| rmcp::ErrorData::internal_error(e, None))?;
 
                 let summary_resource = crate::models::CollectionSummaryResource {
-                    total_records: collection_resp
-                        .pagination
-                        .as_ref()
-                        .map(|p| p.items as i64)
-                        .unwrap_or(0),
-                    vinyl_count: vinyl_resp
-                        .pagination
-                        .as_ref()
-                        .map(|p| p.items as i64)
-                        .unwrap_or(0),
-                    cd_count: cd_resp
-                        .pagination
-                        .as_ref()
-                        .map(|p| p.items as i64)
-                        .unwrap_or(0),
-                    unplayed_count: unplayed_resp
-                        .pagination
-                        .as_ref()
-                        .map(|p| p.items as i64)
-                        .unwrap_or(0),
+                    total_records: i64::from(collection_resp.pagination.items),
+                    vinyl_count: i64::from(vinyl_resp.pagination.items),
+                    cd_count: i64::from(cd_resp.pagination.items),
+                    unplayed_count: i64::from(unplayed_resp.pagination.items),
                     top_genres: genre_breakdown,
                 };
 
@@ -585,6 +569,9 @@ impl ServerHandler for VinylMcpServer {
         }
     }
 }
+
+#[cfg(test)]
+mod contract_tests;
 
 #[cfg(test)]
 mod tests {

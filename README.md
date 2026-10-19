@@ -31,6 +31,7 @@ The project follows a modern containerized micro-architecture:
 - **Language**: Rust
 - **Framework**: `rmcp` (v3.5) official MCP SDK
 - **Communication**: REST client against the Backend over stdio JSON-RPC.
+- **API Contract**: Request/response types are shared with the backend via the crate `vinyl-api-types` (`backend/crates/vinyl-api-types`), so MCP and backend always agree on the JSON format. Use an MCP binary built from the same version as the backend.
 - **Location**: `mcp/` directory.
 
 ### Infrastructure

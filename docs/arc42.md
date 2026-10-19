@@ -87,7 +87,9 @@ The system consists of three main containers:
 | Building Block | Description | Technology |
 | :--- | :--- | :--- |
 | **Frontend** | Single Page Application handling UI, routing, and device integration (Camera & HID Scanner). | Angular 22, Tailwind CSS, html5-qrcode, ScannerService (HID listener) |
-| **Backend** | Core business logic, API endpoints, schedulers, and database interactions. | Java 25, Spring Boot, Spring Data JPA, Lombok |
+| **Backend** | Core business logic, API endpoints, schedulers, and database interactions. | Rust 2024, Axum 0.8, Tokio, SQLx |
+| **API Types** (`vinyl-api-types`) | Request/response DTOs of the REST API, shared by Backend (serialization) and MCP Server (deserialization); JSON field names are pinned by contract tests. Workspace member of the backend at `backend/crates/vinyl-api-types`. | Rust, serde |
+| **MCP Server** | Exposes collection, scanning, analytics and Roon actions as MCP tools/resources for AI assistants; calls the Backend REST API. | Rust, `rmcp`, `reqwest`, `vinyl-api-types` |
 | **Database** | Persistent storage for users, records, and listening events. | PostgreSQL 16, `sqlx::migrate` |
 
 ### 5.2 Level 2: Backend Internals

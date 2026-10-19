@@ -51,6 +51,7 @@ Architektur-Leitlinien für das Frontend:
 * **Feingranulare UI-Updates:** Signals reduzieren unnötige DOM-Neurenderings drastisch.
 * **Einheitlicher Node 24 Standard:** Sowohl lokale Entwicklung als auch CI-Runner und Docker-Images laufen konsistent auf Node.js 24.
 * **100 % Test-Stabilität:** Alle 224 Karma-Unit-Tests und Playwright E2E-Tests laufen fehlerfrei auf Angular 22.
+  > **Hinweis (2026-10-19):** Die Unit-Tests laufen inzwischen mit Vitest statt Karma/Jasmine, siehe [ADR-0018](0018-frontend-unit-tests-mit-vitest.md). Die App nutzt weiterhin `zone.js` (`provideZoneChangeDetection`); eine Umstellung auf Zoneless steht noch aus.
 
 ### Nachteile & Risiken
 * **Node-Kompatibilität:** Ältere Node-Versionen (< 24) werden von Angular 22 nicht mehr unterstützt und müssen im Entwicklungsumfeld aktualisiert werden.

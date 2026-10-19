@@ -42,29 +42,19 @@ describe('RecordDetailModalComponent', () => {
     sessionStorage.removeItem(ROON_LAST_ZONE_KEY);
 
     mockApiService = {
-      getProxiedImageUrl: jasmine.createSpy('getProxiedImageUrl').and.callFake((url: string) => url),
-      logRecordListen: jasmine.createSpy('logRecordListen').and.returnValue(
-        of({ ...mockDetail, listen_count: 4 })
-      ),
-      playOnRoon: jasmine.createSpy('playOnRoon').and.returnValue(
-        of({ success: true, message: 'Playback started' })
-      ),
-      getRoonZones: jasmine.createSpy('getRoonZones').and.returnValue(
-        of([
-          { zoneId: 'zone-living', name: 'Living Room', state: 'playing' },
-          { zoneId: 'zone-office', name: 'Office', state: 'stopped' },
-        ])
-      ),
-      updateRecordCondition: jasmine.createSpy('updateRecordCondition').and.returnValue(
-        of({ ...mockDetail, media_condition: 'Mint (M)', median_price: 29.99 })
-      ),
-      removeReleaseFromCollection: jasmine.createSpy('removeReleaseFromCollection').and.returnValue(
-        of(undefined)
-      ),
+      getProxiedImageUrl: vi.fn().mockName('getProxiedImageUrl').mockImplementation((url: string) => url),
+      logRecordListen: vi.fn().mockName('logRecordListen').mockReturnValue(of({ ...mockDetail, listen_count: 4 })),
+      playOnRoon: vi.fn().mockName('playOnRoon').mockReturnValue(of({ success: true, message: 'Playback started' })),
+      getRoonZones: vi.fn().mockName('getRoonZones').mockReturnValue(of([
+        { zoneId: 'zone-living', name: 'Living Room', state: 'playing' },
+        { zoneId: 'zone-office', name: 'Office', state: 'stopped' },
+      ])),
+      updateRecordCondition: vi.fn().mockName('updateRecordCondition').mockReturnValue(of({ ...mockDetail, media_condition: 'Mint (M)', median_price: 29.99 })),
+      removeReleaseFromCollection: vi.fn().mockName('removeReleaseFromCollection').mockReturnValue(of(undefined)),
     };
 
     mockToastService = {
-      showToast: jasmine.createSpy('showToast'),
+      showToast: vi.fn().mockName('showToast'),
     };
 
     mockAuthService = {
@@ -100,7 +90,7 @@ describe('RecordDetailModalComponent', () => {
   });
 
   it('should emit close event when close is triggered', () => {
-    spyOn(component.close, 'emit');
+    vi.spyOn(component.close, 'emit').mockReturnValue(undefined);
     component.close.emit();
     expect(component.close.emit).toHaveBeenCalled();
   });
@@ -109,36 +99,26 @@ describe('RecordDetailModalComponent', () => {
     fixture.componentRef.setInput('detail', mockDetail);
     fixture.detectChanges();
 
-    spyOn(component.listenLogged, 'emit');
+    vi.spyOn(component.listenLogged, 'emit').mockReturnValue(undefined);
 
     component.onLogListen();
 
     expect(mockApiService.logRecordListen).toHaveBeenCalledWith(42);
-    expect(component.isLoggingListen()).toBeFalse();
-    expect(component.justListened()).toBeTrue();
-    expect(mockToastService.showToast).toHaveBeenCalledWith(
-      'Hör-Event für "Abbey Road" erfasst! 🎵',
-      'success'
-    );
-    expect(component.listenLogged.emit).toHaveBeenCalledWith(
-      jasmine.objectContaining({ listen_count: 4 })
-    );
+    expect(component.isLoggingListen()).toBe(false);
+    expect(component.justListened()).toBe(true);
+    expect(mockToastService.showToast).toHaveBeenCalledWith('Hör-Event für "Abbey Road" erfasst! 🎵', 'success');
+    expect(component.listenLogged.emit).toHaveBeenCalledWith(expect.objectContaining({ listen_count: 4 }));
   });
 
   it('should handle error when logging listen event fails', () => {
     fixture.componentRef.setInput('detail', mockDetail);
-    mockApiService.logRecordListen.and.returnValue(
-      throwError(() => new Error('Server error'))
-    );
+    mockApiService.logRecordListen.mockReturnValue(throwError(() => new Error('Server error')));
     fixture.detectChanges();
 
     component.onLogListen();
 
-    expect(component.isLoggingListen()).toBeFalse();
-    expect(mockToastService.showToast).toHaveBeenCalledWith(
-      jasmine.stringContaining('Server error'),
-      'error'
-    );
+    expect(component.isLoggingListen()).toBe(false);
+    expect(mockToastService.showToast).toHaveBeenCalledWith(expect.stringContaining('Server error'), 'error');
   });
 
   it('should trigger play on Roon successfully with selected zone', () => {
@@ -152,22 +132,19 @@ describe('RecordDetailModalComponent', () => {
       title: 'Abbey Road',
       zoneId: 'zone-living',
     });
-    expect(component.isPlayingOnRoon()).toBeFalse();
-    expect(mockToastService.showToast).toHaveBeenCalledWith(
-      'Wiedergabe auf Roon gestartet (Living Room): The Beatles - Abbey Road 🎶',
-      'success'
-    );
+    expect(component.isPlayingOnRoon()).toBe(false);
+    expect(mockToastService.showToast).toHaveBeenCalledWith('Wiedergabe auf Roon gestartet (Living Room): The Beatles - Abbey Road 🎶', 'success');
   });
 
   it('should toggle zone dropdown and switch selected zone', () => {
-    expect(component.isZoneDropdownOpen()).toBeFalse();
+    expect(component.isZoneDropdownOpen()).toBe(false);
     component.toggleZoneDropdown();
-    expect(component.isZoneDropdownOpen()).toBeTrue();
+    expect(component.isZoneDropdownOpen()).toBe(true);
 
     component.selectZone('zone-office');
     expect(component.selectedZoneId()).toBe('zone-office');
     expect(sessionStorage.getItem(ROON_LAST_ZONE_KEY)).toBe('zone-office');
-    expect(component.isZoneDropdownOpen()).toBeFalse();
+    expect(component.isZoneDropdownOpen()).toBe(false);
   });
 
   it('should restore last used zone from sessionStorage on init', () => {
@@ -188,26 +165,18 @@ describe('RecordDetailModalComponent', () => {
       title: 'Abbey Road',
       zoneId: 'zone-office',
     });
-    expect(mockToastService.showToast).toHaveBeenCalledWith(
-      'Wiedergabe auf Roon gestartet (Office): The Beatles - Abbey Road 🎶',
-      'success'
-    );
+    expect(mockToastService.showToast).toHaveBeenCalledWith('Wiedergabe auf Roon gestartet (Office): The Beatles - Abbey Road 🎶', 'success');
   });
 
   it('should handle error when play on Roon fails', () => {
     fixture.componentRef.setInput('detail', mockDetail);
-    mockApiService.playOnRoon.and.returnValue(
-      throwError(() => new Error('Roon offline'))
-    );
+    mockApiService.playOnRoon.mockReturnValue(throwError(() => new Error('Roon offline')));
     fixture.detectChanges();
 
     component.onPlayOnRoon();
 
-    expect(component.isPlayingOnRoon()).toBeFalse();
-    expect(mockToastService.showToast).toHaveBeenCalledWith(
-      jasmine.stringContaining('Roon offline'),
-      'error'
-    );
+    expect(component.isPlayingOnRoon()).toBe(false);
+    expect(mockToastService.showToast).toHaveBeenCalledWith(expect.stringContaining('Roon offline'), 'error');
   });
 
   it('should format added_at according to active language (German / English)', () => {
@@ -284,54 +253,40 @@ describe('RecordDetailModalComponent', () => {
     fixture.componentRef.setInput('detail', { ...mockDetail, media_condition: 'Very Good Plus (VG+)' });
     fixture.detectChanges();
 
-    spyOn(component.conditionUpdated, 'emit');
+    vi.spyOn(component.conditionUpdated, 'emit').mockReturnValue(undefined);
 
     component.onMediaConditionChange('Mint (M)');
 
     expect(mockApiService.updateRecordCondition).toHaveBeenCalledWith(42, { media_condition: 'Mint (M)' });
-    expect(component.isUpdatingCondition()).toBeFalse();
-    expect(mockToastService.showToast).toHaveBeenCalledWith(
-      jasmine.any(String),
-      'success'
-    );
-    expect(component.conditionUpdated.emit).toHaveBeenCalledWith(
-      jasmine.objectContaining({ media_condition: 'Mint (M)', median_price: 29.99 })
-    );
+    expect(component.isUpdatingCondition()).toBe(false);
+    expect(mockToastService.showToast).toHaveBeenCalledWith(expect.any(String), 'success');
+    expect(component.conditionUpdated.emit).toHaveBeenCalledWith(expect.objectContaining({ media_condition: 'Mint (M)', median_price: 29.99 }));
   });
 
   it('should call updateRecordCondition and emit conditionUpdated when sleeve condition is changed', () => {
     fixture.componentRef.setInput('detail', { ...mockDetail, sleeve_condition: 'Good (G)' });
     fixture.detectChanges();
 
-    mockApiService.updateRecordCondition.and.returnValue(
-      of({ ...mockDetail, sleeve_condition: 'Near Mint (NM or M-)' })
-    );
-    spyOn(component.conditionUpdated, 'emit');
+    mockApiService.updateRecordCondition.mockReturnValue(of({ ...mockDetail, sleeve_condition: 'Near Mint (NM or M-)' }));
+    vi.spyOn(component.conditionUpdated, 'emit').mockReturnValue(undefined);
 
     component.onSleeveConditionChange('Near Mint (NM or M-)');
 
     expect(mockApiService.updateRecordCondition).toHaveBeenCalledWith(42, { sleeve_condition: 'Near Mint (NM or M-)' });
-    expect(component.isUpdatingCondition()).toBeFalse();
-    expect(component.conditionUpdated.emit).toHaveBeenCalledWith(
-      jasmine.objectContaining({ sleeve_condition: 'Near Mint (NM or M-)' })
-    );
+    expect(component.isUpdatingCondition()).toBe(false);
+    expect(component.conditionUpdated.emit).toHaveBeenCalledWith(expect.objectContaining({ sleeve_condition: 'Near Mint (NM or M-)' }));
   });
 
   it('should handle error when updating condition fails', () => {
     fixture.componentRef.setInput('detail', mockDetail);
     fixture.detectChanges();
 
-    mockApiService.updateRecordCondition.and.returnValue(
-      throwError(() => new Error('Discogs update failed'))
-    );
+    mockApiService.updateRecordCondition.mockReturnValue(throwError(() => new Error('Discogs update failed')));
 
     component.onMediaConditionChange('Mint (M)');
 
-    expect(component.isUpdatingCondition()).toBeFalse();
-    expect(mockToastService.showToast).toHaveBeenCalledWith(
-      jasmine.stringContaining('Discogs update failed'),
-      'error'
-    );
+    expect(component.isUpdatingCondition()).toBe(false);
+    expect(mockToastService.showToast).toHaveBeenCalledWith(expect.stringContaining('Discogs update failed'), 'error');
   });
 
   describe('delete / remove from collection flow', () => {
@@ -342,45 +297,37 @@ describe('RecordDetailModalComponent', () => {
     });
 
     it('should show confirmation banner when promptDelete is called', () => {
-      expect(component.showDeleteConfirm()).toBeFalse();
+      expect(component.showDeleteConfirm()).toBe(false);
       component.promptDelete();
-      expect(component.showDeleteConfirm()).toBeTrue();
+      expect(component.showDeleteConfirm()).toBe(true);
     });
 
     it('should hide confirmation banner when cancelDelete is called', () => {
       component.promptDelete();
-      expect(component.showDeleteConfirm()).toBeTrue();
+      expect(component.showDeleteConfirm()).toBe(true);
       component.cancelDelete();
-      expect(component.showDeleteConfirm()).toBeFalse();
+      expect(component.showDeleteConfirm()).toBe(false);
     });
 
     it('should call apiService.removeReleaseFromCollection and emit recordRemoved on confirmDelete', () => {
-      spyOn(component.recordRemoved, 'emit');
+      vi.spyOn(component.recordRemoved, 'emit').mockReturnValue(undefined);
 
       component.confirmDelete();
 
       expect(mockApiService.removeReleaseFromCollection).toHaveBeenCalledWith(123456, 789);
-      expect(component.isRemoving()).toBeFalse();
-      expect(component.showDeleteConfirm()).toBeFalse();
-      expect(mockToastService.showToast).toHaveBeenCalledWith(
-        jasmine.any(String),
-        'success'
-      );
+      expect(component.isRemoving()).toBe(false);
+      expect(component.showDeleteConfirm()).toBe(false);
+      expect(mockToastService.showToast).toHaveBeenCalledWith(expect.any(String), 'success');
       expect(component.recordRemoved.emit).toHaveBeenCalledWith(123456);
     });
 
     it('should show error toast when removeReleaseFromCollection fails', () => {
-      mockApiService.removeReleaseFromCollection.and.returnValue(
-        throwError(() => new Error('Delete failed'))
-      );
+      mockApiService.removeReleaseFromCollection.mockReturnValue(throwError(() => new Error('Delete failed')));
 
       component.confirmDelete();
 
-      expect(component.isRemoving()).toBeFalse();
-      expect(mockToastService.showToast).toHaveBeenCalledWith(
-        jasmine.stringContaining('Delete failed'),
-        'error'
-      );
+      expect(component.isRemoving()).toBe(false);
+      expect(mockToastService.showToast).toHaveBeenCalledWith(expect.stringContaining('Delete failed'), 'error');
     });
   });
 });

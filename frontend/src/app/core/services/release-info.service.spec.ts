@@ -29,20 +29,20 @@ describe('ReleaseInfoService', () => {
     const current = service.currentRelease();
     expect(current).toBeDefined();
     expect(current?.version).toMatch(/^v\d+\.\d+\.\d+/);
-    expect(current?.isCurrent).toBeTrue();
+    expect(current?.isCurrent).toBe(true);
   });
 
   it('should manage expanded versions', () => {
     const currentVersion = service.currentRelease()?.version || 'v0.9.0';
-    expect(service.isExpanded(currentVersion)).toBeTrue();
+    expect(service.isExpanded(currentVersion)).toBe(true);
 
     // Toggle off
     service.toggleExpand(currentVersion);
-    expect(service.isExpanded(currentVersion)).toBeFalse();
+    expect(service.isExpanded(currentVersion)).toBe(false);
 
     // Toggle back on
     service.toggleExpand(currentVersion);
-    expect(service.isExpanded(currentVersion)).toBeTrue();
+    expect(service.isExpanded(currentVersion)).toBe(true);
   });
 
   it('should expand and collapse all releases', () => {
@@ -58,9 +58,9 @@ describe('ReleaseInfoService', () => {
     service.setSearchQuery('Eyoyo');
     const filtered = service.filteredReleases();
     expect(filtered.length).toBeGreaterThan(0);
-    expect(filtered.some((r) => r.version === 'v0.5.0')).toBeTrue();
+    expect(filtered.some((r) => r.version === 'v0.5.0')).toBe(true);
     // Search query should expand matching releases
-    expect(service.isExpanded('v0.5.0')).toBeTrue();
+    expect(service.isExpanded('v0.5.0')).toBe(true);
   });
 
   it('should return empty list when no matches are found', () => {

@@ -1,8 +1,12 @@
-import { TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { ScannerService } from './scanner.service';
 
 describe('ScannerService', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   let service: ScannerService;
   let mockRouter: any;
 
@@ -11,11 +15,11 @@ describe('ScannerService', () => {
     mockRouter = {
       events: {
         pipe: () => ({
-          subscribe: () => ({ unsubscribe: () => {} }),
+          subscribe: () => ({ unsubscribe: () => { } }),
         }),
       },
       url: '/',
-      navigate: jasmine.createSpy('navigate').and.returnValue(Promise.resolve(true)),
+      navigate: vi.fn().mockName('navigate').mockResolvedValue(true),
     };
 
     TestBed.configureTestingModule({
@@ -36,19 +40,19 @@ describe('ScannerService', () => {
   });
 
   it('should toggle showScanner state', () => {
-    expect(service.showScanner()).toBeFalse();
+    expect(service.showScanner()).toBe(false);
     service.openScanner();
-    expect(service.showScanner()).toBeTrue();
+    expect(service.showScanner()).toBe(true);
     service.closeScanner();
-    expect(service.showScanner()).toBeFalse();
+    expect(service.showScanner()).toBe(false);
   });
 
   it('should toggleScanner correctly', () => {
-    expect(service.showScanner()).toBeFalse();
+    expect(service.showScanner()).toBe(false);
     service.toggleScanner();
-    expect(service.showScanner()).toBeTrue();
+    expect(service.showScanner()).toBe(true);
     service.toggleScanner();
-    expect(service.showScanner()).toBeFalse();
+    expect(service.showScanner()).toBe(false);
   });
 
   it('should notify scan logged', () => {
@@ -70,14 +74,14 @@ describe('ScannerService', () => {
   });
 
   it('should manage sound feedback preference', () => {
-    expect(service.soundFeedback()).toBeTrue();
+    expect(service.soundFeedback()).toBe(true);
 
     service.setSoundFeedback(false);
-    expect(service.soundFeedback()).toBeFalse();
+    expect(service.soundFeedback()).toBe(false);
     expect(localStorage.getItem('scanner_sound')).toBe('false');
 
     service.setSoundFeedback(true);
-    expect(service.soundFeedback()).toBeTrue();
+    expect(service.soundFeedback()).toBe(true);
     expect(localStorage.getItem('scanner_sound')).toBe('true');
   });
 
@@ -90,7 +94,7 @@ describe('ScannerService', () => {
       service.handleKeyDown(new KeyboardEvent('keydown', { key: char }));
     }
     const enterEvent = new KeyboardEvent('keydown', { key: 'Enter', cancelable: true });
-    spyOn(enterEvent, 'preventDefault');
+    vi.spyOn(enterEvent, 'preventDefault').mockReturnValue(undefined);
 
     service.handleKeyDown(enterEvent);
 
@@ -99,7 +103,7 @@ describe('ScannerService', () => {
     expect(lastCode).toBeTruthy();
     expect(lastCode?.code).toBe(barcode);
     expect(lastCode?.type).toBe('1d');
-    expect(service.showScanner()).toBeTrue();
+    expect(service.showScanner()).toBe(true);
     expect(service.scanTrigger()?.code).toBe(barcode);
   });
 
@@ -157,14 +161,15 @@ describe('ScannerService', () => {
     expect(service.lastScannedCode()?.code).toBe('075678645624');
   });
 
-  it('should navigate to home if on another page when scan is received', fakeAsync(() => {
+  it('should navigate to home if on another page when scan is received', async () => {
+    vi.useFakeTimers();
     mockRouter.url = '/collection';
     service.processHardwareScan('075678645624');
-    tick();
+    await vi.advanceTimersByTimeAsync(0);
 
     expect(mockRouter.navigate).toHaveBeenCalledWith(['/']);
-    expect(service.showScanner()).toBeTrue();
-  }));
+    expect(service.showScanner()).toBe(true);
+  });
 
   it('should play beep sound without error when soundFeedback is enabled', () => {
     expect(() => service.playBeep()).not.toThrow();

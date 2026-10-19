@@ -1,4 +1,5 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import type { Mock, MockedObject } from "vitest";
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BarcodeScannerComponent } from './barcode-scanner.component';
 import { AuthService } from '../../../core/services/auth.service';
 import { ApiService } from '../../../core/services/api.service';
@@ -9,11 +10,17 @@ import { signal } from '@angular/core';
 import { User, ScanResult, SyncResult } from '../../../core/types';
 
 describe('BarcodeScannerComponent', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   let component: BarcodeScannerComponent;
   let fixture: ComponentFixture<BarcodeScannerComponent>;
-  let apiServiceMock: jasmine.SpyObj<ApiService>;
-  let toastServiceMock: jasmine.SpyObj<ToastService>;
-  let authServiceMock: { user: jasmine.Spy };
+  let apiServiceMock: MockedObject<ApiService>;
+  let toastServiceMock: MockedObject<ToastService>;
+  let authServiceMock: {
+    user: Mock;
+  };
 
   const mockUser: User = {
     id: 1,
@@ -22,17 +29,19 @@ describe('BarcodeScannerComponent', () => {
   };
 
   beforeEach(async () => {
-    apiServiceMock = jasmine.createSpyObj('ApiService', [
-      'scanBarcode',
-      'addReleaseToCollection',
-      'getProxiedImageUrl',
-    ]);
-    apiServiceMock.getProxiedImageUrl.and.callFake((url: string) => url);
+    apiServiceMock = {
+      scanBarcode: vi.fn().mockName("ApiService.scanBarcode"),
+      addReleaseToCollection: vi.fn().mockName("ApiService.addReleaseToCollection"),
+      getProxiedImageUrl: vi.fn().mockName("ApiService.getProxiedImageUrl")
+    } as unknown as MockedObject<ApiService>;
+    apiServiceMock.getProxiedImageUrl.mockImplementation((url: string) => url);
 
-    toastServiceMock = jasmine.createSpyObj('ToastService', ['showToast']);
+    toastServiceMock = {
+      showToast: vi.fn().mockName("ToastService.showToast")
+    } as unknown as MockedObject<ToastService>;
 
     authServiceMock = {
-      user: jasmine.createSpy('user').and.returnValue(mockUser),
+      user: vi.fn().mockName('user').mockReturnValue(mockUser),
     };
 
     await TestBed.configureTestingModule({
@@ -119,37 +128,31 @@ describe('BarcodeScannerComponent', () => {
     expect(component.getSelectedMatch(matches)?.id).toBe(2);
   });
 
-  it('should add release to Discogs and show success state', fakeAsync(() => {
+  it('should add release to Discogs and show success state', async () => {
+    vi.useFakeTimers();
     const syncResult: SyncResult = { added: 1, removed: 0 };
-    apiServiceMock.addReleaseToCollection.and.returnValue(of(syncResult));
+    apiServiceMock.addReleaseToCollection.mockReturnValue(of(syncResult));
 
     component.addToDiscogs(501);
-    tick();
+    await vi.advanceTimersByTimeAsync(0);
 
     expect(apiServiceMock.addReleaseToCollection).toHaveBeenCalledWith(501);
     expect(component.addSuccessMessage()).toContain('Platte erfolgreich zu Discogs hinzugefügt');
-    expect(toastServiceMock.showToast).toHaveBeenCalledWith(
-      'Erfolgreich zu deiner Discogs-Sammlung hinzugefügt!',
-      'success'
-    );
-    expect(component.isAddingToCollection()).toBeFalse();
-  }));
+    expect(toastServiceMock.showToast).toHaveBeenCalledWith('Erfolgreich zu deiner Discogs-Sammlung hinzugefügt!', 'success');
+    expect(component.isAddingToCollection()).toBe(false);
+  });
 
-  it('should handle error when adding release to Discogs fails', fakeAsync(() => {
-    apiServiceMock.addReleaseToCollection.and.returnValue(
-      throwError(() => ({ error: { message: 'Discogs rate limit reached' } }))
-    );
+  it('should handle error when adding release to Discogs fails', async () => {
+    vi.useFakeTimers();
+    apiServiceMock.addReleaseToCollection.mockReturnValue(throwError(() => ({ error: { message: 'Discogs rate limit reached' } })));
 
     component.addToDiscogs(501);
-    tick();
+    await vi.advanceTimersByTimeAsync(0);
 
     expect(component.addErrorMessage()).toBe('Discogs rate limit reached');
-    expect(toastServiceMock.showToast).toHaveBeenCalledWith(
-      'Discogs rate limit reached',
-      'error'
-    );
-    expect(component.isAddingToCollection()).toBeFalse();
-  }));
+    expect(toastServiceMock.showToast).toHaveBeenCalledWith('Discogs rate limit reached', 'error');
+    expect(component.isAddingToCollection()).toBe(false);
+  });
 
   it('should reset scanner state on handleReset', () => {
     component.scanResult.set({ success: true, message: 'Done' });
@@ -163,7 +166,7 @@ describe('BarcodeScannerComponent', () => {
     expect(component.selectedMatchId()).toBeNull();
     expect(component.addSuccessMessage()).toBeNull();
     expect(component.addErrorMessage()).toBeNull();
-    expect(component.isScanning()).toBeTrue();
+    expect(component.isScanning()).toBe(true);
   });
 
   it('should display hardware scanner status when scannerMode is hardware', () => {
@@ -176,17 +179,18 @@ describe('BarcodeScannerComponent', () => {
     expect(compiled.querySelector('#reader')).toBeNull();
   });
 
-  it('should react to scanTrigger from ScannerService', fakeAsync(() => {
+  it('should react to scanTrigger from ScannerService', async () => {
+    vi.useFakeTimers();
     const scannerService = component.scannerService;
-    spyOn(component, 'executeBarcodeScan').and.callThrough();
+    vi.spyOn(component, 'executeBarcodeScan');
     const mockResult: ScanResult = { success: true, message: 'Scan OK' };
-    apiServiceMock.scanBarcode.and.returnValue(of(mockResult));
+    apiServiceMock.scanBarcode.mockReturnValue(of(mockResult));
 
     scannerService.scanTrigger.set({ code: '075678645624', timestamp: Date.now() });
     fixture.detectChanges();
-    tick();
+    await vi.advanceTimersByTimeAsync(0);
 
     expect(component.executeBarcodeScan).toHaveBeenCalledWith('075678645624');
-    expect(component.isScanning()).toBeFalse();
-  }));
+    expect(component.isScanning()).toBe(false);
+  });
 });

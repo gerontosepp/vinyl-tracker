@@ -201,14 +201,14 @@ cd frontend
 npm install
 npm test
 ```
-*Note: Unit tests strictly enforce >80% code coverage via karma.conf.js for statements, lines, branches, and functions.*
+*Note: Unit tests (Vitest) strictly enforce >=80% code coverage for statements, lines, branches, and functions (thresholds in `angular.json`). Run `npm test -- --watch=false --coverage` to check locally.*
 
 **Available NPM Scripts:**
 | Script | Description |
 | :--- | :--- |
 | `npm run dev` | Starts the Angular development server on port 5173 with proxy configuration |
 | `npm run build` | Builds the application for production |
-| `npm run test` | Runs unit tests (Karma/Jasmine) in headless mode with code coverage enforcement |
+| `npm run test` | Runs unit tests (Vitest + jsdom, no browser needed); add `-- --watch=false --coverage` for a single run with coverage enforcement |
 | `npm run test:e2e` | Runs end-to-end tests (Playwright) with automatic dev server bootstrap |
 
 Current high-risk regression coverage focuses on authentication, dashboard scanner access, and manual Discogs sync flows in Playwright plus backend negative-path tests for scan validation and ownership checks.
@@ -238,7 +238,7 @@ cargo run
 The project includes GitHub Actions workflows:
 - **CI Pipeline** (`.github/workflows/ci.yml`):
   - Automatically builds, tests and checks the Backend (Rust 2024 / Cargo).
-  - Builds and tests the Frontend (Node 24/Angular, Karma headless with strict >80% coverage check via `karma.conf.js`).
+  - Builds and tests the Frontend (Node 24/Angular, Vitest unit tests with strict >=80% coverage thresholds from `angular.json`).
   - Runs Playwright end-to-end tests for all critical user workflows.
   - Builds and tests the MCP Server (Rust/Cargo, `rmcp`).
   - Enforces linting and tests across all components.

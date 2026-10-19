@@ -5,7 +5,7 @@ trigger: always_on
 1. **Mandatory Testing**: Never modify business logic or UI behavior without adding or updating the corresponding tests.
 2. **Testing Frameworks**: 
    - Backend: Use Rust built-in tests (`#[test]`, `#[tokio::test]`), unit tests in modules, and integration tests in `backend/tests/`.
-   - Frontend: Use Karma and Jasmine for unit tests, and Playwright for end-to-end tests.
+   - Frontend: Use Vitest (Angular `@angular/build:unit-test` builder, `jsdom`) for unit tests, and Playwright for end-to-end tests.
 3. **Coverage Goal**: Maintain comprehensive test coverage across services and routes. Enforce a minimum of **>= 80% line coverage** for Rust backend code (`cargo llvm-cov --fail-under-lines 80`). Do not write empty or hollow tests just to inflate coverage; assert actual business logic outcomes and UI state changes.
 4. **Validation (Mandatory Commands)**: 
    - Backend: Always verify formatting, tests, coverage, and linter: `cargo fmt --manifest-path backend/Cargo.toml -- --check` (fix via `cargo fmt --manifest-path backend/Cargo.toml`), `cargo test --manifest-path backend/Cargo.toml`, `cargo llvm-cov --manifest-path backend/Cargo.toml --summary-only --fail-under-lines 80`, and `cargo clippy --manifest-path backend/Cargo.toml --all-targets -- -D warnings`.

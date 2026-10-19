@@ -69,9 +69,7 @@ describe('ReleaseNotesComponent', () => {
 
     component.releaseInfo.expandAll();
     fixture.detectChanges();
-    expect(component.releaseInfo.expandedVersions().size).toBe(
-      component.releaseInfo.releases().length
-    );
+    expect(component.releaseInfo.expandedVersions().size).toBe(component.releaseInfo.releases().length);
   });
 
   it('should filter releases on search input', () => {
@@ -80,7 +78,7 @@ describe('ReleaseNotesComponent', () => {
 
     const filtered = component.releaseInfo.filteredReleases();
     expect(filtered.length).toBeGreaterThan(0);
-    expect(filtered.some((r) => r.version === 'v0.5.0')).toBeTrue();
+    expect(filtered.some((r) => r.version === 'v0.5.0')).toBe(true);
   });
 
   it('should return appropriate CSS classes for change types', () => {

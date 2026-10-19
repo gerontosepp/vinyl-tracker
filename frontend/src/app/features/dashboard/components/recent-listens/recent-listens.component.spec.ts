@@ -1,3 +1,4 @@
+import type { Mock, MockedObject } from "vitest";
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { registerLocaleData } from '@angular/common';
 import localeDe from '@angular/common/locales/de';
@@ -14,10 +15,10 @@ registerLocaleData(localeEn);
 describe('RecentListensComponent', () => {
   let component: RecentListensComponent;
   let fixture: ComponentFixture<RecentListensComponent>;
-  let mockApiService: jasmine.SpyObj<ApiService>;
+  let mockApiService: MockedObject<ApiService>;
   let mockLanguageService: {
     language: ReturnType<typeof signal<string>>;
-    translate: jasmine.Spy;
+    translate: Mock;
   };
 
   const sampleListens: ListenEvent[] = [
@@ -34,12 +35,14 @@ describe('RecentListensComponent', () => {
   ];
 
   beforeEach(async () => {
-    mockApiService = jasmine.createSpyObj<ApiService>('ApiService', ['getProxiedImageUrl']);
-    mockApiService.getProxiedImageUrl.and.callFake((url: string) => url);
+    mockApiService = {
+      getProxiedImageUrl: vi.fn().mockName("ApiService.getProxiedImageUrl")
+    } as unknown as MockedObject<ApiService>;
+    mockApiService.getProxiedImageUrl.mockImplementation((url: string) => url);
 
     mockLanguageService = {
       language: signal('de'),
-      translate: jasmine.createSpy('translate').and.callFake((key: string) => {
+      translate: vi.fn().mockName('translate').mockImplementation((key: string) => {
         const translations: Record<string, string> = {
           'dashboard.recentListens': 'Kürzlich Gehört',
           'dashboard.noListens': 'Noch keine Hördurchgänge erfasst.',
@@ -85,7 +88,7 @@ describe('RecentListensComponent', () => {
     fixture.componentRef.setInput('listens', sampleListens);
     fixture.detectChanges();
 
-    const deleteSpy = jasmine.createSpy('deleteSpy');
+    const deleteSpy = vi.fn().mockName('deleteSpy');
     component.delete.subscribe(deleteSpy);
 
     const deleteBtn = fixture.nativeElement.querySelector('button[title="Delete Scan"]');

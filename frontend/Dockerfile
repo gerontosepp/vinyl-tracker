@@ -5,7 +5,7 @@ COPY package*.json ./
 
 # Stage 2: Development
 FROM base AS development
-RUN npm ci --legacy-peer-deps
+RUN npm ci
 COPY . .
 EXPOSE 5173
 CMD ["npm", "run", "dev", "--", "--host"]
@@ -14,7 +14,7 @@ CMD ["npm", "run", "dev", "--", "--host"]
 FROM --platform=$BUILDPLATFORM node:24-alpine AS build
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --legacy-peer-deps
+RUN npm ci
 COPY . .
 RUN npm run build
 

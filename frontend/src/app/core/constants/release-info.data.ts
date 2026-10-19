@@ -11,6 +11,16 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "isUnreleased": true,
     "items": [
       {
+        "title": "Frontend: Unit-Tests mit Vitest statt Karma/Jasmine (`#134`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "**Neuer Test-Runner**: Angular-Builder `@angular/build:unit-test` mit Vitest und `jsdom` – Unit-Tests laufen ohne Browser; alle 227 Tests migriert ([ADR-0018](adr/0018-frontend-unit-tests-mit-vitest.md)).",
+          "**Coverage-Gate unverändert streng**: ≥ 80 % für Statements, Branches, Functions und Lines, jetzt direkt in `angular.json` konfiguriert.",
+          "**Saubere Abhängigkeiten**: `--legacy-peer-deps` aus Dockerfile und CI entfernt; Karma-/Jasmine-Pakete entfernt; die CI installiert für Unit-Tests keinen Chrome mehr."
+        ]
+      },
+      {
         "title": "MCP Server: Gemeinsame API-Typen mit dem Backend – fünf Tools repariert (`#131`)",
         "type": "feat",
         "typeLabel": "Feature",

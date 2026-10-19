@@ -12,7 +12,7 @@ describe('SidebarComponent', () => {
   beforeEach(async () => {
     mockScannerService = {
       showScanner: signal(false),
-      closeScanner: jasmine.createSpy('closeScanner'),
+      closeScanner: vi.fn().mockName('closeScanner'),
     };
 
     await TestBed.configureTestingModule({
@@ -33,7 +33,7 @@ describe('SidebarComponent', () => {
   });
 
   it('should emit scanClick output when scan button is clicked', () => {
-    spyOn(component.scanClick, 'emit');
+    vi.spyOn(component.scanClick, 'emit').mockReturnValue(undefined);
 
     const scanButton = fixture.nativeElement.querySelector('button[aria-label="Scannen"], button[aria-label="Scan"]');
     expect(scanButton).toBeTruthy();

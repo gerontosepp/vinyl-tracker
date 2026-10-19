@@ -5,6 +5,14 @@
     "tag": "In Entwicklung",
     "isCurrent": false,
     "isUnreleased": true,
+    "items": []
+  },
+  {
+    "version": "v0.10.0",
+    "rawHeader": "v0.10.0 (2026-10-19)",
+    "date": "2026-10-19",
+    "isCurrent": true,
+    "isUnreleased": false,
     "items": [
       {
         "title": "Betrieb: Datenbank-Backup-Skript (`scripts/backup_db.sh`, `#139`)",
@@ -207,7 +215,7 @@
     "version": "v0.9.0",
     "rawHeader": "v0.9.0 (2026-10-18)",
     "date": "2026-10-18",
-    "isCurrent": true,
+    "isCurrent": false,
     "isUnreleased": false,
     "items": [
       {

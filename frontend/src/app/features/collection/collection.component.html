@@ -125,6 +125,7 @@
   @if (showPrintDialog()) {
     <app-print-dialog
       [selectedIds]="selectedIds()"
+      [selectionHasCds]="selectionHasCds()"
       [filter]="printFilter()"
       (closed)="showPrintDialog.set(false)"
     />

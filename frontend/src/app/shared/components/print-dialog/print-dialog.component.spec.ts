@@ -17,7 +17,9 @@ describe('PrintDialogComponent', () => {
 
   const filter: PrintFilter = { sort: 'artist', sort_order: 'asc', genres: 'Jazz' };
 
-  async function setup(inputs: { selectedIds?: number[]; filter?: PrintFilter | null } = {}): Promise<void> {
+  async function setup(
+    inputs: { selectedIds?: number[]; filter?: PrintFilter | null; selectionHasCds?: boolean } = {}
+  ): Promise<void> {
     mockApiService = { print: vi.fn().mockReturnValue(of(new Blob(['%PDF'], { type: 'application/pdf' }))) };
     mockToastService = { showToast: vi.fn() };
 
@@ -37,6 +39,7 @@ describe('PrintDialogComponent', () => {
     component = fixture.componentInstance;
     if (inputs.selectedIds) fixture.componentRef.setInput('selectedIds', inputs.selectedIds);
     if (inputs.filter !== undefined) fixture.componentRef.setInput('filter', inputs.filter);
+    if (inputs.selectionHasCds !== undefined) fixture.componentRef.setInput('selectionHasCds', inputs.selectionHasCds);
     closedSpy = vi.fn<() => void>();
     component.closed.subscribe(closedSpy);
     fixture.detectChanges();
@@ -99,7 +102,7 @@ describe('PrintDialogComponent', () => {
   });
 
   it('sends the start label for partially used sheets and validates it', async () => {
-    await setup();
+    await setup({ selectedIds: [1] });
     const input = query('start-position')!;
 
     input.value = '5';
@@ -138,7 +141,7 @@ describe('PrintDialogComponent', () => {
   });
 
   it('keeps the dialog open and shows the server error on failure', async () => {
-    await setup();
+    await setup({ selectedIds: [1] });
     mockApiService.print.mockReturnValue(throwError(() => new Error('The selected scope contains no records')));
 
     await component.submit();
@@ -161,5 +164,68 @@ describe('PrintDialogComponent', () => {
 
     fixture.nativeElement.firstElementChild.click();
     expect(closedSpy).toHaveBeenCalledTimes(1);
+  });
+
+  describe('CD confirmation for labels', () => {
+    const vinylFilter: PrintFilter = { sort: 'artist', sort_order: 'asc', category: 'vinyl' };
+
+    it('requires confirmation for the whole collection', async () => {
+      await setup();
+
+      expect(component.needsCdConfirmation()).toBe(true);
+      expect(query('cd-warning')?.textContent).toContain('print.cdWarning.all');
+      expect(query('print-submit')?.disabled).toBe(true);
+
+      query('cd-confirm')!.dispatchEvent(new Event('change'));
+      fixture.detectChanges();
+      expect(query('print-submit')?.disabled).toBe(false);
+    });
+
+    it('requires confirmation for filters not limited to vinyl', async () => {
+      await setup({ filter });
+      expect(component.needsCdConfirmation()).toBe(true);
+      expect(query('cd-warning')?.textContent).toContain('print.cdWarning.filter');
+    });
+
+    it('needs no confirmation when filtered to vinyl', async () => {
+      await setup({ filter: vinylFilter });
+      expect(component.needsCdConfirmation()).toBe(false);
+      expect(query('cd-warning')).toBeNull();
+      expect(query('print-submit')?.disabled).toBe(false);
+    });
+
+    it('depends on CDs in the selection', async () => {
+      await setup({ selectedIds: [1, 2], selectionHasCds: false, filter: vinylFilter });
+      expect(component.needsCdConfirmation()).toBe(false);
+
+      fixture.componentRef.setInput('selectionHasCds', true);
+      fixture.detectChanges();
+      expect(component.needsCdConfirmation()).toBe(true);
+      expect(query('cd-warning')?.textContent).toContain('print.cdWarning.ids');
+
+      // Switching to the vinyl-only filter needs no confirmation
+      query('scope-filter')!.dispatchEvent(new Event('change'));
+      fixture.detectChanges();
+      expect(component.needsCdConfirmation()).toBe(false);
+    });
+
+    it('needs no confirmation for lists and cards', async () => {
+      await setup();
+      for (const template of ['scan-list', 'qr-cards'] as const) {
+        component.template.set(template);
+        fixture.detectChanges();
+        expect(component.needsCdConfirmation()).toBe(false);
+        expect(query('cd-warning')).toBeNull();
+        expect(component.canSubmit()).toBe(true);
+      }
+    });
+
+    it('does not submit unconfirmed labels', async () => {
+      await setup();
+
+      await component.submit();
+
+      expect(mockApiService.print).not.toHaveBeenCalled();
+    });
   });
 });

@@ -72,6 +72,7 @@ export class CollectionComponent implements OnInit, OnDestroy {
 
   readonly selectedCount = computed(() => this.selectedItems().size);
   readonly selectedIds = computed(() => Array.from(this.selectedItems().keys()));
+  readonly selectionHasCds = computed(() => Array.from(this.selectedItems().values()).some((item) => item.isCd));
 
   /** The collection view's current filters and sorting for the print dialog. */
   readonly printFilter = computed<PrintFilter>(() => {
@@ -306,12 +307,7 @@ export class CollectionComponent implements OnInit, OnDestroy {
       if (newMap.has(id)) {
         newMap.delete(id);
       } else {
-        const artist = release.basic_information.artists?.[0]?.name || 'Unknown Artist';
-        newMap.set(id, {
-          id: release.id,
-          title: release.basic_information.title,
-          artist,
-        });
+        newMap.set(id, this.toSelectionItem(release));
       }
       return newMap;
     });
@@ -324,14 +320,7 @@ export class CollectionComponent implements OnInit, OnDestroy {
       if (allSelected) {
         this.releases().forEach((r) => newMap.delete(r.id));
       } else {
-        this.releases().forEach((r) => {
-          const artist = r.basic_information.artists?.[0]?.name || 'Unknown Artist';
-          newMap.set(r.id, {
-            id: r.id,
-            title: r.basic_information.title,
-            artist,
-          });
-        });
+        this.releases().forEach((r) => newMap.set(r.id, this.toSelectionItem(r)));
       }
       return newMap;
     });
@@ -436,6 +425,16 @@ export class CollectionComponent implements OnInit, OnDestroy {
     });
     this.releases.update((list) => list.filter((r) => r.id !== releaseId));
     this.totalItems.update((total) => Math.max(0, total - 1));
+  }
+
+  private toSelectionItem(release: CollectionRelease): QrCodeItem {
+    const format = getFormatType(release);
+    return {
+      id: release.id,
+      title: release.basic_information.title,
+      artist: release.basic_information.artists?.[0]?.name || 'Unknown Artist',
+      isCd: format === 'cd' || format === 'double_cd',
+    };
   }
 
   getFormatType(release: CollectionRelease): FormatType {

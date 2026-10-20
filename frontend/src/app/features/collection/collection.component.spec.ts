@@ -331,6 +331,21 @@ describe('CollectionComponent', () => {
   });
 
   describe('print dialog', () => {
+    it('remembers CDs when selecting records', () => {
+      const release = (id: number, format: string) => ({
+        id,
+        basic_information: { title: `Album ${id}`, artists: [{ name: 'Artist' }], format, formats: [] },
+      }) as any;
+
+      component.toggleSelection(release(1, 'LP'));
+      expect(component.selectionHasCds()).toBe(false);
+
+      component.releases.set([release(2, 'CD')]);
+      component.toggleSelectAllPage();
+      expect(component.selectedItems().get(2)?.isCd).toBe(true);
+      expect(component.selectionHasCds()).toBe(true);
+    });
+
     it('passes the selected Discogs IDs', () => {
       component.selectedItems.set(new Map([
         [11, { id: 11, title: 'Album 1', artist: 'Artist 1' }],

@@ -66,6 +66,21 @@ Für `avery-3474` MUST eine Startposition 1–24 angegeben werden können; die F
 - **WHEN** die Startposition 0 oder 25 ist
 - **THEN** antwortet das System mit 400 und RFC-7807-Problem-Details
 
+### Requirement: CDs bei Etiketten bestätigen
+Etiketten sind für Schallplatten gedacht. Kann der gewählte Umfang beim Druck der Vorlage `avery-3474` CDs enthalten (ganze Sammlung, Filter ohne Einschränkung auf Platten oder Auswahl mit mindestens einer CD), MUST der Druck-Dialog vor dem Erzeugen eine ausdrückliche Bestätigung verlangen.
+
+#### Scenario: Ganze Sammlung als Etiketten
+- **WHEN** der Nutzer in den Einstellungen Etiketten für die ganze Sammlung drucken will
+- **THEN** zeigt der Dialog einen Hinweis auf CDs, und „PDF erstellen“ ist erst nach Bestätigung möglich
+
+#### Scenario: Auf Platten gefiltert
+- **WHEN** die Sammlung auf die Kategorie „Platten“ gefiltert ist und der Umfang „aktuelle Filter“ gewählt ist
+- **THEN** verlangt der Dialog keine Bestätigung
+
+#### Scenario: Auswahl ohne CDs oder andere Vorlage
+- **WHEN** nur Schallplatten markiert sind oder eine Liste bzw. QR-Karten gedruckt werden
+- **THEN** verlangt der Dialog keine Bestätigung
+
 ### Requirement: Scan-Liste
 Die Vorlage `scan-list` MUST eine Tabelle mit je einer Zeile pro Platte erzeugen: scanbarer QR-Code `discogs-id:<id>` (mindestens 15 mm Kantenlänge), Künstler, Titel, Jahr, Format und Discogs-ID. Jede Seite MUST Spaltenköpfe, Titel mit Erstellungsdatum und Seitenzahl „Seite x von y“ tragen.
 

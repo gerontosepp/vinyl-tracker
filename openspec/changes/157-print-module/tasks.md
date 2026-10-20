@@ -27,10 +27,12 @@
 - [x] 4.4 Einstellungen: QR-Button öffnet den Dialog mit „ganze Sammlung“, `window.confirm` entfällt; Tests in `settings.component.spec.ts` anpassen
 - [x] 4.5 `npm test -- --watch=false --coverage` (≥ 80 %) und `npm run build` grün; E2E-Specs auf den neuen Dialog prüfen und ggf. anpassen
 
+- [x] 4.6 CD-Bestätigung bei Etiketten: Auswahl merkt sich CDs, Dialog verlangt bei möglichen CDs (ganze Sammlung, Filter ohne „Platten“, Auswahl mit CD) eine Bestätigung vor „PDF erstellen“; Vitest-Tests für alle drei Umfänge und andere Vorlagen
+
 ## 5. Dokumentation & Abnahme
 
 - [x] 5.1 README (Feature-Liste: Druck-Modul statt QR-Export), `docs/Release-Info.md` unter „Unreleased“ inkl. Hinweis auf entfallene QR-Endpunkte, `node scripts/sync-release-info.js`
-- [ ] 5.2 Manuelle Abnahme im lokalen Stack: je Vorlage ein PDF erzeugen; Avery-PDF mit 100 % auf Normalpapier drucken und gegen einen Avery-3474-Bogen halten (Ränder, Raster, Innenabstand); QR-Code eines Etiketts und der Scan-Liste mit dem Scanner erfolgreich lesen
+- [x] 5.2 Manuelle Abnahme im lokalen Stack: je Vorlage ein PDF erzeugen; Avery-PDF mit 100 % auf Normalpapier drucken und gegen einen Avery-3474-Bogen halten (Ränder, Raster, Innenabstand); QR-Code eines Etiketts und der Scan-Liste mit dem Scanner erfolgreich lesen
 
 ## Workflow follow-up
 

@@ -203,6 +203,8 @@ export interface QrCodeItem {
   id: number;
   title: string;
   artist: string;
+  /** CDs need an explicit confirmation before printing vinyl labels. */
+  isCd?: boolean;
 }
 
 export type PrintTemplate = 'avery-3474' | 'scan-list' | 'qr-cards';

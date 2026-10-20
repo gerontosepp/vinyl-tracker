@@ -130,6 +130,25 @@ const TEMPLATES: PrintTemplate[] = ['avery-3474', 'scan-list', 'qr-cards'];
           </div>
         }
 
+        <!-- Labels are meant for vinyl: printing them for CDs needs an explicit confirmation -->
+        @if (needsCdConfirmation()) {
+          <div class="mb-5 rounded-xl border border-red-200 dark:border-red-800/50 bg-red-50 dark:bg-red-900/20 p-3" data-testid="cd-warning">
+            <p class="text-xs text-red-700 dark:text-red-300 mb-2">
+              {{ 'print.cdWarning.' + scope() | translate }}
+            </p>
+            <label class="flex items-center gap-2 text-sm font-semibold text-red-800 dark:text-red-200 cursor-pointer">
+              <input
+                type="checkbox"
+                class="accent-red-600"
+                [checked]="cdConfirmed()"
+                (change)="cdConfirmed.set(!cdConfirmed())"
+                data-testid="cd-confirm"
+              />
+              {{ 'print.cdConfirm' | translate }}
+            </label>
+          </div>
+        }
+
         <p class="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-xl p-3 mb-5">
           {{ 'print.scaleHint' | translate }}
         </p>
@@ -165,6 +184,8 @@ export class PrintDialogComponent {
   readonly selectedIds = input<number[]>([]);
   /** Current collection filters (enables scope "filter"). */
   readonly filter = input<PrintFilter | null>(null);
+  /** Whether the selection contains at least one CD. */
+  readonly selectionHasCds = input<boolean>(false);
   readonly closed = output<void>();
 
   readonly templates = TEMPLATES;
@@ -173,6 +194,7 @@ export class PrintDialogComponent {
   readonly template = signal<PrintTemplate>('avery-3474');
   readonly startPosition = signal<number>(1);
   readonly isPrinting = signal<boolean>(false);
+  readonly cdConfirmed = signal<boolean>(false);
 
   readonly scopes = computed<PrintScopeType[]>(() => {
     const scopes: PrintScopeType[] = [];
@@ -191,8 +213,25 @@ export class PrintDialogComponent {
     return Number.isInteger(value) && value >= 1 && value <= LABELS_PER_SHEET;
   });
 
+  /** Whether the chosen scope can contain CDs. */
+  readonly scopeMayIncludeCds = computed(() => {
+    switch (this.scope()) {
+      case 'ids':
+        return this.selectionHasCds();
+      case 'filter':
+        return this.filter()?.category !== 'vinyl';
+      default:
+        return true;
+    }
+  });
+
+  readonly needsCdConfirmation = computed(() => this.template() === 'avery-3474' && this.scopeMayIncludeCds());
+
   readonly canSubmit = computed(
-    () => !this.isPrinting() && (this.template() !== 'avery-3474' || this.startPositionValid())
+    () =>
+      !this.isPrinting() &&
+      (this.template() !== 'avery-3474' || this.startPositionValid()) &&
+      (!this.needsCdConfirmation() || this.cdConfirmed())
   );
 
   onStartPositionInput(event: Event): void {

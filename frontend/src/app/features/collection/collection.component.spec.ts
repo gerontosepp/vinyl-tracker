@@ -5,7 +5,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
 import { of } from 'rxjs';
 import { signal, NO_ERRORS_SCHEMA } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { CollectionRelease } from '../../core/types';
 
 describe('CollectionComponent', () => {
@@ -47,6 +47,29 @@ describe('CollectionComponent', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('takes the search from the URL, e.g. from the dashboard top artists', async () => {
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [CollectionComponent],
+      providers: [
+        provideRouter([]),
+        { provide: ApiService, useValue: mockApiService },
+        { provide: AuthService, useValue: { ...mockAuthService, user: signal({ id: 1 }) } },
+        { provide: ToastService, useValue: mockToastService },
+        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap({ search: ' Miles Davis ' }) } } },
+      ],
+      schemas: [NO_ERRORS_SCHEMA],
+    }).compileComponents();
+    const searched = TestBed.createComponent(CollectionComponent).componentInstance;
+    searched.ngOnInit();
+
+    expect(searched.search()).toBe('Miles Davis');
+    expect(searched.printFilter().search).toBe('Miles Davis');
+    expect(mockApiService.getCollection).toHaveBeenLastCalledWith(
+      1, 50, 0, 'artist', 'asc', 'Miles Davis', 'all', [], '', undefined, false, {}
+    );
   });
 
   it('switches between list and shelves and reloads the list when coming back', () => {

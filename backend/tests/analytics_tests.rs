@@ -101,6 +101,7 @@ async fn test_analytics_endpoints_require_auth() {
     let endpoints = [
         "/api/analytics/recent",
         "/api/analytics/top",
+        "/api/analytics/top-artists",
         "/api/analytics/collection/value",
         "/api/analytics/collection/genres",
     ];
@@ -308,5 +309,155 @@ async fn test_analytics_full_lifecycle() {
             .as_str()
             .unwrap()
             .contains("Connect your Discogs account in settings")
+    );
+}
+
+/// Inserts a release and `plays` listens of the user at the given UTC timestamp.
+async fn listen(
+    state: &AppState,
+    user_id: i64,
+    artist: Option<&str>,
+    title: &str,
+    thumb: Option<&str>,
+    plays: usize,
+    at: &str,
+) {
+    static DISCOGS: std::sync::atomic::AtomicI64 = std::sync::atomic::AtomicI64::new(0);
+    let discogs_id = 800_000_000_000
+        + (chrono::Utc::now().timestamp_micros() % 1_000_000_000) * 100
+        + DISCOGS.fetch_add(1, Ordering::SeqCst);
+    let record_id: i64 = sqlx::query_scalar(
+        "INSERT INTO record_cache (discogs_id, title, artist, thumb_url, format)
+         VALUES ($1, $2, $3, $4, 'LP') RETURNING id",
+    )
+    .bind(discogs_id)
+    .bind(title)
+    .bind(artist)
+    .bind(thumb)
+    .fetch_one(&state.pool)
+    .await
+    .unwrap();
+    let timestamp = chrono::NaiveDateTime::parse_from_str(at, "%Y-%m-%d %H:%M:%S").unwrap();
+    for _ in 0..plays {
+        sqlx::query("INSERT INTO listen_event (user_id, record_id, timestamp) VALUES ($1, $2, $3)")
+            .bind(user_id)
+            .bind(record_id)
+            .bind(timestamp)
+            .execute(&state.pool)
+            .await
+            .unwrap();
+    }
+}
+
+async fn top_artists(app: &axum::Router, token: &str, query: &str) -> Vec<Value> {
+    let res = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri(format!("/api/analytics/top-artists{query}"))
+                .header(header::AUTHORIZATION, format!("Bearer {token}"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(res.status(), StatusCode::OK);
+    let bytes = res.into_body().collect().await.unwrap().to_bytes();
+    serde_json::from_slice::<Value>(&bytes)
+        .unwrap()
+        .as_array()
+        .unwrap()
+        .clone()
+}
+
+#[tokio::test]
+async fn test_top_artists_sum_listens_over_releases() {
+    let (app, state) = setup_app().await;
+    let (user_id, _, token) = create_authenticated_user(&app).await;
+    let (other_id, _, _) = create_authenticated_user(&app).await;
+
+    let day = "2026-10-05 20:00:00";
+    listen(
+        &state,
+        user_id,
+        Some("The Beatles"),
+        "Abbey Road",
+        Some("https://i.discogs.com/abbey.jpg"),
+        3,
+        day,
+    )
+    .await;
+    listen(
+        &state,
+        user_id,
+        Some("The Beatles"),
+        "Help!",
+        Some("https://i.discogs.com/help.jpg"),
+        2,
+        day,
+    )
+    .await;
+    listen(
+        &state,
+        user_id,
+        Some("Miles Davis"),
+        "Kind of Blue",
+        None,
+        4,
+        day,
+    )
+    .await;
+    listen(&state, user_id, Some(" "), "Unknown", None, 9, day).await;
+    listen(
+        &state,
+        user_id,
+        Some("Can"),
+        "Tago Mago",
+        None,
+        1,
+        "2026-09-01 10:00:00",
+    )
+    .await;
+    listen(&state, other_id, Some("Abba"), "Gold", None, 20, day).await;
+
+    let all = top_artists(&app, &token, "").await;
+    let summary: Vec<(&str, i64, i64)> = all
+        .iter()
+        .map(|a| {
+            (
+                a["artist"].as_str().unwrap(),
+                a["count"].as_i64().unwrap(),
+                a["recordCount"].as_i64().unwrap(),
+            )
+        })
+        .collect();
+    // Listens without artist and of other users are not counted
+    assert_eq!(
+        summary,
+        vec![("The Beatles", 5, 2), ("Miles Davis", 4, 1), ("Can", 1, 1)]
+    );
+    assert_eq!(
+        all[0]["thumbUrls"],
+        json!([
+            "https://i.discogs.com/abbey.jpg",
+            "https://i.discogs.com/help.jpg"
+        ])
+    );
+    assert_eq!(all[1]["thumbUrls"], json!([]));
+
+    // Only listens within the days of the period
+    let october = top_artists(&app, &token, "?from=2026-10-01&to=2026-10-31").await;
+    let names: Vec<&str> = october
+        .iter()
+        .map(|a| a["artist"].as_str().unwrap())
+        .collect();
+    assert_eq!(names, vec!["The Beatles", "Miles Davis"]);
+    // An invalid period counts everything
+    assert_eq!(
+        top_artists(&app, &token, "?from=gestern&to=2026-10-31")
+            .await
+            .len(),
+        3
     );
 }

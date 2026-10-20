@@ -9,6 +9,12 @@
 
 ## Unreleased
 
+- **Feature: Meistgespielte Interpreten (`#178`)**:
+  - **Zweiter Tab**: Der Block „Meistgespielt“ auf der Startseite wechselt zwischen „Alben“ und „Interpreten“; der Zeitraum-Filter gilt für beide.
+  - **Rangliste**: Die 10 meistgehörten Interpreten mit Anzahl der Hördurchgänge und gehörten Alben, als Bild eine kleine Collage aus ihren meistgehörten Covern.
+  - **Ein Klick** auf einen Interpreten öffnet die Sammlung mit der Suche nach ihm.
+  - **API & MCP**: `GET /api/analytics/top-artists`, neues MCP-Tool `get_top_artists`.
+
 ---
 
 ## v0.12.0 (2026-10-21)

@@ -189,7 +189,9 @@ pub struct PlayRecordOnRoonArgs {
 // ============================================================================
 
 pub use vinyl_api_types::{
-    analytics::{CollectionValueResponse, GenreBreakdownItem, ListenEventDto, TopRecordDto},
+    analytics::{
+        CollectionValueResponse, GenreBreakdownItem, ListenEventDto, TopArtistDto, TopRecordDto,
+    },
     collection::{CollectionRelease, CollectionResponse, PriceRefreshResultDto, SyncResultDto},
     discogs::DiscogsSearchResponse,
     record::{RecordDetailDto, UpdateConditionRequestDto},

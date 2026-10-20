@@ -50,6 +50,26 @@ pub async fn get_top_records_handler(
     ))
 }
 
+pub async fn get_top_artists_handler(
+    State(state): State<AppState>,
+    CurrentUser(user): CurrentUser,
+    Query(params): Query<DateRangeParams>,
+) -> Result<impl IntoResponse, AppError> {
+    let top = AnalyticsService::get_top_artists(
+        &state.pool,
+        user.id,
+        params.from.as_deref(),
+        params.to.as_deref(),
+    )
+    .await?;
+
+    Ok((
+        StatusCode::OK,
+        [(CACHE_CONTROL, "no-cache, no-store, must-revalidate")],
+        Json(top),
+    ))
+}
+
 pub async fn get_collection_value_handler(
     State(state): State<AppState>,
     CurrentUser(user): CurrentUser,
@@ -81,6 +101,7 @@ pub fn router() -> Router<AppState> {
     Router::new()
         .route("/recent", get(get_recent_listens_handler))
         .route("/top", get(get_top_records_handler))
+        .route("/top-artists", get(get_top_artists_handler))
         .route("/collection/value", get(get_collection_value_handler))
         .route("/collection/genres", get(get_genre_breakdown_handler))
 }

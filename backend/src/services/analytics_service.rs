@@ -3,8 +3,8 @@ use crate::{
     error::AppError,
     models::{
         analytics::{
-            CollectionValueResponse, GenreBreakdownItem, ListenEventDto, TopRecordDto,
-            parse_value_data,
+            CollectionValueResponse, GenreBreakdownItem, ListenEventDto, TopArtistDto,
+            TopRecordDto, parse_value_data,
         },
         scan::TrackedRecordDto,
         user::AppUser,
@@ -14,6 +14,20 @@ use crate::{
 use sqlx::{PgPool, Row};
 
 pub struct AnalyticsService;
+
+/// Start and end (inclusive, UTC) of a `YYYY-MM-DD` day range; `None` unless both are valid.
+fn day_range(
+    from: Option<&str>,
+    to: Option<&str>,
+) -> Option<(chrono::NaiveDateTime, chrono::NaiveDateTime)> {
+    let day = |value: Option<&str>| {
+        value.and_then(|v| chrono::NaiveDate::parse_from_str(v, "%Y-%m-%d").ok())
+    };
+    Some((
+        day(from)?.and_hms_opt(0, 0, 0)?,
+        day(to)?.and_hms_micro_opt(23, 59, 59, 999_999)?,
+    ))
+}
 
 impl AnalyticsService {
     pub async fn get_recent_listens(
@@ -161,6 +175,56 @@ impl AnalyticsService {
         Ok(top)
     }
 
+    /// Artists with the most listens in the period (top 10), with up to 4 covers of their most
+    /// played releases. Listens of releases without an artist are not counted.
+    pub async fn get_top_artists(
+        pool: &PgPool,
+        user_id: i64,
+        from: Option<&str>,
+        to: Option<&str>,
+    ) -> Result<Vec<TopArtistDto>, AppError> {
+        let (start, end) = day_range(from, to).unzip();
+        let rows = sqlx::query(
+            r#"
+            WITH per_release AS (
+                SELECT rc.artist, rc.discogs_id, rc.thumb_url, COUNT(le.id) AS plays
+                FROM listen_event le
+                JOIN record_cache rc ON le.record_id = rc.id
+                WHERE le.user_id = $1
+                  AND NULLIF(TRIM(rc.artist), '') IS NOT NULL
+                  AND ($2::timestamp IS NULL OR le.timestamp BETWEEN $2 AND $3)
+                GROUP BY rc.artist, rc.discogs_id, rc.thumb_url
+            )
+            SELECT artist,
+                   SUM(plays)::int8 AS play_count,
+                   COUNT(*)::int8 AS record_count,
+                   (ARRAY_AGG(thumb_url ORDER BY plays DESC, discogs_id)
+                        FILTER (WHERE thumb_url IS NOT NULL))[1:4] AS thumbs
+            FROM per_release
+            GROUP BY artist
+            ORDER BY play_count DESC, artist
+            LIMIT 10
+            "#,
+        )
+        .bind(user_id)
+        .bind(start)
+        .bind(end)
+        .fetch_all(pool)
+        .await?;
+
+        Ok(rows
+            .into_iter()
+            .map(|row| TopArtistDto {
+                artist: row.get("artist"),
+                count: row.get("play_count"),
+                record_count: row.get("record_count"),
+                thumb_urls: row
+                    .get::<Option<Vec<String>>, _>("thumbs")
+                    .unwrap_or_default(),
+            })
+            .collect())
+    }
+
     pub async fn get_collection_value(
         discogs_client: &DiscogsClient,
         crypto: &CryptoService,
@@ -226,5 +290,20 @@ impl AnalyticsService {
             .collect();
 
         Ok(items)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::day_range;
+
+    #[test]
+    fn test_day_range_needs_both_valid_days() {
+        let (start, end) = day_range(Some("2026-10-01"), Some("2026-10-07")).unwrap();
+        assert_eq!(start.to_string(), "2026-10-01 00:00:00");
+        assert_eq!(end.to_string(), "2026-10-07 23:59:59.999999");
+        assert!(day_range(Some("2026-10-01"), None).is_none());
+        assert!(day_range(Some("gestern"), Some("2026-10-07")).is_none());
+        assert!(day_range(None, None).is_none());
     }
 }

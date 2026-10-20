@@ -343,7 +343,10 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'collection.deleting': 'Wird entfernt...',
 
     // Statistics
-    'stats.topPlayed': 'Meistgespielte Alben',
+    'stats.mostPlayed': 'Meistgespielt',
+    'stats.tabAlbums': 'Alben',
+    'stats.tabArtists': 'Interpreten',
+    'stats.albumCount': '{count} Alben gehört',
     'stats.showMore': 'Mehr anzeigen',
     'stats.showLess': 'Weniger anzeigen',
 
@@ -699,7 +702,10 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'collection.deleting': 'Removing...',
 
     // Statistics
-    'stats.topPlayed': 'Most Played Albums',
+    'stats.mostPlayed': 'Most Played',
+    'stats.tabAlbums': 'Albums',
+    'stats.tabArtists': 'Artists',
+    'stats.albumCount': '{count} albums played',
     'stats.showMore': 'Show more',
     'stats.showLess': 'Show less',
 

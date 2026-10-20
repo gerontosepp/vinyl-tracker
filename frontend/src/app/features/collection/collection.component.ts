@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
+import { ActivatedRoute } from '@angular/router';
 
 import { LayoutComponent } from '../../shared/components/layout/layout.component';
 import { CollectionToolbarComponent } from './components/collection-toolbar/collection-toolbar.component';
@@ -48,6 +49,7 @@ export class CollectionComponent implements OnInit, OnDestroy {
   readonly apiService = inject(ApiService);
   readonly toastService = inject(ToastService);
   readonly languageService = inject(LanguageService);
+  private readonly route = inject(ActivatedRoute);
 
   /** List of records or the shelf view (storage overview and management). */
   readonly view = signal<'list' | 'shelves'>('list');
@@ -120,6 +122,12 @@ export class CollectionComponent implements OnInit, OnDestroy {
   private yearsTimer: any = null;
 
   ngOnInit(): void {
+    // e.g. /collection?search=Miles%20Davis from the dashboard's top artists
+    const search = this.route.snapshot.queryParamMap.get('search')?.trim();
+    if (search) {
+      this.search.set(search);
+      this.debouncedSearch.set(search);
+    }
     this.loadGenres();
     this.loadShelves();
     this.loadData();

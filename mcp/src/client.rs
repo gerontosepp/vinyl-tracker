@@ -537,6 +537,41 @@ impl VinylApiClient {
             .map_err(|e| format!("Failed to parse top records JSON: {}", e))
     }
 
+    pub async fn get_top_artists(
+        &self,
+        from: Option<&str>,
+        to: Option<&str>,
+    ) -> Result<Vec<TopArtistDto>, String> {
+        self.ensure_authenticated().await?;
+        let url = format!("{}/api/analytics/top-artists", self.base_url);
+        let headers = self.build_auth_headers().await;
+
+        let mut req = self.http_client.get(&url).headers(headers);
+        if let Some(f) = from {
+            req = req.query(&[("from", f)]);
+        }
+        if let Some(t) = to {
+            req = req.query(&[("to", t)]);
+        }
+
+        let res = req
+            .send()
+            .await
+            .map_err(|e| format!("Request to /api/analytics/top-artists failed: {}", e))?;
+
+        if !res.status().is_success() {
+            return Err(format!(
+                "Analytics error {}: {}",
+                res.status(),
+                res.text().await.unwrap_or_default()
+            ));
+        }
+
+        res.json::<Vec<TopArtistDto>>()
+            .await
+            .map_err(|e| format!("Failed to parse top artists JSON: {}", e))
+    }
+
     pub async fn get_collection_value(&self) -> Result<CollectionValueResponse, String> {
         self.ensure_authenticated().await?;
         let url = format!("{}/api/analytics/collection/value", self.base_url);

@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, inject, signal, computed, effect, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { LayoutComponent } from '../../shared/components/layout/layout.component';
 import { BarcodeScannerComponent } from '../../shared/components/barcode-scanner/barcode-scanner.component';
 import { RecentListensComponent } from './components/recent-listens/recent-listens.component';
@@ -15,6 +15,7 @@ import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import {
   ListenEvent,
   AnalyticsTopRecord,
+  AnalyticsTopArtist,
   CollectionValueResponse,
   GenreBreakdownItem,
   CollectionRelease,
@@ -73,7 +74,9 @@ import { Subscription, firstValueFrom, forkJoin, of, catchError } from 'rxjs';
           <div class="lg:col-span-2 flex flex-col space-y-4 md:space-y-6">
             <app-top-records
               [data]="topRecords()"
+              [artists]="topArtists()"
               (openRecord)="openTopRecord($event)"
+              (openArtist)="openArtist($event)"
               class="min-h-0"
             >
               <!-- Date Filter Controls projected here -->
@@ -227,11 +230,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
   readonly apiService = inject(ApiService);
   readonly toastService = inject(ToastService);
   readonly scannerService = inject(ScannerService);
+  private readonly router = inject(Router);
 
   /** Shows the sort mode button (phones only) once shelves exist. */
   readonly hasShelves = signal<boolean>(false);
   readonly recentListens = signal<ListenEvent[]>([]);
   readonly topRecords = signal<AnalyticsTopRecord[]>([]);
+  readonly topArtists = signal<AnalyticsTopArtist[]>([]);
   readonly collectionValue = signal<CollectionValueResponse | null>(null);
   readonly genreData = signal<GenreBreakdownItem[]>([]);
   readonly loadingStats = signal<boolean>(true);
@@ -296,6 +301,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.sub.unsubscribe();
     }
     this.detailSub?.unsubscribe();
+  }
+
+  /** All records of the artist: the collection searched for the name. */
+  openArtist(artist: AnalyticsTopArtist): void {
+    void this.router.navigate(['/collection'], { queryParams: { search: artist.artist } });
   }
 
   openTopRecord(record: AnalyticsTopRecord): void {
@@ -371,6 +381,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
           return of([]);
         })
       ),
+      artists: this.apiService.getTopArtists(this.startDate(), this.endDate()).pipe(
+        catchError((err) => {
+          console.error('Failed to load top artists', err);
+          return of([]);
+        })
+      ),
       value: this.apiService.getCollectionValue().pipe(
         catchError((err) => {
           console.warn('Failed to load collection value', err);
@@ -384,9 +400,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
         })
       ),
     }).subscribe({
-      next: ({ recents, tops, value, genres }) => {
+      next: ({ recents, tops, artists, value, genres }) => {
         this.recentListens.set(recents);
         this.topRecords.set(tops);
+        this.topArtists.set(artists);
         this.collectionValue.set(value);
         this.genreData.set(genres);
         this.loadingStats.set(false);

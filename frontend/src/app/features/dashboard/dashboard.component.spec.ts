@@ -7,7 +7,7 @@ import { ScannerService } from '../../core/services/scanner.service';
 import { LanguageService } from '../../core/services/language.service';
 import { signal, NO_ERRORS_SCHEMA } from '@angular/core';
 import { of, throwError } from 'rxjs';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { AnalyticsTopRecord, CollectionValueResponse, GenreBreakdownItem, ListenEvent } from '../../core/types';
 
 describe('DashboardComponent', () => {
@@ -66,6 +66,7 @@ describe('DashboardComponent', () => {
     mockApiService = {
       getRecentListens: vi.fn().mockName('getRecentListens').mockReturnValue(of(mockListens)),
       getTopRecords: vi.fn().mockName('getTopRecords').mockReturnValue(of(mockTops)),
+      getTopArtists: vi.fn().mockName('getTopArtists').mockReturnValue(of([{ artist: 'Miles Davis', count: 9, recordCount: 2, thumbUrls: [] }])),
       getCollectionValue: vi.fn().mockName('getCollectionValue').mockReturnValue(of(mockValue)),
       getGenreBreakdown: vi.fn().mockName('getGenreBreakdown').mockReturnValue(of(mockGenres)),
       getCollection: vi.fn().mockName('getCollection').mockReturnValue(of({ releases: [], pagination: { total: 0, items: 0, pages: 1, page: 1, per_page: 1 } })),
@@ -112,6 +113,26 @@ describe('DashboardComponent', () => {
     fixture = TestBed.createComponent(DashboardComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
+  });
+
+  it('loads the top artists with the period and opens the collection searched for an artist', () => {
+    expect(mockApiService.getTopArtists).toHaveBeenCalledWith(component.sevenDaysAgoString, component.todayString);
+    expect(component.topArtists()[0].artist).toBe('Miles Davis');
+
+    mockApiService.getTopArtists.mockClear();
+    component.setFilterToday();
+    expect(mockApiService.getTopArtists).toHaveBeenCalledWith(component.todayString, component.todayString);
+
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    component.openArtist(component.topArtists()[0]);
+    expect(navigate).toHaveBeenCalledWith(['/collection'], { queryParams: { search: 'Miles Davis' } });
+  });
+
+  it('shows no top artists if they cannot be loaded', () => {
+    mockApiService.getTopArtists.mockReturnValue(throwError(() => new Error('down')));
+    component.loadData();
+    expect(component.topArtists()).toEqual([]);
+    expect(component.topRecords().length).toBeGreaterThan(0);
   });
 
   it('offers the sort mode on phones only when shelves exist', async () => {

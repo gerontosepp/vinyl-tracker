@@ -186,6 +186,23 @@ impl VinylMcpServer {
             .map_err(|e| format!("Failed to serialize top records: {}", e))
     }
 
+    /// Get the most played artists, optionally filtered by date range.
+    #[tool(
+        name = "get_top_artists",
+        description = "Retrieves the user's most played artists (top 10) with listen count and number of releases listened to, optionally filtered by 'from' and 'to' dates (YYYY-MM-DD)."
+    )]
+    async fn get_top_artists(
+        &self,
+        Parameters(args): Parameters<AnalyticsDateRangeArgs>,
+    ) -> Result<String, String> {
+        let top = self
+            .client
+            .get_top_artists(args.from.as_deref(), args.to.as_deref())
+            .await?;
+        serde_json::to_string_pretty(&top)
+            .map_err(|e| format!("Failed to serialize top artists: {}", e))
+    }
+
     /// Get estimated collection value from Discogs.
     #[tool(
         name = "get_collection_value",
@@ -691,6 +708,9 @@ mod tests {
 
         let t25 = VinylMcpServer::get_storage_layout_tool_attr();
         assert_eq!(t25.name, "get_storage_layout");
+
+        let t26 = VinylMcpServer::get_top_artists_tool_attr();
+        assert_eq!(t26.name, "get_top_artists");
     }
 
     #[test]

@@ -105,6 +105,16 @@ export interface AnalyticsTopRecord {
   count: number;
 }
 
+/** A most-played artist (`GET /api/analytics/top-artists`). */
+export interface AnalyticsTopArtist {
+  artist: string;
+  count: number;
+  /** Releases of the artist listened to in the period */
+  recordCount: number;
+  /** Covers of the most played releases (at most 4) */
+  thumbUrls: string[];
+}
+
 // Discogs Collection Types
 export interface DiscogsArtist {
   name: string;

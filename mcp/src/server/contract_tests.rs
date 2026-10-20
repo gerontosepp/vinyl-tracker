@@ -201,6 +201,22 @@ async fn mock_backend() -> VinylMcpServer {
             }),
         )
         .route(
+            "/api/analytics/top-artists",
+            get(|Query(query): Query<HashMap<String, String>>| async move {
+                // Echo the period so the test sees it was passed on
+                let artist = match (query.get("from"), query.get("to")) {
+                    (Some(from), Some(to)) => format!("{from}..{to}"),
+                    _ => "Miles Davis".to_string(),
+                };
+                Json(vec![TopArtistDto {
+                    artist,
+                    count: 9,
+                    record_count: 2,
+                    thumb_urls: vec!["https://i.discogs.com/kob.jpg".to_string()],
+                }])
+            }),
+        )
+        .route(
             "/api/analytics/recent",
             get(|| async {
                 Json(vec![ListenEventDto {
@@ -374,6 +390,28 @@ async fn test_get_top_records_includes_play_count() {
     let json: serde_json::Value = serde_json::from_str(&output).unwrap();
     assert_eq!(json[0]["recordTitle"], "Kind of Blue");
     assert_eq!(json[0]["count"], 7);
+}
+
+#[tokio::test]
+async fn test_get_top_artists_reports_counts_and_passes_the_period() {
+    let server = mock_backend().await;
+    let output = server
+        .get_top_artists(Parameters(AnalyticsDateRangeArgs::default()))
+        .await
+        .expect("top artists must succeed");
+    let json: serde_json::Value = serde_json::from_str(&output).unwrap();
+    assert_eq!(json[0]["artist"], "Miles Davis");
+    assert_eq!(json[0]["count"], 9);
+    assert_eq!(json[0]["recordCount"], 2);
+
+    let output = server
+        .get_top_artists(Parameters(AnalyticsDateRangeArgs {
+            from: Some("2026-10-01".to_string()),
+            to: Some("2026-10-07".to_string()),
+        }))
+        .await
+        .unwrap();
+    assert!(output.contains("2026-10-01..2026-10-07"), "{output}");
 }
 
 #[tokio::test]

@@ -44,6 +44,15 @@ test.describe('Dashboard', () => {
       });
     });
 
+    // Registered after `top*`, so it wins for the artists endpoint
+    await page.route('**/api/analytics/top-artists*', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([{ artist: 'Top Band', count: 7, recordCount: 2, thumbUrls: [] }]),
+      });
+    });
+
     await page.route('**/api/analytics/collection/value*', async (route) => {
       await route.fulfill({
         status: 200,
@@ -77,13 +86,22 @@ test.describe('Dashboard', () => {
   });
 
   test('should display dashboard sections', async ({ page }) => {
-    await expect(page.getByRole('heading', { name: 'Most Played Albums', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Most Played', exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Recent Listens', exact: true })).toBeVisible();
     await expect(page.getByText('Collection Value', { exact: false })).toBeVisible();
     await expect(page.getByText('Genre Breakdown', { exact: false })).toBeVisible();
     await expect(page.getByText('Test Artist').first()).toBeVisible();
     await expect(page.getByText('plays').first()).toBeVisible();
     await expect(page.getByText('5', { exact: true }).first()).toBeVisible();
+  });
+
+  test('should switch the most played block to the artists', async ({ page }) => {
+    await page.getByRole('tab', { name: 'Artists' }).click();
+    await expect(page.getByText('Top Band')).toBeVisible();
+    await expect(page.getByText('2 albums played')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Top Band' }).click();
+    await expect(page).toHaveURL(/\/collection\?search=Top(%20|\+)Band/);
   });
 
   test('should toggle scanner', async ({ page }) => {

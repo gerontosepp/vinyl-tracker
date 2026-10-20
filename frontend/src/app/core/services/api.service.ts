@@ -6,6 +6,7 @@ import {
   ListenEvent,
   User,
   AnalyticsTopRecord,
+  AnalyticsTopArtist,
   ResetResult,
   CollectionResponse,
   CollectionValueResponse,
@@ -68,6 +69,15 @@ export class ApiService {
     if (startDate) params = params.set('from', startDate);
     if (endDate) params = params.set('to', endDate);
     return this.http.get<AnalyticsTopRecord[]>(`${this.baseUrl}/analytics/top`, { params });
+  }
+  getTopArtists(
+    startDate?: string,
+    endDate?: string
+  ): Observable<AnalyticsTopArtist[]> {
+    let params = new HttpParams();
+    if (startDate) params = params.set('from', startDate);
+    if (endDate) params = params.set('to', endDate);
+    return this.http.get<AnalyticsTopArtist[]>(`${this.baseUrl}/analytics/top-artists`, { params });
   }
 
   getCollectionValue(): Observable<CollectionValueResponse> {

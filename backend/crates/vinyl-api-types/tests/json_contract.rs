@@ -4,7 +4,7 @@
 use serde::{Serialize, de::DeserializeOwned};
 use serde_json::{Value, json};
 use vinyl_api_types::{
-    analytics::{CollectionValueData, CollectionValueResponse, TopRecordDto},
+    analytics::{CollectionValueData, CollectionValueResponse, TopArtistDto, TopRecordDto},
     collection::SyncResultDto,
     discogs::{DiscogsPagination, DiscogsSearchResponse, DiscogsSearchResult},
     roon::{RoonPlayRequestDto, RoonStatusDto, RoonZoneDto},
@@ -118,6 +118,20 @@ fn test_sync_result_with_placement() {
     assert!(placement.slot.unplaced);
     assert!(!placement.slot.oversized);
     assert!(placement.moves.is_empty());
+}
+
+#[test]
+fn test_top_artist_wire_format() {
+    let dto = TopArtistDto {
+        artist: "The Beatles".into(),
+        count: 5,
+        record_count: 2,
+        thumb_urls: vec!["https://i.discogs.com/a.jpg".into()],
+    };
+    assert_wire_format(
+        &dto,
+        json!({"artist": "The Beatles", "count": 5, "recordCount": 2, "thumbUrls": ["https://i.discogs.com/a.jpg"]}),
+    );
 }
 
 #[test]

@@ -38,6 +38,64 @@ describe('TopRecordsComponent', () => {
     fixture.detectChanges();
   });
 
+  describe('artists tab', () => {
+    const artists = Array.from({ length: 6 }, (_, i) => ({
+      artist: `Band ${i + 1}`,
+      count: 30 - i,
+      recordCount: i + 1,
+      thumbUrls: i === 0 ? ['https://img.test/a.jpg', 'https://img.test/b.jpg'] : [],
+    }));
+    const el = (selector: string): HTMLElement[] => Array.from(fixture.nativeElement.querySelectorAll(selector));
+
+    beforeEach(() => {
+      fixture.componentRef.setInput('artists', artists);
+      fixture.detectChanges();
+    });
+
+    it('starts with the albums and switches to the artists', () => {
+      expect(component.tab()).toBe('records');
+      expect(el('[data-testid="top-artist-open"]').length).toBe(0);
+
+      el('[data-testid="top-tab-artists"]')[0].click();
+      fixture.detectChanges();
+
+      expect(component.tab()).toBe('artists');
+      expect(el('[data-testid="top-artist-open"]').length).toBe(5);
+      expect(el('app-artist-collage').length).toBe(5);
+      expect(fixture.nativeElement.textContent).toContain('Band 1');
+      expect(component.maxCount()).toBe(30);
+      expect(component.activeCount()).toBe(6);
+    });
+
+    it('shows all artists on demand and resets that when switching tabs', () => {
+      component.selectTab('artists');
+      component.toggleShowAll();
+      fixture.detectChanges();
+      expect(component.visibleArtists().length).toBe(6);
+
+      component.selectTab('records');
+      expect(component.showAll()).toBe(false);
+      expect(component.maxCount()).toBe(20);
+    });
+
+    it('emits the clicked artist', () => {
+      const opened: string[] = [];
+      component.openArtist.subscribe((a) => opened.push(a.artist));
+      component.selectTab('artists');
+      fixture.detectChanges();
+      el('[data-testid="top-artist-open"]')[1].click();
+      expect(opened).toEqual(['Band 2']);
+    });
+
+    it('shows the empty state without artists', () => {
+      fixture.componentRef.setInput('artists', []);
+      component.selectTab('artists');
+      fixture.detectChanges();
+      expect(component.activeCount()).toBe(0);
+      expect(component.maxCount()).toBe(0);
+    });
+  });
+
   it('should create', () => {
     expect(component).toBeTruthy();
   });

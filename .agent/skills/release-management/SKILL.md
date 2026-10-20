@@ -83,22 +83,34 @@ cd frontend && npm run build && cd ..
 docker compose build
 ```
 
-## 5. Commit, Tag & Publish Workflow
+## 5. Branch, PR & Publish Workflow
 
-1. **Commit Changes**:
+`develop` and `main` are protected, so the release runs through two PRs. Publishing happens automatically when the second PR is merged.
+
+1. **Release branch & version bump** (from the latest `develop`):
    ```bash
-   git add frontend/package.json frontend/package-lock.json backend/Cargo.toml backend/Cargo.lock README.md \
-       frontend/src/app/core/constants/release-info.data.ts frontend/public/assets/release-info.json \
-       docs/Release-Info.md docs/DEPLOYMENT.md deploy_proxmox.sh release.sh
-   git commit -m "chore(release): bump version to <NEW_VERSION>"
+   git checkout develop && git pull --ff-only
+   git checkout -b release/v<NEW_VERSION>
+   # docs/Release-Info.md: insert "---" and "## v<NEW_VERSION> (YYYY-MM-DD)" directly below "## Unreleased"
+   # scripts/deploy_proxmox.sh: update the example version in the header comment
+   git add docs/Release-Info.md scripts/deploy_proxmox.sh
+   echo "<NEW_VERSION>" | ./scripts/release.sh     # bumps all manifests, regenerates APP_VERSION, commits
+   git push -u origin release/v<NEW_VERSION>
+   gh pr create --base develop --title "chore(release): bump version to <NEW_VERSION>"
    ```
-
-2. **Push to `develop`**:
+2. **Merge the bump** after green CI (`gh pr checks <PR> --watch`) and the user's go: `gh pr merge <PR> --merge --delete-branch`.
+3. **Release PR `develop` → `main`**:
    ```bash
-   git push origin develop
+   gh pr create --base main --head develop --title "Release v<NEW_VERSION>"
    ```
+   After green CI: `gh pr merge <PR> --merge` (never `--delete-branch` here – it would delete `develop`).
+4. **Automatic publishing** – merging into `main` triggers:
+   - `.github/workflows/release.yml` (**Auto Release**): creates the GitHub Release `v<NEW_VERSION>` (version from `frontend/package.json`, auto-generated notes) and attaches the MCP binaries (`linux-x86_64`, `macos-aarch64`).
+   - `.github/workflows/ci.yml` on `main`: tests, then `publish-images` builds multi-arch images to GHCR (`:v<NEW_VERSION>` and `:latest`) and cleans up old packages.
 
-3. **Merge to `main` & Create GitHub Release**:
-   - Merge `develop` into `main` (via PR or fast-forward).
-   - Create a GitHub Release with tag `v<NEW_VERSION>` pointing to `main`.
-   - The `.github/workflows/ci.yml` pipeline will automatically build and publish multi-platform Docker images to GHCR (`ghcr.io/gerontosepp/vinyl-tracker-backend:v<NEW_VERSION>` and `:latest`).
+   Do **not** run `gh release create` yourself – the workflow skips an existing release, so a manual one would end up without MCP binaries.
+5. **Polish the release** once both workflows are green: set a descriptive title and prepend highlights and upgrade notes (migrations, config changes, breaking changes) to the generated notes:
+   ```bash
+   gh release edit v<NEW_VERSION> --title "v<NEW_VERSION> – <Kurztitel>" --notes-file <notes.md>
+   ```
+6. **Deploy** on the Proxmox host: `./scripts/deploy_proxmox.sh v<NEW_VERSION>` (creates a database backup before the update).

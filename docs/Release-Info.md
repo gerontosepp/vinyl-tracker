@@ -9,6 +9,12 @@
 
 ## Unreleased
 
+- **DevOps: Claude-Code-Setup fürs Projekt (`#153`)**:
+  - **Projektleitfaden beim Start geladen**: Neue `CLAUDE.md` im Root bindet `docs/CLAUDE.md` ein.
+  - **Projekt-Skills verfügbar**: `.claude/skills/` verweist auf alle Skills in `.agent/skills/` und `.agents/skills/`; `ticket-workflow` und `release-management` beschreiben den aktuellen Ablauf über PRs, Merge nur auf Zuruf und automatische Releases.
+  - **Release-Daten automatisch aktuell**: Ein Hook erzeugt `release-info.data.ts` und `release-info.json` nach jeder Änderung an `docs/Release-Info.md` neu.
+  - **Projekt-Berechtigungen**: Routine-Befehle für Issues, PRs, CI und Tests sind freigegeben; Wiederherstellung, Deployment und Löschen von Releases fragen nach; Befehle, die Docker-Volumes (und damit die Datenbank) löschen, sind gesperrt.
+
 - **Fix: Kein leerer Abschnitt „Unreleased“ in den Versionshinweisen (`#151`)**:
   - **Aufgeräumte Liste**: Der Abschnitt „Unreleased – In Entwicklung“ erscheint nur noch, wenn er Änderungen enthält – direkt nach einem Release ist er ausgeblendet, auch bei der Suche.
 

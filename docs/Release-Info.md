@@ -9,6 +9,10 @@
 
 ## Unreleased
 
+---
+
+## v0.11.0 (2026-10-20)
+
 - **Fix: Große JSON-Backups lassen sich in Produktion einspielen (`#160`)**:
   - **Upload-Limit angehoben**: Der nginx im Frontend-Container ließ für `/api` nur 1 MB zu und lehnte größere Backups mit `413` ab, bevor das Backend sie sah. Er erlaubt jetzt wie das Backend 25 MB (`client_max_body_size 25m`).
   - **Reverse Proxy**: `DEPLOYMENT.md` beschreibt, wie ein vorgeschalteter Proxy (z. B. Nginx Proxy Manager) auf dasselbe Limit gesetzt wird.

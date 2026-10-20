@@ -19,4 +19,4 @@
 
 - [x] 3.1 `README.md`, `docs/arc42.md`, `docs/Release-Info.md` (inkl. Sync)
 - [x] 3.2 Backend: `cargo fmt`, `cargo clippy`, `cargo test`; Frontend: `npm test -- --watch=false --coverage`, `npm run build`
-- [ ] 3.3 OpenSpec-Change nach dem Merge archivieren
+- [x] 3.3 OpenSpec-Change nach dem Merge archivieren

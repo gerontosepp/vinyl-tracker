@@ -3,7 +3,7 @@
 import { ReleaseEntry } from '../models/release-info.model';
 
 // Application version from frontend/package.json – single source for all version badges.
-export const APP_VERSION = '0.10.1';
+export const APP_VERSION = '0.11.0';
 
 export const RELEASE_INFO_DATA: ReleaseEntry[] = [
   {
@@ -15,10 +15,80 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "items": []
   },
   {
+    "version": "v0.11.0",
+    "rawHeader": "v0.11.0 (2026-10-20)",
+    "date": "2026-10-20",
+    "isCurrent": true,
+    "isUnreleased": false,
+    "items": [
+      {
+        "title": "Fix: Große JSON-Backups lassen sich in Produktion einspielen (`#160`)",
+        "type": "fix",
+        "typeLabel": "Fix",
+        "details": [
+          "**Upload-Limit angehoben**: Der nginx im Frontend-Container ließ für `/api` nur 1 MB zu und lehnte größere Backups mit `413` ab, bevor das Backend sie sah. Er erlaubt jetzt wie das Backend 25 MB (`client_max_body_size 25m`).",
+          "**Reverse Proxy**: `DEPLOYMENT.md` beschreibt, wie ein vorgeschalteter Proxy (z. B. Nginx Proxy Manager) auf dasselbe Limit gesetzt wird."
+        ]
+      },
+      {
+        "title": "Feature: Druck-Modul mit Avery-Etiketten und Scan-Liste (`#157`, `#56`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "**Ein Druck-Dialog für alles**: In der Sammlung druckst du die markierten Platten oder alles, was die aktuellen Filter zeigen; in den Einstellungen die ganze Sammlung. Auswählbar sind Vorlage, Umfang und bei Etiketten das Start-Etikett (`POST /api/print`).",
+          "**Avery-Etiketten 70 × 37 mm**: 24 QR-Etiketten pro A4-Bogen (Avery Zweckform 6605 / 3474), ohne Überschrift, mit Titel, Künstler und Discogs-ID. Angebrochene Bögen lassen sich ab Etikett 1–24 weiterverwenden.",
+          "**Keine Etiketten für CDs aus Versehen**: Enthält der Umfang CDs, nennt der Dialog ihre Anzahl und lässt sie beim Etikettendruck standardmäßig aus – die Auswahl muss dafür nicht geändert werden. CDs werden nur gedruckt, wenn „Auch die CDs drucken“ gewählt ist.",
+          "**Scan-Liste**: Tabelle mit einem QR-Code pro Platte (Künstler, Titel, Jahr, Format, ID) – Hörvorgänge direkt von der Liste scannen; Seitenzahlen und Spaltenköpfe auf jeder Seite.",
+          "**QR-Karten**: Das bisherige Layout (9 Karten pro Seite) bleibt als Vorlage erhalten.",
+          "**Hinweis**: Im PDF-Viewer mit 100 % bzw. „Tatsächliche Größe“ drucken. Die Endpunkte `/api/collection/qr-codes/all` und `/selected` entfallen; das Frontend nutzt `POST /api/print`."
+        ]
+      },
+      {
+        "title": "Feature: Sammlung aus JSON-Backup wiederherstellen (`#102`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "**Backup einspielen**: In den Einstellungen unter *Datenverwaltung* lässt sich ein JSON-Backup über „Backup wiederherstellen (.json)“ auswählen; nach einer Bestätigung mit der Anzahl der Platten wird es eingespielt (`POST /api/collection/restore`).",
+          "**Zusammenführen statt Überschreiben**: Es wird nichts gelöscht, und auch mehrfaches Einspielen erzeugt keine Duplikate. Zustände aus dem Backup überschreiben vorhandene Werte, fehlende bleiben erhalten; Platten-Metadaten werden nur ergänzt.",
+          "**Hör-Historie im Backup**: Das JSON-Backup enthält jetzt pro Platte alle Hör-Zeitstempel (`listen_history`, `format_version: 2`) und stellt damit auch Hörzähler und Statistiken wieder her. Ältere Backups stellen Sammlung und Zustände wieder her, aber keine Hörzähler; ein Hinweis meldet das.",
+          "**Sicher**: Ungültige Dateien werden mit einer verständlichen Fehlermeldung abgelehnt; die Wiederherstellung läuft in einer Transaktion (alles oder nichts)."
+        ]
+      },
+      {
+        "title": "DevOps: Claude-Code-Setup fürs Projekt (`#153`)",
+        "type": "chore",
+        "typeLabel": "DevOps / Tooling",
+        "details": [
+          "**Projektleitfaden beim Start geladen**: Neue `CLAUDE.md` im Root bindet `docs/CLAUDE.md` ein.",
+          "**Projekt-Skills verfügbar**: `.claude/skills/` verweist auf alle Skills in `.agent/skills/` und `.agents/skills/`; `ticket-workflow` und `release-management` beschreiben den aktuellen Ablauf über PRs, Merge nur auf Zuruf und automatische Releases.",
+          "**Release-Daten automatisch aktuell**: Ein Hook erzeugt `release-info.data.ts` und `release-info.json` nach jeder Änderung an `docs/Release-Info.md` neu.",
+          "**Projekt-Berechtigungen**: Routine-Befehle für Issues, PRs, CI und Tests sind freigegeben; Wiederherstellung, Deployment und Löschen von Releases fragen nach; Befehle, die Docker-Volumes (und damit die Datenbank) löschen, sind gesperrt."
+        ]
+      },
+      {
+        "title": "Fix: Kein leerer Abschnitt „Unreleased“ in den Versionshinweisen (`#151`)",
+        "type": "fix",
+        "typeLabel": "Fix",
+        "details": [
+          "**Aufgeräumte Liste**: Der Abschnitt „Unreleased – In Entwicklung“ erscheint nur noch, wenn er Änderungen enthält – direkt nach einem Release ist er ausgeblendet, auch bei der Suche."
+        ]
+      },
+      {
+        "title": "Aufgeräumte Seitenleiste (`#148`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "**Kein doppelter Einstieg mehr**: Das Zahnrad unten in der Desktop-Seitenleiste entfällt; die Einstellungen öffnen sich wie bisher über den Eintrag „Profil“. Die mobile Ansicht bleibt unverändert.",
+          "**Scanner-Test unter „Profil“**: Ein Test-Scan auf der Einstellungsseite bleibt jetzt auch unter `/profile` auf der Seite, statt zum Dashboard zu springen."
+        ]
+      }
+    ]
+  },
+  {
     "version": "v0.10.1",
     "rawHeader": "v0.10.1 (2026-10-19)",
     "date": "2026-10-19",
-    "isCurrent": true,
+    "isCurrent": false,
     "isUnreleased": false,
     "items": [
       {

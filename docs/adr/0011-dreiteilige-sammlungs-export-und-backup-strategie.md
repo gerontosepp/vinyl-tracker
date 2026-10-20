@@ -47,6 +47,7 @@ Es wird eine **dreiteilige Export- und Backup-Architektur** über den Endpunkt `
 2. **JSON-Backup (`format=json`):**
    * Vollständiges maschinenlesbares JSON-Backup mit Metadaten (`exported_at`, `username`, `total_records`, `total_estimated_value`, Albenliste).
    * Dient als Basis für Archivierung und spätere Re-Importe.
+   * **Ergänzung (#102):** Seit `format_version: 2` enthält jede Platte zusätzlich `listen_history` (alle Hör-Zeitstempel, UTC). `POST /api/collection/restore` spielt ein Backup zusammenführend und idempotent wieder ein (nichts wird gelöscht; der geteilte `record_cache` wird nur ergänzt; Zustände aus dem Backup gewinnen; Hör-Events werden über Nutzer, Platte und Zeitstempel dedupliziert). Backups ohne `listen_history` stellen Sammlung und Zustände wieder her, aber keine Hörzähler.
 3. **PDF-Katalog & Versicherungsnachweis (`format=pdf`):**
    * Generiert über `printpdf` (siehe [ADR-0010](0010-serverseitige-vektor-pdf-generierung-via-printpdf.md)).
    * Enthält ein zusammenfassendes Bewertungsbanner (Gesamtwert der Sammlung, Eigentümer, Zeitstempel), strukturierte Kacheln pro Album mit hochauflösendem Cover-Artwork, Goldmine-Zustandseinstufungen und Marktpreisen.

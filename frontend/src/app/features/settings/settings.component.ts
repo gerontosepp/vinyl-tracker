@@ -12,9 +12,16 @@ import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { ScannerService } from '../../core/services/scanner.service';
 import { getErrorMessage } from '../../core/utils/error';
 import { RoonStatus } from '../../core/types';
-import { LucideDownload, LucideLogOut, LucideSettings, LucideHistory } from '@lucide/angular';
+import { LucideDownload, LucideLogOut, LucideSettings, LucideHistory, LucideUpload, LucidePrinter } from '@lucide/angular';
+import { PrintDialogComponent } from '../../shared/components/print-dialog/print-dialog.component';
 import { ReleaseNotesComponent } from './components/release-notes/release-notes.component';
 import { APP_VERSION } from '../../core/constants/release-info.data';
+
+interface PendingRestore {
+  fileName: string;
+  count: number;
+  backup: unknown;
+}
 
 @Component({
   selector: 'app-settings',
@@ -27,6 +34,9 @@ import { APP_VERSION } from '../../core/constants/release-info.data';
     LucideLogOut,
     LucideSettings,
     LucideHistory,
+    LucideUpload,
+    LucidePrinter,
+    PrintDialogComponent,
     ReleaseNotesComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -425,6 +435,35 @@ import { APP_VERSION } from '../../core/constants/release-info.data';
                   </button>
                 </div>
               </div>
+
+              <!-- Restore Collection from JSON Backup -->
+              <div class="border-t border-slate-100 dark:border-slate-700/50 pt-5 mt-5">
+                <h4 class="text-sm font-bold text-slate-900 dark:text-slate-100 mb-1">
+                  {{ 'settings.restoreTitle' | translate }}
+                </h4>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 font-medium">
+                  {{ 'settings.restoreDesc' | translate }}
+                </p>
+
+                <input
+                  #restoreInput
+                  type="file"
+                  accept=".json,application/json"
+                  class="hidden"
+                  data-testid="restore-file-input"
+                  (change)="handleRestoreFileSelected($event)"
+                />
+                <button
+                  type="button"
+                  (click)="restoreInput.click()"
+                  [disabled]="isRestoring()"
+                  data-testid="restore-button"
+                  class="w-full sm:w-auto bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 font-bold px-4 py-3 rounded-xl transition-all shadow-xs hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  <svg lucideUpload [size]="16" class="text-slate-400 dark:text-slate-500"></svg>
+                  <span>{{ (isRestoring() ? 'settings.restoring' : 'settings.restoreButton') | translate }}</span>
+                </button>
+              </div>
             </div>
 
             <!-- QR-Code Management -->
@@ -440,12 +479,12 @@ import { APP_VERSION } from '../../core/constants/release-info.data';
 
               <div>
                 <button
-                  (click)="handleDownloadQrCodes()"
-                  [disabled]="isDownloadingQr()"
+                  (click)="showPrintDialog.set(true)"
+                  data-testid="open-print-dialog"
                   class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2.5 rounded-xl transition-all shadow-sm hover:-translate-y-0.5 cursor-pointer disabled:opacity-50 flex items-center gap-2"
                 >
-                  <svg lucideDownload [size]="18"></svg>
-                  {{ (isDownloadingQr() ? 'settings.generatingQr' : 'settings.downloadQr') | translate }}
+                  <svg lucidePrinter [size]="18"></svg>
+                  {{ 'settings.downloadQr' | translate }}
                 </button>
               </div>
             </div>
@@ -570,6 +609,40 @@ import { APP_VERSION } from '../../core/constants/release-info.data';
       </div>
 
       <!-- Confirm Dialog for Reset Listens -->
+      @if (showPrintDialog()) {
+        <app-print-dialog (closed)="showPrintDialog.set(false)" />
+      }
+
+      @if (pendingRestore(); as restore) {
+        <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div
+            class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-600 p-8 max-w-md animate-fade-in"
+            data-testid="restore-confirm"
+          >
+            <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100 mb-2">
+              {{ 'settings.restoreConfirmTitle' | translate }}
+            </h3>
+            <p class="text-slate-600 dark:text-slate-400 text-sm mb-6">
+              {{ 'settings.restoreConfirmText' | translate: { file: restore.fileName, count: restore.count } }}
+            </p>
+            <div class="flex gap-3">
+              <button
+                (click)="pendingRestore.set(null)"
+                class="flex-1 bg-slate-100 dark:bg-slate-900/50 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 font-bold px-4 py-2.5 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                {{ 'settings.cancel' | translate }}
+              </button>
+              <button
+                (click)="confirmRestore()"
+                class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2.5 rounded-xl transition-colors cursor-pointer"
+              >
+                {{ 'settings.restoreConfirm' | translate }}
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
       @if (showResetConfirm()) {
         <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div
@@ -626,8 +699,10 @@ export class SettingsComponent {
   readonly roonStatus = signal<RoonStatus | null>(null);
   readonly isSavingRoon = signal<boolean>(false);
   readonly isLoadingZones = signal<boolean>(false);
-  readonly isDownloadingQr = signal<boolean>(false);
+  readonly showPrintDialog = signal<boolean>(false);
   readonly isExporting = signal<'csv' | 'json' | 'pdf' | null>(null);
+  readonly isRestoring = signal<boolean>(false);
+  readonly pendingRestore = signal<PendingRestore | null>(null);
 
   constructor() {
     this.loadRoonStatus();
@@ -752,28 +827,6 @@ export class SettingsComponent {
     });
   }
 
-  async handleDownloadQrCodes(): Promise<void> {
-    const user = this.authService.user();
-    if (!user) return;
-    if (
-      !window.confirm('Generate QR codes for your ENTIRE collection? This may take a while.')
-    ) {
-      return;
-    }
-
-    this.isDownloadingQr.set(true);
-    try {
-      const blob = await firstValueFrom(this.apiService.downloadQrCodes());
-      this.downloadBlob(blob, 'collection_qr_codes.pdf');
-      this.toastService.showToast('QR codes generated successfully', 'success');
-    } catch (err) {
-      console.error(err);
-      this.toastService.showToast(getErrorMessage(err, 'Failed to generate QR codes.'), 'error');
-    } finally {
-      this.isDownloadingQr.set(false);
-    }
-  }
-
   async handleExportCollection(format: 'csv' | 'json' | 'pdf'): Promise<void> {
     const user = this.authService.user();
     if (!user) return;
@@ -790,6 +843,55 @@ export class SettingsComponent {
       this.toastService.showToast(getErrorMessage(err, this.languageService.translate('settings.exportError')), 'error');
     } finally {
       this.isExporting.set(null);
+    }
+  }
+
+  async handleRestoreFileSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    // Reset so selecting the same file again triggers another change event
+    input.value = '';
+    if (!file) return;
+
+    let backup: unknown;
+    try {
+      backup = JSON.parse(await file.text());
+    } catch {
+      backup = null;
+    }
+    const releases = (backup as { releases?: unknown } | null)?.releases;
+    if (!Array.isArray(releases)) {
+      this.toastService.showToast(this.languageService.translate('settings.restoreInvalid'), 'error');
+      return;
+    }
+
+    this.pendingRestore.set({ fileName: file.name, count: releases.length, backup });
+  }
+
+  async confirmRestore(): Promise<void> {
+    const pending = this.pendingRestore();
+    if (!pending) return;
+    this.pendingRestore.set(null);
+
+    this.isRestoring.set(true);
+    try {
+      const result = await firstValueFrom(this.apiService.restoreCollection(pending.backup));
+      this.toastService.showToast(
+        this.languageService.translate('settings.restoreSuccess', {
+          records: result.records_total,
+          added: result.records_added,
+          listens: result.listens_added,
+        }),
+        'success'
+      );
+      if (!result.listen_history_included) {
+        this.toastService.showToast(this.languageService.translate('settings.restoreNoHistory'), 'info');
+      }
+    } catch (err) {
+      console.error(err);
+      this.toastService.showToast(getErrorMessage(err, this.languageService.translate('settings.restoreError')), 'error');
+    } finally {
+      this.isRestoring.set(false);
     }
   }
 

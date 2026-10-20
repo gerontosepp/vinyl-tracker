@@ -161,6 +161,14 @@ describe('ScannerService', () => {
     expect(service.lastScannedCode()?.code).toBe('075678645624');
   });
 
+  it('should not navigate away if on profile page (settings) when scan is received', () => {
+    mockRouter.url = '/profile';
+    service.processHardwareScan('075678645624');
+
+    expect(mockRouter.navigate).not.toHaveBeenCalled();
+    expect(service.lastScannedCode()?.code).toBe('075678645624');
+  });
+
   it('should navigate to home if on another page when scan is received', async () => {
     vi.useFakeTimers();
     mockRouter.url = '/collection';

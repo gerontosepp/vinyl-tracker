@@ -3,14 +3,15 @@ use crate::{
     error::AppError,
     models::collection::{CollectionQueryParams, ParsedCollectionFilter},
     services::{
-        collection_query::CollectionQueryService, collection_sync::CollectionSyncService,
-        export_service::ExportService,
+        collection_query::CollectionQueryService, collection_restore::CollectionRestoreService,
+        collection_sync::CollectionSyncService, export_service::ExportService,
     },
     state::AppState,
 };
 use axum::{
     Json, Router,
-    extract::{Path, Query, State},
+    body::Bytes,
+    extract::{DefaultBodyLimit, Path, Query, State},
     http::StatusCode,
     response::IntoResponse,
     routing::{get, post},
@@ -169,47 +170,6 @@ pub async fn refresh_prices_handler(
     Ok((StatusCode::OK, Json(res)))
 }
 
-pub async fn generate_selected_qr_codes_handler(
-    _user: CurrentUser,
-    Json(request): Json<crate::models::analytics::QrCodeRequest>,
-) -> Result<impl IntoResponse, AppError> {
-    let pdf_bytes =
-        crate::services::qr_pdf_service::QrPdfService::generate_qr_codes_pdf(&request.items)?;
-    Ok((
-        StatusCode::OK,
-        [
-            (axum::http::header::CONTENT_TYPE, "application/pdf"),
-            (
-                axum::http::header::CONTENT_DISPOSITION,
-                "attachment; filename=collection_qr_codes.pdf",
-            ),
-        ],
-        pdf_bytes,
-    ))
-}
-
-pub async fn generate_all_qr_codes_handler(
-    State(state): State<AppState>,
-    CurrentUser(user): CurrentUser,
-) -> Result<impl IntoResponse, AppError> {
-    let pdf_bytes = crate::services::qr_pdf_service::QrPdfService::generate_all_qr_codes_pdf(
-        &state.pool,
-        user.id,
-    )
-    .await?;
-    Ok((
-        StatusCode::OK,
-        [
-            (axum::http::header::CONTENT_TYPE, "application/pdf"),
-            (
-                axum::http::header::CONTENT_DISPOSITION,
-                "attachment; filename=collection_qr_codes.pdf",
-            ),
-        ],
-        pdf_bytes,
-    ))
-}
-
 pub async fn export_collection_handler(
     State(state): State<AppState>,
     CurrentUser(user): CurrentUser,
@@ -236,7 +196,12 @@ pub async fn export_collection_handler(
             ))
         }
         "json" => {
-            let json_bytes = ExportService::export_collection_json(&user.username, &releases)?;
+            let discogs_ids: Vec<i64> = releases.iter().map(|r| r.id).collect();
+            let listen_history =
+                CollectionQueryService::get_listen_history(&state.pool, user.id, &discogs_ids)
+                    .await?;
+            let json_bytes =
+                ExportService::export_collection_json(&user.username, &releases, &listen_history)?;
             Ok((
                 StatusCode::OK,
                 [
@@ -277,10 +242,29 @@ pub async fn export_collection_handler(
     }
 }
 
+/// JSON backups of large collections exceed Axum's default body limit of 2 MB.
+const RESTORE_BODY_LIMIT: usize = 25 * 1024 * 1024;
+
+/// Merges a JSON backup (from `/export?format=json`) into the user's collection.
+pub async fn restore_collection_handler(
+    State(state): State<AppState>,
+    CurrentUser(user): CurrentUser,
+    body: Bytes,
+) -> Result<impl IntoResponse, AppError> {
+    let (backup, releases) = CollectionRestoreService::parse_backup(&body)?;
+    let result =
+        CollectionRestoreService::restore(&state.pool, user.id, &backup, &releases).await?;
+    Ok((StatusCode::OK, Json(result)))
+}
+
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/", get(get_collection_handler))
         .route("/export", get(export_collection_handler))
+        .route(
+            "/restore",
+            post(restore_collection_handler).layer(DefaultBodyLimit::max(RESTORE_BODY_LIMIT)),
+        )
         .route("/random", get(get_random_record_handler))
         .route("/unplayed", get(get_unplayed_collection_handler))
         .route("/sync", post(sync_collection_handler))
@@ -289,9 +273,4 @@ pub fn router() -> Router<AppState> {
             post(add_release_handler).delete(remove_release_handler),
         )
         .route("/prices/refresh", post(refresh_prices_handler))
-        .route(
-            "/qr-codes/selected",
-            post(generate_selected_qr_codes_handler),
-        )
-        .route("/qr-codes/all", get(generate_all_qr_codes_handler))
 }

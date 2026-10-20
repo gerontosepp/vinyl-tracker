@@ -1,19 +1,7 @@
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 pub use vinyl_api_types::analytics::{
     CollectionValueData, CollectionValueResponse, GenreBreakdownItem, ListenEventDto, TopRecordDto,
 };
-
-#[derive(Debug, Clone, Deserialize)]
-pub struct QrCodeRequest {
-    pub items: Vec<QrCodeItem>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct QrCodeItem {
-    pub id: i64,
-    pub title: String,
-    pub artist: Option<String>,
-}
 
 #[derive(Debug, Clone, Deserialize, Default)]
 pub struct DateRangeParams {

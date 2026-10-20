@@ -2,6 +2,7 @@ pub mod actuator;
 pub mod analytics;
 pub mod collection;
 pub mod discogs;
+pub mod print;
 pub mod proxy;
 pub mod records;
 pub mod roon;
@@ -95,6 +96,8 @@ pub fn create_app(state: AppState) -> Router {
         .nest("/api/proxy", proxy::router())
         // Analytics & Dashboard endpoints (nested under /api/analytics)
         .nest("/api/analytics", analytics::router())
+        // Print module: PDF labels and lists (nested under /api/print)
+        .nest("/api/print", print::router())
         // Roon Audio endpoints (nested under /api/roon)
         .nest("/api/roon", roon::router())
         // API root / ping

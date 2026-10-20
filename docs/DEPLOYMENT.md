@@ -143,6 +143,7 @@ Für den produktiven Einsatz auf einem Server (z.B. als Docker-VM unter Proxmox)
    - **Forward Hostname / IP**: Die interne IP deiner Vinyl Tracker Docker VM (z.B. `192.168.1.100`)
    - **Forward Port**: `80` (Der Port, auf den der `vinyl-frontend-prod` Container im Netzwerk mappt)
    - **Websockets Support**: Aktivieren (hilft bei einigen API Headern)
+   - **Upload-Größe**: Die Wiederherstellung eines JSON-Backups (`POST /api/collection/restore`) sendet Bodies bis 25 MB. Der nginx im Frontend-Container erlaubt das; begrenzt der vorgeschaltete Proxy kleiner, im NPM unter *Advanced* → *Custom Nginx Configuration* `client_max_body_size 25m;` eintragen. Sonst scheitert das Einspielen großer Backups mit `413 Request Entity Too Large`.
 4. **SSL Zertifikat im NPM anfordern**:
    - Gehe zum Reiter `SSL`.
    - Wähle "Request a new SSL Certificate".

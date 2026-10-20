@@ -76,6 +76,17 @@ export interface SyncResult {
   removed: number;
 }
 
+/** Result of `POST /api/collection/restore` (merge of a JSON backup). */
+export interface RestoreResult {
+  format_version: number;
+  records_total: number;
+  records_added: number;
+  records_updated: number;
+  listens_added: number;
+  listens_skipped: number;
+  listen_history_included: boolean;
+}
+
 export interface ResetResult {
   success: boolean;
   message: string;
@@ -187,14 +198,43 @@ export interface CollectionResponse {
   pagination: CollectionPagination;
 }
 
+/** Record reference kept for the print selection in the collection view. */
 export interface QrCodeItem {
   id: number;
   title: string;
   artist: string;
+  /** CDs need an explicit confirmation before printing vinyl labels. */
+  isCd?: boolean;
 }
 
-export interface QrCodeRequest {
-  items: QrCodeItem[];
+export type PrintTemplate = 'avery-3474' | 'scan-list' | 'qr-cards';
+
+/** Same filters as `GET /api/collection` (snake_case, genres comma-separated). */
+export interface PrintFilter {
+  search?: string;
+  category?: string;
+  genres?: string;
+  years?: string;
+  not_played_since?: string;
+  unplayed_only?: boolean;
+  min_plays?: number;
+  sort?: string;
+  sort_order?: string;
+}
+
+export type PrintScope =
+  | { type: 'all' }
+  | { type: 'filter'; filter: PrintFilter }
+  | { type: 'ids'; discogs_ids: number[] };
+
+/** Body of `POST /api/print`. */
+export interface PrintRequest {
+  template: PrintTemplate;
+  scope: PrintScope;
+  options: {
+    language: 'de' | 'en';
+    start_position?: number;
+  };
 }
 
 export interface CollectionValueData {

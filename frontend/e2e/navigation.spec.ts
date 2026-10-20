@@ -1,13 +1,10 @@
 import { test, expect } from '@playwright/test';
 
-const openSettingsFromDashboard = async (page: import('@playwright/test').Page) => {
+const openSettingsViaProfile = async (page: import('@playwright/test').Page) => {
   const profileNavItem = page.locator('aside').getByText('Profile', { exact: true });
   await expect(profileNavItem).toBeVisible();
   await profileNavItem.click();
   await expect(page).toHaveURL('/profile');
-  const settingsButton = page.getByRole('button', { name: 'Settings' }).first();
-  await expect(settingsButton).toBeVisible();
-  await settingsButton.click();
 };
 
 test.describe('Navigation', () => {
@@ -46,14 +43,14 @@ test.describe('Navigation', () => {
   });
 
   test('should navigate to settings', async ({ page }) => {
-    await openSettingsFromDashboard(page);
-    await expect(page).toHaveURL('/settings');
+    await openSettingsViaProfile(page);
+    await expect(page).toHaveURL('/profile');
     await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
   });
 
   test('should contain Discogs connection form in settings', async ({ page }) => {
-    await openSettingsFromDashboard(page);
-    await expect(page).toHaveURL('/settings');
+    await openSettingsViaProfile(page);
+    await expect(page).toHaveURL('/profile');
     await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
     await expect(page.getByText('Discogs Integration')).toBeVisible();
   });

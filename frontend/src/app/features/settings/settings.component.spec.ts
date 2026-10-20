@@ -8,7 +8,7 @@ import { ToastService } from '../../core/services/toast.service';
 import { of, throwError } from 'rxjs';
 import { signal, NO_ERRORS_SCHEMA } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { RoonStatus } from '../../core/types';
+import { RestoreResult, RoonStatus } from '../../core/types';
 import { APP_VERSION } from '../../core/constants/release-info.data';
 
 describe('SettingsComponent', () => {
@@ -29,6 +29,28 @@ describe('SettingsComponent', () => {
       { zoneId: 'z1', name: 'Living Room', state: 'playing' },
       { zoneId: 'z2', name: 'Kitchen', state: 'stopped' },
     ],
+  };
+
+  const mockRestoreResult: RestoreResult = {
+    format_version: 2,
+    records_total: 2,
+    records_added: 1,
+    records_updated: 1,
+    listens_added: 3,
+    listens_skipped: 0,
+    listen_history_included: true,
+  };
+
+  const backupFile = (content: string, name = 'vinyl_collection_backup.json'): File =>
+    new File([content], name, { type: 'application/json' });
+
+  /** Simulates choosing a file in the hidden restore input. */
+  const selectRestoreFile = async (file: File | null): Promise<HTMLInputElement> => {
+    const input: HTMLInputElement = fixture.nativeElement.querySelector('[data-testid="restore-file-input"]');
+    Object.defineProperty(input, 'files', { value: file ? [file] : [], configurable: true });
+    await component.handleRestoreFileSelected({ target: input } as unknown as Event);
+    fixture.detectChanges();
+    return input;
   };
 
   beforeEach(async () => {
@@ -53,8 +75,12 @@ describe('SettingsComponent', () => {
       getRoonStatus: vi.fn().mockName('getRoonStatus').mockReturnValue(of(mockRoonStatus)),
       getRoonZones: vi.fn().mockName('getRoonZones').mockReturnValue(of(mockRoonStatus.zones)),
       updateRoonSettings: vi.fn().mockName('updateRoonSettings').mockReturnValue(of(mockRoonStatus)),
-      downloadQrCodes: vi.fn().mockName('downloadQrCodes').mockReturnValue(of(new Blob())),
       exportCollection: vi.fn().mockName('exportCollection').mockReturnValue(of(new Blob(['test'], { type: 'text/csv' }))),
+      restoreCollection: vi.fn().mockName('restoreCollection').mockReturnValue(of(mockRestoreResult)),
+      // CD count requested by the print dialog
+      getCollection: vi.fn().mockName('getCollection').mockReturnValue(
+        of({ releases: [], pagination: { page: 1, pages: 1, per_page: 1, items: 0 } })
+      ),
     };
 
     mockThemeService = {
@@ -135,34 +161,21 @@ describe('SettingsComponent', () => {
     expect(mockToastService.showToast).toHaveBeenCalledWith('Roon-Zonen aktualisiert', 'success');
   });
 
-  it('should download QR codes when confirmed', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
-    vi.spyOn(component as any, 'downloadBlob').mockImplementation(() => { });
+  it('opens the print dialog for the whole collection and closes it again', () => {
+    expect(fixture.nativeElement.querySelector('app-print-dialog')).toBeNull();
 
-    await component.handleDownloadQrCodes();
+    fixture.nativeElement.querySelector('[data-testid="open-print-dialog"]').click();
+    fixture.detectChanges();
 
-    expect(mockApiService.downloadQrCodes).toHaveBeenCalled();
-    expect(component.isDownloadingQr()).toBe(false);
-    expect(mockToastService.showToast).toHaveBeenCalledWith('QR codes generated successfully', 'success');
-  });
+    const dialog = fixture.debugElement.query((el) => el.name === 'app-print-dialog');
+    expect(dialog).not.toBeNull();
+    // No selection or filter: the dialog offers the whole collection only
+    expect(dialog.componentInstance.scopes()).toEqual(['all']);
 
-  it('should not download QR codes when confirmation cancelled', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(false);
-
-    await component.handleDownloadQrCodes();
-
-    expect(mockApiService.downloadQrCodes).not.toHaveBeenCalled();
-    expect(component.isDownloadingQr()).toBe(false);
-  });
-
-  it('should handle error during QR code download', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
-    mockApiService.downloadQrCodes.mockReturnValue(throwError(() => new Error('Download failed')));
-
-    await component.handleDownloadQrCodes();
-
-    expect(component.isDownloadingQr()).toBe(false);
-    expect(mockToastService.showToast).toHaveBeenCalledWith('Download failed', 'error');
+    dialog.componentInstance.closed.emit();
+    fixture.detectChanges();
+    expect(component.showPrintDialog()).toBe(false);
+    expect(fixture.nativeElement.querySelector('app-print-dialog')).toBeNull();
   });
 
   it('should allow changing scanner mode and sound feedback', () => {
@@ -221,5 +234,101 @@ describe('SettingsComponent', () => {
 
     expect(component.isExporting()).toBeNull();
     expect(mockToastService.showToast).toHaveBeenCalledWith('Export error', 'error');
+  });
+
+  describe('restore from JSON backup', () => {
+    const backup = { format_version: 2, releases: [{ id: 1 }, { id: 2 }] };
+
+    it('opens the file picker from the restore button', () => {
+      const input: HTMLInputElement = fixture.nativeElement.querySelector('[data-testid="restore-file-input"]');
+      const clickSpy = vi.spyOn(input, 'click').mockImplementation(() => { });
+
+      fixture.nativeElement.querySelector('[data-testid="restore-button"]').click();
+
+      expect(clickSpy).toHaveBeenCalled();
+      expect(input.accept).toContain('.json');
+    });
+
+    it('asks for confirmation with file name and record count before restoring', async () => {
+      const input = await selectRestoreFile(backupFile(JSON.stringify(backup)));
+
+      expect(input.value).toBe('');
+      expect(component.pendingRestore()).toEqual({
+        fileName: 'vinyl_collection_backup.json',
+        count: 2,
+        backup,
+      });
+      expect(fixture.nativeElement.querySelector('[data-testid="restore-confirm"]')).not.toBeNull();
+      expect(mockApiService.restoreCollection).not.toHaveBeenCalled();
+    });
+
+    it('does nothing when the file dialog is cancelled', async () => {
+      await selectRestoreFile(null);
+
+      expect(component.pendingRestore()).toBeNull();
+      expect(mockToastService.showToast).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['invalid JSON', '{ not json'],
+      ['JSON without releases', '{"username":"x"}'],
+      ['JSON null', 'null'],
+    ])('rejects %s without calling the API', async (_label, content) => {
+      await selectRestoreFile(backupFile(content));
+
+      expect(component.pendingRestore()).toBeNull();
+      expect(mockToastService.showToast).toHaveBeenCalledWith('settings.restoreInvalid', 'error');
+      expect(mockApiService.restoreCollection).not.toHaveBeenCalled();
+    });
+
+    it('cancelling the confirmation keeps the collection untouched', async () => {
+      await selectRestoreFile(backupFile(JSON.stringify(backup)));
+
+      component.pendingRestore.set(null);
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('[data-testid="restore-confirm"]')).toBeNull();
+      expect(mockApiService.restoreCollection).not.toHaveBeenCalled();
+    });
+
+    it('restores the backup after confirmation and reports the result', async () => {
+      await selectRestoreFile(backupFile(JSON.stringify(backup)));
+
+      await component.confirmRestore();
+
+      expect(mockApiService.restoreCollection).toHaveBeenCalledWith(backup);
+      expect(component.pendingRestore()).toBeNull();
+      expect(component.isRestoring()).toBe(false);
+      expect(mockToastService.showToast).toHaveBeenCalledWith('settings.restoreSuccess', 'success');
+      expect(mockToastService.showToast).not.toHaveBeenCalledWith('settings.restoreNoHistory', 'info');
+    });
+
+    it('hints that listen counts were not restored from an old backup', async () => {
+      mockApiService.restoreCollection.mockReturnValue(
+        of({ ...mockRestoreResult, format_version: 1, listens_added: 0, listen_history_included: false })
+      );
+      await selectRestoreFile(backupFile(JSON.stringify(backup)));
+
+      await component.confirmRestore();
+
+      expect(mockToastService.showToast).toHaveBeenCalledWith('settings.restoreSuccess', 'success');
+      expect(mockToastService.showToast).toHaveBeenCalledWith('settings.restoreNoHistory', 'info');
+    });
+
+    it('shows the backend error when the restore fails', async () => {
+      mockApiService.restoreCollection.mockReturnValue(throwError(() => new Error('Invalid backup entry #2')));
+      await selectRestoreFile(backupFile(JSON.stringify(backup)));
+
+      await component.confirmRestore();
+
+      expect(component.isRestoring()).toBe(false);
+      expect(mockToastService.showToast).toHaveBeenCalledWith('Invalid backup entry #2', 'error');
+    });
+
+    it('confirmRestore without a pending backup is a no-op', async () => {
+      await component.confirmRestore();
+
+      expect(mockApiService.restoreCollection).not.toHaveBeenCalled();
+    });
   });
 });

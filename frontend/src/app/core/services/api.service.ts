@@ -10,7 +10,6 @@ import {
   CollectionResponse,
   CollectionValueResponse,
   GenreBreakdownItem,
-  QrCodeItem,
   SyncResult,
   RecordDetailDto,
   RoonStatus,
@@ -18,6 +17,8 @@ import {
   RoonSettings,
   RoonPlayRequest,
   PriceRefreshResult,
+  RestoreResult,
+  PrintRequest,
 } from '../types';
 
 @Injectable({
@@ -175,12 +176,8 @@ export class ApiService {
     return this.http.delete<void>(`${this.baseUrl}/collection/releases/${releaseId}`, { params });
   }
 
-  downloadQrCodes(): Observable<Blob> {
-    return this.http.get(`${this.baseUrl}/collection/qr-codes/all`, { responseType: 'blob' });
-  }
-
-  downloadQrCodesSelected(items: QrCodeItem[]): Observable<Blob> {
-    return this.http.post(`${this.baseUrl}/collection/qr-codes/selected`, { items }, { responseType: 'blob' });
+  print(request: PrintRequest): Observable<Blob> {
+    return this.http.post(`${this.baseUrl}/print`, request, { responseType: 'blob' });
   }
 
   exportCollection(
@@ -226,6 +223,10 @@ export class ApiService {
       }
     }
     return this.http.get(`${this.baseUrl}/collection/export`, { params, responseType: 'blob' });
+  }
+
+  restoreCollection(backup: unknown): Observable<RestoreResult> {
+    return this.http.post<RestoreResult>(`${this.baseUrl}/collection/restore`, backup);
   }
 
   getUser(): Observable<User> {

@@ -101,59 +101,59 @@ Update project documentation immediately alongside code changes (see [`documenta
 
 ---
 
-## 6. Deployment & User Verification
+## 6. Commit, Push & Pull Request
 
-1. **Rebuild & Start Docker Containers**:
+`develop` and `main` are protected – never push to them directly; every change goes through a PR against `develop`.
+
+1. **Conventional Commit** (body explains the why, footer `Closes #<ISSUE_ID>`):
    ```bash
-   docker compose up -d --build backend frontend
-   ```
-2. **Invite User to Verify**:
-   - Summarize the implemented changes and test results.
-   - Provide the test URL (`https://localhost:5173`).
-   - Request verification and approval to merge.
-   - **CRITICAL**: Never merge or delete the feature branch without explicit user approval!
-
----
-
-## 7. Commit, Merge & Cleanup
-
-Once the user approves:
-
-1. **Archive OpenSpec Change (if applicable)**:
-   ```bash
-   ./scripts/opsx.sh archive <ISSUE_ID>-<short-description>
-   ```
-   This merges delta specifications into the persistent domain specifications under `openspec/specs/`.
-
-2. **Conventional Commit**:
-   ```bash
-   git add .
+   git add <files>
    git commit -m "feat(scope): <short description> (#<ISSUE_ID>)"
    ```
-
-3. **Merge into `develop` with `--no-ff`**:
+2. **Push & open the PR**:
    ```bash
-   git checkout develop
-   git pull origin develop
-   git merge feat/<ISSUE_ID>-<short-description> --no-ff -m "Merge branch 'feat/<ISSUE_ID>-<short-description>' into develop"
+   git push -u origin feat/<ISSUE_ID>-<short-description>
+   gh pr create --base develop --title "feat(scope): <short description> (#<ISSUE_ID>)" --body "Closes #<ISSUE_ID> ..."
    ```
-
-4. **Push to Remote**:
+   The PR body lists the changes and the local test results.
+3. **Wait for CI** (backend, frontend, MCP jobs on the self-hosted runners, ~10 min):
    ```bash
-   git push origin develop
+   gh pr checks <PR> --watch
    ```
-
-5. **Delete Local Feature Branch**:
-   ```bash
-   git branch -d feat/<ISSUE_ID>-<short-description>
-   ```
+   Report the result to the user. Fix failures on the same branch (see the [`pipeline-healer`](../pipeline-healer/SKILL.md) skill).
 
 ---
 
-## 8. Close GitHub Issue
+## 7. Merge (only on explicit user instruction)
 
-Close the issue via GitHub CLI with a concise summary of the resolution and commit hash:
+**CRITICAL**: Never merge without an explicit instruction from the user (e.g. "merge #123"). A green CI is not an approval.
+
+1. **Merge & delete the branch**:
+   ```bash
+   gh pr merge <PR> --merge --delete-branch
+   git checkout develop && git pull --ff-only
+   ```
+   The `Closes #<ISSUE_ID>` footer closes the issue automatically – verify with `gh issue view <ISSUE_ID>`.
+2. **Archive the OpenSpec change (if any)** in a separate PR, because `develop` is protected:
+   ```bash
+   git checkout -b chore/archive-<ISSUE_ID>-<short-description>
+   ./scripts/opsx.sh archive <ISSUE_ID>-<short-description>
+   ```
+   Commit as `docs(spec): archive OpenSpec change <ISSUE_ID>-<short-description> (#<ISSUE_ID>)`, then PR → CI → merge.
+
+---
+
+## 8. Parallel PRs & Release-Info Conflicts
+
+Every PR adds its entry at the top of `## Unreleased` in `docs/Release-Info.md` and regenerates `release-info.data.ts` / `release-info.json`, so two open PRs always conflict there. After the first one is merged, rebase the other:
 
 ```bash
-gh issue close <ISSUE_ID> --comment "Implemented and merged into develop: <summary>."
+git checkout <branch> && git rebase develop
+# docs/Release-Info.md: keep BOTH entries (newest first)
+git checkout --theirs frontend/public/assets/release-info.json frontend/src/app/core/constants/release-info.data.ts
+node scripts/sync-release-info.js        # regenerate from the merged Markdown
+git add -A && GIT_EDITOR=true git rebase --continue
+git push --force-with-lease
 ```
+
+Re-run the frontend tests, wait for CI again and only then merge.

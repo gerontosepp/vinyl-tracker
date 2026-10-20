@@ -1,11 +1,11 @@
 use chrono::{DateTime, Utc};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 pub use vinyl_api_types::collection::{
     BasicInformation, CollectionNote, CollectionRelease, CollectionResponse, PriceRefreshResultDto,
     SyncResultDto,
 };
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Default, Deserialize)]
 pub struct CollectionQueryParams {
     pub page: Option<u32>,
     pub per_page: Option<u32>,
@@ -99,6 +99,58 @@ impl From<CollectionQueryParams> for ParsedCollectionFilter {
             min_plays,
         }
     }
+}
+
+/// JSON backup as produced by `GET /api/collection/export?format=json`, read leniently for
+/// `POST /api/collection/restore`: unknown fields are ignored, optional fields may be missing.
+#[derive(Debug, Clone, Deserialize)]
+pub struct CollectionBackupRequest {
+    pub format_version: Option<u32>,
+    pub releases: Vec<BackupRelease>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct BackupRelease {
+    /// Discogs release ID
+    pub id: i64,
+    pub instance_id: i64,
+    pub date_added: Option<String>,
+    pub media_condition: Option<String>,
+    pub sleeve_condition: Option<String>,
+    pub basic_information: BackupBasicInformation,
+    /// Listen timestamps (format version 2); missing in older backups
+    pub listen_history: Option<Vec<String>>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct BackupBasicInformation {
+    pub title: String,
+    #[serde(default)]
+    pub artists: Vec<BackupArtist>,
+    pub year: Option<i32>,
+    #[serde(rename = "thumb")]
+    pub thumb_url: Option<String>,
+    #[serde(default)]
+    pub genres: Vec<String>,
+    pub format: Option<String>,
+    pub lowest_price: Option<f64>,
+    pub median_price: Option<f64>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct BackupArtist {
+    pub name: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct RestoreResultDto {
+    pub format_version: u32,
+    pub records_total: usize,
+    pub records_added: usize,
+    pub records_updated: usize,
+    pub listens_added: usize,
+    pub listens_skipped: usize,
+    pub listen_history_included: bool,
 }
 
 /// Parses year filter expressions such as "1970-1979", "1980s", "1975,1976" into individual years.

@@ -9,14 +9,26 @@ use printpdf::{
     Rgb, TextItem, WindingOrder, XObjectTransform,
 };
 use serde::Serialize;
+use std::collections::HashMap;
+
+/// Version of the JSON backup format; 2 added `listen_history` per release.
+pub const BACKUP_FORMAT_VERSION: u32 = 2;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct CollectionBackupDto<'a> {
+    pub format_version: u32,
     pub exported_at: String,
     pub username: &'a str,
     pub total_records: usize,
     pub total_estimated_value: f64,
-    pub releases: &'a [CollectionRelease],
+    pub releases: Vec<BackupReleaseDto<'a>>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct BackupReleaseDto<'a> {
+    #[serde(flatten)]
+    pub release: &'a CollectionRelease,
+    pub listen_history: &'a [String],
 }
 
 pub struct ExportService;
@@ -93,10 +105,12 @@ impl ExportService {
             .map_err(|e| AppError::Internal(format!("Failed to finalize CSV data: {e}")))
     }
 
-    /// Generates a structured JSON backup of the user collection
+    /// Generates a structured JSON backup of the user collection.
+    /// `listen_history` maps a Discogs release ID to its listen timestamps (RFC 3339, ascending).
     pub fn export_collection_json(
         username: &str,
         releases: &[CollectionRelease],
+        listen_history: &HashMap<i64, Vec<String>>,
     ) -> Result<Vec<u8>, AppError> {
         let total_value: f64 = releases
             .iter()
@@ -109,11 +123,21 @@ impl ExportService {
             .sum();
 
         let backup = CollectionBackupDto {
+            format_version: BACKUP_FORMAT_VERSION,
             exported_at: Utc::now().to_rfc3339(),
             username,
             total_records: releases.len(),
             total_estimated_value: (total_value * 100.0).round() / 100.0,
-            releases,
+            releases: releases
+                .iter()
+                .map(|release| BackupReleaseDto {
+                    release,
+                    listen_history: listen_history
+                        .get(&release.id)
+                        .map(Vec::as_slice)
+                        .unwrap_or_default(),
+                })
+                .collect(),
         };
 
         serde_json::to_vec_pretty(&backup)
@@ -982,16 +1006,34 @@ mod tests {
             sample_release(11, "The Beatles", "Abbey Road", Some(32.50)),
         ];
 
-        let json_bytes =
-            ExportService::export_collection_json("testuser", &releases).expect("JSON generation");
+        let history = HashMap::from([(
+            10,
+            vec![
+                "2026-04-01T20:00:00.000000Z".to_string(),
+                "2026-04-12T15:30:00.123456Z".to_string(),
+            ],
+        )]);
+
+        let json_bytes = ExportService::export_collection_json("testuser", &releases, &history)
+            .expect("JSON generation");
         let json_val: serde_json::Value =
             serde_json::from_slice(&json_bytes).expect("Valid JSON output");
 
+        assert_eq!(json_val["format_version"], 2);
         assert_eq!(json_val["username"], "testuser");
         assert_eq!(json_val["total_records"], 2);
         assert_eq!(json_val["total_estimated_value"], 60.50);
         assert!(json_val["exported_at"].is_string());
-        assert_eq!(json_val["releases"].as_array().unwrap().len(), 2);
+        let exported = json_val["releases"].as_array().unwrap();
+        assert_eq!(exported.len(), 2);
+        // Release fields stay flat; the history is added next to them
+        assert_eq!(exported[0]["id"], 10);
+        assert_eq!(exported[0]["basic_information"]["title"], "IV");
+        assert_eq!(
+            exported[0]["listen_history"],
+            serde_json::json!(["2026-04-01T20:00:00.000000Z", "2026-04-12T15:30:00.123456Z"])
+        );
+        assert_eq!(exported[1]["listen_history"], serde_json::json!([]));
     }
 
     #[tokio::test]

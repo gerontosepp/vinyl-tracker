@@ -1,5 +1,6 @@
-import { Component, ChangeDetectionStrategy, computed, inject, input, output, signal } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { Component, ChangeDetectionStrategy, DestroyRef, computed, effect, inject, input, output, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subscription, firstValueFrom } from 'rxjs';
 import { LucidePrinter, LucideX } from '@lucide/angular';
 import { ApiService } from '../../../core/services/api.service';
 import { LanguageService } from '../../../core/services/language.service';
@@ -134,7 +135,7 @@ const TEMPLATES: PrintTemplate[] = ['avery-3474', 'scan-list', 'qr-cards'];
         @if (needsCdConfirmation()) {
           <div class="mb-5 rounded-xl border border-red-200 dark:border-red-800/50 bg-red-50 dark:bg-red-900/20 p-3" data-testid="cd-warning">
             <p class="text-xs text-red-700 dark:text-red-300 mb-2">
-              {{ 'print.cdWarning.' + scope() | translate }}
+              {{ cdWarningKey() | translate: { count: cdCount() ?? 0 } }}
             </p>
             <label class="flex items-center gap-2 text-sm font-semibold text-red-800 dark:text-red-200 cursor-pointer">
               <input
@@ -179,6 +180,7 @@ export class PrintDialogComponent {
   private readonly apiService = inject(ApiService);
   private readonly languageService = inject(LanguageService);
   private readonly toastService = inject(ToastService);
+  private readonly destroyRef = inject(DestroyRef);
 
   /** Discogs IDs of the selected records (enables scope "ids"). */
   readonly selectedIds = input<number[]>([]);
@@ -213,23 +215,73 @@ export class PrintDialogComponent {
     return Number.isInteger(value) && value >= 1 && value <= LABELS_PER_SHEET;
   });
 
-  /** Whether the chosen scope can contain CDs. */
+  /**
+   * Number of CDs in the "filter"/"all" scope (null while loading). Loaded from the collection
+   * endpoint with category "cd" so only real CDs trigger the label confirmation.
+   */
+  readonly cdCount = signal<number | null>(null);
+  private cdCountSub?: Subscription;
+
+  /** Whether the chosen scope contains CDs (or might, if they could not be counted). */
   readonly scopeMayIncludeCds = computed(() => {
-    switch (this.scope()) {
-      case 'ids':
-        return this.selectionHasCds();
-      case 'filter':
-        return this.filter()?.category !== 'vinyl';
-      default:
-        return true;
-    }
+    if (this.scope() === 'ids') return this.selectionHasCds();
+    const count = this.cdCount();
+    return count !== null && count !== 0;
   });
 
-  readonly needsCdConfirmation = computed(() => this.template() === 'avery-3474' && this.scopeMayIncludeCds());
+  constructor() {
+    effect(() => {
+      const scope = this.scope();
+      const labels = this.template() === 'avery-3474';
+      const filter = scope === 'filter' ? (this.filter() ?? {}) : {};
+      this.cdCountSub?.unsubscribe();
+      this.cdCount.set(null);
+      if (!labels || scope === 'ids') return;
+      if (filter.category === 'vinyl') {
+        this.cdCount.set(0);
+        return;
+      }
+      this.cdCountSub = this.apiService
+        .getCollection(
+          1,
+          1,
+          filter.min_plays ?? 0,
+          filter.sort,
+          filter.sort_order,
+          filter.search,
+          'cd',
+          filter.genres ? filter.genres.split(',') : undefined,
+          filter.years,
+          filter.not_played_since,
+          filter.unplayed_only
+        )
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (res) => this.cdCount.set(res.pagination?.items ?? 0),
+          // If the count is unavailable, err on the side of asking for confirmation
+          error: () => this.cdCount.set(-1),
+        });
+    });
+  }
+
+  /** Labels for a "filter"/"all" scope wait for the CD count. */
+  readonly cdCheckPending = computed(
+    () => this.template() === 'avery-3474' && this.scope() !== 'ids' && this.cdCount() === null
+  );
+
+  readonly needsCdConfirmation = computed(
+    () => this.template() === 'avery-3474' && !this.cdCheckPending() && this.scopeMayIncludeCds()
+  );
+
+  /** Translation key of the CD warning; -1 means the count could not be loaded. */
+  readonly cdWarningKey = computed(() =>
+    this.scope() !== 'ids' && this.cdCount() === -1 ? 'print.cdWarning.unknown' : `print.cdWarning.${this.scope()}`
+  );
 
   readonly canSubmit = computed(
     () =>
       !this.isPrinting() &&
+      !this.cdCheckPending() &&
       (this.template() !== 'avery-3474' || this.startPositionValid()) &&
       (!this.needsCdConfirmation() || this.cdConfirmed())
   );

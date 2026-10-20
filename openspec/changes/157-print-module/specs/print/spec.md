@@ -67,15 +67,19 @@ Für `avery-3474` MUST eine Startposition 1–24 angegeben werden können; die F
 - **THEN** antwortet das System mit 400 und RFC-7807-Problem-Details
 
 ### Requirement: CDs bei Etiketten bestätigen
-Etiketten sind für Schallplatten gedacht. Kann der gewählte Umfang beim Druck der Vorlage `avery-3474` CDs enthalten (ganze Sammlung, Filter ohne Einschränkung auf Platten oder Auswahl mit mindestens einer CD), MUST der Druck-Dialog vor dem Erzeugen eine ausdrückliche Bestätigung verlangen.
+Etiketten sind für Schallplatten gedacht. Enthält der gewählte Umfang beim Druck der Vorlage `avery-3474` tatsächlich CDs, MUST der Druck-Dialog die Anzahl nennen und vor dem Erzeugen eine ausdrückliche Bestätigung verlangen. Lässt sich das nicht prüfen, MUST er ebenfalls bestätigen lassen.
 
 #### Scenario: Ganze Sammlung als Etiketten
 - **WHEN** der Nutzer in den Einstellungen Etiketten für die ganze Sammlung drucken will
 - **THEN** zeigt der Dialog einen Hinweis auf CDs, und „PDF erstellen“ ist erst nach Bestätigung möglich
 
-#### Scenario: Auf Platten gefiltert
-- **WHEN** die Sammlung auf die Kategorie „Platten“ gefiltert ist und der Umfang „aktuelle Filter“ gewählt ist
+#### Scenario: Gefilterte Liste ohne CDs
+- **WHEN** der Umfang „aktuelle Filter“ gewählt ist und die gefilterte Liste keine CD enthält (z. B. Kategorie „Platten“ oder Suche nach einem Künstler nur mit Platten)
 - **THEN** verlangt der Dialog keine Bestätigung
+
+#### Scenario: Gefilterte Liste mit CDs
+- **WHEN** der Umfang „aktuelle Filter“ gewählt ist und die gefilterte Liste 2 CDs enthält
+- **THEN** nennt der Hinweis die 2 CDs und „PDF erstellen“ ist erst nach Bestätigung möglich
 
 #### Scenario: Auswahl ohne CDs oder andere Vorlage
 - **WHEN** nur Schallplatten markiert sind oder eine Liste bzw. QR-Karten gedruckt werden

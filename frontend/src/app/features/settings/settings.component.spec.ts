@@ -77,6 +77,10 @@ describe('SettingsComponent', () => {
       updateRoonSettings: vi.fn().mockName('updateRoonSettings').mockReturnValue(of(mockRoonStatus)),
       exportCollection: vi.fn().mockName('exportCollection').mockReturnValue(of(new Blob(['test'], { type: 'text/csv' }))),
       restoreCollection: vi.fn().mockName('restoreCollection').mockReturnValue(of(mockRestoreResult)),
+      // CD count requested by the print dialog
+      getCollection: vi.fn().mockName('getCollection').mockReturnValue(
+        of({ releases: [], pagination: { page: 1, pages: 1, per_page: 1, items: 0 } })
+      ),
     };
 
     mockThemeService = {

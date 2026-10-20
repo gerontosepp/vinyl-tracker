@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
-import { of, throwError } from 'rxjs';
+import { Observable, Subject, of, throwError } from 'rxjs';
 import { PrintDialogComponent } from './print-dialog.component';
 import { ApiService } from '../../../core/services/api.service';
 import { LanguageService } from '../../../core/services/language.service';
@@ -10,17 +10,27 @@ import { PrintFilter } from '../../../core/types';
 describe('PrintDialogComponent', () => {
   let fixture: ComponentFixture<PrintDialogComponent>;
   let component: PrintDialogComponent;
-  let mockApiService: { print: ReturnType<typeof vi.fn> };
+  let mockApiService: { print: ReturnType<typeof vi.fn>; getCollection: ReturnType<typeof vi.fn> };
   let mockToastService: { showToast: ReturnType<typeof vi.fn> };
   let closedSpy: ReturnType<typeof vi.fn<() => void>>;
   const language = signal<'de' | 'en'>('de');
 
   const filter: PrintFilter = { sort: 'artist', sort_order: 'asc', genres: 'Jazz' };
 
+  const cdPage = (items: number) => of({ releases: [], pagination: { page: 1, pages: 1, per_page: 1, items } });
+
   async function setup(
-    inputs: { selectedIds?: number[]; filter?: PrintFilter | null; selectionHasCds?: boolean } = {}
+    inputs: {
+      selectedIds?: number[];
+      filter?: PrintFilter | null;
+      selectionHasCds?: boolean;
+      cdCount?: Observable<unknown>;
+    } = {}
   ): Promise<void> {
-    mockApiService = { print: vi.fn().mockReturnValue(of(new Blob(['%PDF'], { type: 'application/pdf' }))) };
+    mockApiService = {
+      print: vi.fn().mockReturnValue(of(new Blob(['%PDF'], { type: 'application/pdf' }))),
+      getCollection: vi.fn().mockReturnValue(inputs.cdCount ?? cdPage(0)),
+    };
     mockToastService = { showToast: vi.fn() };
 
     await TestBed.configureTestingModule({
@@ -169,10 +179,13 @@ describe('PrintDialogComponent', () => {
   describe('CD confirmation for labels', () => {
     const vinylFilter: PrintFilter = { sort: 'artist', sort_order: 'asc', category: 'vinyl' };
 
-    it('requires confirmation for the whole collection', async () => {
-      await setup();
+    it('counts the CDs of the whole collection and requires confirmation', async () => {
+      await setup({ cdCount: cdPage(80) });
 
-      expect(component.needsCdConfirmation()).toBe(true);
+      expect(mockApiService.getCollection).toHaveBeenCalledWith(
+        1, 1, 0, undefined, undefined, undefined, 'cd', undefined, undefined, undefined, undefined
+      );
+      expect(component.cdCount()).toBe(80);
       expect(query('cd-warning')?.textContent).toContain('print.cdWarning.all');
       expect(query('print-submit')?.disabled).toBe(true);
 
@@ -181,22 +194,54 @@ describe('PrintDialogComponent', () => {
       expect(query('print-submit')?.disabled).toBe(false);
     });
 
-    it('requires confirmation for filters not limited to vinyl', async () => {
-      await setup({ filter });
-      expect(component.needsCdConfirmation()).toBe(true);
-      expect(query('cd-warning')?.textContent).toContain('print.cdWarning.filter');
-    });
+    it('needs no confirmation when the filtered list contains no CDs', async () => {
+      // e.g. category "all" but searching for an artist with vinyl only
+      await setup({ filter: { ...filter, search: 'Pink Floyd', genres: 'Rock,Pop' }, cdCount: cdPage(0) });
 
-    it('needs no confirmation when filtered to vinyl', async () => {
-      await setup({ filter: vinylFilter });
+      expect(mockApiService.getCollection).toHaveBeenCalledWith(
+        1, 1, 0, 'artist', 'asc', 'Pink Floyd', 'cd', ['Rock', 'Pop'], undefined, undefined, undefined
+      );
       expect(component.needsCdConfirmation()).toBe(false);
       expect(query('cd-warning')).toBeNull();
       expect(query('print-submit')?.disabled).toBe(false);
     });
 
+    it('requires confirmation when the filtered list contains CDs', async () => {
+      await setup({ filter, cdCount: cdPage(2) });
+      expect(component.needsCdConfirmation()).toBe(true);
+      expect(query('cd-warning')?.textContent).toContain('print.cdWarning.filter');
+    });
+
+    it('does not count when filtered to vinyl', async () => {
+      await setup({ filter: vinylFilter });
+      expect(mockApiService.getCollection).not.toHaveBeenCalled();
+      expect(component.needsCdConfirmation()).toBe(false);
+      expect(query('print-submit')?.disabled).toBe(false);
+    });
+
+    it('waits for the count before labels can be printed', async () => {
+      const pending = new Subject<unknown>();
+      await setup({ cdCount: pending });
+
+      expect(component.cdCheckPending()).toBe(true);
+      expect(query('print-submit')?.disabled).toBe(true);
+
+      pending.next({ releases: [], pagination: { page: 1, pages: 1, per_page: 1, items: 0 } });
+      fixture.detectChanges();
+      expect(component.cdCheckPending()).toBe(false);
+      expect(query('print-submit')?.disabled).toBe(false);
+    });
+
+    it('asks for confirmation if the CDs cannot be counted', async () => {
+      await setup({ cdCount: throwError(() => new Error('offline')) });
+      expect(component.needsCdConfirmation()).toBe(true);
+      expect(query('cd-warning')?.textContent).toContain('print.cdWarning.unknown');
+    });
+
     it('depends on CDs in the selection', async () => {
       await setup({ selectedIds: [1, 2], selectionHasCds: false, filter: vinylFilter });
       expect(component.needsCdConfirmation()).toBe(false);
+      expect(mockApiService.getCollection).not.toHaveBeenCalled();
 
       fixture.componentRef.setInput('selectionHasCds', true);
       fixture.detectChanges();
@@ -209,8 +254,8 @@ describe('PrintDialogComponent', () => {
       expect(component.needsCdConfirmation()).toBe(false);
     });
 
-    it('needs no confirmation for lists and cards', async () => {
-      await setup();
+    it('needs no confirmation or count for lists and cards', async () => {
+      await setup({ cdCount: cdPage(80) });
       for (const template of ['scan-list', 'qr-cards'] as const) {
         component.template.set(template);
         fixture.detectChanges();
@@ -221,7 +266,7 @@ describe('PrintDialogComponent', () => {
     });
 
     it('does not submit unconfirmed labels', async () => {
-      await setup();
+      await setup({ cdCount: cdPage(1) });
 
       await component.submit();
 

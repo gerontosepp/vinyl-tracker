@@ -27,7 +27,7 @@
 - [x] 4.4 Einstellungen: QR-Button öffnet den Dialog mit „ganze Sammlung“, `window.confirm` entfällt; Tests in `settings.component.spec.ts` anpassen
 - [x] 4.5 `npm test -- --watch=false --coverage` (≥ 80 %) und `npm run build` grün; E2E-Specs auf den neuen Dialog prüfen und ggf. anpassen
 
-- [x] 4.6 CD-Bestätigung bei Etiketten: Auswahl merkt sich CDs, Dialog verlangt bei möglichen CDs (ganze Sammlung, Filter ohne „Platten“, Auswahl mit CD) eine Bestätigung vor „PDF erstellen“; Vitest-Tests für alle drei Umfänge und andere Vorlagen
+- [x] 4.6 CD-Bestätigung bei Etiketten: Auswahl merkt sich CDs, Dialog zählt die CDs im Umfang (Auswahl: gemerkt; Filter/ganze Sammlung: Sammlungsabfrage mit Kategorie „CDs“) und verlangt nur bei CDs eine Bestätigung vor „PDF erstellen“; Vitest-Tests für alle Umfänge, laufende/fehlgeschlagene Zählung und andere Vorlagen
 
 ## 5. Dokumentation & Abnahme
 

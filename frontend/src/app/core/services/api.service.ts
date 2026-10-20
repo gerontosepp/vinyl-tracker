@@ -18,6 +18,7 @@ import {
   RoonSettings,
   RoonPlayRequest,
   PriceRefreshResult,
+  RestoreResult,
 } from '../types';
 
 @Injectable({
@@ -226,6 +227,10 @@ export class ApiService {
       }
     }
     return this.http.get(`${this.baseUrl}/collection/export`, { params, responseType: 'blob' });
+  }
+
+  restoreCollection(backup: unknown): Observable<RestoreResult> {
+    return this.http.post<RestoreResult>(`${this.baseUrl}/collection/restore`, backup);
   }
 
   getUser(): Observable<User> {

@@ -14,6 +14,17 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "isUnreleased": true,
     "items": [
       {
+        "title": "Feature: Sammlung aus JSON-Backup wiederherstellen (`#102`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "**Backup einspielen**: In den Einstellungen unter *Datenverwaltung* lässt sich ein JSON-Backup über „Backup wiederherstellen (.json)“ auswählen; nach einer Bestätigung mit der Anzahl der Platten wird es eingespielt (`POST /api/collection/restore`).",
+          "**Zusammenführen statt Überschreiben**: Es wird nichts gelöscht, und auch mehrfaches Einspielen erzeugt keine Duplikate. Zustände aus dem Backup überschreiben vorhandene Werte, fehlende bleiben erhalten; Platten-Metadaten werden nur ergänzt.",
+          "**Hör-Historie im Backup**: Das JSON-Backup enthält jetzt pro Platte alle Hör-Zeitstempel (`listen_history`, `format_version: 2`) und stellt damit auch Hörzähler und Statistiken wieder her. Ältere Backups stellen Sammlung und Zustände wieder her, aber keine Hörzähler; ein Hinweis meldet das.",
+          "**Sicher**: Ungültige Dateien werden mit einer verständlichen Fehlermeldung abgelehnt; die Wiederherstellung läuft in einer Transaktion (alles oder nichts)."
+        ]
+      },
+      {
         "title": "DevOps: Claude-Code-Setup fürs Projekt (`#153`)",
         "type": "chore",
         "typeLabel": "DevOps / Tooling",

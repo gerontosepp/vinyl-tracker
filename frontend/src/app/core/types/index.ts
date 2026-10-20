@@ -76,6 +76,17 @@ export interface SyncResult {
   removed: number;
 }
 
+/** Result of `POST /api/collection/restore` (merge of a JSON backup). */
+export interface RestoreResult {
+  format_version: number;
+  records_total: number;
+  records_added: number;
+  records_updated: number;
+  listens_added: number;
+  listens_skipped: number;
+  listen_history_included: boolean;
+}
+
 export interface ResetResult {
   success: boolean;
   message: string;

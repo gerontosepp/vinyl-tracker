@@ -82,6 +82,39 @@ impl CollectionQueryService {
         Self::fetch_and_map_releases(pool, user_id, &filter, None).await
     }
 
+    /// Listen timestamps of the user per Discogs release ID (RFC 3339 UTC with microseconds,
+    /// ascending) for the JSON backup.
+    pub async fn get_listen_history(
+        pool: &PgPool,
+        user_id: i64,
+        discogs_ids: &[i64],
+    ) -> Result<HashMap<i64, Vec<String>>, AppError> {
+        let rows = sqlx::query(
+            "SELECT rc.discogs_id, le.timestamp
+             FROM listen_event le
+             JOIN record_cache rc ON rc.id = le.record_id
+             WHERE le.user_id = $1 AND rc.discogs_id = ANY($2)
+             ORDER BY le.timestamp ASC, le.id ASC",
+        )
+        .bind(user_id)
+        .bind(discogs_ids)
+        .fetch_all(pool)
+        .await
+        .map_err(AppError::Database)?;
+
+        let mut history: HashMap<i64, Vec<String>> = HashMap::new();
+        for row in rows {
+            let discogs_id: i64 = row.get("discogs_id");
+            let timestamp: chrono::NaiveDateTime = row.get("timestamp");
+            history.entry(discogs_id).or_default().push(
+                timestamp
+                    .and_utc()
+                    .to_rfc3339_opts(chrono::SecondsFormat::Micros, true),
+            );
+        }
+        Ok(history)
+    }
+
     fn build_order_by(sort: &str, sort_order: &str) -> String {
         let normalized_artist_asc =
             r#"REGEXP_REPLACE(LOWER(rc.artist), '^the\s+', '', 'i') COLLATE "C" ASC"#;

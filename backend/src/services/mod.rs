@@ -1,5 +1,6 @@
 pub mod analytics_service;
 pub mod collection_query;
+pub mod collection_restore;
 pub mod collection_sync;
 pub mod crypto_service;
 pub mod export_service;

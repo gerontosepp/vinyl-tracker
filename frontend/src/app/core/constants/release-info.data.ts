@@ -14,6 +14,13 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "isUnreleased": true,
     "items": [
       {
+        "title": "Fix: Eigenes Favicon (`#180`)",
+        "type": "fix",
+        "typeLabel": "Fix",
+        "summary": "Der Browser-Tab zeigt statt des Angular-Icons eine rote Platte mit weiß-blauem Label im Stil des App-Logos (`favicon.svg`, `favicon.ico` als Fallback).",
+        "details": []
+      },
+      {
         "title": "Feature: Meistgespielte Interpreten (`#178`)",
         "type": "feat",
         "typeLabel": "Feature",

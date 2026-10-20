@@ -9,6 +9,12 @@
 
 ## Unreleased
 
+- **Design: Farbschema „Vinyl“ und Theme ab dem App-Start (`#164`)**:
+  - **Theme greift sofort**: Hell, Dunkel oder System gilt jetzt ab dem ersten Laden auf jeder Seite. Bisher wurde es erst beim Öffnen von „Profil“ angewendet – die App wechselte dann scheinbar grundlos ins dunkle Design. Ein kleines Skript setzt das Theme schon vor dem App-Start, damit dunkle Systeme nicht kurz hell aufblitzen.
+  - **Warmes dunkles Design**: Braunschwarz statt Dunkelblau für Hintergründe, Karten und Rahmen.
+  - **Bernstein als Akzentfarbe** in beiden Modi statt Himmelblau; Texte und Links im hellen Modus in dunklerem Ton (mind. 4,5:1 Kontrast). Auch Login, Registrierung und Scanner nutzen jetzt die Akzentfarbe.
+  - **Browserleiste**: `theme-color` passend zum hellen bzw. dunklen Design.
+
 ---
 
 ## v0.11.0 (2026-10-20)

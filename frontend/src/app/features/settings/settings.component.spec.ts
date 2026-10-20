@@ -75,7 +75,6 @@ describe('SettingsComponent', () => {
       getRoonStatus: vi.fn().mockName('getRoonStatus').mockReturnValue(of(mockRoonStatus)),
       getRoonZones: vi.fn().mockName('getRoonZones').mockReturnValue(of(mockRoonStatus.zones)),
       updateRoonSettings: vi.fn().mockName('updateRoonSettings').mockReturnValue(of(mockRoonStatus)),
-      downloadQrCodes: vi.fn().mockName('downloadQrCodes').mockReturnValue(of(new Blob())),
       exportCollection: vi.fn().mockName('exportCollection').mockReturnValue(of(new Blob(['test'], { type: 'text/csv' }))),
       restoreCollection: vi.fn().mockName('restoreCollection').mockReturnValue(of(mockRestoreResult)),
     };
@@ -158,34 +157,21 @@ describe('SettingsComponent', () => {
     expect(mockToastService.showToast).toHaveBeenCalledWith('Roon-Zonen aktualisiert', 'success');
   });
 
-  it('should download QR codes when confirmed', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
-    vi.spyOn(component as any, 'downloadBlob').mockImplementation(() => { });
+  it('opens the print dialog for the whole collection and closes it again', () => {
+    expect(fixture.nativeElement.querySelector('app-print-dialog')).toBeNull();
 
-    await component.handleDownloadQrCodes();
+    fixture.nativeElement.querySelector('[data-testid="open-print-dialog"]').click();
+    fixture.detectChanges();
 
-    expect(mockApiService.downloadQrCodes).toHaveBeenCalled();
-    expect(component.isDownloadingQr()).toBe(false);
-    expect(mockToastService.showToast).toHaveBeenCalledWith('QR codes generated successfully', 'success');
-  });
+    const dialog = fixture.debugElement.query((el) => el.name === 'app-print-dialog');
+    expect(dialog).not.toBeNull();
+    // No selection or filter: the dialog offers the whole collection only
+    expect(dialog.componentInstance.scopes()).toEqual(['all']);
 
-  it('should not download QR codes when confirmation cancelled', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(false);
-
-    await component.handleDownloadQrCodes();
-
-    expect(mockApiService.downloadQrCodes).not.toHaveBeenCalled();
-    expect(component.isDownloadingQr()).toBe(false);
-  });
-
-  it('should handle error during QR code download', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
-    mockApiService.downloadQrCodes.mockReturnValue(throwError(() => new Error('Download failed')));
-
-    await component.handleDownloadQrCodes();
-
-    expect(component.isDownloadingQr()).toBe(false);
-    expect(mockToastService.showToast).toHaveBeenCalledWith('Download failed', 'error');
+    dialog.componentInstance.closed.emit();
+    fixture.detectChanges();
+    expect(component.showPrintDialog()).toBe(false);
+    expect(fixture.nativeElement.querySelector('app-print-dialog')).toBeNull();
   });
 
   it('should allow changing scanner mode and sound feedback', () => {

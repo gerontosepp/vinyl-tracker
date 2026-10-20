@@ -49,13 +49,13 @@ describe('CollectionToolbarComponent', () => {
     expect(selectPageBtn?.classList.contains('md:flex')).toBe(true);
   });
 
-  it('should have hidden md:flex on downloadSelected container for responsive mobile hiding', () => {
+  it('should have hidden md:flex on the print container for responsive mobile hiding', () => {
     fixture.componentRef.setInput('selectedCount', 5);
     fixture.detectChanges();
 
-    const downloadBtn = fixture.nativeElement.querySelector('button svg[lucideDownload]')?.closest('button');
-    expect(downloadBtn).toBeTruthy();
-    const container = downloadBtn.parentElement;
+    const printBtn = fixture.nativeElement.querySelector('[data-testid="print-button"]');
+    expect(printBtn).toBeTruthy();
+    const container = printBtn.parentElement;
     expect(container?.classList.contains('hidden')).toBe(true);
     expect(container?.classList.contains('md:flex')).toBe(true);
   });
@@ -129,15 +129,27 @@ describe('CollectionToolbarComponent', () => {
     expect(component.clearSelection.emit).toHaveBeenCalled();
   });
 
-  it('should emit downloadSelected when download button is clicked', () => {
-    vi.spyOn(component.downloadSelected, 'emit').mockReturnValue(undefined);
+  it('should emit printRequested when the print button is clicked', () => {
+    vi.spyOn(component.printRequested, 'emit').mockReturnValue(undefined);
     fixture.componentRef.setInput('selectedCount', 3);
     fixture.detectChanges();
 
-    const downloadBtn = fixture.nativeElement.querySelector('button svg[lucideDownload]')?.closest('button');
-    expect(downloadBtn).toBeTruthy();
-    downloadBtn.click();
-    expect(component.downloadSelected.emit).toHaveBeenCalled();
+    const printBtn = fixture.nativeElement.querySelector('[data-testid="print-button"]');
+    expect(printBtn.textContent).toMatch(/\(3\)/);
+    printBtn.click();
+    expect(component.printRequested.emit).toHaveBeenCalled();
+  });
+
+  it('should offer printing without a selection but no clear-selection button', () => {
+    fixture.componentRef.setInput('selectedCount', 0);
+    fixture.detectChanges();
+
+    const printBtn = fixture.nativeElement.querySelector('[data-testid="print-button"]');
+    expect(printBtn).toBeTruthy();
+    expect(printBtn.textContent).not.toMatch(/\(\d+\)/);
+    expect(
+      fixture.nativeElement.querySelector('button[title="Auswahl aufheben"], button[title="Clear Selection"]')
+    ).toBeNull();
   });
 
   it('should toggle and close notPlayed popover', () => {

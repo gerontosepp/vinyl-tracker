@@ -12,7 +12,8 @@ import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { ScannerService } from '../../core/services/scanner.service';
 import { getErrorMessage } from '../../core/utils/error';
 import { RoonStatus } from '../../core/types';
-import { LucideDownload, LucideLogOut, LucideSettings, LucideHistory, LucideUpload } from '@lucide/angular';
+import { LucideDownload, LucideLogOut, LucideSettings, LucideHistory, LucideUpload, LucidePrinter } from '@lucide/angular';
+import { PrintDialogComponent } from '../../shared/components/print-dialog/print-dialog.component';
 import { ReleaseNotesComponent } from './components/release-notes/release-notes.component';
 import { APP_VERSION } from '../../core/constants/release-info.data';
 
@@ -34,6 +35,8 @@ interface PendingRestore {
     LucideSettings,
     LucideHistory,
     LucideUpload,
+    LucidePrinter,
+    PrintDialogComponent,
     ReleaseNotesComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -476,12 +479,12 @@ interface PendingRestore {
 
               <div>
                 <button
-                  (click)="handleDownloadQrCodes()"
-                  [disabled]="isDownloadingQr()"
+                  (click)="showPrintDialog.set(true)"
+                  data-testid="open-print-dialog"
                   class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2.5 rounded-xl transition-all shadow-sm hover:-translate-y-0.5 cursor-pointer disabled:opacity-50 flex items-center gap-2"
                 >
-                  <svg lucideDownload [size]="18"></svg>
-                  {{ (isDownloadingQr() ? 'settings.generatingQr' : 'settings.downloadQr') | translate }}
+                  <svg lucidePrinter [size]="18"></svg>
+                  {{ 'settings.downloadQr' | translate }}
                 </button>
               </div>
             </div>
@@ -606,6 +609,10 @@ interface PendingRestore {
       </div>
 
       <!-- Confirm Dialog for Reset Listens -->
+      @if (showPrintDialog()) {
+        <app-print-dialog (closed)="showPrintDialog.set(false)" />
+      }
+
       @if (pendingRestore(); as restore) {
         <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div
@@ -692,7 +699,7 @@ export class SettingsComponent {
   readonly roonStatus = signal<RoonStatus | null>(null);
   readonly isSavingRoon = signal<boolean>(false);
   readonly isLoadingZones = signal<boolean>(false);
-  readonly isDownloadingQr = signal<boolean>(false);
+  readonly showPrintDialog = signal<boolean>(false);
   readonly isExporting = signal<'csv' | 'json' | 'pdf' | null>(null);
   readonly isRestoring = signal<boolean>(false);
   readonly pendingRestore = signal<PendingRestore | null>(null);
@@ -818,28 +825,6 @@ export class SettingsComponent {
     this.authService.logout().then(() => {
       this.router.navigate(['/login']);
     });
-  }
-
-  async handleDownloadQrCodes(): Promise<void> {
-    const user = this.authService.user();
-    if (!user) return;
-    if (
-      !window.confirm('Generate QR codes for your ENTIRE collection? This may take a while.')
-    ) {
-      return;
-    }
-
-    this.isDownloadingQr.set(true);
-    try {
-      const blob = await firstValueFrom(this.apiService.downloadQrCodes());
-      this.downloadBlob(blob, 'collection_qr_codes.pdf');
-      this.toastService.showToast('QR codes generated successfully', 'success');
-    } catch (err) {
-      console.error(err);
-      this.toastService.showToast(getErrorMessage(err, 'Failed to generate QR codes.'), 'error');
-    } finally {
-      this.isDownloadingQr.set(false);
-    }
   }
 
   async handleExportCollection(format: 'csv' | 'json' | 'pdf'): Promise<void> {

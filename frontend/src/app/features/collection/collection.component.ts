@@ -9,10 +9,11 @@ import { AuthService } from '../../core/services/auth.service';
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
 import { LanguageService } from '../../core/services/language.service';
-import { CollectionRelease, QrCodeItem, RecordDetailDto, GenreBreakdownItem } from '../../core/types';
+import { CollectionRelease, QrCodeItem, RecordDetailDto, GenreBreakdownItem, PrintFilter } from '../../core/types';
 import { getErrorMessage } from '../../core/utils/error';
+import { PrintDialogComponent } from '../../shared/components/print-dialog/print-dialog.component';
 import { getFormatType, FormatType } from './utils/format-type.util';
-import { Subscription, firstValueFrom } from 'rxjs';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-collection',
@@ -22,8 +23,9 @@ import { Subscription, firstValueFrom } from 'rxjs';
     CollectionToolbarComponent,
     CollectionTableComponent,
     CollectionCardListComponent,
-    RecordDetailModalComponent
-],
+    RecordDetailModalComponent,
+    PrintDialogComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './collection.component.html',
 })
@@ -44,7 +46,7 @@ export class CollectionComponent implements OnInit, OnDestroy {
   readonly releases = signal<CollectionRelease[]>([]);
 
   readonly loading = signal<boolean>(false);
-  readonly generating = signal<boolean>(false);
+  readonly showPrintDialog = signal<boolean>(false);
   readonly search = signal<string>('');
   readonly debouncedSearch = signal<string>('');
   readonly loadStatus = signal<string>('');
@@ -69,6 +71,22 @@ export class CollectionComponent implements OnInit, OnDestroy {
   });
 
   readonly selectedCount = computed(() => this.selectedItems().size);
+  readonly selectedIds = computed(() => Array.from(this.selectedItems().keys()));
+
+  /** The collection view's current filters and sorting for the print dialog. */
+  readonly printFilter = computed<PrintFilter>(() => {
+    const filter: PrintFilter = { sort: this.sort(), sort_order: this.sortOrder() };
+    const search = this.debouncedSearch();
+    if (search) filter.search = search;
+    if (this.category() !== 'all') filter.category = this.category();
+    if (this.selectedGenres().length > 0) filter.genres = this.selectedGenres().join(',');
+    const years = this.debouncedYears().trim();
+    if (years) filter.years = years;
+    if (this.notPlayedSince()) filter.not_played_since = this.notPlayedSince();
+    if (this.unplayedOnly()) filter.unplayed_only = true;
+    if (this.showPlayedOnly()) filter.min_plays = 1;
+    return filter;
+  });
 
   private sub: Subscription | null = null;
   private searchTimer: any = null;
@@ -323,22 +341,6 @@ export class CollectionComponent implements OnInit, OnDestroy {
     this.selectedItems.set(new Map());
   }
 
-  async handleDownloadSelected(): Promise<void> {
-    if (this.selectedCount() === 0) return;
-    this.generating.set(true);
-    try {
-      const items = Array.from(this.selectedItems().values());
-      const blob = await firstValueFrom(this.apiService.downloadQrCodesSelected(items));
-      this.downloadBlob(blob, 'selected_qr_codes.pdf');
-      this.toastService.showToast('QR codes generated successfully', 'success');
-    } catch (err) {
-      console.error(err);
-      this.toastService.showToast(getErrorMessage(err, 'Failed to generate QR codes.'), 'error');
-    } finally {
-      this.generating.set(false);
-    }
-  }
-
   openDetail(release: CollectionRelease): void {
     this.selectedRecord.set(release);
     this.recordDetail.set(null);
@@ -438,16 +440,5 @@ export class CollectionComponent implements OnInit, OnDestroy {
 
   getFormatType(release: CollectionRelease): FormatType {
     return getFormatType(release);
-  }
-
-  private downloadBlob(blob: Blob, filename: string): void {
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
   }
 }

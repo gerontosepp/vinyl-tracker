@@ -198,14 +198,41 @@ export interface CollectionResponse {
   pagination: CollectionPagination;
 }
 
+/** Record reference kept for the print selection in the collection view. */
 export interface QrCodeItem {
   id: number;
   title: string;
   artist: string;
 }
 
-export interface QrCodeRequest {
-  items: QrCodeItem[];
+export type PrintTemplate = 'avery-3474' | 'scan-list' | 'qr-cards';
+
+/** Same filters as `GET /api/collection` (snake_case, genres comma-separated). */
+export interface PrintFilter {
+  search?: string;
+  category?: string;
+  genres?: string;
+  years?: string;
+  not_played_since?: string;
+  unplayed_only?: boolean;
+  min_plays?: number;
+  sort?: string;
+  sort_order?: string;
+}
+
+export type PrintScope =
+  | { type: 'all' }
+  | { type: 'filter'; filter: PrintFilter }
+  | { type: 'ids'; discogs_ids: number[] };
+
+/** Body of `POST /api/print`. */
+export interface PrintRequest {
+  template: PrintTemplate;
+  scope: PrintScope;
+  options: {
+    language: 'de' | 'en';
+    start_position?: number;
+  };
 }
 
 export interface CollectionValueData {

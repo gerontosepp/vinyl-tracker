@@ -17,7 +17,6 @@
       [showPlayedOnly]="showPlayedOnly()"
       [notPlayedSince]="notPlayedSince()"
       [unplayedOnly]="unplayedOnly()"
-      [generating]="generating()"
       [loadStatus]="loadStatus()"
       [loading]="loading()"
       [availableGenres]="availableGenres()"
@@ -36,7 +35,7 @@
       (notPlayedSinceChange)="onNotPlayedSinceChange($event)"
       (toggleUnplayedOnly)="toggleUnplayedOnly()"
       (clearNotPlayedFilters)="clearNotPlayedFilters()"
-      (downloadSelected)="handleDownloadSelected()"
+      (printRequested)="showPrintDialog.set(true)"
       (clearSelection)="clearSelection()"
       (genresChange)="onGenresChange($event)"
       (yearsChange)="onYearsChange($event)"
@@ -122,4 +121,12 @@
     (conditionUpdated)="onConditionUpdated($event)"
     (recordRemoved)="onRecordRemoved($event)"
   />
+
+  @if (showPrintDialog()) {
+    <app-print-dialog
+      [selectedIds]="selectedIds()"
+      [filter]="printFilter()"
+      (closed)="showPrintDialog.set(false)"
+    />
+  }
 </app-layout>

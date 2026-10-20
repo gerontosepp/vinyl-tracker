@@ -330,6 +330,61 @@ describe('CollectionComponent', () => {
     });
   });
 
+  describe('print dialog', () => {
+    it('passes the selected Discogs IDs', () => {
+      component.selectedItems.set(new Map([
+        [11, { id: 11, title: 'Album 1', artist: 'Artist 1' }],
+        [22, { id: 22, title: 'Album 2', artist: 'Artist 2' }],
+      ]));
+
+      expect(component.selectedIds()).toEqual([11, 22]);
+    });
+
+    it('maps the default view to sorting only', () => {
+      expect(component.printFilter()).toEqual({ sort: 'artist', sort_order: 'asc' });
+    });
+
+    it('maps all active filters like the collection request', () => {
+      component.debouncedSearch.set('miles');
+      component.category.set('vinyl');
+      component.selectedGenres.set(['Jazz', 'Rock']);
+      component.debouncedYears.set(' 1959-1961 ');
+      component.notPlayedSince.set('2026-01-01');
+      component.sort.set('year');
+      component.sortOrder.set('desc');
+
+      expect(component.printFilter()).toEqual({
+        sort: 'year',
+        sort_order: 'desc',
+        search: 'miles',
+        category: 'vinyl',
+        genres: 'Jazz,Rock',
+        years: '1959-1961',
+        not_played_since: '2026-01-01',
+      });
+
+      component.notPlayedSince.set('');
+      component.unplayedOnly.set(true);
+      expect(component.printFilter().unplayed_only).toBe(true);
+
+      component.unplayedOnly.set(false);
+      component.showPlayedOnly.set(true);
+      expect(component.printFilter().min_plays).toBe(1);
+    });
+
+    it('shows the dialog when printing is requested and hides it when closed', () => {
+      mockAuthService.user = signal(null);
+      fixture.detectChanges();
+      component.showPrintDialog.set(true);
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('app-print-dialog')).not.toBeNull();
+
+      component.showPrintDialog.set(false);
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('app-print-dialog')).toBeNull();
+    });
+  });
+
   describe('onConditionUpdated', () => {
     it('should update recordDetail and releases array with new conditions and median price', () => {
       const initialRelease = {

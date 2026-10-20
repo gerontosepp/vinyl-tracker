@@ -9,6 +9,13 @@
 
 ## Unreleased
 
+- **Feature: Druck-Modul mit Avery-Etiketten und Scan-Liste (`#157`, `#56`)**:
+  - **Ein Druck-Dialog für alles**: In der Sammlung druckst du die markierten Platten oder alles, was die aktuellen Filter zeigen; in den Einstellungen die ganze Sammlung. Auswählbar sind Vorlage, Umfang und bei Etiketten das Start-Etikett (`POST /api/print`).
+  - **Avery-Etiketten 70 × 37 mm**: 24 QR-Etiketten pro A4-Bogen (Avery Zweckform 6605 / 3474), ohne Überschrift, mit Titel, Künstler und Discogs-ID. Angebrochene Bögen lassen sich ab Etikett 1–24 weiterverwenden.
+  - **Scan-Liste**: Tabelle mit einem QR-Code pro Platte (Künstler, Titel, Jahr, Format, ID) – Hörvorgänge direkt von der Liste scannen; Seitenzahlen und Spaltenköpfe auf jeder Seite.
+  - **QR-Karten**: Das bisherige Layout (9 Karten pro Seite) bleibt als Vorlage erhalten.
+  - **Hinweis**: Im PDF-Viewer mit 100 % bzw. „Tatsächliche Größe“ drucken. Die Endpunkte `/api/collection/qr-codes/all` und `/selected` entfallen; das Frontend nutzt `POST /api/print`.
+
 - **Feature: Sammlung aus JSON-Backup wiederherstellen (`#102`)**:
   - **Backup einspielen**: In den Einstellungen unter *Datenverwaltung* lässt sich ein JSON-Backup über „Backup wiederherstellen (.json)“ auswählen; nach einer Bestätigung mit der Anzahl der Platten wird es eingespielt (`POST /api/collection/restore`).
   - **Zusammenführen statt Überschreiben**: Es wird nichts gelöscht, und auch mehrfaches Einspielen erzeugt keine Duplikate. Zustände aus dem Backup überschreiben vorhandene Werte, fehlende bleiben erhalten; Platten-Metadaten werden nur ergänzt.

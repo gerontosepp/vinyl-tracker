@@ -13,7 +13,7 @@ const LONG_RUNNING_PATHS: &[&str] = &[
     "/api/collection/prices/refresh",
     "/api/collection/export",
     "/api/collection/restore",
-    "/api/collection/qr-codes/",
+    "/api/print",
 ];
 
 #[derive(Debug, Clone, Copy)]
@@ -96,8 +96,7 @@ mod tests {
             "/api/collection/prices/refresh",
             "/api/collection/export",
             "/api/collection/restore",
-            "/api/collection/qr-codes/all",
-            "/api/collection/qr-codes/selected",
+            "/api/print",
         ] {
             assert_eq!(TIMEOUTS.for_path(path), TIMEOUTS.long_running, "{path}");
         }

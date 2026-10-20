@@ -34,8 +34,8 @@ describe('LanguageService', () => {
 
   it('should interpolate variables in translation keys', () => {
     service.setLanguage('de');
-    const result = service.translate('collection.selectedQr', { count: 5 });
-    expect(result).toBe('Ausgewählte QR-Codes (5)');
+    const result = service.translate('collection.printSelected', { count: 5 });
+    expect(result).toBe('Drucken (5)');
   });
 
   it('should fallback to key if translation is missing', () => {

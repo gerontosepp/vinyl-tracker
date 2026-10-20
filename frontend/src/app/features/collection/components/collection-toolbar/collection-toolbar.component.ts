@@ -3,7 +3,7 @@ import { Component, input, output, signal, computed, ChangeDetectionStrategy } f
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
 import {
-  LucideDownload,
+  LucidePrinter,
   LucideCheckSquare,
   LucideSquare,
   LucideArrowUp,
@@ -23,7 +23,7 @@ import {
   imports: [
     FormsModule,
     TranslatePipe,
-    LucideDownload,
+    LucidePrinter,
     LucideCheckSquare,
     LucideSquare,
     LucideArrowUp,
@@ -53,7 +53,6 @@ export class CollectionToolbarComponent {
   readonly showPlayedOnly = input<boolean>(false);
   readonly notPlayedSince = input<string>('');
   readonly unplayedOnly = input<boolean>(false);
-  readonly generating = input<boolean>(false);
   readonly loadStatus = input<string>('');
   readonly loading = input<boolean>(false);
   readonly availableGenres = input<{ name: string; value: number }[]>([]);
@@ -73,7 +72,7 @@ export class CollectionToolbarComponent {
   readonly notPlayedSinceChange = output<string>();
   readonly toggleUnplayedOnly = output<void>();
   readonly clearNotPlayedFilters = output<void>();
-  readonly downloadSelected = output<void>();
+  readonly printRequested = output<void>();
   readonly clearSelection = output<void>();
   readonly genresChange = output<string[]>();
   readonly yearsChange = output<string>();

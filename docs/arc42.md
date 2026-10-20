@@ -96,7 +96,7 @@ The system consists of three main containers:
 The backend (`backend/src/`) follows a strict layered architecture (see `.agent/rules/coding_standards.md`):
 
 - **Routes** (`routes/`): Axum routers and handlers per area – `users`, `collection`, `records`, `scan`, `analytics`, `discogs`, `roon`, `proxy`, `actuator` (health/info). Handlers parse requests, resolve the user via the `CurrentUser` extractor and delegate to services. Cross-cutting layers: CORS, `TraceLayer`, request timeouts (`routes/timeout.rs`) and the per-IP auth rate limit.
-- **Services** (`services/`): Business logic and data access with SQLx queries (no separate repository layer) – `user_service`, `collection_query`, `collection_sync`, `record_service`, `scan_service`, `analytics_service`, `marketplace` (condition-based pricing), `export_service` (CSV/JSON/PDF), `collection_restore` (merging JSON backup restore in one transaction), `qr_pdf_service` (`printpdf`, `fast_qr`), `image_proxy` (SSRF-protected), `crypto_service` (AES-256-GCM), `roon/` (SOOD discovery, WebSocket MOO/1 client, pairing, browse-and-play).
+- **Services** (`services/`): Business logic and data access with SQLx queries (no separate repository layer) – `user_service`, `collection_query`, `collection_sync`, `record_service`, `scan_service`, `analytics_service`, `marketplace` (condition-based pricing), `export_service` (CSV/JSON/PDF), `collection_restore` (merging JSON backup restore in one transaction), `print/` (print module: template renderers for Avery labels, scan list and QR cards via `printpdf`, `fast_qr`), `image_proxy` (SSRF-protected), `crypto_service` (AES-256-GCM), `roon/` (SOOD discovery, WebSocket MOO/1 client, pairing, browse-and-play).
 - **Clients** (`clients/discogs.rs`): `reqwest`-based Discogs API client with `governor` rate limiting and `moka` caches.
 - **Models** (`models/`): Domain types (e.g. `AppUser` with `sqlx::FromRow`) and backend-internal DTOs. REST request/response DTOs shared with the MCP server live in the workspace crate `vinyl-api-types` and are re-exported here.
 - **Infrastructure**: `auth/` (JWT, `CurrentUser` extractor, client IP resolution), `db/` (connection pool with startup retries, `sqlx::migrate` migrations), `config.rs` (environment configuration), `state.rs` (`AppState` shared by all handlers), `error.rs` (`AppError` → RFC 7807 `ProblemDetail`).
@@ -123,15 +123,13 @@ The backend (`backend/src/`) follows a strict layered architecture (see `.agent/
 4.  **Backend** inserts a new row into `listen_event` with the current UTC timestamp.
 5.  Play count and last-played time are derived from `listen_event` on the next read; no counters are stored on the record.
 
-### 6.3 Scenario: Generating QR Codes
-1.  **User** clicks "Download QR Codes PDF" in Settings.
-2.  **Frontend** requests `GET /api/collection/qr-codes/all`.
-3.  **Backend** fetches User's releases from Discogs.
-4.  **Backend** sorts releases by Artist.
-5.  **Backend** generates QR codes for each release.
-6.  **Backend** compiles a PDF grid.
-7.  **Backend** returns the PDF binary.
-8.  **Frontend** triggers a file download.
+### 6.3 Scenario: Printing Labels and Lists
+1.  **User** clicks "Drucken" in Settings (whole collection) or in the Collection toolbar (selection or current filters).
+2.  **Frontend** opens the print dialog: template (Avery labels 70×37, scan list, QR cards), scope and, for labels, the first free label on the sheet.
+3.  **Frontend** posts `{ template, scope, options }` to `POST /api/print`.
+4.  **Backend** `print` module validates the request and loads the records of the scope from the user's collection (one entry per copy, sorted by artist unless the filter sorts otherwise).
+5.  **Backend** renders the PDF with the template's renderer (QR payload `discogs-id:<id>`).
+6.  **Frontend** downloads `vinyl_<template>.pdf`.
 
 ### 6.4 Scenario: Resetting All Listening Events
 1.  **User** opens the Settings page.
@@ -150,14 +148,14 @@ The backend (`backend/src/`) follows a strict layered architecture (see `.agent/
 4.  **ScannerService** filters out normal typing, plays an optional audio beep, and identifies the payload (1D Barcode vs 2D QR Code).
 5.  **Frontend** automatically routes the decoded barcode to `POST /api/scan` and logs the listening session or opens the Discogs match preview.
 
-### 6.6 Scenario: Batch Printing Selected QR Codes
+### 6.6 Scenario: Batch Printing Selected Records
 1.  **User** navigates to the Collection table view.
 2.  **User** checks the selection checkboxes in column 1 for specific albums to print.
 3.  **Frontend** updates the selection count and displays the "Drucken (N)" and "Auswahl aufheben" buttons in the toolbar.
-4.  **User** clicks "Drucken (N)".
-5.  **Frontend** posts selected item metadata to `POST /api/collection/qr-codes/selected`.
-6.  **Backend** `qr_pdf_service` generates a tailored PDF document for only the selected releases.
-7.  **Frontend** streams the binary blob and prompts a file download.
+4.  **User** clicks "Drucken (N)" and confirms the print dialog with scope "Auswahl".
+5.  **Frontend** posts the selected Discogs IDs to `POST /api/print` (`scope.type = "ids"`).
+6.  **Backend** prints only those records of the user's collection; foreign IDs are ignored.
+7.  **Frontend** prompts a file download.
 
 ### 6.7 Scenario: Editing Media & Sleeve Condition with Discogs Sync
 1.  **User** opens the record detail modal for an album in their collection.
@@ -246,6 +244,7 @@ Architectural decisions in Vinyl Tracker are maintained as formal **Architecture
 | [ADR-0016](adr/0016-vertrauenswuerdige-proxies-fuer-client-ip-ermittlung.md) | 2026-10-19 | Trusted proxies for client IP resolution (auth rate limiting) | `Accepted` |
 | [ADR-0017](adr/0017-datenbank-migrationen-mit-sqlx-migrate.md) | 2026-10-19 | Database migrations with `sqlx::migrate` instead of `refinery` | `Accepted` |
 | [ADR-0018](adr/0018-frontend-unit-tests-mit-vitest.md) | 2026-10-19 | Frontend unit tests with Vitest instead of Karma/Jasmine | `Accepted` |
+| [ADR-0019](adr/0019-druck-modul-mit-vorlagen-renderern.md) | 2026-10-20 | Print module with template renderers (`POST /api/print`) | `Accepted` |
 
 ## 10. Quality Requirements
 

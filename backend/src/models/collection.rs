@@ -5,7 +5,7 @@ pub use vinyl_api_types::collection::{
     SyncResultDto,
 };
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Default, Deserialize)]
 pub struct CollectionQueryParams {
     pub page: Option<u32>,
     pub per_page: Option<u32>,

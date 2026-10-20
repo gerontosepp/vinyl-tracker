@@ -103,7 +103,6 @@ async fn test_analytics_endpoints_require_auth() {
         "/api/analytics/top",
         "/api/analytics/collection/value",
         "/api/analytics/collection/genres",
-        "/api/collection/qr-codes/all",
     ];
 
     for endpoint in endpoints {
@@ -120,20 +119,10 @@ async fn test_analytics_endpoints_require_auth() {
             "Expected 401 for unauthorized {endpoint}"
         );
     }
-
-    let req_qr = Request::builder()
-        .method(Method::POST)
-        .uri("/api/collection/qr-codes/selected")
-        .header(header::CONTENT_TYPE, "application/json")
-        .body(Body::from(r#"{"items":[]}"#))
-        .unwrap();
-
-    let res_qr = app.oneshot(req_qr).await.unwrap();
-    assert_eq!(res_qr.status(), StatusCode::UNAUTHORIZED);
 }
 
 #[tokio::test]
-async fn test_analytics_and_qr_full_lifecycle() {
+async fn test_analytics_full_lifecycle() {
     let (app, state) = setup_app().await;
     let pool = state.pool;
 
@@ -314,78 +303,4 @@ async fn test_analytics_and_qr_full_lifecycle() {
             .unwrap()
             .contains("Connect your Discogs account in settings")
     );
-
-    // 8. Test POST /api/collection/qr-codes/selected with empty items -> 400 Bad Request
-    let req_qr_empty = Request::builder()
-        .method(Method::POST)
-        .uri("/api/collection/qr-codes/selected")
-        .header(header::AUTHORIZATION, &auth_header)
-        .header(header::CONTENT_TYPE, "application/json")
-        .body(Body::from(r#"{"items":[]}"#))
-        .unwrap();
-
-    let res_qr_empty = app.clone().oneshot(req_qr_empty).await.unwrap();
-    assert_eq!(res_qr_empty.status(), StatusCode::BAD_REQUEST);
-
-    // 9. Test POST /api/collection/qr-codes/selected with items -> 200 PDF
-    let payload = json!({
-        "items": [
-            {
-                "id": discogs_id_1,
-                "title": "Kind of Blue",
-                "artist": "Miles Davis"
-            },
-            {
-                "id": discogs_id_2,
-                "title": "A Love Supreme",
-                "artist": "John Coltrane"
-            }
-        ]
-    });
-
-    let req_qr_valid = Request::builder()
-        .method(Method::POST)
-        .uri("/api/collection/qr-codes/selected")
-        .header(header::AUTHORIZATION, &auth_header)
-        .header(header::CONTENT_TYPE, "application/json")
-        .body(Body::from(serde_json::to_vec(&payload).unwrap()))
-        .unwrap();
-
-    let res_qr_valid = app.clone().oneshot(req_qr_valid).await.unwrap();
-    assert_eq!(res_qr_valid.status(), StatusCode::OK);
-    assert_eq!(
-        res_qr_valid.headers().get(header::CONTENT_TYPE).unwrap(),
-        "application/pdf"
-    );
-    assert!(
-        res_qr_valid
-            .headers()
-            .get(header::CONTENT_DISPOSITION)
-            .unwrap()
-            .to_str()
-            .unwrap()
-            .contains("collection_qr_codes.pdf")
-    );
-
-    let pdf_bytes = res_qr_valid.into_body().collect().await.unwrap().to_bytes();
-    assert!(!pdf_bytes.is_empty());
-    assert_eq!(&pdf_bytes[0..4], b"%PDF");
-
-    // 10. Test GET /api/collection/qr-codes/all -> 200 PDF
-    let req_qr_all = Request::builder()
-        .method(Method::GET)
-        .uri("/api/collection/qr-codes/all")
-        .header(header::AUTHORIZATION, &auth_header)
-        .body(Body::empty())
-        .unwrap();
-
-    let res_qr_all = app.oneshot(req_qr_all).await.unwrap();
-    assert_eq!(res_qr_all.status(), StatusCode::OK);
-    assert_eq!(
-        res_qr_all.headers().get(header::CONTENT_TYPE).unwrap(),
-        "application/pdf"
-    );
-    let all_pdf_bytes = res_qr_all.into_body().collect().await.unwrap().to_bytes();
-    assert!(!all_pdf_bytes.is_empty());
-    assert_eq!(&all_pdf_bytes[0..4], b"%PDF");
 }

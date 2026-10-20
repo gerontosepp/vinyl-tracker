@@ -25,6 +25,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/collection/collection.component').then(m => m.CollectionComponent),
   },
   {
+    path: 'sort',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/sort-mode/sort-mode.component').then(m => m.SortModeComponent),
+  },
+  {
     path: 'profile',
     canActivate: [authGuard],
     loadComponent: () => import('./features/settings/settings.component').then(m => m.SettingsComponent),

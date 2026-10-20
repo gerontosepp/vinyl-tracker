@@ -27,6 +27,7 @@ import {
   StorageMedia,
   StorageLayout,
   StoragePlacement,
+  StorageSequence,
   RedistributePreview,
 } from '../types';
 
@@ -295,6 +296,10 @@ export class ApiService {
   }
 
   /** Emits `null` (HTTP 204) when no shelf exists for the record's medium. */
+  getStorageSequence(media: StorageMedia): Observable<StorageSequence> {
+    return this.http.get<StorageSequence>(`${this.baseUrl}/storage/sequence`, { params: { media } });
+  }
+
   getStoragePlacement(discogsId: number): Observable<StoragePlacement | null> {
     return this.http.get<StoragePlacement | null>(`${this.baseUrl}/storage/placement/${discogsId}`);
   }

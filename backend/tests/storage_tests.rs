@@ -1004,3 +1004,98 @@ async fn test_backup_contains_and_restores_the_storage_configuration() {
             .contains("unknown storage type 'Billy'")
     );
 }
+
+#[tokio::test]
+async fn test_sort_sequence_follows_the_layout_with_unplaced_last() {
+    let (app, state) = setup_app().await;
+    let (user_id, cookie) = create_user(&app).await;
+
+    // Without shelves the sequence is empty; an unknown medium is rejected.
+    add_lp(&state, user_id, "Zappa", "Hot Rats").await;
+    let (status, empty) = call(
+        &app,
+        &cookie,
+        Method::GET,
+        "/api/storage/sequence?media=vinyl",
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(empty["media"], "vinyl");
+    assert!(empty["items"].as_array().unwrap().is_empty());
+    let (status, _) = call(
+        &app,
+        &cookie,
+        Method::GET,
+        "/api/storage/sequence?media=tape",
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+
+    for artist in ["The Beatles", "Abba", "Cream", "Doors", "Eagles"] {
+        add_lp(&state, user_id, artist, "Album").await;
+    }
+    sqlx::query("UPDATE record_cache SET thumb_url = 'https://i.discogs.com/abba.jpg' WHERE discogs_id = (SELECT rc.discogs_id FROM record_cache rc JOIN collection_item ci ON ci.record_id = rc.id WHERE ci.user_id = $1 AND rc.artist = 'Abba')")
+        .bind(user_id)
+        .execute(&state.pool)
+        .await
+        .unwrap();
+    let kallax = create_type(&app, &cookie, "Kallax 1×2", "vinyl", 1, 2, 2).await;
+    create_unit(&app, &cookie, "Kallax-1", kallax).await;
+
+    let (status, sequence) = call(
+        &app,
+        &cookie,
+        Method::GET,
+        "/api/storage/sequence?media=vinyl",
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    let items = sequence["items"].as_array().unwrap();
+    let artists: Vec<&str> = items
+        .iter()
+        .map(|i| i["artist"].as_str().unwrap())
+        .collect();
+    // 6 LPs, 4 places: shelf order, the two that do not fit come last
+    assert_eq!(
+        artists,
+        vec!["Abba", "The Beatles", "Cream", "Doors", "Eagles", "Zappa"]
+    );
+    let slots: Vec<(Value, bool)> = items
+        .iter()
+        .map(|i| {
+            (
+                i["slot"]["compartment"].clone(),
+                i["slot"]["unplaced"].as_bool().unwrap(),
+            )
+        })
+        .collect();
+    assert_eq!(
+        slots,
+        vec![
+            (json!(1), false),
+            (json!(1), false),
+            (json!(2), false),
+            (json!(2), false),
+            (Value::Null, true),
+            (Value::Null, true),
+        ]
+    );
+    assert_eq!(items[0]["slot"]["unitName"], "Kallax-1");
+    assert_eq!(items[0]["thumbUrl"], "https://i.discogs.com/abba.jpg");
+    assert!(items[0]["instanceId"].as_i64().unwrap() > 0);
+
+    // Consistent with the overview
+    assert_eq!(compartment_usage(&app, &cookie).await, vec![2, 2]);
+    let (_, cds) = call(
+        &app,
+        &cookie,
+        Method::GET,
+        "/api/storage/sequence?media=cd",
+        None,
+    )
+    .await;
+    assert!(cds["items"].as_array().unwrap().is_empty());
+}

@@ -174,6 +174,12 @@ The backend (`backend/src/`) follows a strict layered architecture (see `.agent/
 4.  **Backend** returns the placement hint in the `SyncResult`: shelf, compartment (row/column), neighbors and the copies that move to another compartment.
 5.  **Frontend** shows the hint below the success message. Discogs syncs and backup restores sort in new copies the same way (`StorageService::commit_all`).
 
+### 6.9 Scenario: Sorting the Collection on a Phone
+1.  **User** taps "Sammlung sortieren" on the home page (phones only, shown once shelves exist) and opens the full-screen route `/sort` (no navigation).
+2.  **User** picks a shelf and the start compartment as row:column; the medium follows from the shelf.
+3.  **Frontend** loads the whole order of the medium once via `GET /api/storage/sequence?media=` (`StorageService::sequence`: copies in shelf order with slot and cover, copies without place last) and requests a Screen Wake Lock.
+4.  **Frontend** pages through the snapshot locally: cover, title, artist, compartment and "x / n" within the compartment, highlighted when the compartment changes; "Next", "Back", "Quit". After the last copy a summary appears and the wake lock is released.
+
 ## 7. Deployment View
 
 The system is deployed as a multi-container Docker application orchestrated by Docker Compose.

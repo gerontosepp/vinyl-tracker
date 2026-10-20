@@ -11,8 +11,8 @@ use vinyl_api_types::{
     scan::{DiscogsMatchDto, ScanResultDto, TrackedRecordDto},
     storage::{
         MediaLayoutDto, StorageCompartmentDto, StorageLayoutDto, StorageMedia, StorageMoveDto,
-        StorageNeighborsDto, StoragePlacementDto, StorageRecordRefDto, StorageSlotDto,
-        StorageTypeDto, StorageUnitLayoutDto,
+        StorageNeighborsDto, StoragePlacementDto, StorageRecordRefDto, StorageSequenceDto,
+        StorageSequenceItemDto, StorageSlotDto, StorageTypeDto, StorageUnitLayoutDto,
     },
     user::UserResponseDto,
 };
@@ -118,6 +118,43 @@ fn test_sync_result_with_placement() {
     assert!(placement.slot.unplaced);
     assert!(!placement.slot.oversized);
     assert!(placement.moves.is_empty());
+}
+
+#[test]
+fn test_storage_sequence_wire_format() {
+    let dto = StorageSequenceDto {
+        media: StorageMedia::Vinyl,
+        items: vec![StorageSequenceItemDto {
+            discogs_id: 42,
+            instance_id: 4200,
+            artist: Some("Miles Davis".into()),
+            title: "Kind of Blue".into(),
+            thumb_url: None,
+            slot: StorageSlotDto {
+                unit_id: Some(3),
+                unit_name: Some("Kallax-1".into()),
+                compartment: Some(6),
+                row: Some(2),
+                column: Some(2),
+                oversized: false,
+                unplaced: false,
+            },
+        }],
+    };
+    assert_wire_format(
+        &dto,
+        json!({
+            "media": "vinyl",
+            "items": [{
+                "discogsId": 42, "instanceId": 4200, "artist": "Miles Davis",
+                "title": "Kind of Blue", "thumbUrl": null,
+                "slot": {
+                    "unitId": 3, "unitName": "Kallax-1", "compartment": 6, "row": 2,
+                    "column": 2, "oversized": false, "unplaced": false
+                }
+            }]
+        }),
+    );
 }
 
 #[test]

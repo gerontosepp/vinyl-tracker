@@ -108,13 +108,13 @@ import { firstValueFrom } from 'rxjs';
           <button
             type="submit"
             [disabled]="isLoading() || !forgotForm.valid"
-            class="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700 disabled:bg-blue-300 cursor-pointer"
+            class="w-full bg-indigo-600 text-white p-2 rounded hover:bg-indigo-700 disabled:bg-indigo-300 cursor-pointer"
           >
             {{ isLoading() ? 'Resetting...' : 'Reset Password' }}
           </button>
         </form>
         <div class="mt-4 text-center text-sm">
-          <a routerLink="/login" class="text-blue-600 dark:text-blue-400 hover:underline">
+          <a routerLink="/login" class="text-indigo-600 dark:text-indigo-400 hover:underline">
             Back to Login
           </a>
         </div>

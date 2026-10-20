@@ -73,17 +73,17 @@ import { APP_VERSION } from '../../../core/constants/release-info.data';
           <button
             type="submit"
             [disabled]="authService.isLoading() || !loginForm.valid"
-            class="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700 disabled:bg-blue-300 cursor-pointer"
+            class="w-full bg-indigo-600 text-white p-2 rounded hover:bg-indigo-700 disabled:bg-indigo-300 cursor-pointer"
           >
             {{ authService.isLoading() ? 'Logging in...' : 'Login' }}
           </button>
         </form>
 
         <div class="mt-4 text-center text-sm flex justify-between">
-          <a routerLink="/forgot-password" class="text-blue-600 dark:text-blue-400 hover:underline">
+          <a routerLink="/forgot-password" class="text-indigo-600 dark:text-indigo-400 hover:underline">
             Forgot Password?
           </a>
-          <a routerLink="/register" class="text-blue-600 dark:text-blue-400 hover:underline">
+          <a routerLink="/register" class="text-indigo-600 dark:text-indigo-400 hover:underline">
             Register here
           </a>
         </div>

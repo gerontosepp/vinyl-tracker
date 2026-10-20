@@ -68,13 +68,13 @@ import { firstValueFrom } from 'rxjs';
                 (ngModelChange)="manualQuery.set($event)"
                 (keyup.enter)="searchManual()"
                 placeholder="z. B. 075678645624"
-                class="w-full pl-9 pr-3 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors shadow-sm"
+                class="w-full pl-9 pr-3 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors shadow-sm"
               />
             </div>
             <button
               (click)="searchManual()"
               [disabled]="isSearchingManual() || !manualQuery().trim()"
-              class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium rounded-lg text-sm transition-colors shadow-sm cursor-pointer shrink-0 flex items-center gap-1.5"
+              class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-medium rounded-lg text-sm transition-colors shadow-sm cursor-pointer shrink-0 flex items-center gap-1.5"
             >
               @if (isSearchingManual()) {
                 <span class="animate-spin text-xs">⏳</span>
@@ -115,7 +115,7 @@ import { firstValueFrom } from 'rxjs';
             }
             <button
               (click)="handleReset()"
-              class="mt-4 w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition-colors cursor-pointer"
+              class="mt-4 w-full px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition-colors cursor-pointer"
             >
               Nächste Platte scannen
             </button>
@@ -152,7 +152,7 @@ import { firstValueFrom } from 'rxjs';
                       [class]="
                         'p-2.5 rounded-lg border text-left cursor-pointer transition-all flex items-center gap-3 ' +
                         (selectedMatchId() === match.id
-                          ? 'border-blue-500 bg-blue-50/70 dark:bg-blue-900/30 ring-1 ring-blue-500'
+                          ? 'border-indigo-500 bg-indigo-50/70 dark:bg-indigo-900/30 ring-1 ring-indigo-500'
                           : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600')
                       "
                     >
@@ -194,7 +194,7 @@ import { firstValueFrom } from 'rxjs';
                   @if (selected.format && selected.format.length > 0) {
                     <div class="flex flex-wrap justify-center gap-1 mt-2">
                       @for (fmt of selected.format; track fmt) {
-                        <span class="text-[11px] px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300">
+                        <span class="text-[11px] px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-800 dark:text-indigo-300">
                           {{ fmt }}
                         </span>
                       }
@@ -254,12 +254,12 @@ import { firstValueFrom } from 'rxjs';
                   (ngModelChange)="manualQuery.set($event)"
                   (keyup.enter)="searchManual()"
                   placeholder="Barcode oder Album/Künstler eingeben"
-                  class="flex-1 px-3 py-2 text-sm rounded-lg border border-red-300 dark:border-red-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  class="flex-1 px-3 py-2 text-sm rounded-lg border border-red-300 dark:border-red-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
                 <button
                   (click)="searchManual()"
                   [disabled]="isSearchingManual() || !manualQuery().trim()"
-                  class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors cursor-pointer shrink-0"
+                  class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors cursor-pointer shrink-0"
                 >
                   @if (isSearchingManual()) {
                     ⏳

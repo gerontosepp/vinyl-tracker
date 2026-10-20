@@ -110,7 +110,7 @@ import { LucideChevronDown, LucideChevronUp } from '@lucide/angular';
                 class="inline-flex items-center gap-1 text-xs font-extrabold text-indigo-700 dark:text-indigo-300 bg-indigo-50/90 dark:bg-indigo-950/60 px-2.5 py-0.5 rounded-full border border-indigo-200/60 dark:border-indigo-800/50 shadow-2xs"
               >
                 <span>{{ record.count }}</span>
-                <span class="text-[10px] font-semibold text-indigo-500 dark:text-indigo-400 uppercase tracking-wider">plays</span>
+                <span class="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">plays</span>
               </span>
             </div>
           </div>

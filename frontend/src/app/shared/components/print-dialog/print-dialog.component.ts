@@ -16,6 +16,9 @@ export const LABELS_PER_SHEET = 24;
 
 const TEMPLATES: PrintTemplate[] = ['avery-3474', 'scan-list', 'qr-cards'];
 
+/** CD count that could not be determined. */
+const UNKNOWN_CD_COUNT = -1;
+
 /**
  * Print dialog: picks template, scope and (for labels) the first free label, then downloads the
  * PDF from `POST /api/print`. Offers "selection" only with selected IDs and "filter" only with a filter.
@@ -186,8 +189,8 @@ export class PrintDialogComponent {
   readonly selectedIds = input<number[]>([]);
   /** Current collection filters (enables scope "filter"). */
   readonly filter = input<PrintFilter | null>(null);
-  /** Whether the selection contains at least one CD. */
-  readonly selectionHasCds = input<boolean>(false);
+  /** Number of CDs among the selected records. */
+  readonly selectedCdCount = input<number>(0);
   readonly closed = output<void>();
 
   readonly templates = TEMPLATES;
@@ -216,18 +219,14 @@ export class PrintDialogComponent {
   });
 
   /**
-   * Number of CDs in the "filter"/"all" scope (null while loading). Loaded from the collection
-   * endpoint with category "cd" so only real CDs trigger the label confirmation.
+   * CDs in the "filter"/"all" scope, loaded from the collection endpoint with category "cd"
+   * (null while loading, UNKNOWN_CD_COUNT if the request failed).
    */
-  readonly cdCount = signal<number | null>(null);
+  private readonly loadedCdCount = signal<number | null>(null);
   private cdCountSub?: Subscription;
 
-  /** Whether the chosen scope contains CDs (or might, if they could not be counted). */
-  readonly scopeMayIncludeCds = computed(() => {
-    if (this.scope() === 'ids') return this.selectionHasCds();
-    const count = this.cdCount();
-    return count !== null && count !== 0;
-  });
+  /** Number of CDs in the chosen scope. */
+  readonly cdCount = computed(() => (this.scope() === 'ids' ? this.selectedCdCount() : this.loadedCdCount()));
 
   constructor() {
     effect(() => {
@@ -235,10 +234,10 @@ export class PrintDialogComponent {
       const labels = this.template() === 'avery-3474';
       const filter = scope === 'filter' ? (this.filter() ?? {}) : {};
       this.cdCountSub?.unsubscribe();
-      this.cdCount.set(null);
+      this.loadedCdCount.set(null);
       if (!labels || scope === 'ids') return;
       if (filter.category === 'vinyl') {
-        this.cdCount.set(0);
+        this.loadedCdCount.set(0);
         return;
       }
       this.cdCountSub = this.apiService
@@ -257,25 +256,23 @@ export class PrintDialogComponent {
         )
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
-          next: (res) => this.cdCount.set(res.pagination?.items ?? 0),
-          // If the count is unavailable, err on the side of asking for confirmation
-          error: () => this.cdCount.set(-1),
+          next: (res) => this.loadedCdCount.set(res.pagination?.items ?? 0),
+          error: () => this.loadedCdCount.set(UNKNOWN_CD_COUNT),
         });
     });
   }
 
-  /** Labels for a "filter"/"all" scope wait for the CD count. */
-  readonly cdCheckPending = computed(
-    () => this.template() === 'avery-3474' && this.scope() !== 'ids' && this.cdCount() === null
-  );
+  /** Labels wait for the CD count of the scope. */
+  readonly cdCheckPending = computed(() => this.template() === 'avery-3474' && this.cdCount() === null);
 
-  readonly needsCdConfirmation = computed(
-    () => this.template() === 'avery-3474' && !this.cdCheckPending() && this.scopeMayIncludeCds()
-  );
+  /** Labels are meant for vinyl: confirm if the scope contains CDs – or if that is unknown. */
+  readonly needsCdConfirmation = computed(() => {
+    const count = this.cdCount();
+    return this.template() === 'avery-3474' && count !== null && (count > 0 || count === UNKNOWN_CD_COUNT);
+  });
 
-  /** Translation key of the CD warning; -1 means the count could not be loaded. */
   readonly cdWarningKey = computed(() =>
-    this.scope() !== 'ids' && this.cdCount() === -1 ? 'print.cdWarning.unknown' : `print.cdWarning.${this.scope()}`
+    this.cdCount() === UNKNOWN_CD_COUNT ? 'print.cdWarning.unknown' : `print.cdWarning.${this.scope()}`
   );
 
   readonly canSubmit = computed(

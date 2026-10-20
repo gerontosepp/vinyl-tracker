@@ -23,7 +23,7 @@ describe('PrintDialogComponent', () => {
     inputs: {
       selectedIds?: number[];
       filter?: PrintFilter | null;
-      selectionHasCds?: boolean;
+      selectedCdCount?: number;
       cdCount?: Observable<unknown>;
     } = {}
   ): Promise<void> {
@@ -49,7 +49,7 @@ describe('PrintDialogComponent', () => {
     component = fixture.componentInstance;
     if (inputs.selectedIds) fixture.componentRef.setInput('selectedIds', inputs.selectedIds);
     if (inputs.filter !== undefined) fixture.componentRef.setInput('filter', inputs.filter);
-    if (inputs.selectionHasCds !== undefined) fixture.componentRef.setInput('selectionHasCds', inputs.selectionHasCds);
+    if (inputs.selectedCdCount !== undefined) fixture.componentRef.setInput('selectedCdCount', inputs.selectedCdCount);
     closedSpy = vi.fn<() => void>();
     component.closed.subscribe(closedSpy);
     fixture.detectChanges();
@@ -238,13 +238,15 @@ describe('PrintDialogComponent', () => {
       expect(query('cd-warning')?.textContent).toContain('print.cdWarning.unknown');
     });
 
-    it('depends on CDs in the selection', async () => {
-      await setup({ selectedIds: [1, 2], selectionHasCds: false, filter: vinylFilter });
+    it('depends on the number of CDs in the selection', async () => {
+      await setup({ selectedIds: [1, 2], selectedCdCount: 0, filter: vinylFilter });
+      expect(component.cdCount()).toBe(0);
       expect(component.needsCdConfirmation()).toBe(false);
       expect(mockApiService.getCollection).not.toHaveBeenCalled();
 
-      fixture.componentRef.setInput('selectionHasCds', true);
+      fixture.componentRef.setInput('selectedCdCount', 1);
       fixture.detectChanges();
+      expect(component.cdCount()).toBe(1);
       expect(component.needsCdConfirmation()).toBe(true);
       expect(query('cd-warning')?.textContent).toContain('print.cdWarning.ids');
 

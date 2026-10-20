@@ -72,7 +72,9 @@ export class CollectionComponent implements OnInit, OnDestroy {
 
   readonly selectedCount = computed(() => this.selectedItems().size);
   readonly selectedIds = computed(() => Array.from(this.selectedItems().keys()));
-  readonly selectionHasCds = computed(() => Array.from(this.selectedItems().values()).some((item) => item.isCd));
+  readonly selectedCdCount = computed(
+    () => Array.from(this.selectedItems().values()).filter((item) => item.isCd).length
+  );
 
   /** The collection view's current filters and sorting for the print dialog. */
   readonly printFilter = computed<PrintFilter>(() => {

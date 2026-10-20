@@ -5,6 +5,14 @@
     "tag": "In Entwicklung",
     "isCurrent": false,
     "isUnreleased": true,
+    "items": []
+  },
+  {
+    "version": "v0.12.0",
+    "rawHeader": "v0.12.0 (2026-10-21)",
+    "date": "2026-10-21",
+    "isCurrent": true,
+    "isUnreleased": false,
     "items": [
       {
         "title": "Feature: Sortier-Modus auf dem Handy (`#172`)",
@@ -81,7 +89,7 @@
     "version": "v0.11.0",
     "rawHeader": "v0.11.0 (2026-10-20)",
     "date": "2026-10-20",
-    "isCurrent": true,
+    "isCurrent": false,
     "isUnreleased": false,
     "items": [
       {

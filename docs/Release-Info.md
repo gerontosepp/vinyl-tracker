@@ -9,6 +9,10 @@
 
 ## Unreleased
 
+- **Fix: Große JSON-Backups lassen sich in Produktion einspielen (`#160`)**:
+  - **Upload-Limit angehoben**: Der nginx im Frontend-Container ließ für `/api` nur 1 MB zu und lehnte größere Backups mit `413` ab, bevor das Backend sie sah. Er erlaubt jetzt wie das Backend 25 MB (`client_max_body_size 25m`).
+  - **Reverse Proxy**: `DEPLOYMENT.md` beschreibt, wie ein vorgeschalteter Proxy (z. B. Nginx Proxy Manager) auf dasselbe Limit gesetzt wird.
+
 - **Feature: Druck-Modul mit Avery-Etiketten und Scan-Liste (`#157`, `#56`)**:
   - **Ein Druck-Dialog für alles**: In der Sammlung druckst du die markierten Platten oder alles, was die aktuellen Filter zeigen; in den Einstellungen die ganze Sammlung. Auswählbar sind Vorlage, Umfang und bei Etiketten das Start-Etikett (`POST /api/print`).
   - **Avery-Etiketten 70 × 37 mm**: 24 QR-Etiketten pro A4-Bogen (Avery Zweckform 6605 / 3474), ohne Überschrift, mit Titel, Künstler und Discogs-ID. Angebrochene Bögen lassen sich ab Etikett 1–24 weiterverwenden.

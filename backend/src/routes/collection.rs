@@ -3,14 +3,15 @@ use crate::{
     error::AppError,
     models::collection::{CollectionQueryParams, ParsedCollectionFilter},
     services::{
-        collection_query::CollectionQueryService, collection_sync::CollectionSyncService,
-        export_service::ExportService,
+        collection_query::CollectionQueryService, collection_restore::CollectionRestoreService,
+        collection_sync::CollectionSyncService, export_service::ExportService,
     },
     state::AppState,
 };
 use axum::{
     Json, Router,
-    extract::{Path, Query, State},
+    body::Bytes,
+    extract::{DefaultBodyLimit, Path, Query, State},
     http::StatusCode,
     response::IntoResponse,
     routing::{get, post},
@@ -236,7 +237,12 @@ pub async fn export_collection_handler(
             ))
         }
         "json" => {
-            let json_bytes = ExportService::export_collection_json(&user.username, &releases)?;
+            let discogs_ids: Vec<i64> = releases.iter().map(|r| r.id).collect();
+            let listen_history =
+                CollectionQueryService::get_listen_history(&state.pool, user.id, &discogs_ids)
+                    .await?;
+            let json_bytes =
+                ExportService::export_collection_json(&user.username, &releases, &listen_history)?;
             Ok((
                 StatusCode::OK,
                 [
@@ -277,10 +283,29 @@ pub async fn export_collection_handler(
     }
 }
 
+/// JSON backups of large collections exceed Axum's default body limit of 2 MB.
+const RESTORE_BODY_LIMIT: usize = 25 * 1024 * 1024;
+
+/// Merges a JSON backup (from `/export?format=json`) into the user's collection.
+pub async fn restore_collection_handler(
+    State(state): State<AppState>,
+    CurrentUser(user): CurrentUser,
+    body: Bytes,
+) -> Result<impl IntoResponse, AppError> {
+    let (backup, releases) = CollectionRestoreService::parse_backup(&body)?;
+    let result =
+        CollectionRestoreService::restore(&state.pool, user.id, &backup, &releases).await?;
+    Ok((StatusCode::OK, Json(result)))
+}
+
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/", get(get_collection_handler))
         .route("/export", get(export_collection_handler))
+        .route(
+            "/restore",
+            post(restore_collection_handler).layer(DefaultBodyLimit::max(RESTORE_BODY_LIMIT)),
+        )
         .route("/random", get(get_random_record_handler))
         .route("/unplayed", get(get_unplayed_collection_handler))
         .route("/sync", post(sync_collection_handler))

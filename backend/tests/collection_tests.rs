@@ -1370,3 +1370,271 @@ async fn test_collection_sync_service_full_workflow() {
         "Removing non-existent record should return error"
     );
 }
+
+async fn post_restore(app: &axum::Router, cookie: &str, body: Vec<u8>) -> (StatusCode, Value) {
+    let res = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/api/collection/restore")
+                .header(header::COOKIE, cookie)
+                .header(header::CONTENT_TYPE, "application/json")
+                .body(Body::from(body))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    let status = res.status();
+    let bytes = res.into_body().collect().await.unwrap().to_bytes();
+    (status, serde_json::from_slice(&bytes).unwrap())
+}
+
+async fn fetch_collection(app: &axum::Router, cookie: &str) -> CollectionResponse {
+    let res = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/api/collection?per_page=100")
+                .header(header::COOKIE, cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(res.status(), StatusCode::OK);
+    let bytes = res.into_body().collect().await.unwrap().to_bytes();
+    serde_json::from_slice(&bytes).unwrap()
+}
+
+#[tokio::test]
+async fn test_collection_backup_restore_roundtrip() {
+    let (app, state) = setup_app().await;
+    let (source_id, _, source_cookie) = create_authenticated_user(&app).await;
+    let (_, _, target_cookie) = create_authenticated_user(&app).await;
+
+    // record_cache is shared between tests, so use Discogs IDs unique to this run
+    let base_id = 800_000_000 + (chrono::Utc::now().timestamp_micros() % 100_000_000) * 2;
+    let (played_id, unplayed_id) = (base_id, base_id + 1);
+
+    // 1. Source collection: one played record (two listens) and one unplayed record
+    let mut record_ids = Vec::new();
+    for (discogs_id, title, genre) in [
+        (played_id, "Restore Played", "Rock"),
+        (unplayed_id, "Restore Unplayed", "Jazz"),
+    ] {
+        let record_id: i64 = sqlx::query(
+            "INSERT INTO record_cache (discogs_id, title, artist, release_year, format, lowest_price)
+             VALUES ($1, $2, 'Restore Artist', '1977', 'LP', 21.50) RETURNING id",
+        )
+        .bind(discogs_id)
+        .bind(title)
+        .fetch_one(&state.pool)
+        .await
+        .unwrap()
+        .get("id");
+        sqlx::query("INSERT INTO record_genres (record_id, genre) VALUES ($1, $2)")
+            .bind(record_id)
+            .bind(genre)
+            .execute(&state.pool)
+            .await
+            .unwrap();
+        record_ids.push(record_id);
+    }
+    for (record_id, instance_id) in [(record_ids[0], base_id), (record_ids[1], base_id + 1)] {
+        sqlx::query(
+            "INSERT INTO collection_item (user_id, record_id, instance_id, added_at, media_condition, sleeve_condition)
+             VALUES ($1, $2, $3, '2026-04-10 12:00:00', 'Near Mint (NM or M-)', 'Very Good Plus (VG+)')",
+        )
+        .bind(source_id)
+        .bind(record_id)
+        .bind(instance_id)
+        .execute(&state.pool)
+        .await
+        .unwrap();
+    }
+    for ts in ["2026-04-01 20:00:00.250000", "2026-04-12 15:30:00.123456"] {
+        sqlx::query(
+            "INSERT INTO listen_event (user_id, record_id, timestamp) VALUES ($1, $2, $3::timestamp)",
+        )
+        .bind(source_id)
+        .bind(record_ids[0])
+        .bind(ts)
+        .execute(&state.pool)
+        .await
+        .unwrap();
+    }
+
+    // 2. Export the source collection as JSON backup (format version 2 with listen history)
+    let export_res = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/api/collection/export?format=json")
+                .header(header::COOKIE, &source_cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(export_res.status(), StatusCode::OK);
+    let backup_bytes = export_res.into_body().collect().await.unwrap().to_bytes();
+    let backup: Value = serde_json::from_slice(&backup_bytes).unwrap();
+    assert_eq!(backup["format_version"], 2);
+    let played = backup["releases"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|r| r["id"] == played_id)
+        .unwrap();
+    assert_eq!(
+        played["listen_history"],
+        json!(["2026-04-01T20:00:00.250000Z", "2026-04-12T15:30:00.123456Z"])
+    );
+
+    // 3. Unauthenticated restore is rejected
+    let unauth = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/api/collection/restore")
+                .header(header::CONTENT_TYPE, "application/json")
+                .body(Body::from(backup_bytes.to_vec()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(unauth.status(), StatusCode::UNAUTHORIZED);
+
+    // 4. Restore into the empty target collection
+    let (status, result) = post_restore(&app, &target_cookie, backup_bytes.to_vec()).await;
+    assert_eq!(status, StatusCode::OK, "{result}");
+    assert_eq!(result["format_version"], 2);
+    assert_eq!(result["records_total"], 2);
+    assert_eq!(result["records_added"], 2);
+    assert_eq!(result["records_updated"], 0);
+    assert_eq!(result["listens_added"], 2);
+    assert_eq!(result["listens_skipped"], 0);
+    assert_eq!(result["listen_history_included"], true);
+
+    let restored = fetch_collection(&app, &target_cookie).await;
+    assert_eq!(restored.releases.len(), 2);
+    let played = restored
+        .releases
+        .iter()
+        .find(|r| r.id == played_id)
+        .unwrap();
+    assert_eq!(played.listen_count, 2);
+    assert_eq!(
+        played.last_played_at.as_deref(),
+        Some("2026-04-12T15:30:00Z")
+    );
+    assert_eq!(played.date_added, "2026-04-10T12:00:00Z");
+    assert_eq!(
+        played.media_condition.as_deref(),
+        Some("Near Mint (NM or M-)")
+    );
+    assert_eq!(
+        played.sleeve_condition.as_deref(),
+        Some("Very Good Plus (VG+)")
+    );
+    assert_eq!(played.basic_information.genres, vec!["Rock"]);
+
+    // 5. Restoring the same backup again is idempotent
+    let (status, result) = post_restore(&app, &target_cookie, backup_bytes.to_vec()).await;
+    assert_eq!(status, StatusCode::OK, "{result}");
+    assert_eq!(result["records_added"], 0);
+    assert_eq!(result["records_updated"], 2);
+    assert_eq!(result["listens_added"], 0);
+    assert_eq!(result["listens_skipped"], 2);
+    let again = fetch_collection(&app, &target_cookie).await;
+    assert_eq!(again.releases.len(), 2);
+    let played = again.releases.iter().find(|r| r.id == played_id).unwrap();
+    assert_eq!(played.listen_count, 2);
+
+    // 6. Merge rules: backup conditions win, missing ones keep the stored value
+    let mut edited = backup.clone();
+    for release in edited["releases"].as_array_mut().unwrap() {
+        if release["id"] == played_id {
+            release["media_condition"] = json!("Good (G)");
+            release["sleeve_condition"] = Value::Null;
+        }
+    }
+    let (status, _) =
+        post_restore(&app, &target_cookie, serde_json::to_vec(&edited).unwrap()).await;
+    assert_eq!(status, StatusCode::OK);
+    let merged = fetch_collection(&app, &target_cookie).await;
+    let played = merged.releases.iter().find(|r| r.id == played_id).unwrap();
+    assert_eq!(played.media_condition.as_deref(), Some("Good (G)"));
+    assert_eq!(
+        played.sleeve_condition.as_deref(),
+        Some("Very Good Plus (VG+)")
+    );
+
+    // 7. A version 1 backup (no listen history) restores the collection but no listens
+    let (_, _, legacy_cookie) = create_authenticated_user(&app).await;
+    let mut legacy = backup.clone();
+    legacy.as_object_mut().unwrap().remove("format_version");
+    for release in legacy["releases"].as_array_mut().unwrap() {
+        release.as_object_mut().unwrap().remove("listen_history");
+    }
+    let (status, result) =
+        post_restore(&app, &legacy_cookie, serde_json::to_vec(&legacy).unwrap()).await;
+    assert_eq!(status, StatusCode::OK, "{result}");
+    assert_eq!(result["format_version"], 1);
+    assert_eq!(result["records_added"], 2);
+    assert_eq!(result["listens_added"], 0);
+    assert_eq!(result["listen_history_included"], false);
+    let legacy_collection = fetch_collection(&app, &legacy_cookie).await;
+    assert!(
+        legacy_collection
+            .releases
+            .iter()
+            .all(|r| r.listen_count == 0)
+    );
+}
+
+#[tokio::test]
+async fn test_collection_restore_rejects_invalid_backups() {
+    let (app, _) = setup_app().await;
+    let (_, _, cookie) = create_authenticated_user(&app).await;
+
+    // Not JSON at all
+    let (status, problem) = post_restore(&app, &cookie, b"not a backup".to_vec()).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+    assert_eq!(problem["status"], 400);
+    assert!(
+        problem["detail"]
+            .as_str()
+            .unwrap()
+            .starts_with("Invalid backup file")
+    );
+
+    // One invalid entry rejects the whole backup; nothing is written
+    let backup = json!({
+        "format_version": 2,
+        "releases": [
+            {
+                "id": 700000001, "instance_id": 1, "date_added": "2026-04-10T12:00:00Z",
+                "basic_information": { "title": "Valid", "artists": [], "genres": [] },
+                "listen_history": []
+            },
+            {
+                "id": 700000002, "instance_id": 2, "date_added": "2026-04-10T12:00:00Z",
+                "basic_information": { "title": "Broken", "artists": [], "genres": [] },
+                "listen_history": ["not-a-date"]
+            }
+        ]
+    });
+    let (status, problem) = post_restore(&app, &cookie, serde_json::to_vec(&backup).unwrap()).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+    let detail = problem["detail"].as_str().unwrap();
+    assert!(
+        detail.contains("Invalid backup entry #2 (Discogs ID 700000002)"),
+        "{detail}"
+    );
+    assert!(fetch_collection(&app, &cookie).await.releases.is_empty());
+}

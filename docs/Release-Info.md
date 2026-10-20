@@ -9,6 +9,12 @@
 
 ## Unreleased
 
+- **Feature: Sammlung aus JSON-Backup wiederherstellen (`#102`)**:
+  - **Backup einspielen**: In den Einstellungen unter *Datenverwaltung* lässt sich ein JSON-Backup über „Backup wiederherstellen (.json)“ auswählen; nach einer Bestätigung mit der Anzahl der Platten wird es eingespielt (`POST /api/collection/restore`).
+  - **Zusammenführen statt Überschreiben**: Es wird nichts gelöscht, und auch mehrfaches Einspielen erzeugt keine Duplikate. Zustände aus dem Backup überschreiben vorhandene Werte, fehlende bleiben erhalten; Platten-Metadaten werden nur ergänzt.
+  - **Hör-Historie im Backup**: Das JSON-Backup enthält jetzt pro Platte alle Hör-Zeitstempel (`listen_history`, `format_version: 2`) und stellt damit auch Hörzähler und Statistiken wieder her. Ältere Backups stellen Sammlung und Zustände wieder her, aber keine Hörzähler; ein Hinweis meldet das.
+  - **Sicher**: Ungültige Dateien werden mit einer verständlichen Fehlermeldung abgelehnt; die Wiederherstellung läuft in einer Transaktion (alles oder nichts).
+
 - **DevOps: Claude-Code-Setup fürs Projekt (`#153`)**:
   - **Projektleitfaden beim Start geladen**: Neue `CLAUDE.md` im Root bindet `docs/CLAUDE.md` ein.
   - **Projekt-Skills verfügbar**: `.claude/skills/` verweist auf alle Skills in `.agent/skills/` und `.agents/skills/`; `ticket-workflow` und `release-management` beschreiben den aktuellen Ablauf über PRs, Merge nur auf Zuruf und automatische Releases.

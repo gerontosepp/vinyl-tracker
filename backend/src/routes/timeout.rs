@@ -12,6 +12,7 @@ const LONG_RUNNING_PATHS: &[&str] = &[
     "/api/collection/sync",
     "/api/collection/prices/refresh",
     "/api/collection/export",
+    "/api/collection/restore",
     "/api/collection/qr-codes/",
 ];
 
@@ -94,6 +95,7 @@ mod tests {
             "/api/collection/sync",
             "/api/collection/prices/refresh",
             "/api/collection/export",
+            "/api/collection/restore",
             "/api/collection/qr-codes/all",
             "/api/collection/qr-codes/selected",
         ] {

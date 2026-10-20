@@ -284,4 +284,104 @@ describe('DashboardComponent', () => {
     expect(text).toContain('6,405 €');
     expect(text).toContain('23,112 €');
   });
+
+  describe('record detail view', () => {
+    const detail = {
+      id: 7,
+      discogs_id: 101,
+      title: 'Dark Side of the Moon',
+      artist: 'Pink Floyd',
+      genres: [],
+      in_collection: true,
+      listen_count: 5,
+      tracklist: [],
+      formats: [],
+      labels: [],
+    };
+
+    beforeEach(() => {
+      mockApiService.getRecordDetails = vi.fn().mockReturnValue(of(detail));
+    });
+
+    it('opens from "Zuletzt gehört" and loads the details', () => {
+      component.openRecord(mockListens[0].record);
+
+      expect(mockApiService.getRecordDetails).toHaveBeenCalledWith(101);
+      expect(component.selectedRecord()?.id).toBe(101);
+      expect(component.selectedRecord()?.basic_information.title).toBe('Dark Side of the Moon');
+      expect(component.selectedRecord()?.basic_information.artists).toEqual([{ name: 'Pink Floyd' }]);
+      expect(component.recordDetail()).toEqual(detail);
+      expect(component.loadingDetail()).toBe(false);
+    });
+
+    it('is wired to both dashboard lists and renders the modal', () => {
+      const recent = fixture.debugElement.query((el) => el.name === 'app-recent-listens');
+      recent.triggerEventHandler('openRecord', mockListens[0].record);
+      fixture.detectChanges();
+      expect(mockApiService.getRecordDetails).toHaveBeenCalledWith(101);
+      expect(fixture.debugElement.query((el) => el.name === 'app-record-detail-modal')).not.toBeNull();
+
+      const top = fixture.debugElement.query((el) => el.name === 'app-top-records');
+      top.triggerEventHandler('openRecord', { ...mockTops[0], discogsId: 202 });
+      expect(mockApiService.getRecordDetails).toHaveBeenCalledWith(202);
+    });
+
+    it('opens from "Meistgespielte Alben" only with a Discogs ID', () => {
+      component.openTopRecord(mockTops[0]);
+      expect(mockApiService.getRecordDetails).not.toHaveBeenCalled();
+
+      component.openTopRecord({ ...mockTops[0], title: '', discogsId: 202 });
+      expect(mockApiService.getRecordDetails).toHaveBeenCalledWith(202);
+      // Falls back to recordTitle
+      expect(component.selectedRecord()?.basic_information.title).toBe('Dark Side of the Moon');
+    });
+
+    it('shows an error toast if the details cannot be loaded', () => {
+      mockApiService.getRecordDetails.mockReturnValue(throwError(() => new Error('Not found')));
+
+      component.openRecord(mockListens[0].record);
+
+      expect(component.loadingDetail()).toBe(false);
+      expect(mockToastService.showToast).toHaveBeenCalledWith('Not found', 'error');
+    });
+
+    it('closes without reloading if nothing changed', () => {
+      component.openRecord(mockListens[0].record);
+      mockApiService.getRecentListens.mockClear();
+
+      component.closeDetail();
+
+      expect(component.selectedRecord()).toBeNull();
+      expect(component.recordDetail()).toBeNull();
+      expect(mockApiService.getRecentListens).not.toHaveBeenCalled();
+    });
+
+    it('refreshes the lists on close after a logged listen or condition change', () => {
+      component.openRecord(mockListens[0].record);
+      mockApiService.getRecentListens.mockClear();
+      mockApiService.getTopRecords.mockClear();
+
+      component.onDetailChanged({ ...detail, listen_count: 6 });
+      expect(component.recordDetail()?.listen_count).toBe(6);
+      expect(mockApiService.getRecentListens).not.toHaveBeenCalled();
+
+      component.closeDetail();
+      expect(mockApiService.getRecentListens).toHaveBeenCalledTimes(1);
+      expect(mockApiService.getTopRecords).toHaveBeenCalledTimes(1);
+
+      // A second close does not reload again
+      component.closeDetail();
+      expect(mockApiService.getRecentListens).toHaveBeenCalledTimes(1);
+    });
+
+    it('closes and refreshes after the record was removed', () => {
+      component.openRecord(mockListens[0].record);
+      mockApiService.getRecentListens.mockClear();
+
+      component.onRecordRemoved();
+
+      expect(component.selectedRecord()).toBeNull();
+      expect(mockApiService.getRecentListens).toHaveBeenCalledTimes(1);
+    });
+  });
 });

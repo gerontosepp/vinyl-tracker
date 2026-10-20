@@ -105,11 +105,11 @@ impl AnalyticsService {
             (Some(start), Some(end)) => {
                 sqlx::query(
                     r#"
-                    SELECT rc.title, rc.artist, rc.thumb_url, COUNT(le.id) AS play_count
+                    SELECT rc.discogs_id, rc.title, rc.artist, rc.thumb_url, COUNT(le.id) AS play_count
                     FROM listen_event le
                     JOIN record_cache rc ON le.record_id = rc.id
                     WHERE le.user_id = $1 AND le.timestamp >= $2 AND le.timestamp <= $3
-                    GROUP BY rc.title, rc.artist, rc.thumb_url
+                    GROUP BY rc.discogs_id, rc.title, rc.artist, rc.thumb_url
                     ORDER BY play_count DESC
                     LIMIT 10
                     "#,
@@ -123,11 +123,11 @@ impl AnalyticsService {
             _ => {
                 sqlx::query(
                     r#"
-                    SELECT rc.title, rc.artist, rc.thumb_url, COUNT(le.id) AS play_count
+                    SELECT rc.discogs_id, rc.title, rc.artist, rc.thumb_url, COUNT(le.id) AS play_count
                     FROM listen_event le
                     JOIN record_cache rc ON le.record_id = rc.id
                     WHERE le.user_id = $1
-                    GROUP BY rc.title, rc.artist, rc.thumb_url
+                    GROUP BY rc.discogs_id, rc.title, rc.artist, rc.thumb_url
                     ORDER BY play_count DESC
                     LIMIT 10
                     "#,
@@ -141,12 +141,14 @@ impl AnalyticsService {
         let top = rows
             .into_iter()
             .map(|row| {
+                let discogs_id: i64 = row.get("discogs_id");
                 let title: String = row.get("title");
                 let artist: String = row.get("artist");
                 let thumb_url: Option<String> = row.get("thumb_url");
                 let count: i64 = row.get("play_count");
 
                 TopRecordDto {
+                    discogs_id,
                     record_title: title.clone(),
                     title,
                     artist,

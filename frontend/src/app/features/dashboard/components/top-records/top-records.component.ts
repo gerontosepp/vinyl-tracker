@@ -1,4 +1,4 @@
-import { Component, input, inject, computed, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, input, output, inject, computed, signal, ChangeDetectionStrategy } from '@angular/core';
 import { ApiService } from '../../../../core/services/api.service';
 import { AnalyticsTopRecord } from '../../../../core/types';
 import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
@@ -37,6 +37,17 @@ import { LucideChevronDown, LucideChevronUp } from '@lucide/angular';
           <div
             class="group relative flex items-center gap-3 p-2 sm:px-3 sm:py-2 rounded-xl border border-slate-100/80 dark:border-slate-700/60 bg-white/60 dark:bg-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-all duration-200 overflow-hidden shadow-xs hover:shadow-sm"
           >
+            <!-- The whole row opens the record's details -->
+            @if (record.discogsId) {
+              <button
+                type="button"
+                (click)="openRecord.emit(record)"
+                class="absolute inset-0 z-20 rounded-xl cursor-pointer focus-visible:outline-2 focus-visible:outline-indigo-500"
+                [attr.aria-label]="'Details: ' + (record.title || record.recordTitle)"
+                data-testid="top-record-open"
+              ></button>
+            }
+
             <!-- Background Relative Progress Bar -->
             <div
               class="absolute inset-y-0 left-0 bg-indigo-500/10 dark:bg-indigo-500/20 rounded-xl transition-all duration-700 ease-out pointer-events-none"
@@ -167,6 +178,7 @@ export class TopRecordsComponent {
 
   readonly data = input.required<AnalyticsTopRecord[]>();
   readonly className = input<string>('');
+  readonly openRecord = output<AnalyticsTopRecord>();
 
   readonly showAll = signal<boolean>(false);
 

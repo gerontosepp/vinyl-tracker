@@ -131,4 +131,25 @@ describe('RecentListensComponent', () => {
     expect(deleteBtn.classList).toContain('w-11');
     expect(deleteBtn.getAttribute('aria-label')).toContain('Abbey Road');
   });
+
+  it('opens the record details from an entry, while delete still only deletes', () => {
+    fixture.componentRef.setInput('listens', sampleListens);
+    fixture.detectChanges();
+    const opened = vi.fn();
+    const deleted = vi.fn();
+    component.openRecord.subscribe(opened);
+    component.delete.subscribe(deleted);
+
+    const open: HTMLButtonElement = fixture.nativeElement.querySelector('[data-testid="recent-open"]');
+    expect(open.getAttribute('aria-label')).toBe('Details: Abbey Road');
+    open.click();
+    expect(opened).toHaveBeenCalledWith(sampleListens[0].record);
+
+    // The delete button sits above the open button
+    const deleteBtn: HTMLElement = fixture.nativeElement.querySelector('button[title="Delete Scan"]');
+    expect(deleteBtn.classList).toContain('z-20');
+    deleteBtn.click();
+    expect(deleted).toHaveBeenCalledWith(42);
+    expect(opened).toHaveBeenCalledTimes(1);
+  });
 });

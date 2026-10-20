@@ -330,6 +330,37 @@ describe('RecordDetailModalComponent', () => {
       expect(mockToastService.showToast).toHaveBeenCalledWith(expect.stringContaining('Delete failed'), 'error');
     });
   });
+
+  describe('Escape key', () => {
+    const pressEscape = () => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+
+    it('closes the open modal', () => {
+      fixture.componentRef.setInput('record', { id: 123456, basic_information: { title: 'Abbey Road', artists: [] } });
+      fixture.detectChanges();
+      const closed = vi.fn();
+      component.close.subscribe(closed);
+
+      pressEscape();
+      expect(closed).toHaveBeenCalledTimes(1);
+    });
+
+    it('closes the delete confirmation first', () => {
+      fixture.componentRef.setInput('record', { id: 123456, basic_information: { title: 'Abbey Road', artists: [] } });
+      fixture.detectChanges();
+      const closed = vi.fn();
+      component.close.subscribe(closed);
+      component.promptDelete();
+
+      pressEscape();
+      expect(component.showDeleteConfirm()).toBe(false);
+      expect(closed).not.toHaveBeenCalled();
+    });
+
+    it('does nothing while no record is shown', () => {
+      const closed = vi.fn();
+      component.close.subscribe(closed);
+      pressEscape();
+      expect(closed).not.toHaveBeenCalled();
+    });
+  });
 });
-
-

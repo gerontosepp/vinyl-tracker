@@ -88,4 +88,23 @@ describe('TopRecordsComponent', () => {
     const playTexts = Array.from(plays).map((p: any) => p.textContent);
     expect(playTexts.some((t: string) => t.includes('20'))).toBe(true);
   });
+
+  it('opens the record details from a row with a Discogs ID', () => {
+    fixture.componentRef.setInput('data', [
+      { ...mockRecords[0], discogsId: 4711 },
+      mockRecords[1], // from an older server: no ID, not clickable
+    ]);
+    fixture.detectChanges();
+    const opened = vi.fn();
+    component.openRecord.subscribe(opened);
+
+    const buttons: HTMLButtonElement[] = Array.from(
+      fixture.nativeElement.querySelectorAll('[data-testid="top-record-open"]')
+    );
+    expect(buttons.length).toBe(1);
+    expect(buttons[0].getAttribute('aria-label')).toBe('Details: Album 1');
+
+    buttons[0].click();
+    expect(opened).toHaveBeenCalledWith(expect.objectContaining({ discogsId: 4711, title: 'Album 1' }));
+  });
 });

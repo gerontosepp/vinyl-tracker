@@ -10,6 +10,10 @@ pub struct ListenEventDto {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TopRecordDto {
+    /// Discogs release ID; lets clients open the record's details. Defaults to 0 for
+    /// responses of servers that predate the field.
+    #[serde(rename = "discogsId", default)]
+    pub discogs_id: i64,
     pub title: String,
     #[serde(rename = "recordTitle")]
     pub record_title: String,

@@ -9,6 +9,12 @@
 
 ## Unreleased
 
+- **Feature: Detailansicht vom Dashboard aus (`#166`)**:
+  - **Ein Klick genügt**: Einträge in „Zuletzt gehört“ und „Meistgespielte Alben“ öffnen dieselbe Detailansicht wie in der Sammlung – mit Tracklist, Zuständen, Marktwert, Hörverlauf, „Gehört“, „Auf Roon abspielen“ und „Aus Sammlung entfernen“.
+  - **Aktuelle Listen**: Nach einem erfassten Hördurchgang, einer Zustandsänderung oder dem Entfernen werden die Dashboard-Listen beim Schließen neu geladen.
+  - **Escape schließt die Detailansicht** (auch in der Sammlung); ein offener Lösch-Dialog wird zuerst geschlossen.
+  - **API**: `GET /api/analytics/top` liefert zusätzlich die `discogsId` jeder Platte.
+
 - **UX: Kompaktere Mobil-Ansicht (`#165`)**:
   - **Startseite**: „Zuletzt gehört“ ist auf dem Handy eine kompakte Liste mit kleinen Covern wie „Meistgespielte Alben“ (statt großer Kacheln); Abstände von Karten und Spalten sind kleiner. Der Lösch-Button ist auf Touch-Geräten jetzt sichtbar (bisher nur per Hover).
   - **Versionsnummer** erscheint auf dem Handy neben dem Logo.

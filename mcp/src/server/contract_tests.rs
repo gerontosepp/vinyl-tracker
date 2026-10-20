@@ -48,6 +48,7 @@ async fn mock_backend() -> VinylMcpServer {
             "/api/analytics/top",
             get(|| async {
                 Json(vec![TopRecordDto {
+                    discogs_id: 1_000_001,
                     title: "Miles Davis - Kind of Blue".to_string(),
                     record_title: "Kind of Blue".to_string(),
                     artist: "Miles Davis".to_string(),

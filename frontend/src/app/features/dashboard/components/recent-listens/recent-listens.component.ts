@@ -18,27 +18,31 @@ import { LucideTrash2 } from '@lucide/angular';
       "
     >
       <div
-        class="p-6 pb-4 border-b border-slate-100 dark:border-slate-600 bg-white dark:bg-slate-800 z-10 transition-colors"
+        class="p-4 pb-3 md:p-6 md:pb-4 border-b border-slate-100 dark:border-slate-600 bg-white dark:bg-slate-800 z-10 transition-colors"
       >
-        <h2 class="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+        <h2 class="text-lg md:text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
           {{ 'dashboard.recentListens' | translate }}
         </h2>
       </div>
 
       <!-- Scrollable Container -->
-      <div class="flex-1 overflow-y-auto p-6 pt-4">
-        <!-- Grid Layout inside scrollable area -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-5 md:gap-8">
+      <div class="flex-1 overflow-y-auto p-2 md:p-6 md:pt-4">
+        <!-- Mobile: compact list (like "Meistgespielte Alben"); md+: tile grid -->
+        <div
+          class="flex flex-col gap-1 md:grid md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 md:gap-8"
+          data-testid="recent-listens-list"
+        >
           @for (event of listens(); track event.id; let idx = $index) {
             <div
-              class="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 rounded-2xl p-4 flex flex-col gap-3 group border hover:shadow-xl hover:-translate-y-1 transition-all duration-300 animate-slide-up"
+              class="flex flex-row items-center gap-3 rounded-xl p-2 group transition-all duration-300 animate-slide-up hover:bg-slate-50 dark:hover:bg-slate-700/40 md:flex-col md:items-stretch md:gap-3 md:rounded-2xl md:p-4 md:border md:border-slate-200 md:dark:border-slate-600 md:bg-white md:dark:bg-slate-800 md:hover:bg-white md:dark:hover:bg-slate-800 md:hover:shadow-xl md:hover:-translate-y-1"
               [style.animationDelay]="(idx % 6) * 75 + 'ms'"
               style="opacity: 0"
             >
 
               <!-- Cover Image -->
               <div
-                class="w-full aspect-square bg-slate-100 dark:bg-slate-700/50 rounded-xl overflow-hidden relative shadow-inner"
+                class="w-10 h-10 shrink-0 rounded-lg md:w-full md:h-auto md:aspect-square md:rounded-xl bg-slate-100 dark:bg-slate-700/50 overflow-hidden relative shadow-inner"
+                data-testid="recent-cover"
               >
                 <img
                   [src]="
@@ -48,34 +52,39 @@ import { LucideTrash2 } from '@lucide/angular';
                   "
                   [alt]="event.record.title"
                   class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  loading="lazy"
                 />
               </div>
 
               <!-- Info & Actions -->
-              <div class="flex-1 min-w-0 flex flex-col pt-1">
-                <div class="flex justify-between items-start gap-2">
+              <div class="flex-1 min-w-0 flex flex-row items-center gap-2 md:flex-col md:items-stretch md:gap-0 md:pt-1">
+                <div class="flex-1 min-w-0 flex justify-between items-start gap-2 w-full">
                   <div class="flex-1 min-w-0">
                     <h3
-                      class="font-bold text-slate-900 dark:text-slate-100 truncate text-base leading-tight mb-1"
+                      class="font-bold text-slate-900 dark:text-slate-100 truncate text-sm md:text-base leading-tight md:mb-1"
                       [title]="event.record.title"
                     >
                       {{ event.record.title }}
                     </h3>
-                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400 truncate">
+                    <p class="text-xs md:text-sm font-medium text-slate-500 dark:text-slate-400 truncate">
                       {{ event.record.artist }}
+                      <span class="md:hidden"> · {{ event.timestamp | localizedDate: 'short' }}</span>
                     </p>
                   </div>
+                  <!-- Always visible on touch screens; revealed on hover from md -->
                   <button
+                    type="button"
                     (click)="delete.emit(event.id)"
-                    class="p-1.5 -mr-1.5 -mt-1 text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 flex-shrink-0 opacity-0 group-hover:opacity-100 cursor-pointer"
+                    class="w-11 h-11 -my-2 -mr-1 flex items-center justify-center md:w-auto md:h-auto md:p-1.5 md:-mr-1.5 md:-mt-1 md:my-0 text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 flex-shrink-0 md:opacity-0 md:group-hover:opacity-100 cursor-pointer"
                     title="Delete Scan"
+                    [attr.aria-label]="'Delete Scan: ' + event.record.title"
                   >
                     <svg lucideTrash2 [size]="16"></svg>
                   </button>
                 </div>
 
                 <div
-                  class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-600 flex justify-between items-center w-full z-20"
+                  class="hidden md:flex mt-4 pt-3 border-t border-slate-100 dark:border-slate-600 justify-between items-center w-full z-20"
                 >
                   <span class="text-xs font-semibold text-slate-400 dark:text-slate-500">
                     {{ event.timestamp | localizedDate: 'medium' }}

@@ -65,6 +65,7 @@ pub struct LayoutItem {
     pub discogs_id: i64,
     pub artist: Option<String>,
     pub title: String,
+    pub thumb_url: Option<String>,
     /// Number of discs (at least 1).
     pub size: u32,
 }
@@ -435,6 +436,7 @@ mod tests {
             discogs_id: 1000 + n,
             artist: Some(format!("Artist {n:05}")),
             title: format!("Title {n}"),
+            thumb_url: None,
             size,
         }
     }

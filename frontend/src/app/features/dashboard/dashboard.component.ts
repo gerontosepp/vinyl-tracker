@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, inject, signal, computed, effect, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { LayoutComponent } from '../../shared/components/layout/layout.component';
 import { BarcodeScannerComponent } from '../../shared/components/barcode-scanner/barcode-scanner.component';
 import { RecentListensComponent } from './components/recent-listens/recent-listens.component';
@@ -36,6 +37,7 @@ import { Subscription, firstValueFrom, forkJoin, of, catchError } from 'rxjs';
     TopRecordsComponent,
     StatisticWidgetComponent,
     RecordDetailModalComponent,
+    RouterLink,
     TranslatePipe,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -56,6 +58,16 @@ import { Subscription, firstValueFrom, forkJoin, of, catchError } from 'rxjs';
           </div>
         </div>
       } @else {
+        @if (hasShelves()) {
+          <!-- Sort mode is a phone feature -->
+          <a
+            routerLink="/sort"
+            data-testid="sort-mode-button"
+            class="md:hidden mb-4 flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-indigo-600 text-white font-bold shadow-sm"
+          >
+            ↕ {{ 'sort.dashboardButton' | translate }}
+          </a>
+        }
         <div class="flex flex-col lg:grid lg:grid-cols-3 gap-4 md:gap-6">
           <!-- Left/Center content: Top Records & Recent Listens -->
           <div class="lg:col-span-2 flex flex-col space-y-4 md:space-y-6">
@@ -216,6 +228,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   readonly toastService = inject(ToastService);
   readonly scannerService = inject(ScannerService);
 
+  /** Shows the sort mode button (phones only) once shelves exist. */
+  readonly hasShelves = signal<boolean>(false);
   readonly recentListens = signal<ListenEvent[]>([]);
   readonly topRecords = signal<AnalyticsTopRecord[]>([]);
   readonly collectionValue = signal<CollectionValueResponse | null>(null);
@@ -270,6 +284,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadData();
+    this.apiService
+      .getStorageUnits()
+      .pipe(catchError(() => of([])))
+      .subscribe((units) => this.hasShelves.set(units.length > 0));
   }
 
   ngOnDestroy(): void {

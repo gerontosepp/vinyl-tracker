@@ -14,6 +14,17 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "isUnreleased": true,
     "items": [
       {
+        "title": "Feature: Sortier-Modus auf dem Handy (`#172`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "**Platte für Platte**: Auf der Startseite (nur am Handy, sobald Regale angelegt sind) startet „Sammlung sortieren“ einen Vollbild-Modus. Du wählst Regal und Startfach (Zeile:Spalte), dann zeigt der Screen nur Cover, Titel, Interpret, das Fach und die Position im Fach („12 / 70“).",
+          "**Neues Fach**: Gehört die nächste Platte in ein anderes Fach, wird das Fach deutlich hervorgehoben. Am Regalende geht es nahtlos im nächsten Regal weiter, danach folgen die Platten ohne Platz.",
+          "**Bedienung**: großes „Weiter“, dazu „Zurück“ und „Beenden“; der Bildschirm bleibt beim Sortieren an.",
+          "**API**: `GET /api/storage/sequence?media=` liefert alle Exemplare eines Mediums in Regal-Reihenfolge mit Lagerplatz und Cover."
+        ]
+      },
+      {
         "title": "Feature: Lagerung in Regalen (`#41`, Teil 2)",
         "type": "feat",
         "typeLabel": "Feature",

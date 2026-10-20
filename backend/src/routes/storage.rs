@@ -4,8 +4,8 @@ use crate::{
     models::storage::{
         CreateStorageTypeRequest, RedistributePreviewDto, RedistributeRequest,
         ReorderStorageUnitsRequest, StorageLayoutDto, StorageMedia, StoragePlacementDto,
-        StorageTypeDto, StorageTypesDto, StorageUnitDto, StorageUnitRequest, StorageUnitsDto,
-        UpdateStorageTypeRequest,
+        StorageSequenceDto, StorageTypeDto, StorageTypesDto, StorageUnitDto, StorageUnitRequest,
+        StorageUnitsDto, UpdateStorageTypeRequest,
     },
     services::storage::{StorageService, config::StorageConfigService},
     state::AppState,
@@ -30,6 +30,7 @@ pub fn router() -> Router<AppState> {
         .route("/redistribute/preview", get(preview_redistribution))
         .route("/redistribute", post(redistribute))
         .route("/placement/{discogs_id}", get(placement))
+        .route("/sequence", get(sequence))
 }
 
 async fn list_types(
@@ -147,6 +148,18 @@ async fn preview_redistribution(
     let media = parse_media(&query.media)?;
     Ok(Json(
         StorageService::preview_redistribution(&state.pool, user.id, media).await?,
+    ))
+}
+
+/// All copies of a medium in shelf order for the sort mode.
+async fn sequence(
+    State(state): State<AppState>,
+    CurrentUser(user): CurrentUser,
+    Query(query): Query<MediaQuery>,
+) -> Result<Json<StorageSequenceDto>, AppError> {
+    let media = parse_media(&query.media)?;
+    Ok(Json(
+        StorageService::sequence(&state.pool, user.id, media).await?,
     ))
 }
 

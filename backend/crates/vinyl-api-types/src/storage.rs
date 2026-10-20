@@ -210,3 +210,24 @@ pub struct StorageLayoutDto {
     /// One entry per medium that has at least one shelf.
     pub media: Vec<MediaLayoutDto>,
 }
+
+/// A copy in the sort mode sequence.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StorageSequenceItemDto {
+    pub discogs_id: i64,
+    pub instance_id: i64,
+    pub artist: Option<String>,
+    pub title: String,
+    pub thumb_url: Option<String>,
+    pub slot: StorageSlotDto,
+}
+
+/// All copies of a medium in shelf order, copies without a place last
+/// (`GET /api/storage/sequence`).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StorageSequenceDto {
+    pub media: StorageMedia,
+    pub items: Vec<StorageSequenceItemDto>,
+}

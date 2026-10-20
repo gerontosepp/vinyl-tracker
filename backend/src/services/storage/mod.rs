@@ -9,8 +9,8 @@ use crate::{
     error::AppError,
     models::storage::{
         MediaLayoutDto, RedistributePreviewDto, StorageCompartmentDto, StorageFilter,
-        StorageLayoutDto, StorageMedia, StorageMoveDto, StoragePlacementDto, StorageSlotDto,
-        StorageUnitLayoutDto,
+        StorageLayoutDto, StorageMedia, StorageMoveDto, StoragePlacementDto, StorageSequenceDto,
+        StorageSequenceItemDto, StorageSlotDto, StorageUnitLayoutDto,
     },
     services::collection_query::{SHELF_ARTIST_KEY_SQL, SHELF_TITLE_KEY_SQL},
 };
@@ -81,7 +81,7 @@ impl StorageService {
         media: StorageMedia,
     ) -> Result<Vec<LayoutItem>, AppError> {
         let sql = format!(
-            "SELECT ci.instance_id, rc.discogs_id, rc.artist, COALESCE(rc.title, '') AS title,
+            "SELECT ci.instance_id, rc.discogs_id, rc.artist, COALESCE(rc.title, '') AS title, rc.thumb_url,
                     {SHELF_ARTIST_KEY_SQL} AS artist_key, rc.release_year AS year_key,
                     {SHELF_TITLE_KEY_SQL} AS title_key,
                     COALESCE(rc.disc_count, CASE WHEN rc.format ILIKE 'double%' THEN 2 ELSE 1 END)::int4 AS discs
@@ -103,6 +103,7 @@ impl StorageService {
                 discogs_id: row.get("discogs_id"),
                 artist: row.get("artist"),
                 title: row.get("title"),
+                thumb_url: row.get("thumb_url"),
                 size: row.get::<i32, _>("discs").max(1) as u32,
             })
             .collect())
@@ -355,6 +356,38 @@ impl StorageService {
             }
         }
         Ok(positions)
+    }
+
+    /// All copies of a medium in shelf order with their slot (unplaced ones last), for the
+    /// sort mode. Empty without shelves for the medium.
+    pub async fn sequence(
+        pool: &PgPool,
+        user_id: i64,
+        media: StorageMedia,
+    ) -> Result<StorageSequenceDto, AppError> {
+        let items = match Self::current_layout(pool, user_id, media).await? {
+            Some(layout) => {
+                let mut indices: Vec<usize> = (0..layout.items.len()).collect();
+                // Unplaced copies go last; within both groups the shelf order is kept
+                indices.sort_by_key(|&i| layout.assignment[i].is_none());
+                indices
+                    .into_iter()
+                    .map(|i| {
+                        let item = &layout.items[i];
+                        StorageSequenceItemDto {
+                            discogs_id: item.discogs_id,
+                            instance_id: item.key.instance_id,
+                            artist: item.artist.clone(),
+                            title: item.title.clone(),
+                            thumb_url: item.thumb_url.clone(),
+                            slot: layout.slot(i),
+                        }
+                    })
+                    .collect()
+            }
+            None => Vec::new(),
+        };
+        Ok(StorageSequenceDto { media, items })
     }
 
     /// Slot of every copy (by instance ID) of the media that have shelves.

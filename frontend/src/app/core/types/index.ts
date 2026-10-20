@@ -377,6 +377,22 @@ export interface StorageLayout {
   media: MediaLayout[];
 }
 
+/** A copy in the sort mode sequence (`GET /api/storage/sequence`). */
+export interface StorageSequenceItem {
+  discogsId: number;
+  instanceId: number;
+  artist: string | null;
+  title: string;
+  thumbUrl: string | null;
+  slot: StorageSlot;
+}
+
+/** All copies of a medium in shelf order, copies without a place last. */
+export interface StorageSequence {
+  media: StorageMedia;
+  items: StorageSequenceItem[];
+}
+
 /** A shelf offered by the collection's storage filter. */
 export interface StorageShelfOption {
   id: number;

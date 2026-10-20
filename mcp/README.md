@@ -20,9 +20,9 @@ Der Server implementiert **Option 1 (REST-Client)**: Er kommuniziert direkt übe
 
 | Tool-Name | Beschreibung | Parameter |
 | :--- | :--- | :--- |
-| `get_user_collection` | Ruft die persönliche Vinyl-Sammlung ab | `page` (int), `per_page` (int), `sort` (`artist`, `listens`, `addedAt`), `sort_order` (`asc`, `desc`), `min_plays` (int), `search` (str) |
+| `get_user_collection` | Ruft die persönliche Vinyl-Sammlung ab, mit berechnetem Lagerplatz (`storage`) bei konfigurierten Regalen | `page` (int), `per_page` (int), `sort` (`artist`, `listens`, `addedAt`), `sort_order` (`asc`, `desc`), `min_plays` (int), `search` (str), `storage_unit` (Regal-ID oder `unplaced`, optional), `compartment` (int, optional) |
 | `sync_collection` | Startet den bidirektionalen Abgleich mit Discogs | *keine* |
-| `add_to_collection` | Fügt ein Album via Discogs-Release-ID zur Sammlung hinzu und gleicht ab | `release_id` (int) |
+| `add_to_collection` | Fügt ein Album via Discogs-Release-ID zur Sammlung hinzu, gleicht ab und nennt den Lagerplatz samt nötiger Verschiebungen | `release_id` (int) |
 | `remove_from_collection` | Entfernt ein Album aus der Sammlung und von Discogs | `release_id` (int), `instance_id` (int, optional) |
 | `scan_barcode` | Protokolliert ein Hör-Event via Barcode oder QR-Code | `barcode` (str, z. B. `discogs-id:12345` oder UPC/EAN) |
 | `log_record_listen` | Protokolliert ein Hör-Event direkt per Record-ID oder Release-ID | `id` (int) |
@@ -43,6 +43,8 @@ Der Server implementiert **Option 1 (REST-Client)**: Er kommuniziert direkt übe
 | `update_record_condition` | Aktualisiert die Goldmine-Zustandseinstufung (Media/Sleeve) einer Platte | `id` (int), `media_condition` (str, optional), `sleeve_condition` (str, optional) |
 | `refresh_collection_prices` | Aktualisiert Discogs-Marktpreise (Min, Median) der Sammlung | `only_missing` (bool, optional, default `true`) |
 | `export_collection` | Exportiert die komplette Nutzersammlung als strukturierte Daten | `format` (`json` oder `csv`) |
+| `get_record_placement` | Lagerplatz einer Platte: Regal, Fach (Zeile/Spalte) und Nachbarn | `discogs_id` (int) |
+| `get_storage_layout` | Regal-Übersicht je Medium mit Füllstand und Künstlerbereich pro Fach | *keine* |
 
 ---
 

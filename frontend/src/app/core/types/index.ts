@@ -215,7 +215,7 @@ export interface QrCodeItem {
   isCd?: boolean;
 }
 
-export type PrintTemplate = 'avery-3474' | 'scan-list' | 'qr-cards';
+export type PrintTemplate = 'avery-3474' | 'scan-list' | 'qr-cards' | 'inventory';
 
 /** Same filters as `GET /api/collection` (snake_case, genres comma-separated). */
 export interface PrintFilter {
@@ -226,6 +226,9 @@ export interface PrintFilter {
   not_played_since?: string;
   unplayed_only?: boolean;
   min_plays?: number;
+  /** Shelf ID or `unplaced` */
+  storage_unit?: string;
+  compartment?: number;
   sort?: string;
   sort_order?: string;
 }
@@ -372,6 +375,13 @@ export interface MediaLayout {
 
 export interface StorageLayout {
   media: MediaLayout[];
+}
+
+/** A shelf offered by the collection's storage filter. */
+export interface StorageShelfOption {
+  id: number;
+  name: string;
+  compartments: number;
 }
 
 export interface RedistributePreview {

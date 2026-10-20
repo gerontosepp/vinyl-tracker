@@ -52,7 +52,7 @@ Lesende Endpunkte speichern nichts; sie berechnen die Belegung samt Ausgleich. N
 `determine_format` bleibt unverändert; neue Funktion `disc_count(formats, media)` summiert `qty` der Formate des passenden Mediums. Gespeichert beim Sync und beim Hinzufügen im Upsert von `record_cache`. Fallback ohne Wert: „Double …“ → 2, sonst 1 (`COALESCE` in der Layout-Abfrage).
 
 ### 8. Filter auf Fächer
-Der Filter `storageUnit`/`compartment` berechnet die Belegung und schränkt die Sammlungsabfrage per `ci.instance_id = ANY($n)` ein; „ohne Platz“ ist `storageUnit=unplaced`.
+Der Filter `storage_unit`/`compartment` (snake_case wie die übrigen Sammlungsfilter) berechnet die Belegung und schränkt die Sammlungsabfrage per `ci.instance_id = ANY($n)` ein; „ohne Platz“ ist `storage_unit=unplaced` und umfasst auch Exemplare eines Mediums ohne Regale. Im Frontend ist der Filter ein String (`''`, `unplaced`, `<id>`, `<id>:<fach>`), der auch in `printFilter` landet.
 
 ### 9. DTOs
 `vinyl-api-types`: `StorageSlotDto { unitId, unitName, compartment, row, column, oversized }`, als `storage: Option<StorageSlotDto>` (`#[serde(default)]`) in `CollectionRelease` und `RecordDetailDto`; im Detail zusätzlich `storageNeighbors`. Antwort von `POST /api/collection/releases/{id}` erhält optional `placement`. Die Sammlungsabfrage berechnet die Belegung nur, wenn für den Nutzer Regale existieren.
@@ -63,7 +63,7 @@ Der Filter `storageUnit`/`compartment` berechnet die Belegung und schränkt die 
 - Tabelle: Spalte „Lagerplatz“; mobile Liste: kleine Zeile „Kallax-1 · 3“.
 
 ### 11. Backup
-`CollectionBackupDto.storage: { types, units, boundaries }`, `BACKUP_FORMAT_VERSION = 3`. Restore akzeptiert 2 und 3; Typen per Name, Regale per Name anlegen, falls nicht vorhanden (mit ihren Grenzen); vorhandene Regale und Grenzen bleiben unverändert; danach `commit`.
+`CollectionBackupDto.storage: { types, units: [{ name, type_name, boundaries }] }`, `BACKUP_FORMAT_VERSION = 3`. Restore akzeptiert 1–3 und validiert den Abschnitt vorab (400 bei Fehlern); Typen und Regale werden in der Restore-Transaktion per Name angelegt, falls nicht vorhanden; vorhandene bleiben unverändert. Grenzen werden nur für Medien übernommen, die vorher keine Regale hatten – sonst würden sie mit den bestehenden Grenzen kollidieren; neue Regale hängen dann ohne Grenzen hinten an. Danach `commit`.
 
 ### 12. Auslieferung in zwei PRs
 - **PR 1 – Kern**: Migration, DTOs, Disc-Anzahl, Konfiguration, Verteilen/Einsortieren/Ausgleich, Commit nach Hinzufügen und Sync, Einsortier-Hinweis, Lagerplatz in Sammlung und Detail, Ansicht „Regale“ mit Übersicht, Verwaltung und „Neu verteilen“.

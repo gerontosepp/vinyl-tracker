@@ -26,11 +26,25 @@ pub fn shelf_order_sql() -> String {
 }
 
 impl CollectionQueryService {
+    /// Resolves the storage filter into the instance IDs the query is restricted to.
+    async fn resolve_storage_filter(
+        pool: &PgPool,
+        user_id: i64,
+        filter: &mut ParsedCollectionFilter,
+    ) -> Result<(), AppError> {
+        if let Some(storage) = filter.storage {
+            filter.instance_ids =
+                Some(StorageService::filter_instances(pool, user_id, storage).await?);
+        }
+        Ok(())
+    }
+
     pub async fn get_collection(
         pool: &PgPool,
         user_id: i64,
-        filter: ParsedCollectionFilter,
+        mut filter: ParsedCollectionFilter,
     ) -> Result<CollectionResponse, AppError> {
+        Self::resolve_storage_filter(pool, user_id, &mut filter).await?;
         let where_clause = Self::build_where_clause(&filter);
 
         // 1. Count total matching items
@@ -95,8 +109,9 @@ impl CollectionQueryService {
     pub async fn get_collection_for_export(
         pool: &PgPool,
         user_id: i64,
-        filter: ParsedCollectionFilter,
+        mut filter: ParsedCollectionFilter,
     ) -> Result<Vec<CollectionRelease>, AppError> {
+        Self::resolve_storage_filter(pool, user_id, &mut filter).await?;
         Self::fetch_and_map_releases(pool, user_id, &filter, None).await
     }
 
@@ -323,6 +338,8 @@ impl CollectionQueryService {
             not_played_since: None,
             unplayed_only,
             min_plays: None,
+            storage: None,
+            instance_ids: None,
         };
 
         let where_clause = Self::build_where_clause(&filter);
@@ -455,6 +472,8 @@ impl CollectionQueryService {
             not_played_since: None,
             unplayed_only: true,
             min_plays: None,
+            storage: None,
+            instance_ids: None,
         };
         Self::get_collection(pool, user_id, filter).await
     }
@@ -501,6 +520,11 @@ impl CollectionQueryService {
 
         if filter.min_plays.is_some() {
             clauses.push(format!("COALESCE(le.listen_count, 0) >= ${param_idx}"));
+            param_idx += 1;
+        }
+
+        if filter.instance_ids.is_some() {
+            clauses.push(format!("ci.instance_id = ANY(${param_idx})"));
         }
 
         clauses.join(" AND ")
@@ -532,6 +556,10 @@ impl CollectionQueryService {
             query = query.bind(p as i64);
         }
 
+        if let Some(ids) = &filter.instance_ids {
+            query = query.bind(ids.clone());
+        }
+
         query
     }
 
@@ -559,6 +587,10 @@ impl CollectionQueryService {
 
         if let Some(p) = filter.min_plays {
             query = query.bind(p as i64);
+        }
+
+        if let Some(ids) = &filter.instance_ids {
+            query = query.bind(ids.clone());
         }
 
         query

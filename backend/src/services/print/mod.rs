@@ -1,6 +1,7 @@
 //! Print module: renders collection records into printable PDF documents using templates.
 
 mod avery;
+mod inventory;
 pub mod layout;
 mod qr_cards;
 mod scan_list;
@@ -8,7 +9,7 @@ mod scan_list;
 use crate::{
     error::AppError,
     models::collection::{CollectionQueryParams, CollectionRelease, ParsedCollectionFilter},
-    services::collection_query::CollectionQueryService,
+    services::{collection_query::CollectionQueryService, storage::StorageService},
 };
 use printpdf::{PdfDocument, PdfPage, PdfSaveOptions};
 use serde::Deserialize;
@@ -30,6 +31,8 @@ pub enum PrintTemplate {
     ScanList,
     /// Legacy layout: 9 QR cards per page
     QrCards,
+    /// Checklist grouped by computed storage location
+    Inventory,
 }
 
 impl PrintTemplate {
@@ -38,6 +41,7 @@ impl PrintTemplate {
             Self::Avery3474 => "avery-3474",
             Self::ScanList => "scan-list",
             Self::QrCards => "qr-cards",
+            Self::Inventory => "inventory",
         }
     }
 
@@ -46,6 +50,7 @@ impl PrintTemplate {
             Self::Avery3474 => "Vinyl Tracker Labels",
             Self::ScanList => "Vinyl Tracker Scan List",
             Self::QrCards => "Vinyl Tracker QR Codes",
+            Self::Inventory => "Vinyl Tracker Inventory",
         }
     }
 }
@@ -59,7 +64,7 @@ pub enum PrintScope {
     /// Same filters and sorting as `GET /api/collection`
     Filter {
         #[serde(default)]
-        filter: CollectionQueryParams,
+        filter: Box<CollectionQueryParams>,
     },
     Ids {
         discogs_ids: Vec<i64>,
@@ -99,6 +104,19 @@ pub struct PrintRecord {
     pub artist: Option<String>,
     pub year: Option<i32>,
     pub format: String,
+    /// Computed storage location; `None` for media without shelves
+    pub location: Option<PrintLocation>,
+}
+
+/// Storage location of a printed copy.
+#[derive(Debug, Clone, PartialEq)]
+pub struct PrintLocation {
+    /// Shelf name and compartment number; `None` if the copy has no place
+    pub slot: Option<(String, i32)>,
+    /// Compartment index in shelf order (`usize::MAX` without place)
+    pub group: usize,
+    /// Position of the copy in shelf order
+    pub rank: usize,
 }
 
 impl From<CollectionRelease> for PrintRecord {
@@ -115,6 +133,7 @@ impl From<CollectionRelease> for PrintRecord {
                 .filter(|name| !name.trim().is_empty()),
             year: info.year,
             format: info.format,
+            location: None,
         }
     }
 }
@@ -162,7 +181,7 @@ impl PrintService {
         scope: &PrintScope,
     ) -> Result<Vec<PrintRecord>, AppError> {
         let params = match scope {
-            PrintScope::Filter { filter } => filter.clone(),
+            PrintScope::Filter { filter } => (**filter).clone(),
             PrintScope::All | PrintScope::Ids { .. } => CollectionQueryParams::default(),
         };
         let mut releases = CollectionQueryService::get_collection_for_export(
@@ -182,7 +201,21 @@ impl PrintService {
             ));
         }
 
-        Ok(releases.into_iter().map(PrintRecord::from).collect())
+        let positions = StorageService::positions(pool, user_id).await?;
+        Ok(releases
+            .into_iter()
+            .map(|release| {
+                let location = positions.get(&release.instance_id).map(|p| PrintLocation {
+                    slot: p.slot.unit_name.clone().zip(p.slot.compartment),
+                    group: p.compartment,
+                    rank: p.rank,
+                });
+                PrintRecord {
+                    location,
+                    ..PrintRecord::from(release)
+                }
+            })
+            .collect())
     }
 
     /// Renders `records` with the given template into a PDF document.
@@ -200,6 +233,7 @@ impl PrintService {
             PrintTemplate::Avery3474 => &avery::AveryLabels,
             PrintTemplate::ScanList => &scan_list::ScanList,
             PrintTemplate::QrCards => &qr_cards::QrCards,
+            PrintTemplate::Inventory => &inventory::Inventory,
         };
 
         let mut doc = PdfDocument::new(template.document_title());
@@ -222,6 +256,7 @@ pub(crate) mod test_support {
             artist: Some(artist.to_string()),
             year: Some(1977),
             format: "LP".to_string(),
+            location: None,
         }
     }
 
@@ -333,7 +368,7 @@ mod tests {
     #[test]
     fn test_parse_request_rejects_unknown_template_with_available_ones() {
         let detail = bad_request(parse(r#"{"template":"poster"}"#));
-        for slug in ["avery-3474", "scan-list", "qr-cards"] {
+        for slug in ["avery-3474", "scan-list", "qr-cards", "inventory"] {
             assert!(detail.contains(slug), "{detail}");
         }
         assert!(bad_request(parse("not json")).starts_with("Invalid print request"));
@@ -380,6 +415,7 @@ mod tests {
             PrintTemplate::Avery3474,
             PrintTemplate::ScanList,
             PrintTemplate::QrCards,
+            PrintTemplate::Inventory,
         ] {
             let pdf = PrintService::render(template, &records, &PrintOptions::default())
                 .unwrap_or_else(|e| panic!("{template:?}: {e:?}"));

@@ -26,6 +26,17 @@ pub struct GetCollectionArgs {
     pub genres: Option<Vec<String>>,
     /// Filter collection by year or year ranges (e.g. "1970, 1971" or "1970-1972")
     pub years: Option<String>,
+    /// Filter by storage: shelf ID (see `get_storage_layout`) or "unplaced" for copies without a place
+    pub storage_unit: Option<String>,
+    /// Compartment number within `storage_unit` (1-based, row by row)
+    pub compartment: Option<i32>,
+}
+
+/// Arguments for looking up the shelf position of a record.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub struct GetRecordPlacementArgs {
+    /// The Discogs release ID of a record in the collection
+    pub discogs_id: i64,
 }
 
 /// Arguments for scanning a barcode or custom Discogs QR code.
@@ -184,6 +195,7 @@ pub use vinyl_api_types::{
     record::{RecordDetailDto, UpdateConditionRequestDto},
     roon::{RoonPlayRequestDto, RoonPlayResponseDto, RoonStatusDto, RoonZoneDto},
     scan::{ResetResultDto, ScanRequest, ScanResultDto},
+    storage::{StorageLayoutDto, StoragePlacementDto},
     user::{LoginRequestDto, UserResponseDto},
 };
 

@@ -6,13 +6,22 @@ use crate::client::VinylApiClient;
 use crate::models::*;
 use axum::{
     Json, Router,
+    extract::{Path, Query},
     http::StatusCode,
+    response::IntoResponse,
     routing::{get, post},
 };
 use rmcp::handler::server::wrapper::Parameters;
+use std::collections::HashMap;
 use vinyl_api_types::{
     analytics::CollectionValueData,
+    collection::BasicInformation,
+    discogs::{DiscogsArtist, DiscogsPagination},
     scan::{DiscogsMatchDto, TrackedRecordDto},
+    storage::{
+        MediaLayoutDto, StorageCompartmentDto, StorageMedia, StorageMoveDto, StorageNeighborsDto,
+        StorageRecordRefDto, StorageSlotDto, StorageUnitLayoutDto,
+    },
 };
 
 fn sync_result() -> SyncResultDto {
@@ -35,6 +44,103 @@ fn tracked_record() -> TrackedRecordDto {
     }
 }
 
+fn slot(compartment: i32) -> StorageSlotDto {
+    StorageSlotDto {
+        unit_id: Some(3),
+        unit_name: Some("Kallax-1".to_string()),
+        compartment: Some(compartment),
+        row: Some(1),
+        column: Some(compartment),
+        oversized: false,
+        unplaced: false,
+    }
+}
+
+fn record_ref(discogs_id: i64, artist: &str, title: &str) -> StorageRecordRefDto {
+    StorageRecordRefDto {
+        discogs_id,
+        artist: Some(artist.to_string()),
+        title: title.to_string(),
+    }
+}
+
+fn placement(discogs_id: i64) -> StoragePlacementDto {
+    StoragePlacementDto {
+        discogs_id,
+        slot: slot(2),
+        neighbors: StorageNeighborsDto {
+            previous: Some(record_ref(10, "Can", "Tago Mago")),
+            next: Some(record_ref(11, "Cure", "Disintegration")),
+        },
+        moves: vec![StorageMoveDto {
+            record: record_ref(12, "Cream", "Disraeli Gears"),
+            from: slot(2),
+            to: slot(3),
+        }],
+    }
+}
+
+fn collection_release(storage: Option<StorageSlotDto>) -> CollectionRelease {
+    CollectionRelease {
+        id: 42,
+        instance_id: 4200,
+        listen_count: 3,
+        date_added: "2026-10-01T10:00:00Z".to_string(),
+        rating: None,
+        basic_information: BasicInformation {
+            id: 42,
+            title: "Kind of Blue".to_string(),
+            artists: vec![DiscogsArtist {
+                name: "Miles Davis".to_string(),
+                id: None,
+            }],
+            year: Some(1959),
+            thumb_url: None,
+            cover_image: None,
+            tracklist: None,
+            formats: None,
+            labels: None,
+            genres: vec!["Jazz".to_string()],
+            styles: Vec::new(),
+            format: "LP".to_string(),
+            lowest_price: None,
+            median_price: None,
+        },
+        media_condition: None,
+        sleeve_condition: None,
+        last_played_at: None,
+        notes: None,
+        storage,
+    }
+}
+
+fn storage_layout() -> StorageLayoutDto {
+    StorageLayoutDto {
+        media: vec![MediaLayoutDto {
+            media: StorageMedia::Vinyl,
+            units: vec![StorageUnitLayoutDto {
+                id: 3,
+                name: "Kallax-1".to_string(),
+                type_name: "Kallax 1×4".to_string(),
+                rows: 1,
+                columns: 4,
+                compartments: vec![StorageCompartmentDto {
+                    number: 1,
+                    row: 1,
+                    column: 1,
+                    capacity: 70,
+                    used: 64,
+                    count: 60,
+                    first_artist: Some("ABBA".to_string()),
+                    last_artist: Some("Beatles".to_string()),
+                    oversized: false,
+                }],
+            }],
+            unplaced_count: 2,
+        }],
+    }
+}
+
 async fn mock_backend() -> VinylMcpServer {
     let app = Router::new()
         .route(
@@ -43,7 +149,43 @@ async fn mock_backend() -> VinylMcpServer {
         )
         .route(
             "/api/collection/releases/{id}",
-            post(|| async { Json(sync_result()) }),
+            post(|Path(id): Path<i64>| async move {
+                Json(SyncResultDto {
+                    placement: Some(placement(id)),
+                    ..sync_result()
+                })
+            }),
+        )
+        .route(
+            "/api/collection",
+            get(|Query(query): Query<HashMap<String, String>>| async move {
+                // Only the copy in compartment 2 matches the storage filter
+                let filtered = query.get("storage_unit").map(String::as_str) == Some("3")
+                    && query.get("compartment").map(String::as_str) == Some("2");
+                Json(CollectionResponse {
+                    releases: vec![collection_release(filtered.then(|| slot(2)))],
+                    pagination: DiscogsPagination {
+                        page: 1,
+                        pages: 1,
+                        per_page: 50,
+                        items: 1,
+                    },
+                })
+            }),
+        )
+        .route(
+            "/api/storage/placement/{id}",
+            get(|Path(id): Path<i64>| async move {
+                if id == 42 {
+                    Json(placement(id)).into_response()
+                } else {
+                    StatusCode::NO_CONTENT.into_response()
+                }
+            }),
+        )
+        .route(
+            "/api/storage/layout",
+            get(|| async { Json(storage_layout()) }),
         )
         .route(
             "/api/analytics/top",
@@ -148,6 +290,78 @@ async fn test_add_to_collection_reports_sync_result() {
         .expect("add must succeed");
     assert!(output.contains("release 99"), "{output}");
     assert!(output.contains("3 added, 2 updated, 1 removed"), "{output}");
+    assert!(output.contains("Shelf placement:"), "{output}");
+    assert!(output.contains(r#""unitName":"Kallax-1""#), "{output}");
+    assert!(
+        output.contains("Disraeli Gears"),
+        "moves are reported: {output}"
+    );
+}
+
+#[tokio::test]
+async fn test_get_user_collection_passes_storage_filter_and_reports_slot() {
+    let server = mock_backend().await;
+    let output = server
+        .get_user_collection(Parameters(GetCollectionArgs {
+            storage_unit: Some("3".to_string()),
+            compartment: Some(2),
+            ..GetCollectionArgs::default()
+        }))
+        .await
+        .expect("collection must succeed");
+    let json: serde_json::Value = serde_json::from_str(&output).unwrap();
+    let storage = &json["releases"][0]["storage"];
+    assert_eq!(storage["unitName"], "Kallax-1");
+    assert_eq!(storage["compartment"], 2);
+
+    let output = server
+        .get_user_collection(Parameters(GetCollectionArgs::default()))
+        .await
+        .unwrap();
+    let json: serde_json::Value = serde_json::from_str(&output).unwrap();
+    assert!(json["releases"][0].get("storage").is_none());
+}
+
+#[tokio::test]
+async fn test_get_record_placement_reports_slot_neighbors_and_moves() {
+    let server = mock_backend().await;
+    let output = server
+        .get_record_placement(Parameters(GetRecordPlacementArgs { discogs_id: 42 }))
+        .await
+        .expect("placement must succeed");
+    let json: serde_json::Value = serde_json::from_str(&output).unwrap();
+    assert_eq!(json["discogsId"], 42);
+    assert_eq!(json["slot"]["unitName"], "Kallax-1");
+    assert_eq!(json["slot"]["compartment"], 2);
+    assert_eq!(json["neighbors"]["previous"]["title"], "Tago Mago");
+    assert_eq!(json["neighbors"]["next"]["artist"], "Cure");
+    assert_eq!(json["moves"][0]["to"]["compartment"], 3);
+
+    let output = server
+        .get_record_placement(Parameters(GetRecordPlacementArgs { discogs_id: 7 }))
+        .await
+        .expect("no shelf is not an error");
+    assert_eq!(
+        output,
+        "No shelf is configured for the medium of release 7."
+    );
+}
+
+#[tokio::test]
+async fn test_get_storage_layout_reports_compartments() {
+    let server = mock_backend().await;
+    let output = server
+        .get_storage_layout()
+        .await
+        .expect("layout must succeed");
+    let json: serde_json::Value = serde_json::from_str(&output).unwrap();
+    let media = &json["media"][0];
+    assert_eq!(media["media"], "vinyl");
+    assert_eq!(media["unplacedCount"], 2);
+    let compartment = &media["units"][0]["compartments"][0];
+    assert_eq!(compartment["used"], 64);
+    assert_eq!(compartment["capacity"], 70);
+    assert_eq!(compartment["firstArtist"], "ABBA");
 }
 
 #[tokio::test]

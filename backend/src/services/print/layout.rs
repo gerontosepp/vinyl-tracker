@@ -242,6 +242,10 @@ pub fn place_qr(ops: &mut Vec<Op>, qr: &QrImage, x: f32, y: f32, size_mm: f32) {
 pub struct Labels {
     pub cards_heading: &'static str,
     pub scan_list_title: &'static str,
+    pub inventory_title: &'static str,
+    pub compartment: &'static str,
+    pub no_location: &'static str,
+    pub continued: &'static str,
     pub artist: &'static str,
     pub title: &'static str,
     pub year: &'static str,
@@ -260,6 +264,10 @@ impl Labels {
             PrintLanguage::De => &Labels {
                 cards_heading: "Meine Vinyl-Sammlung – QR-Codes",
                 scan_list_title: "Scan-Liste",
+                inventory_title: "Inventurliste",
+                compartment: "Fach",
+                no_location: "Ohne Platz",
+                continued: "(Forts.)",
                 artist: "Künstler",
                 title: "Titel",
                 year: "Jahr",
@@ -274,6 +282,10 @@ impl Labels {
             PrintLanguage::En => &Labels {
                 cards_heading: "My Vinyl Collection QR Codes",
                 scan_list_title: "Scan List",
+                inventory_title: "Inventory List",
+                compartment: "Compartment",
+                no_location: "No location",
+                continued: "(cont.)",
                 artist: "Artist",
                 title: "Title",
                 year: "Year",

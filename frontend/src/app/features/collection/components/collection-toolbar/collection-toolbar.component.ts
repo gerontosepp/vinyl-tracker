@@ -1,7 +1,10 @@
-import { Component, input, output, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, input, output, signal, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
+import { LanguageService } from '../../../../core/services/language.service';
+import { StorageShelfOption } from '../../../../core/types';
+import { parseStorageFilter } from '../../../../core/utils/storage-filter';
 import {
   LucidePrinter,
   LucideCheckSquare,
@@ -15,6 +18,7 @@ import {
   LucideTag,
   LucideCalendar,
   LucideChevronDown,
+  LucideArchive,
 } from '@lucide/angular';
 
 @Component({
@@ -34,8 +38,9 @@ import {
     LucideDiscAlbum,
     LucideTag,
     LucideCalendar,
-    LucideChevronDown
-],
+    LucideChevronDown,
+    LucideArchive,
+  ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './collection-toolbar.component.html',
 })
@@ -58,6 +63,9 @@ export class CollectionToolbarComponent {
   readonly availableGenres = input<{ name: string; value: number }[]>([]);
   readonly selectedGenres = input<string[]>([]);
   readonly years = input<string>('');
+  readonly storageShelves = input<StorageShelfOption[]>([]);
+  /** Encoded storage filter, see `parseStorageFilter`. */
+  readonly storageFilter = input<string>('');
 
   readonly searchChange = output<string>();
   readonly clearSearch = output<void>();
@@ -76,7 +84,10 @@ export class CollectionToolbarComponent {
   readonly clearSelection = output<void>();
   readonly genresChange = output<string[]>();
   readonly yearsChange = output<string>();
+  readonly storageFilterChange = output<string>();
   readonly clearAllFilters = output<void>();
+
+  private readonly languageService = inject(LanguageService);
 
   readonly isGenreDropdownOpen = signal<boolean>(false);
   readonly isNotPlayedPopoverOpen = signal<boolean>(false);
@@ -88,6 +99,23 @@ export class CollectionToolbarComponent {
     if (!query) return list;
     return list.filter((g) => g.name.toLowerCase().includes(query));
   });
+
+  /** Label of the active storage filter for the filter badge. */
+  readonly storageFilterLabel = computed(() => {
+    const { storage_unit, compartment } = parseStorageFilter(this.storageFilter());
+    if (!storage_unit) return '';
+    if (storage_unit === 'unplaced') return this.languageService.translate('storage.unplaced');
+    const shelf = this.storageShelves().find((s) => String(s.id) === storage_unit);
+    const name = shelf?.name ?? storage_unit;
+    return compartment
+      ? `${name} · ${this.languageService.translate('storage.compartment', { number: compartment })}`
+      : name;
+  });
+
+  /** 1..n for the compartment options of a shelf. */
+  compartmentNumbers(shelf: StorageShelfOption): number[] {
+    return Array.from({ length: shelf.compartments }, (_, i) => i + 1);
+  }
 
   onSearchInput(value: string): void {
     this.searchChange.emit(value);

@@ -5,6 +5,7 @@ use crate::{
     services::{
         collection_query::CollectionQueryService, collection_restore::CollectionRestoreService,
         collection_sync::CollectionSyncService, export_service::ExportService,
+        storage::backup::StorageBackupService,
     },
     state::AppState,
 };
@@ -200,8 +201,13 @@ pub async fn export_collection_handler(
             let listen_history =
                 CollectionQueryService::get_listen_history(&state.pool, user.id, &discogs_ids)
                     .await?;
-            let json_bytes =
-                ExportService::export_collection_json(&user.username, &releases, &listen_history)?;
+            let storage = StorageBackupService::export(&state.pool, user.id).await?;
+            let json_bytes = ExportService::export_collection_json(
+                &user.username,
+                &releases,
+                &listen_history,
+                storage.as_ref(),
+            )?;
             Ok((
                 StatusCode::OK,
                 [

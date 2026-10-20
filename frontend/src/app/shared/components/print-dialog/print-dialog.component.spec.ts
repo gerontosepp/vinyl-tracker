@@ -23,7 +23,7 @@ describe('PrintDialogComponent', () => {
     inputs: {
       selectedIds?: number[];
       filter?: PrintFilter | null;
-      selectedCdCount?: number;
+      selectedCdIds?: number[];
       cdCount?: Observable<unknown>;
     } = {}
   ): Promise<void> {
@@ -49,7 +49,7 @@ describe('PrintDialogComponent', () => {
     component = fixture.componentInstance;
     if (inputs.selectedIds) fixture.componentRef.setInput('selectedIds', inputs.selectedIds);
     if (inputs.filter !== undefined) fixture.componentRef.setInput('filter', inputs.filter);
-    if (inputs.selectedCdCount !== undefined) fixture.componentRef.setInput('selectedCdCount', inputs.selectedCdCount);
+    if (inputs.selectedCdIds !== undefined) fixture.componentRef.setInput('selectedCdIds', inputs.selectedCdIds);
     closedSpy = vi.fn<() => void>();
     component.closed.subscribe(closedSpy);
     fixture.detectChanges();
@@ -176,10 +176,14 @@ describe('PrintDialogComponent', () => {
     expect(closedSpy).toHaveBeenCalledTimes(1);
   });
 
-  describe('CD confirmation for labels', () => {
+  describe('CDs in label scopes', () => {
     const vinylFilter: PrintFilter = { sort: 'artist', sort_order: 'asc', category: 'vinyl' };
+    const choose = (testId: 'cd-skip' | 'cd-confirm') => {
+      query(testId)!.dispatchEvent(new Event('change'));
+      fixture.detectChanges();
+    };
 
-    it('counts the CDs of the whole collection and requires confirmation', async () => {
+    it('counts the CDs of the whole collection and skips them by default', async () => {
       await setup({ cdCount: cdPage(80) });
 
       expect(mockApiService.getCollection).toHaveBeenCalledWith(
@@ -187,14 +191,16 @@ describe('PrintDialogComponent', () => {
       );
       expect(component.cdCount()).toBe(80);
       expect(query('cd-warning')?.textContent).toContain('print.cdWarning.all');
-      expect(query('print-submit')?.disabled).toBe(true);
-
-      query('cd-confirm')!.dispatchEvent(new Event('change'));
-      fixture.detectChanges();
+      expect(query('cd-skip')?.checked).toBe(true);
       expect(query('print-submit')?.disabled).toBe(false);
+      // Whole collection without CDs = filter on vinyl
+      expect(component.buildRequest().scope).toEqual({ type: 'filter', filter: { category: 'vinyl' } });
+
+      choose('cd-confirm');
+      expect(component.buildRequest().scope).toEqual({ type: 'all' });
     });
 
-    it('needs no confirmation when the filtered list contains no CDs', async () => {
+    it('needs no decision when the filtered list contains no CDs', async () => {
       // e.g. category "all" but searching for an artist with vinyl only
       await setup({ filter: { ...filter, search: 'Pink Floyd', genres: 'Rock,Pop' }, cdCount: cdPage(0) });
 
@@ -203,13 +209,32 @@ describe('PrintDialogComponent', () => {
       );
       expect(component.needsCdConfirmation()).toBe(false);
       expect(query('cd-warning')).toBeNull();
-      expect(query('print-submit')?.disabled).toBe(false);
+      expect(component.buildRequest().scope).toEqual({
+        type: 'filter',
+        filter: { ...filter, search: 'Pink Floyd', genres: 'Rock,Pop' },
+      });
     });
 
-    it('requires confirmation when the filtered list contains CDs', async () => {
+    it('limits a filtered list with CDs to vinyl unless CDs are included', async () => {
       await setup({ filter, cdCount: cdPage(2) });
-      expect(component.needsCdConfirmation()).toBe(true);
+
       expect(query('cd-warning')?.textContent).toContain('print.cdWarning.filter');
+      expect(component.buildRequest().scope).toEqual({ type: 'filter', filter: { ...filter, category: 'vinyl' } });
+
+      choose('cd-confirm');
+      expect(component.buildRequest().scope).toEqual({ type: 'filter', filter });
+    });
+
+    it('requires including the CDs when the filter shows CDs only', async () => {
+      await setup({ filter: { ...filter, category: 'cd' }, cdCount: cdPage(5) });
+
+      expect(query('cd-skip')).toBeNull();
+      expect(query('print-submit')?.disabled).toBe(true);
+      await component.submit();
+      expect(mockApiService.print).not.toHaveBeenCalled();
+
+      choose('cd-confirm');
+      expect(query('print-submit')?.disabled).toBe(false);
     });
 
     it('does not count when filtered to vinyl', async () => {
@@ -232,47 +257,53 @@ describe('PrintDialogComponent', () => {
       expect(query('print-submit')?.disabled).toBe(false);
     });
 
-    it('asks for confirmation if the CDs cannot be counted', async () => {
+    it('offers to skip CDs if they cannot be counted', async () => {
       await setup({ cdCount: throwError(() => new Error('offline')) });
+
       expect(component.needsCdConfirmation()).toBe(true);
       expect(query('cd-warning')?.textContent).toContain('print.cdWarning.unknown');
+      expect(query('cd-warning')?.textContent).toContain('print.cdSkipUnknown');
+      expect(component.buildRequest().scope).toEqual({ type: 'filter', filter: { category: 'vinyl' } });
     });
 
-    it('depends on the number of CDs in the selection', async () => {
-      await setup({ selectedIds: [1, 2], selectedCdCount: 0, filter: vinylFilter });
-      expect(component.cdCount()).toBe(0);
-      expect(component.needsCdConfirmation()).toBe(false);
-      expect(mockApiService.getCollection).not.toHaveBeenCalled();
+    it('removes the selected CDs unless they are included', async () => {
+      await setup({ selectedIds: [1, 2, 3], selectedCdIds: [2], filter: vinylFilter });
 
-      fixture.componentRef.setInput('selectedCdCount', 1);
-      fixture.detectChanges();
       expect(component.cdCount()).toBe(1);
-      expect(component.needsCdConfirmation()).toBe(true);
       expect(query('cd-warning')?.textContent).toContain('print.cdWarning.ids');
+      expect(mockApiService.getCollection).not.toHaveBeenCalled();
+      expect(component.buildRequest().scope).toEqual({ type: 'ids', discogs_ids: [1, 3] });
 
-      // Switching to the vinyl-only filter needs no confirmation
+      choose('cd-confirm');
+      expect(component.buildRequest().scope).toEqual({ type: 'ids', discogs_ids: [1, 2, 3] });
+
+      // Switching to the vinyl-only filter needs no decision
       query('scope-filter')!.dispatchEvent(new Event('change'));
       fixture.detectChanges();
       expect(component.needsCdConfirmation()).toBe(false);
     });
 
-    it('needs no confirmation or count for lists and cards', async () => {
-      await setup({ cdCount: cdPage(80) });
+    it('requires including the CDs when only CDs are selected', async () => {
+      await setup({ selectedIds: [4, 5], selectedCdIds: [4, 5] });
+
+      expect(query('cd-skip')).toBeNull();
+      expect(query('print-submit')?.disabled).toBe(true);
+
+      choose('cd-confirm');
+      expect(component.buildRequest().scope).toEqual({ type: 'ids', discogs_ids: [4, 5] });
+    });
+
+    it('needs no decision or count for lists and cards', async () => {
+      await setup({ selectedIds: [1, 2], selectedCdIds: [2] });
       for (const template of ['scan-list', 'qr-cards'] as const) {
         component.template.set(template);
         fixture.detectChanges();
         expect(component.needsCdConfirmation()).toBe(false);
         expect(query('cd-warning')).toBeNull();
-        expect(component.canSubmit()).toBe(true);
+        // Lists print CDs as well
+        expect(component.buildRequest().scope).toEqual({ type: 'ids', discogs_ids: [1, 2] });
       }
-    });
-
-    it('does not submit unconfirmed labels', async () => {
-      await setup({ cdCount: cdPage(1) });
-
-      await component.submit();
-
-      expect(mockApiService.print).not.toHaveBeenCalled();
+      expect(mockApiService.getCollection).not.toHaveBeenCalled();
     });
   });
 });

@@ -66,24 +66,32 @@ Für `avery-3474` MUST eine Startposition 1–24 angegeben werden können; die F
 - **WHEN** die Startposition 0 oder 25 ist
 - **THEN** antwortet das System mit 400 und RFC-7807-Problem-Details
 
-### Requirement: CDs bei Etiketten bestätigen
-Etiketten sind für Schallplatten gedacht. Enthält der gewählte Umfang beim Druck der Vorlage `avery-3474` tatsächlich CDs, MUST der Druck-Dialog die Anzahl nennen und vor dem Erzeugen eine ausdrückliche Bestätigung verlangen. Lässt sich das nicht prüfen, MUST er ebenfalls bestätigen lassen.
+### Requirement: CDs bei Etiketten auslassen oder bestätigen
+Etiketten sind für Schallplatten gedacht. Enthält der Umfang beim Druck der Vorlage `avery-3474` CDs, MUST der Druck-Dialog deren Anzahl nennen und die Wahl „Nur Platten drucken – CDs auslassen“ (voreingestellt) oder „Auch die CDs drucken“ anbieten. CDs MUST nur nach ausdrücklicher Wahl gedruckt werden. Lässt sich die Anzahl nicht ermitteln, MUST der Dialog ebenso fragen.
 
-#### Scenario: Ganze Sammlung als Etiketten
-- **WHEN** der Nutzer in den Einstellungen Etiketten für die ganze Sammlung drucken will
-- **THEN** zeigt der Dialog einen Hinweis auf CDs, und „PDF erstellen“ ist erst nach Bestätigung möglich
+#### Scenario: CDs in der Auswahl auslassen
+- **WHEN** 3 Platten markiert sind, davon 1 CD, und der Nutzer Etiketten mit der Voreinstellung druckt
+- **THEN** enthält das PDF nur die 2 Schallplatten, ohne dass die Auswahl geändert werden muss
+
+#### Scenario: Ganze Sammlung ohne CDs
+- **WHEN** der Nutzer in den Einstellungen Etiketten für die ganze Sammlung mit der Voreinstellung druckt
+- **THEN** enthält das PDF nur die Schallplatten der Sammlung
+
+#### Scenario: CDs ausdrücklich mitdrucken
+- **WHEN** der Nutzer „Auch die CDs drucken“ wählt
+- **THEN** enthält das PDF den vollständigen Umfang einschließlich der CDs
+
+#### Scenario: Nur CDs im Umfang
+- **WHEN** der Umfang ausschließlich CDs enthält
+- **THEN** gibt es kein „Auslassen“, und „PDF erstellen“ ist erst nach Wahl von „Auch die CDs drucken“ möglich
 
 #### Scenario: Gefilterte Liste ohne CDs
 - **WHEN** der Umfang „aktuelle Filter“ gewählt ist und die gefilterte Liste keine CD enthält (z. B. Kategorie „Platten“ oder Suche nach einem Künstler nur mit Platten)
-- **THEN** verlangt der Dialog keine Bestätigung
-
-#### Scenario: Gefilterte Liste mit CDs
-- **WHEN** der Umfang „aktuelle Filter“ gewählt ist und die gefilterte Liste 2 CDs enthält
-- **THEN** nennt der Hinweis die 2 CDs und „PDF erstellen“ ist erst nach Bestätigung möglich
+- **THEN** zeigt der Dialog keinen Hinweis
 
 #### Scenario: Auswahl ohne CDs oder andere Vorlage
 - **WHEN** nur Schallplatten markiert sind oder eine Liste bzw. QR-Karten gedruckt werden
-- **THEN** verlangt der Dialog keine Bestätigung
+- **THEN** zeigt der Dialog keinen Hinweis, und Listen enthalten auch CDs
 
 ### Requirement: Scan-Liste
 Die Vorlage `scan-list` MUST eine Tabelle mit je einer Zeile pro Platte erzeugen: scanbarer QR-Code `discogs-id:<id>` (mindestens 15 mm Kantenlänge), Künstler, Titel, Jahr, Format und Discogs-ID. Jede Seite MUST Spaltenköpfe, Titel mit Erstellungsdatum und Seitenzahl „Seite x von y“ tragen.

@@ -134,23 +134,37 @@ const UNKNOWN_CD_COUNT = -1;
           </div>
         }
 
-        <!-- Labels are meant for vinyl: printing them for CDs needs an explicit confirmation -->
+        <!-- Labels are meant for vinyl: CDs are skipped unless the user explicitly includes them -->
         @if (needsCdConfirmation()) {
-          <div class="mb-5 rounded-xl border border-red-200 dark:border-red-800/50 bg-red-50 dark:bg-red-900/20 p-3" data-testid="cd-warning">
+          <fieldset class="mb-5 rounded-xl border border-red-200 dark:border-red-800/50 bg-red-50 dark:bg-red-900/20 p-3" data-testid="cd-warning">
             <p class="text-xs text-red-700 dark:text-red-300 mb-2">
               {{ cdWarningKey() | translate: { count: cdCount() ?? 0 } }}
             </p>
+            @if (canSkipCds()) {
+              <label class="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100 cursor-pointer mb-1">
+                <input
+                  type="radio"
+                  name="print-cds"
+                  class="accent-indigo-600"
+                  [checked]="cdHandling() === 'skip'"
+                  (change)="chosenCdHandling.set('skip')"
+                  data-testid="cd-skip"
+                />
+                {{ (cdCount() === unknownCdCount ? 'print.cdSkipUnknown' : 'print.cdSkip') | translate: { count: cdCount() ?? 0 } }}
+              </label>
+            }
             <label class="flex items-center gap-2 text-sm font-semibold text-red-800 dark:text-red-200 cursor-pointer">
               <input
-                type="checkbox"
+                type="radio"
+                name="print-cds"
                 class="accent-red-600"
-                [checked]="cdConfirmed()"
-                (change)="cdConfirmed.set(!cdConfirmed())"
+                [checked]="cdHandling() === 'include'"
+                (change)="chosenCdHandling.set('include')"
                 data-testid="cd-confirm"
               />
               {{ 'print.cdConfirm' | translate }}
             </label>
-          </div>
+          </fieldset>
         }
 
         <p class="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-xl p-3 mb-5">
@@ -189,8 +203,8 @@ export class PrintDialogComponent {
   readonly selectedIds = input<number[]>([]);
   /** Current collection filters (enables scope "filter"). */
   readonly filter = input<PrintFilter | null>(null);
-  /** Number of CDs among the selected records. */
-  readonly selectedCdCount = input<number>(0);
+  /** Discogs IDs of the selected CDs (they can be skipped when printing labels). */
+  readonly selectedCdIds = input<number[]>([]);
   readonly closed = output<void>();
 
   readonly templates = TEMPLATES;
@@ -199,7 +213,7 @@ export class PrintDialogComponent {
   readonly template = signal<PrintTemplate>('avery-3474');
   readonly startPosition = signal<number>(1);
   readonly isPrinting = signal<boolean>(false);
-  readonly cdConfirmed = signal<boolean>(false);
+  readonly unknownCdCount = UNKNOWN_CD_COUNT;
 
   readonly scopes = computed<PrintScopeType[]>(() => {
     const scopes: PrintScopeType[] = [];
@@ -226,7 +240,9 @@ export class PrintDialogComponent {
   private cdCountSub?: Subscription;
 
   /** Number of CDs in the chosen scope. */
-  readonly cdCount = computed(() => (this.scope() === 'ids' ? this.selectedCdCount() : this.loadedCdCount()));
+  readonly cdCount = computed(() =>
+    this.scope() === 'ids' ? this.selectedCdIds().length : this.loadedCdCount()
+  );
 
   constructor() {
     effect(() => {
@@ -275,12 +291,28 @@ export class PrintDialogComponent {
     this.cdCount() === UNKNOWN_CD_COUNT ? 'print.cdWarning.unknown' : `print.cdWarning.${this.scope()}`
   );
 
+  /** Skipping CDs only makes sense if records remain to be printed. */
+  readonly canSkipCds = computed(() => {
+    switch (this.scope()) {
+      case 'ids':
+        return this.selectedIds().length > this.selectedCdIds().length;
+      case 'filter':
+        return this.filter()?.category !== 'cd';
+      default:
+        return true;
+    }
+  });
+
+  /** What happens to CDs in the scope; skipping is preselected, including them must be chosen. */
+  readonly chosenCdHandling = signal<'skip' | 'include' | null>(null);
+  readonly cdHandling = computed(() => this.chosenCdHandling() ?? (this.canSkipCds() ? 'skip' : null));
+
   readonly canSubmit = computed(
     () =>
       !this.isPrinting() &&
       !this.cdCheckPending() &&
       (this.template() !== 'avery-3474' || this.startPositionValid()) &&
-      (!this.needsCdConfirmation() || this.cdConfirmed())
+      (!this.needsCdConfirmation() || this.cdHandling() !== null)
   );
 
   onStartPositionInput(event: Event): void {
@@ -289,13 +321,16 @@ export class PrintDialogComponent {
 
   buildRequest(): PrintRequest {
     const scopeType = this.scope();
+    const skipCds = this.needsCdConfirmation() && this.cdHandling() === 'skip';
     let scope: PrintScope;
     if (scopeType === 'ids') {
-      scope = { type: 'ids', discogs_ids: this.selectedIds() };
+      const cds = new Set(skipCds ? this.selectedCdIds() : []);
+      scope = { type: 'ids', discogs_ids: this.selectedIds().filter((id) => !cds.has(id)) };
     } else if (scopeType === 'filter') {
-      scope = { type: 'filter', filter: this.filter() ?? {} };
+      const filter = this.filter() ?? {};
+      scope = { type: 'filter', filter: skipCds ? { ...filter, category: 'vinyl' } : filter };
     } else {
-      scope = { type: 'all' };
+      scope = skipCds ? { type: 'filter', filter: { category: 'vinyl' } } : { type: 'all' };
     }
 
     const request: PrintRequest = {

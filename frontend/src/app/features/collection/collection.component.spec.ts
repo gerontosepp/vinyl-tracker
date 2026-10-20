@@ -338,12 +338,12 @@ describe('CollectionComponent', () => {
       }) as any;
 
       component.toggleSelection(release(1, 'LP'));
-      expect(component.selectedCdCount()).toBe(0);
+      expect(component.selectedCdIds()).toEqual([]);
 
       component.releases.set([release(2, 'CD')]);
       component.toggleSelectAllPage();
       expect(component.selectedItems().get(2)?.isCd).toBe(true);
-      expect(component.selectedCdCount()).toBe(1);
+      expect(component.selectedCdIds()).toEqual([2]);
     });
 
     it('passes the selected Discogs IDs', () => {

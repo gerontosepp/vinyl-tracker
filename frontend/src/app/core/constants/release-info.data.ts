@@ -20,7 +20,7 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
         "details": [
           "**Ein Druck-Dialog für alles**: In der Sammlung druckst du die markierten Platten oder alles, was die aktuellen Filter zeigen; in den Einstellungen die ganze Sammlung. Auswählbar sind Vorlage, Umfang und bei Etiketten das Start-Etikett (`POST /api/print`).",
           "**Avery-Etiketten 70 × 37 mm**: 24 QR-Etiketten pro A4-Bogen (Avery Zweckform 6605 / 3474), ohne Überschrift, mit Titel, Künstler und Discogs-ID. Angebrochene Bögen lassen sich ab Etikett 1–24 weiterverwenden.",
-          "**Schutz vor CD-Etiketten**: Enthält der Umfang CDs, nennt der Dialog ihre Anzahl und verlangt vor dem Etikettendruck eine ausdrückliche Bestätigung.",
+          "**Keine Etiketten für CDs aus Versehen**: Enthält der Umfang CDs, nennt der Dialog ihre Anzahl und lässt sie beim Etikettendruck standardmäßig aus – die Auswahl muss dafür nicht geändert werden. CDs werden nur gedruckt, wenn „Auch die CDs drucken“ gewählt ist.",
           "**Scan-Liste**: Tabelle mit einem QR-Code pro Platte (Künstler, Titel, Jahr, Format, ID) – Hörvorgänge direkt von der Liste scannen; Seitenzahlen und Spaltenköpfe auf jeder Seite.",
           "**QR-Karten**: Das bisherige Layout (9 Karten pro Seite) bleibt als Vorlage erhalten.",
           "**Hinweis**: Im PDF-Viewer mit 100 % bzw. „Tatsächliche Größe“ drucken. Die Endpunkte `/api/collection/qr-codes/all` und `/selected` entfallen; das Frontend nutzt `POST /api/print`."

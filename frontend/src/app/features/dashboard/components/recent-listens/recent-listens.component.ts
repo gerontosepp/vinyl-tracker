@@ -1,6 +1,6 @@
 import { Component, input, output, inject, ChangeDetectionStrategy } from '@angular/core';
 import { ApiService } from '../../../../core/services/api.service';
-import { ListenEvent } from '../../../../core/types';
+import { ListenEvent, TrackedRecord } from '../../../../core/types';
 import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
 import { LocalizedDatePipe } from '../../../../core/pipes/localized-date.pipe';
 import { LucideTrash2 } from '@lucide/angular';
@@ -34,10 +34,19 @@ import { LucideTrash2 } from '@lucide/angular';
         >
           @for (event of listens(); track event.id; let idx = $index) {
             <div
-              class="flex flex-row items-center gap-3 rounded-xl p-2 group transition-all duration-300 animate-slide-up hover:bg-slate-50 dark:hover:bg-slate-700/40 md:flex-col md:items-stretch md:gap-3 md:rounded-2xl md:p-4 md:border md:border-slate-200 md:dark:border-slate-600 md:bg-white md:dark:bg-slate-800 md:hover:bg-white md:dark:hover:bg-slate-800 md:hover:shadow-xl md:hover:-translate-y-1"
+              class="relative flex flex-row items-center gap-3 rounded-xl p-2 group transition-all duration-300 animate-slide-up hover:bg-slate-50 dark:hover:bg-slate-700/40 md:flex-col md:items-stretch md:gap-3 md:rounded-2xl md:p-4 md:border md:border-slate-200 md:dark:border-slate-600 md:bg-white md:dark:bg-slate-800 md:hover:bg-white md:dark:hover:bg-slate-800 md:hover:shadow-xl md:hover:-translate-y-1"
               [style.animationDelay]="(idx % 6) * 75 + 'ms'"
               style="opacity: 0"
             >
+
+              <!-- The whole entry opens the record's details; the delete button sits above it -->
+              <button
+                type="button"
+                (click)="openRecord.emit(event.record)"
+                class="absolute inset-0 z-10 rounded-xl md:rounded-2xl cursor-pointer focus-visible:outline-2 focus-visible:outline-indigo-500"
+                [attr.aria-label]="'Details: ' + event.record.title"
+                data-testid="recent-open"
+              ></button>
 
               <!-- Cover Image -->
               <div
@@ -75,7 +84,7 @@ import { LucideTrash2 } from '@lucide/angular';
                   <button
                     type="button"
                     (click)="delete.emit(event.id)"
-                    class="w-11 h-11 -my-2 -mr-1 flex items-center justify-center md:w-auto md:h-auto md:p-1.5 md:-mr-1.5 md:-mt-1 md:my-0 text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 flex-shrink-0 md:opacity-0 md:group-hover:opacity-100 cursor-pointer"
+                    class="relative z-20 w-11 h-11 -my-2 -mr-1 flex items-center justify-center md:w-auto md:h-auto md:p-1.5 md:-mr-1.5 md:-mt-1 md:my-0 text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 flex-shrink-0 md:opacity-0 md:group-hover:opacity-100 cursor-pointer"
                     title="Delete Scan"
                     [attr.aria-label]="'Delete Scan: ' + event.record.title"
                   >
@@ -126,5 +135,6 @@ export class RecentListensComponent {
   readonly listens = input.required<ListenEvent[]>();
   readonly className = input<string>('');
   readonly delete = output<number>();
+  readonly openRecord = output<TrackedRecord>();
 }
 

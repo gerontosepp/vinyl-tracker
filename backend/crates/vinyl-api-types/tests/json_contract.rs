@@ -47,6 +47,7 @@ fn test_sync_result_wire_format() {
 #[test]
 fn test_top_record_wire_format() {
     let dto = TopRecordDto {
+        discogs_id: 1_000_001,
         title: "Miles Davis - Kind of Blue".into(),
         record_title: "Kind of Blue".into(),
         artist: "Miles Davis".into(),
@@ -56,6 +57,7 @@ fn test_top_record_wire_format() {
     assert_wire_format(
         &dto,
         json!({
+            "discogsId": 1_000_001,
             "title": "Miles Davis - Kind of Blue",
             "recordTitle": "Kind of Blue",
             "artist": "Miles Davis",
@@ -63,6 +65,20 @@ fn test_top_record_wire_format() {
             "count": 7
         }),
     );
+}
+
+#[test]
+fn test_top_record_without_discogs_id_from_older_servers() {
+    let dto: TopRecordDto = serde_json::from_value(json!({
+        "title": "Kind of Blue",
+        "recordTitle": "Kind of Blue",
+        "artist": "Miles Davis",
+        "thumbUrl": null,
+        "count": 7
+    }))
+    .unwrap();
+    assert_eq!(dto.discogs_id, 0);
+    assert_eq!(dto.count, 7);
 }
 
 #[test]

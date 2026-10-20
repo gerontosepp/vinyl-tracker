@@ -40,6 +40,7 @@ export const ROON_LAST_ZONE_KEY = 'vinyl_last_roon_zone_id';
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './record-detail-modal.component.html',
+  host: { '(document:keydown.escape)': 'onEscape()' },
 })
 export class RecordDetailModalComponent implements OnInit {
   readonly apiService = inject(ApiService);
@@ -145,6 +146,16 @@ export class RecordDetailModalComponent implements OnInit {
   selectAndPlay(zoneId: string): void {
     this.selectZone(zoneId);
     this.onPlayOnRoon();
+  }
+
+  /** Escape closes the delete confirmation first, then the modal. */
+  onEscape(): void {
+    if (!this.record()) return;
+    if (this.showDeleteConfirm()) {
+      this.cancelDelete();
+    } else {
+      this.close.emit();
+    }
   }
 
   promptDelete(): void {

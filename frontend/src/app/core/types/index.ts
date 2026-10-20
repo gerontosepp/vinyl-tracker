@@ -94,6 +94,8 @@ export interface ResetResult {
 }
 
 export interface AnalyticsTopRecord {
+  /** Discogs release ID (0 from servers before v0.12) */
+  discogsId?: number;
   recordTitle: string; // Keeping for backward compatibility if needed, though title is better
   title: string;
   artist: string;

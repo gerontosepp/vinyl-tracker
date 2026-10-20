@@ -1,15 +1,26 @@
 import { Component, OnInit, OnDestroy, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 
 import { LayoutComponent } from '../../shared/components/layout/layout.component';
 import { CollectionToolbarComponent } from './components/collection-toolbar/collection-toolbar.component';
 import { CollectionTableComponent } from './components/collection-table/collection-table.component';
 import { CollectionCardListComponent } from './components/collection-card-list/collection-card-list.component';
 import { RecordDetailModalComponent } from './components/record-detail-modal/record-detail-modal.component';
+import { ShelfViewComponent } from './components/shelf-view/shelf-view.component';
+import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { AuthService } from '../../core/services/auth.service';
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
 import { LanguageService } from '../../core/services/language.service';
-import { CollectionRelease, QrCodeItem, RecordDetailDto, GenreBreakdownItem, PrintFilter } from '../../core/types';
+import {
+  CollectionRelease,
+  QrCodeItem,
+  RecordDetailDto,
+  GenreBreakdownItem,
+  PrintFilter,
+  StorageShelfOption,
+} from '../../core/types';
+import { parseStorageFilter, shelfOptions } from '../../core/utils/storage-filter';
 import { getErrorMessage } from '../../core/utils/error';
 import { PrintDialogComponent } from '../../shared/components/print-dialog/print-dialog.component';
 import { getFormatType, FormatType } from './utils/format-type.util';
@@ -25,6 +36,9 @@ import { Subscription } from 'rxjs';
     CollectionCardListComponent,
     RecordDetailModalComponent,
     PrintDialogComponent,
+    ShelfViewComponent,
+    NgTemplateOutlet,
+    TranslatePipe,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './collection.component.html',
@@ -34,6 +48,10 @@ export class CollectionComponent implements OnInit, OnDestroy {
   readonly apiService = inject(ApiService);
   readonly toastService = inject(ToastService);
   readonly languageService = inject(LanguageService);
+
+  /** List of records or the shelf view (storage overview and management). */
+  readonly view = signal<'list' | 'shelves'>('list');
+  readonly viewOptions = ['list', 'shelves'] as const;
 
   readonly selectedRecord = signal<CollectionRelease | null>(null);
   readonly recordDetail = signal<RecordDetailDto | null>(null);
@@ -61,6 +79,10 @@ export class CollectionComponent implements OnInit, OnDestroy {
   readonly selectedGenres = signal<string[]>([]);
   readonly years = signal<string>('');
   readonly debouncedYears = signal<string>('');
+  /** Shelves for the storage filter; empty without configured shelves. */
+  readonly storageShelves = signal<StorageShelfOption[]>([]);
+  /** Encoded storage filter, see `parseStorageFilter`. */
+  readonly storageFilter = signal<string>('');
 
   readonly selectedItems = signal<Map<number, QrCodeItem>>(new Map());
 
@@ -90,7 +112,7 @@ export class CollectionComponent implements OnInit, OnDestroy {
     if (this.notPlayedSince()) filter.not_played_since = this.notPlayedSince();
     if (this.unplayedOnly()) filter.unplayed_only = true;
     if (this.showPlayedOnly()) filter.min_plays = 1;
-    return filter;
+    return { ...filter, ...parseStorageFilter(this.storageFilter()) };
   });
 
   private sub: Subscription | null = null;
@@ -99,6 +121,7 @@ export class CollectionComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadGenres();
+    this.loadShelves();
     this.loadData();
   }
 
@@ -112,6 +135,45 @@ export class CollectionComponent implements OnInit, OnDestroy {
     if (this.yearsTimer) {
       clearTimeout(this.yearsTimer);
     }
+  }
+
+  /** Back in the list, slots may have changed (shelves edited or redistributed). */
+  switchView(view: 'list' | 'shelves'): void {
+    if (this.view() === view) return;
+    this.view.set(view);
+    if (view === 'list') {
+      this.loadShelves();
+      this.loadData();
+    }
+  }
+
+  loadShelves(): void {
+    this.apiService.getStorageLayout().subscribe({
+      next: (layout) => {
+        const shelves = shelfOptions(layout);
+        this.storageShelves.set(shelves);
+        // A deleted shelf must not keep filtering the list
+        const unit = parseStorageFilter(this.storageFilter()).storage_unit;
+        if (unit && unit !== 'unplaced' && !shelves.some((s) => String(s.id) === unit)) {
+          this.storageFilter.set('');
+          this.loadData();
+        }
+      },
+      error: (err) => console.error('Failed to load shelves', err),
+    });
+  }
+
+  onStorageFilterChange(value: string): void {
+    this.storageFilter.set(value);
+    this.page.set(1);
+    this.loadData();
+  }
+
+  /** A compartment (or "without place") was clicked in the shelf overview. */
+  openStorageFilter(value: string): void {
+    this.storageFilter.set(value);
+    this.page.set(1);
+    this.switchView('list');
   }
 
   loadGenres(): void {
@@ -144,7 +206,8 @@ export class CollectionComponent implements OnInit, OnDestroy {
         this.selectedGenres(),
         this.debouncedYears(),
         this.notPlayedSince() || undefined,
-        this.unplayedOnly()
+        this.unplayedOnly(),
+        parseStorageFilter(this.storageFilter())
       )
       .subscribe({
         next: (data) => {
@@ -278,6 +341,7 @@ export class CollectionComponent implements OnInit, OnDestroy {
     this.showPlayedOnly.set(false);
     this.notPlayedSince.set('');
     this.unplayedOnly.set(false);
+    this.storageFilter.set('');
     this.page.set(1);
     this.loadData();
   }

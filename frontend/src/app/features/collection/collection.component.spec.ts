@@ -21,6 +21,7 @@ describe('CollectionComponent', () => {
       getGenreBreakdown: vi.fn().mockName('getGenreBreakdown').mockReturnValue(of([{ name: 'Rock', value: 10 }])),
       getProxiedImageUrl: vi.fn().mockName('getProxiedImageUrl').mockImplementation((url: string) => url),
       exportCollection: vi.fn().mockName('exportCollection').mockReturnValue(of(new Blob(['csv'], { type: 'text/csv' }))),
+      getStorageLayout: vi.fn().mockName('getStorageLayout').mockReturnValue(of({ media: [] })),
     };
     mockAuthService = {
       isSyncing: signal(false)
@@ -46,6 +47,88 @@ describe('CollectionComponent', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('switches between list and shelves and reloads the list when coming back', () => {
+    const loadData = vi.spyOn(component, 'loadData').mockImplementation(() => {});
+    expect(component.view()).toBe('list');
+
+    component.switchView('shelves');
+    expect(component.view()).toBe('shelves');
+    expect(loadData).not.toHaveBeenCalled();
+
+    component.switchView('shelves');
+    component.switchView('list');
+    expect(component.view()).toBe('list');
+    expect(loadData).toHaveBeenCalledTimes(1);
+  });
+
+  describe('storage filter', () => {
+    const layout = {
+      media: [
+        {
+          media: 'vinyl',
+          unplacedCount: 0,
+          units: [{ id: 3, name: 'Kallax-1', typeName: 'Kallax', rows: 1, columns: 2, compartments: [{}, {}] }],
+        },
+      ],
+    };
+
+    it('loads the shelves for the toolbar', () => {
+      mockApiService.getStorageLayout.mockReturnValue(of(layout));
+      component.loadShelves();
+      expect(component.storageShelves()).toEqual([{ id: 3, name: 'Kallax-1', compartments: 2 }]);
+    });
+
+    it('filters the list and the print scope by shelf and compartment', () => {
+      mockAuthService.user = signal(null);
+      component.onStorageFilterChange('3:2');
+      expect(component.page()).toBe(1);
+      expect(mockApiService.getCollection).not.toHaveBeenCalled(); // no user signed in
+      expect(component.printFilter()).toEqual({ sort: 'artist', sort_order: 'asc', storage_unit: '3', compartment: 2 });
+
+      component.onStorageFilterChange('unplaced');
+      expect(component.printFilter().storage_unit).toBe('unplaced');
+      expect(component.printFilter().compartment).toBeUndefined();
+
+      component.clearAllFilters();
+      expect(component.storageFilter()).toBe('');
+    });
+
+    it('passes the storage filter to the collection request', () => {
+      mockAuthService.user = signal({ id: 1 });
+      component.onStorageFilterChange('3');
+      expect(mockApiService.getCollection).toHaveBeenLastCalledWith(
+        1, component.perPage(), 0, 'artist', 'asc', '', 'all', [], '', undefined, false, { storage_unit: '3' }
+      );
+    });
+
+    it('opens the list filtered to a compartment clicked in the shelf view', () => {
+      mockApiService.getStorageLayout.mockReturnValue(of(layout));
+      const loadData = vi.spyOn(component, 'loadData').mockImplementation(() => {});
+      component.switchView('shelves');
+      component.page.set(4);
+
+      component.openStorageFilter('3:1');
+      expect(component.view()).toBe('list');
+      expect(component.storageFilter()).toBe('3:1');
+      expect(component.page()).toBe(1);
+      expect(mockApiService.getStorageLayout).toHaveBeenCalled();
+      expect(loadData).toHaveBeenCalledTimes(1);
+    });
+
+    it('drops the filter of a deleted shelf', () => {
+      const loadData = vi.spyOn(component, 'loadData').mockImplementation(() => {});
+      component.storageFilter.set('9:1');
+      mockApiService.getStorageLayout.mockReturnValue(of(layout));
+      component.loadShelves();
+      expect(component.storageFilter()).toBe('');
+      expect(loadData).toHaveBeenCalled();
+
+      component.storageFilter.set('unplaced');
+      component.loadShelves();
+      expect(component.storageFilter()).toBe('unplaced');
+    });
   });
 
   describe('getFormatType', () => {
@@ -156,7 +239,7 @@ describe('CollectionComponent', () => {
       component.onSortChange('format');
       expect(component.sort()).toBe('format');
       expect(component.sortOrder()).toBe('asc');
-      expect(mockApiService.getCollection).toHaveBeenCalledWith(1, component.perPage(), 0, 'format', 'asc', '', 'all', [], '', undefined, false);
+      expect(mockApiService.getCollection).toHaveBeenCalledWith(1, component.perPage(), 0, 'format', 'asc', '', 'all', [], '', undefined, false, {});
     });
   });
 
@@ -167,7 +250,7 @@ describe('CollectionComponent', () => {
       component.onCategoryChange('cd');
       expect(component.category()).toBe('cd');
       expect(component.page()).toBe(1);
-      expect(mockApiService.getCollection).toHaveBeenCalledWith(1, component.perPage(), 0, 'artist', 'asc', '', 'cd', [], '', undefined, false);
+      expect(mockApiService.getCollection).toHaveBeenCalledWith(1, component.perPage(), 0, 'artist', 'asc', '', 'cd', [], '', undefined, false, {});
     });
 
     it('should ignore category change if already selected', () => {
@@ -195,7 +278,7 @@ describe('CollectionComponent', () => {
       component.onGenresChange(['Rock', 'Jazz']);
       expect(component.selectedGenres()).toEqual(['Rock', 'Jazz']);
       expect(component.page()).toBe(1);
-      expect(mockApiService.getCollection).toHaveBeenCalledWith(1, component.perPage(), 0, 'artist', 'asc', '', 'all', ['Rock', 'Jazz'], '', undefined, false);
+      expect(mockApiService.getCollection).toHaveBeenCalledWith(1, component.perPage(), 0, 'artist', 'asc', '', 'all', ['Rock', 'Jazz'], '', undefined, false, {});
     });
 
     it('should reset all filters on clearAllFilters', () => {
@@ -234,7 +317,7 @@ describe('CollectionComponent', () => {
       expect(component.unplayedOnly()).toBe(false);
       expect(component.showPlayedOnly()).toBe(false);
       expect(component.page()).toBe(1);
-      expect(mockApiService.getCollection).toHaveBeenCalledWith(1, component.perPage(), 0, 'artist', 'asc', '', 'all', [], '', '2025-06-01', false);
+      expect(mockApiService.getCollection).toHaveBeenCalledWith(1, component.perPage(), 0, 'artist', 'asc', '', 'all', [], '', '2025-06-01', false, {});
     });
 
     it('should toggle unplayedOnly, reset notPlayedSince and showPlayedOnly, and reload data', () => {
@@ -247,7 +330,7 @@ describe('CollectionComponent', () => {
       expect(component.notPlayedSince()).toBe('');
       expect(component.showPlayedOnly()).toBe(false);
       expect(component.page()).toBe(1);
-      expect(mockApiService.getCollection).toHaveBeenCalledWith(1, component.perPage(), 0, 'artist', 'asc', '', 'all', [], '', undefined, true);
+      expect(mockApiService.getCollection).toHaveBeenCalledWith(1, component.perPage(), 0, 'artist', 'asc', '', 'all', [], '', undefined, true, {});
     });
 
     it('should clear unplayed filters on clearNotPlayedFilters', () => {
@@ -258,7 +341,7 @@ describe('CollectionComponent', () => {
 
       expect(component.notPlayedSince()).toBe('');
       expect(component.unplayedOnly()).toBe(false);
-      expect(mockApiService.getCollection).toHaveBeenCalledWith(1, component.perPage(), 0, 'artist', 'asc', '', 'all', [], '', undefined, false);
+      expect(mockApiService.getCollection).toHaveBeenCalledWith(1, component.perPage(), 0, 'artist', 'asc', '', 'all', [], '', undefined, false, {});
     });
 
     it('should reset unplayed filters when showPlayedOnly is activated', () => {
@@ -272,7 +355,7 @@ describe('CollectionComponent', () => {
       expect(component.showPlayedOnly()).toBe(true);
       expect(component.notPlayedSince()).toBe('');
       expect(component.unplayedOnly()).toBe(false);
-      expect(mockApiService.getCollection).toHaveBeenCalledWith(1, component.perPage(), 1, 'artist', 'asc', '', 'all', [], '', undefined, false);
+      expect(mockApiService.getCollection).toHaveBeenCalledWith(1, component.perPage(), 1, 'artist', 'asc', '', 'all', [], '', undefined, false, {});
     });
   });
 

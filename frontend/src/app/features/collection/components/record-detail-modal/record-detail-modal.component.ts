@@ -17,6 +17,7 @@ import {
 } from '@lucide/angular';
 import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
 import { LocalizedDatePipe } from '../../../../core/pipes/localized-date.pipe';
+import { StoragePlacementComponent } from '../../../../shared/components/storage-placement/storage-placement.component';
 import { getErrorMessage } from '../../../../core/utils/error';
 import { getConditionShortCode, MEDIA_CONDITION_OPTIONS, SLEEVE_CONDITION_OPTIONS } from '../../utils/condition.util';
 
@@ -30,6 +31,7 @@ export const ROON_LAST_ZONE_KEY = 'vinyl_last_roon_zone_id';
     FormsModule,
     TranslatePipe,
     LocalizedDatePipe,
+    StoragePlacementComponent,
     LucideExternalLink,
     LucideX,
     LucideHeadphones,
@@ -40,6 +42,7 @@ export const ROON_LAST_ZONE_KEY = 'vinyl_last_roon_zone_id';
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './record-detail-modal.component.html',
+  host: { '(document:keydown.escape)': 'onEscape()' },
 })
 export class RecordDetailModalComponent implements OnInit {
   readonly apiService = inject(ApiService);
@@ -145,6 +148,16 @@ export class RecordDetailModalComponent implements OnInit {
   selectAndPlay(zoneId: string): void {
     this.selectZone(zoneId);
     this.onPlayOnRoon();
+  }
+
+  /** Escape closes the delete confirmation first, then the modal. */
+  onEscape(): void {
+    if (!this.record()) return;
+    if (this.showDeleteConfirm()) {
+      this.cancelDelete();
+    } else {
+      this.close.emit();
+    }
   }
 
   promptDelete(): void {

@@ -3,10 +3,10 @@ use crate::{
     error::AppError,
     models::{
         collection::{PriceRefreshResultDto, SyncResultDto},
-        discogs::{DiscogsFolderReleaseItem, determine_format},
+        discogs::{DiscogsFolderReleaseItem, determine_format, disc_count},
         user::AppUser,
     },
-    services::crypto_service::CryptoService,
+    services::{crypto_service::CryptoService, storage::StorageService},
 };
 use chrono::{DateTime, Utc};
 use sqlx::{PgPool, Row};
@@ -113,6 +113,9 @@ impl CollectionSyncService {
             del_res.rows_affected() as i32
         };
 
+        // New copies are sorted into their compartments (balancing full ones).
+        StorageService::commit_all(pool, user.id).await?;
+
         let total_synced = added_count + updated_count;
 
         tracing::info!(
@@ -125,6 +128,7 @@ impl CollectionSyncService {
             updated: updated_count,
             removed: removed_count,
             total: total_synced,
+            placement: None,
         })
     }
 
@@ -157,6 +161,7 @@ impl CollectionSyncService {
 
         // 3. Upsert record_cache
         let format = determine_format(release.formats.as_deref());
+        let discs = disc_count(release.formats.as_deref());
         let artist = release
             .artists
             .as_ref()
@@ -166,14 +171,15 @@ impl CollectionSyncService {
         let year_str = release.year.map(|y| y.to_string());
 
         let record_row = sqlx::query(
-            "INSERT INTO record_cache (discogs_id, title, artist, release_year, thumb_url, format)
-             VALUES ($1, $2, $3, $4, $5, $6)
+            "INSERT INTO record_cache (discogs_id, title, artist, release_year, thumb_url, format, disc_count)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)
              ON CONFLICT (discogs_id)
              DO UPDATE SET title = EXCLUDED.title,
                            artist = EXCLUDED.artist,
                            release_year = EXCLUDED.release_year,
                            thumb_url = COALESCE(EXCLUDED.thumb_url, record_cache.thumb_url),
-                           format = EXCLUDED.format
+                           format = EXCLUDED.format,
+                           disc_count = COALESCE(EXCLUDED.disc_count, record_cache.disc_count)
              RETURNING id",
         )
         .bind(release_id)
@@ -182,6 +188,7 @@ impl CollectionSyncService {
         .bind(&year_str)
         .bind(&release.thumb)
         .bind(&format)
+        .bind(discs)
         .fetch_one(pool)
         .await
         .map_err(AppError::Database)?;
@@ -222,12 +229,16 @@ impl CollectionSyncService {
         .await
         .map_err(AppError::Database)?;
 
+        let placement =
+            StorageService::place_new_copy(pool, user.id, release_id, add_res.instance_id).await?;
+
         Ok(SyncResultDto {
             status: "SUCCESS".to_string(),
             added: 1,
             updated: 0,
             removed: 0,
             total: 1,
+            placement,
         })
     }
 
@@ -410,18 +421,20 @@ impl CollectionSyncService {
             .unwrap_or_default();
         let year_str = item.basic_information.year.map(|y| y.to_string());
         let format = determine_format(item.basic_information.formats.as_deref());
+        let discs = disc_count(item.basic_information.formats.as_deref());
         let thumb_url = item.basic_information.thumb.as_deref();
 
         // 1. Upsert record_cache
         let record_row = sqlx::query(
-            "INSERT INTO record_cache (discogs_id, title, artist, release_year, thumb_url, format)
-             VALUES ($1, $2, $3, $4, $5, $6)
+            "INSERT INTO record_cache (discogs_id, title, artist, release_year, thumb_url, format, disc_count)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)
              ON CONFLICT (discogs_id)
              DO UPDATE SET title = EXCLUDED.title,
                            artist = EXCLUDED.artist,
                            release_year = EXCLUDED.release_year,
                            thumb_url = COALESCE(EXCLUDED.thumb_url, record_cache.thumb_url),
-                           format = EXCLUDED.format
+                           format = EXCLUDED.format,
+                           disc_count = COALESCE(EXCLUDED.disc_count, record_cache.disc_count)
              RETURNING id",
         )
         .bind(discogs_id)
@@ -430,6 +443,7 @@ impl CollectionSyncService {
         .bind(&year_str)
         .bind(thumb_url)
         .bind(&format)
+        .bind(discs)
         .fetch_one(pool)
         .await
         .map_err(AppError::Database)?;

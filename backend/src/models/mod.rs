@@ -4,4 +4,5 @@ pub mod discogs;
 pub mod record;
 pub mod roon;
 pub mod scan;
+pub mod storage;
 pub mod user;

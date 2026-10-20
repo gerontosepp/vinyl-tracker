@@ -11,6 +11,49 @@
 
 ---
 
+## v0.12.0 (2026-10-21)
+
+- **Feature: Sortier-Modus auf dem Handy (`#172`)**:
+  - **Platte für Platte**: Auf der Startseite (nur am Handy, sobald Regale angelegt sind) startet „Sammlung sortieren“ einen Vollbild-Modus. Du wählst Regal und Startfach (Zeile:Spalte), dann zeigt der Screen nur Cover, Titel, Interpret, das Fach und die Position im Fach („12 / 70“).
+  - **Neues Fach**: Gehört die nächste Platte in ein anderes Fach, wird das Fach deutlich hervorgehoben. Am Regalende geht es nahtlos im nächsten Regal weiter, danach folgen die Platten ohne Platz.
+  - **Bedienung**: großes „Weiter“, dazu „Zurück“ und „Beenden“; der Bildschirm bleibt beim Sortieren an.
+  - **API**: `GET /api/storage/sequence?media=` liefert alle Exemplare eines Mediums in Regal-Reihenfolge mit Lagerplatz und Cover.
+
+- **Feature: Lagerung in Regalen (`#41`, Teil 2)**:
+  - **Nach Lagerplatz filtern**: In der Sammlung gibt es den Filter „Lagerplatz“ (Regal, Fach oder „Ohne Platz“). Ein Klick auf ein Fach in der Regal-Übersicht öffnet die Liste mit genau diesen Platten.
+  - **Inventurliste**: Neue Druckvorlage, nach Regal und Fach gruppiert, mit Ankreuzfeld je Platte und „Ohne Platz“ am Ende. Der Lagerplatz-Filter gilt auch beim Drucken.
+  - **MCP**: Neue Tools `get_record_placement` (wohin gehört die Platte?) und `get_storage_layout` (Regal-Übersicht); `get_user_collection` filtert nach Lagerplatz, `add_to_collection` nennt den Platz und die nötigen Verschiebungen.
+  - **Backup**: Das JSON-Backup enthält Lagertypen, Regale und Fachgrenzen (`format_version: 3`). Beim Wiederherstellen werden fehlende Regale ergänzt, vorhandene bleiben unverändert.
+  - **API**: `GET /api/collection` mit `storage_unit` (Regal-ID oder `unplaced`) und `compartment`; Druckvorlage `inventory`.
+
+- **Feature: Lagerung in Regalen (`#41`, Teil 1)**:
+  - **Regale beschreiben**: In der Sammlung gibt es neben der Liste die Ansicht „Regale“. Dort legst du Lagertypen (Fach-Raster und Discs pro Fach, Vorlagen für IKEA Kallax mit 70 Platten und das IKEA-CD-Regal mit 11 CDs pro Fach) und deine Regale in ihrer Reihenfolge an.
+  - **Gleichmäßig verteilt**: Die Sammlung (Künstler A–Z) wird gleichmäßig auf alle Fächer aller Regale verteilt, jedes Fach behält Luft. Doppel-LPs und Boxen belegen so viele Plätze, wie sie Discs haben.
+  - **Einsortieren ohne Kettenreaktion**: Neue Platten – per App oder Discogs-Sync – kommen in das Fach, in das sie alphabetisch gehören. Nur wenn ein Fach voll ist, wandern einzelne Platten ins nächste Fach mit Platz.
+  - **Wohin damit?**: Nach dem Hinzufügen zeigt der Tracker Regal, Fach (Zeile/Spalte), die Nachbarn und welche Platten umgestellt werden müssen. Tabelle, mobile Liste und Detailansicht zeigen den Lagerplatz.
+  - **Übersicht**: Jedes Regal als Raster mit Füllstand und Künstlerbereich je Fach; „Neu verteilen“ mit Vorschau, wie viele Platten das Fach wechseln.
+  - **API**: Neue Endpunkte unter `/api/storage` (Lagertypen, Regale, Übersicht, Neu verteilen, Platzierung); `storage` in Sammlung und Platten-Details, `placement` beim Hinzufügen. Migration `10` (neue Tabellen, `record_cache.disc_count`).
+
+- **Feature: Detailansicht vom Dashboard aus (`#166`)**:
+  - **Ein Klick genügt**: Einträge in „Zuletzt gehört“ und „Meistgespielte Alben“ öffnen dieselbe Detailansicht wie in der Sammlung – mit Tracklist, Zuständen, Marktwert, Hörverlauf, „Gehört“, „Auf Roon abspielen“ und „Aus Sammlung entfernen“.
+  - **Aktuelle Listen**: Nach einem erfassten Hördurchgang, einer Zustandsänderung oder dem Entfernen werden die Dashboard-Listen beim Schließen neu geladen.
+  - **Escape schließt die Detailansicht** (auch in der Sammlung); ein offener Lösch-Dialog wird zuerst geschlossen.
+  - **API**: `GET /api/analytics/top` liefert zusätzlich die `discogsId` jeder Platte.
+
+- **UX: Kompaktere Mobil-Ansicht (`#165`)**:
+  - **Startseite**: „Zuletzt gehört“ ist auf dem Handy eine kompakte Liste mit kleinen Covern wie „Meistgespielte Alben“ (statt großer Kacheln); Abstände von Karten und Spalten sind kleiner. Der Lösch-Button ist auf Touch-Geräten jetzt sichtbar (bisher nur per Hover).
+  - **Versionsnummer** erscheint auf dem Handy neben dem Logo.
+  - **Sammlung**: Auf dem Handy kompakte Zeilen mit kleinem Cover, Künstler, Jahr, Format, Zustand, Wert und Anzahl Hördurchgänge statt zweispaltiger Kacheln; weniger Rand in Kopfzeile und Liste.
+  - Desktop-Ansichten bleiben unverändert.
+
+- **Design: Farbschema „Vinyl“ und Theme ab dem App-Start (`#164`)**:
+  - **Theme greift sofort**: Hell, Dunkel oder System gilt jetzt ab dem ersten Laden auf jeder Seite. Bisher wurde es erst beim Öffnen von „Profil“ angewendet – die App wechselte dann scheinbar grundlos ins dunkle Design. Ein kleines Skript setzt das Theme schon vor dem App-Start, damit dunkle Systeme nicht kurz hell aufblitzen.
+  - **Warmes dunkles Design**: Braunschwarz statt Dunkelblau für Hintergründe, Karten und Rahmen.
+  - **Bernstein als Akzentfarbe** in beiden Modi statt Himmelblau; Texte und Links im hellen Modus in dunklerem Ton (mind. 4,5:1 Kontrast). Auch Login, Registrierung und Scanner nutzen jetzt die Akzentfarbe.
+  - **Browserleiste**: `theme-color` passend zum hellen bzw. dunklen Design.
+
+---
+
 ## v0.11.0 (2026-10-20)
 
 - **Fix: Große JSON-Backups lassen sich in Produktion einspielen (`#160`)**:

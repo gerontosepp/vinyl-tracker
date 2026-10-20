@@ -32,6 +32,13 @@ import { LucideLogOut, LucideSettings, LucideGlobe } from '@lucide/angular';
           <span class="font-black text-lg md:text-xl text-slate-900 dark:text-white tracking-tighter">
             Vinyl<span class="text-indigo-600 dark:text-indigo-400">Tracker</span>
           </span>
+          <!-- On desktop the version sits below the username -->
+          <span
+            class="md:hidden text-[10px] font-bold text-slate-500 dark:text-slate-400 tracking-wider self-end mb-1"
+            data-testid="mobile-version"
+          >
+            v{{ appVersion }}
+          </span>
         </a>
 
         <!-- Right - User Area & Quick Language Switcher -->

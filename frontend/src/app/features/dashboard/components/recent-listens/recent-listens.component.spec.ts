@@ -105,4 +105,51 @@ describe('RecentListensComponent', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.textContent).toContain('Noch keine Hördurchgänge erfasst.');
   });
+
+  it('uses compact rows with small covers on mobile and tiles from md', () => {
+    fixture.componentRef.setInput('listens', sampleListens);
+    fixture.detectChanges();
+
+    const list: HTMLElement = fixture.nativeElement.querySelector('[data-testid="recent-listens-list"]');
+    expect(list.classList).toContain('flex-col');
+    expect(list.classList).toContain('md:grid');
+
+    const cover: HTMLElement = fixture.nativeElement.querySelector('[data-testid="recent-cover"]');
+    expect(cover.classList).toContain('w-10');
+    expect(cover.classList).toContain('h-10');
+    expect(cover.classList).toContain('md:aspect-square');
+  });
+
+  it('keeps the delete button visible on touch screens', () => {
+    fixture.componentRef.setInput('listens', sampleListens);
+    fixture.detectChanges();
+
+    const deleteBtn: HTMLElement = fixture.nativeElement.querySelector('button[title="Delete Scan"]');
+    // Only hidden until hover from md; a plain opacity-0 would hide it on phones
+    expect(deleteBtn.classList).not.toContain('opacity-0');
+    expect(deleteBtn.classList).toContain('md:opacity-0');
+    expect(deleteBtn.classList).toContain('w-11');
+    expect(deleteBtn.getAttribute('aria-label')).toContain('Abbey Road');
+  });
+
+  it('opens the record details from an entry, while delete still only deletes', () => {
+    fixture.componentRef.setInput('listens', sampleListens);
+    fixture.detectChanges();
+    const opened = vi.fn();
+    const deleted = vi.fn();
+    component.openRecord.subscribe(opened);
+    component.delete.subscribe(deleted);
+
+    const open: HTMLButtonElement = fixture.nativeElement.querySelector('[data-testid="recent-open"]');
+    expect(open.getAttribute('aria-label')).toBe('Details: Abbey Road');
+    open.click();
+    expect(opened).toHaveBeenCalledWith(sampleListens[0].record);
+
+    // The delete button sits above the open button
+    const deleteBtn: HTMLElement = fixture.nativeElement.querySelector('button[title="Delete Scan"]');
+    expect(deleteBtn.classList).toContain('z-20');
+    deleteBtn.click();
+    expect(deleted).toHaveBeenCalledWith(42);
+    expect(opened).toHaveBeenCalledTimes(1);
+  });
 });

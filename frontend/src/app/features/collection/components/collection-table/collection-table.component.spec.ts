@@ -176,5 +176,21 @@ describe('CollectionTableComponent', () => {
     expect(link.getAttribute('href')).toBe('https://www.discogs.com/release/12345');
     expect(link.getAttribute('target')).toBe('_blank');
   });
-});
 
+  it('shows the location column only when shelves are configured', () => {
+    TestBed.inject(LanguageService).setLanguage('de');
+    expect(component.showStorage()).toBe(false);
+    expect(fixture.nativeElement.querySelector('[data-testid="storage-cell"]')).toBeNull();
+
+    const slot = { unitId: 1, unitName: 'Kallax-1', compartment: 3, row: 1, column: 3, oversized: false, unplaced: false };
+    fixture.componentRef.setInput('releases', [
+      { ...mockRelease, storage: slot },
+      { ...mockRelease, id: 2, instance_id: 2 },
+      { ...mockRelease, id: 3, instance_id: 3, storage: { ...slot, unitName: null, compartment: null, unplaced: true } },
+    ]);
+    fixture.detectChanges();
+
+    const cells: HTMLElement[] = Array.from(fixture.nativeElement.querySelectorAll('[data-testid="storage-cell"]'));
+    expect(cells.map((c) => c.textContent?.trim())).toEqual(['Kallax-1 · 3', '—', 'Ohne Platz']);
+  });
+});

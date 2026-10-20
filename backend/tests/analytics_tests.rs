@@ -264,6 +264,12 @@ async fn test_analytics_full_lifecycle() {
     assert_eq!(top_list[0]["count"], 3);
     assert_eq!(top_list[1]["title"], "A Love Supreme");
     assert_eq!(top_list[1]["count"], 1);
+    // The Discogs ID lets the dashboard open the record's details
+    let top_ids: Vec<i64> = top_list
+        .iter()
+        .map(|r| r["discogsId"].as_i64().unwrap())
+        .collect();
+    assert!(top_ids.contains(&discogs_id_1) && top_ids.contains(&discogs_id_2));
 
     // 6. Test GET /api/analytics/collection/genres
     let req_genres = Request::builder()

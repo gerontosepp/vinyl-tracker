@@ -19,6 +19,16 @@ import {
   PriceRefreshResult,
   RestoreResult,
   PrintRequest,
+  StorageType,
+  StorageTypeRequest,
+  StorageTypesResult,
+  StorageUnit,
+  StorageUnitsResult,
+  StorageMedia,
+  StorageLayout,
+  StoragePlacement,
+  StorageSequence,
+  RedistributePreview,
 } from '../types';
 
 @Injectable({
@@ -127,7 +137,8 @@ export class ApiService {
     genres?: string[],
     years?: string,
     notPlayedSince?: string,
-    unplayedOnly?: boolean
+    unplayedOnly?: boolean,
+    storage: { storage_unit?: string; compartment?: number } = {}
   ): Observable<CollectionResponse> {
     let params = new HttpParams()
       .set('page', page.toString())
@@ -156,6 +167,12 @@ export class ApiService {
     }
     if (unplayedOnly) {
       params = params.set('unplayed_only', 'true');
+    }
+    if (storage.storage_unit) {
+      params = params.set('storage_unit', storage.storage_unit);
+    }
+    if (storage.compartment) {
+      params = params.set('compartment', storage.compartment.toString());
     }
     return this.http.get<CollectionResponse>(`${this.baseUrl}/collection`, { params });
   }
@@ -227,6 +244,64 @@ export class ApiService {
 
   restoreCollection(backup: unknown): Observable<RestoreResult> {
     return this.http.post<RestoreResult>(`${this.baseUrl}/collection/restore`, backup);
+  }
+
+  getStorageTypes(): Observable<StorageType[]> {
+    return this.http.get<StorageType[]>(`${this.baseUrl}/storage/types`);
+  }
+
+  createStorageType(request: StorageTypeRequest): Observable<StorageTypesResult> {
+    return this.http.post<StorageTypesResult>(`${this.baseUrl}/storage/types`, request);
+  }
+
+  updateStorageType(id: number, request: StorageTypeRequest): Observable<StorageTypesResult> {
+    return this.http.put<StorageTypesResult>(`${this.baseUrl}/storage/types/${id}`, request);
+  }
+
+  deleteStorageType(id: number): Observable<StorageTypesResult> {
+    return this.http.delete<StorageTypesResult>(`${this.baseUrl}/storage/types/${id}`);
+  }
+
+  getStorageUnits(): Observable<StorageUnit[]> {
+    return this.http.get<StorageUnit[]>(`${this.baseUrl}/storage/units`);
+  }
+
+  createStorageUnit(name: string, typeId: number): Observable<StorageUnitsResult> {
+    return this.http.post<StorageUnitsResult>(`${this.baseUrl}/storage/units`, { name, typeId });
+  }
+
+  updateStorageUnit(id: number, name: string, typeId: number): Observable<StorageUnitsResult> {
+    return this.http.put<StorageUnitsResult>(`${this.baseUrl}/storage/units/${id}`, { name, typeId });
+  }
+
+  deleteStorageUnit(id: number): Observable<StorageUnitsResult> {
+    return this.http.delete<StorageUnitsResult>(`${this.baseUrl}/storage/units/${id}`);
+  }
+
+  reorderStorageUnits(media: StorageMedia, unitIds: number[]): Observable<StorageUnitsResult> {
+    return this.http.put<StorageUnitsResult>(`${this.baseUrl}/storage/units/order`, { media, unitIds });
+  }
+
+  getStorageLayout(): Observable<StorageLayout> {
+    return this.http.get<StorageLayout>(`${this.baseUrl}/storage/layout`);
+  }
+
+  previewRedistribution(media: StorageMedia): Observable<RedistributePreview> {
+    const params = new HttpParams().set('media', media);
+    return this.http.get<RedistributePreview>(`${this.baseUrl}/storage/redistribute/preview`, { params });
+  }
+
+  redistribute(media: StorageMedia): Observable<StorageLayout> {
+    return this.http.post<StorageLayout>(`${this.baseUrl}/storage/redistribute`, { media });
+  }
+
+  /** Emits `null` (HTTP 204) when no shelf exists for the record's medium. */
+  getStorageSequence(media: StorageMedia): Observable<StorageSequence> {
+    return this.http.get<StorageSequence>(`${this.baseUrl}/storage/sequence`, { params: { media } });
+  }
+
+  getStoragePlacement(discogsId: number): Observable<StoragePlacement | null> {
+    return this.http.get<StoragePlacement | null>(`${this.baseUrl}/storage/placement/${discogsId}`);
   }
 
   getUser(): Observable<User> {

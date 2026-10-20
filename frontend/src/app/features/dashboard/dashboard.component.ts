@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, inject, signal, computed, effect, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { LayoutComponent } from '../../shared/components/layout/layout.component';
 import { BarcodeScannerComponent } from '../../shared/components/barcode-scanner/barcode-scanner.component';
 import { RecentListensComponent } from './components/recent-listens/recent-listens.component';
@@ -11,7 +12,17 @@ import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
 import { ScannerService } from '../../core/services/scanner.service';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
-import { ListenEvent, AnalyticsTopRecord, CollectionValueResponse, GenreBreakdownItem } from '../../core/types';
+import {
+  ListenEvent,
+  AnalyticsTopRecord,
+  CollectionValueResponse,
+  GenreBreakdownItem,
+  CollectionRelease,
+  RecordDetailDto,
+} from '../../core/types';
+import { RecordDetailModalComponent } from '../collection/components/record-detail-modal/record-detail-modal.component';
+import { RecordRef, toCollectionRelease } from '../collection/components/record-detail-modal/record-ref';
+import { getErrorMessage } from '../../core/utils/error';
 import { Subscription, firstValueFrom, forkJoin, of, catchError } from 'rxjs';
 
 @Component({
@@ -25,6 +36,8 @@ import { Subscription, firstValueFrom, forkJoin, of, catchError } from 'rxjs';
     RecentListensComponent,
     TopRecordsComponent,
     StatisticWidgetComponent,
+    RecordDetailModalComponent,
+    RouterLink,
     TranslatePipe,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -45,10 +58,24 @@ import { Subscription, firstValueFrom, forkJoin, of, catchError } from 'rxjs';
           </div>
         </div>
       } @else {
-        <div class="flex flex-col lg:grid lg:grid-cols-3 gap-6">
+        @if (hasShelves()) {
+          <!-- Sort mode is a phone feature -->
+          <a
+            routerLink="/sort"
+            data-testid="sort-mode-button"
+            class="md:hidden mb-4 flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-indigo-600 text-white font-bold shadow-sm"
+          >
+            ↕ {{ 'sort.dashboardButton' | translate }}
+          </a>
+        }
+        <div class="flex flex-col lg:grid lg:grid-cols-3 gap-4 md:gap-6">
           <!-- Left/Center content: Top Records & Recent Listens -->
-          <div class="lg:col-span-2 flex flex-col space-y-6">
-            <app-top-records [data]="topRecords()" class="min-h-0">
+          <div class="lg:col-span-2 flex flex-col space-y-4 md:space-y-6">
+            <app-top-records
+              [data]="topRecords()"
+              (openRecord)="openTopRecord($event)"
+              class="min-h-0"
+            >
               <!-- Date Filter Controls projected here -->
               <div
                 class="flex gap-2 items-center bg-white dark:bg-slate-800 p-1.5 rounded-xl shadow-sm border border-slate-200/50 dark:border-slate-600 w-full md:w-auto max-w-full overflow-x-auto transition-colors"
@@ -108,12 +135,13 @@ import { Subscription, firstValueFrom, forkJoin, of, catchError } from 'rxjs';
             <app-recent-listens
               [listens]="recentListens()"
               (delete)="handleDelete($event)"
+              (openRecord)="openRecord($event)"
               class="min-h-0"
             />
           </div>
 
           <!-- Right side panel: Collection Value & Genre Breakdown -->
-          <div class="lg:col-span-1 flex flex-col space-y-6">
+          <div class="lg:col-span-1 flex flex-col space-y-4 md:space-y-6">
             <!-- Collection Value widget -->
             <app-statistic-widget
               [title]="'dashboard.collectionValue' | translate"
@@ -180,6 +208,17 @@ import { Subscription, firstValueFrom, forkJoin, of, catchError } from 'rxjs';
           </div>
         </div>
       }
+
+      <!-- Same detail view as in the collection -->
+      <app-record-detail-modal
+        [record]="selectedRecord()"
+        [detail]="recordDetail()"
+        [loading]="loadingDetail()"
+        (close)="closeDetail()"
+        (listenLogged)="onDetailChanged($event)"
+        (conditionUpdated)="onDetailChanged($event)"
+        (recordRemoved)="onRecordRemoved()"
+      />
     </app-layout>
   `,
 })
@@ -189,11 +228,21 @@ export class DashboardComponent implements OnInit, OnDestroy {
   readonly toastService = inject(ToastService);
   readonly scannerService = inject(ScannerService);
 
+  /** Shows the sort mode button (phones only) once shelves exist. */
+  readonly hasShelves = signal<boolean>(false);
   readonly recentListens = signal<ListenEvent[]>([]);
   readonly topRecords = signal<AnalyticsTopRecord[]>([]);
   readonly collectionValue = signal<CollectionValueResponse | null>(null);
   readonly genreData = signal<GenreBreakdownItem[]>([]);
   readonly loadingStats = signal<boolean>(true);
+
+  // Record detail view opened from "Zuletzt gehört" / "Meistgespielte Alben"
+  readonly selectedRecord = signal<CollectionRelease | null>(null);
+  readonly recordDetail = signal<RecordDetailDto | null>(null);
+  readonly loadingDetail = signal<boolean>(false);
+  private detailSub: Subscription | null = null;
+  /** Set when an action in the detail view changed listens or conditions shown on the dashboard. */
+  private detailChanged = false;
 
   readonly todayString = this.getTodayString();
   readonly sevenDaysAgoString = this.getDaysAgoString(7);
@@ -235,6 +284,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadData();
+    this.apiService
+      .getStorageUnits()
+      .pipe(catchError(() => of([])))
+      .subscribe((units) => this.hasShelves.set(units.length > 0));
   }
 
   ngOnDestroy(): void {
@@ -242,6 +295,57 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (this.sub) {
       this.sub.unsubscribe();
     }
+    this.detailSub?.unsubscribe();
+  }
+
+  openTopRecord(record: AnalyticsTopRecord): void {
+    if (!record.discogsId) return;
+    this.openRecord({
+      discogsId: record.discogsId,
+      title: record.title || record.recordTitle,
+      artist: record.artist,
+      thumbUrl: record.thumbUrl,
+    });
+  }
+
+  openRecord(ref: RecordRef): void {
+    this.detailSub?.unsubscribe();
+    this.selectedRecord.set(toCollectionRelease(ref));
+    this.recordDetail.set(null);
+    this.loadingDetail.set(true);
+
+    this.detailSub = this.apiService.getRecordDetails(ref.discogsId).subscribe({
+      next: (detail) => {
+        this.recordDetail.set(detail);
+        this.loadingDetail.set(false);
+      },
+      error: (err) => {
+        this.loadingDetail.set(false);
+        this.toastService.showToast(getErrorMessage(err, 'Fehler beim Laden der Details'), 'error');
+      },
+    });
+  }
+
+  closeDetail(): void {
+    this.detailSub?.unsubscribe();
+    this.selectedRecord.set(null);
+    this.recordDetail.set(null);
+    this.loadingDetail.set(false);
+    // Refresh once on close instead of after every action in the open view
+    if (this.detailChanged) {
+      this.detailChanged = false;
+      this.loadData();
+    }
+  }
+
+  onDetailChanged(detail: RecordDetailDto): void {
+    this.recordDetail.set(detail);
+    this.detailChanged = true;
+  }
+
+  onRecordRemoved(): void {
+    this.detailChanged = true;
+    this.closeDetail();
   }
 
   loadData(): void {

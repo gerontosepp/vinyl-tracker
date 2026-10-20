@@ -170,6 +170,12 @@ impl VinylApiClient {
         if let Some(y) = &args.years {
             req = req.query(&[("years", y)]);
         }
+        if let Some(unit) = &args.storage_unit {
+            req = req.query(&[("storage_unit", unit)]);
+        }
+        if let Some(c) = args.compartment {
+            req = req.query(&[("compartment", c.to_string())]);
+        }
 
         let res = req
             .send()
@@ -633,6 +639,71 @@ impl VinylApiClient {
         res.json::<RecordDetailDto>()
             .await
             .map_err(|e| format!("Failed to parse record details JSON: {}", e))
+    }
+
+    /// Shelf position of a record; `None` if no shelf is configured for its medium.
+    pub async fn get_record_placement(
+        &self,
+        discogs_id: i64,
+    ) -> Result<Option<StoragePlacementDto>, String> {
+        self.ensure_authenticated().await?;
+        let url = format!("{}/api/storage/placement/{}", self.base_url, discogs_id);
+        let headers = self.build_auth_headers().await;
+
+        let res = self
+            .http_client
+            .get(&url)
+            .headers(headers)
+            .send()
+            .await
+            .map_err(|e| {
+                format!(
+                    "Request to /api/storage/placement/{} failed: {}",
+                    discogs_id, e
+                )
+            })?;
+
+        if res.status() == reqwest::StatusCode::NO_CONTENT {
+            return Ok(None);
+        }
+        if !res.status().is_success() {
+            return Err(format!(
+                "Backend error {}: {}",
+                res.status(),
+                res.text().await.unwrap_or_default()
+            ));
+        }
+
+        res.json::<StoragePlacementDto>()
+            .await
+            .map(Some)
+            .map_err(|e| format!("Failed to parse placement JSON: {}", e))
+    }
+
+    pub async fn get_storage_layout(&self) -> Result<StorageLayoutDto, String> {
+        self.ensure_authenticated().await?;
+        let url = format!("{}/api/storage/layout", self.base_url);
+        let headers = self.build_auth_headers().await;
+
+        let res = self
+            .http_client
+            .get(&url)
+            .headers(headers)
+            .send()
+            .await
+            .map_err(|e| format!("Request to /api/storage/layout failed: {}", e))?;
+
+        if !res.status().is_success() {
+            return Err(format!(
+                "Backend error {}: {}",
+                res.status(),
+                res.text().await.unwrap_or_default()
+            ));
+        }
+
+        res.json::<StorageLayoutDto>()
+            .await
+            .map_err(|e| format!("Failed to parse storage layout JSON: {}", e))
     }
 
     pub async fn search_discogs(

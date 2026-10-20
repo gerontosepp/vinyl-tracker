@@ -1,7 +1,10 @@
 use crate::{
     error::AppError,
     models::collection::{BackupRelease, CollectionBackupRequest, RestoreResultDto},
-    services::export_service::BACKUP_FORMAT_VERSION,
+    services::{
+        export_service::BACKUP_FORMAT_VERSION,
+        storage::{StorageService, backup::StorageBackupService},
+    },
 };
 use chrono::{DateTime, NaiveDateTime, Utc};
 use sqlx::{PgPool, Postgres, Row, Transaction};
@@ -55,6 +58,12 @@ impl CollectionRestoreService {
                 "Backup contains {} releases; at most {MAX_RESTORE_RELEASES} can be restored at once",
                 backup.releases.len()
             )));
+        }
+
+        if let Some(storage) = &backup.storage {
+            StorageBackupService::validate(storage).map_err(|reason| {
+                AppError::BadRequest(format!("Invalid backup storage: {reason}"))
+            })?;
         }
 
         let now = Utc::now().naive_utc();
@@ -222,7 +231,12 @@ impl CollectionRestoreService {
             }
         }
 
+        if let Some(storage) = &backup.storage {
+            StorageBackupService::restore(&mut tx, user_id, storage).await?;
+        }
+
         tx.commit().await.map_err(AppError::Database)?;
+        StorageService::commit_all(pool, user_id).await?;
 
         tracing::info!(
             "Collection restore for user {user_id}: added={}, updated={}, listens_added={}, listens_skipped={}",
@@ -423,12 +437,12 @@ mod tests {
         ));
         assert!(detail.contains("releases"), "{detail}");
 
-        let body = json!({ "format_version": 3, "releases": [] });
+        let body = json!({ "format_version": 4, "releases": [] });
         let detail = bad_request_detail(CollectionRestoreService::parse_backup(
             &serde_json::to_vec(&body).unwrap(),
         ));
         assert!(
-            detail.contains("Unsupported backup format version 3"),
+            detail.contains("Unsupported backup format version 4"),
             "{detail}"
         );
     }

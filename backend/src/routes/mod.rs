@@ -7,6 +7,7 @@ pub mod proxy;
 pub mod records;
 pub mod roon;
 pub mod scan;
+pub mod storage;
 pub mod timeout;
 pub mod users;
 
@@ -98,6 +99,8 @@ pub fn create_app(state: AppState) -> Router {
         .nest("/api/analytics", analytics::router())
         // Print module: PDF labels and lists (nested under /api/print)
         .nest("/api/print", print::router())
+        // Shelf storage: types, shelves, layout and placement (nested under /api/storage)
+        .nest("/api/storage", storage::router())
         // Roon Audio endpoints (nested under /api/roon)
         .nest("/api/roon", roon::router())
         // API root / ping

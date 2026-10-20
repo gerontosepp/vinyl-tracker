@@ -7,18 +7,44 @@ use crate::{
         },
         discogs::{DiscogsArtist, DiscogsPagination},
     },
+    services::storage::StorageService,
 };
 use sqlx::{PgPool, Row};
 use std::collections::HashMap;
 
 pub struct CollectionQueryService;
 
+/// Shelf sort key columns (artist without a leading "The", year, title). The storage layout
+/// compares the selected values byte-wise, which matches `COLLATE "C"` in [`shelf_order_sql`].
+pub const SHELF_ARTIST_KEY_SQL: &str = r#"REGEXP_REPLACE(LOWER(rc.artist), '^the\s+', '', 'i')"#;
+pub const SHELF_TITLE_KEY_SQL: &str = "COALESCE(LOWER(rc.title), '')";
+/// Shelf order of the collection view ("artist", ascending) and of the storage layout.
+pub fn shelf_order_sql() -> String {
+    format!(
+        r#"{SHELF_ARTIST_KEY_SQL} COLLATE "C" ASC NULLS LAST, rc.release_year COLLATE "C" ASC NULLS LAST, {SHELF_TITLE_KEY_SQL} COLLATE "C" ASC, ci.instance_id ASC"#
+    )
+}
+
 impl CollectionQueryService {
+    /// Resolves the storage filter into the instance IDs the query is restricted to.
+    async fn resolve_storage_filter(
+        pool: &PgPool,
+        user_id: i64,
+        filter: &mut ParsedCollectionFilter,
+    ) -> Result<(), AppError> {
+        if let Some(storage) = filter.storage {
+            filter.instance_ids =
+                Some(StorageService::filter_instances(pool, user_id, storage).await?);
+        }
+        Ok(())
+    }
+
     pub async fn get_collection(
         pool: &PgPool,
         user_id: i64,
-        filter: ParsedCollectionFilter,
+        mut filter: ParsedCollectionFilter,
     ) -> Result<CollectionResponse, AppError> {
+        Self::resolve_storage_filter(pool, user_id, &mut filter).await?;
         let where_clause = Self::build_where_clause(&filter);
 
         // 1. Count total matching items
@@ -58,8 +84,14 @@ impl CollectionQueryService {
         let limit = filter.per_page as i64;
         let limit_clause = format!("LIMIT {limit} OFFSET {offset}");
 
-        let releases =
+        let mut releases =
             Self::fetch_and_map_releases(pool, user_id, &filter, Some(&limit_clause)).await?;
+        let slots = StorageService::slots(pool, user_id).await?;
+        if !slots.is_empty() {
+            for release in &mut releases {
+                release.storage = slots.get(&release.instance_id).cloned();
+            }
+        }
 
         let total_pages = ((total_items as f64) / (filter.per_page as f64)).ceil() as u32;
 
@@ -77,8 +109,9 @@ impl CollectionQueryService {
     pub async fn get_collection_for_export(
         pool: &PgPool,
         user_id: i64,
-        filter: ParsedCollectionFilter,
+        mut filter: ParsedCollectionFilter,
     ) -> Result<Vec<CollectionRelease>, AppError> {
+        Self::resolve_storage_filter(pool, user_id, &mut filter).await?;
         Self::fetch_and_map_releases(pool, user_id, &filter, None).await
     }
 
@@ -140,14 +173,12 @@ impl CollectionQueryService {
                     "COALESCE(le.listen_count, 0) {dir}, {normalized_artist_asc} NULLS LAST, rc.release_year ASC NULLS LAST"
                 )
             }
-            "artist" => {
-                let dir = if sort_order == "desc" {
-                    normalized_artist_desc
-                } else {
-                    normalized_artist_asc
-                };
-                format!("{dir} NULLS LAST, rc.release_year ASC NULLS LAST, rc.title ASC")
+            "artist" if sort_order == "desc" => {
+                format!(
+                    "{normalized_artist_desc} NULLS LAST, rc.release_year ASC NULLS LAST, rc.title ASC"
+                )
             }
+            "artist" => shelf_order_sql(),
             _ => {
                 let dir = if sort_order == "desc" { "DESC" } else { "ASC" };
                 format!("ci.added_at {dir}")
@@ -266,6 +297,7 @@ impl CollectionQueryService {
                 last_played_at: last_played_at
                     .map(|lp| lp.format("%Y-%m-%dT%H:%M:%SZ").to_string()),
                 notes: Some(notes),
+                storage: None,
                 basic_information: BasicInformation {
                     id: discogs_id,
                     title,
@@ -306,6 +338,8 @@ impl CollectionQueryService {
             not_played_since: None,
             unplayed_only,
             min_plays: None,
+            storage: None,
+            instance_ids: None,
         };
 
         let where_clause = Self::build_where_clause(&filter);
@@ -400,6 +434,7 @@ impl CollectionQueryService {
             sleeve_condition: sleeve_cond,
             last_played_at: last_played_at.map(|lp| lp.format("%Y-%m-%dT%H:%M:%SZ").to_string()),
             notes: Some(notes),
+            storage: None,
             basic_information: BasicInformation {
                 id: discogs_id,
                 title,
@@ -437,6 +472,8 @@ impl CollectionQueryService {
             not_played_since: None,
             unplayed_only: true,
             min_plays: None,
+            storage: None,
+            instance_ids: None,
         };
         Self::get_collection(pool, user_id, filter).await
     }
@@ -483,6 +520,11 @@ impl CollectionQueryService {
 
         if filter.min_plays.is_some() {
             clauses.push(format!("COALESCE(le.listen_count, 0) >= ${param_idx}"));
+            param_idx += 1;
+        }
+
+        if filter.instance_ids.is_some() {
+            clauses.push(format!("ci.instance_id = ANY(${param_idx})"));
         }
 
         clauses.join(" AND ")
@@ -514,6 +556,10 @@ impl CollectionQueryService {
             query = query.bind(p as i64);
         }
 
+        if let Some(ids) = &filter.instance_ids {
+            query = query.bind(ids.clone());
+        }
+
         query
     }
 
@@ -541,6 +587,10 @@ impl CollectionQueryService {
 
         if let Some(p) = filter.min_plays {
             query = query.bind(p as i64);
+        }
+
+        if let Some(ids) = &filter.instance_ids {
+            query = query.bind(ids.clone());
         }
 
         query

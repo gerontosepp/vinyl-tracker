@@ -22,6 +22,59 @@ describe('CollectionToolbarComponent', () => {
     expect(component).toBeTruthy();
   });
 
+  describe('storage filter', () => {
+    const shelves = [
+      { id: 3, name: 'Kallax-1', compartments: 2 },
+      { id: 5, name: 'CD-1', compartments: 1 },
+    ];
+    const select = (): HTMLSelectElement | null =>
+      fixture.nativeElement.querySelector('[data-testid="storage-filter"]');
+    const badge = (): HTMLElement | null => fixture.nativeElement.querySelector('[data-testid="storage-filter-badge"]');
+
+    it('is hidden without shelves', () => {
+      expect(select()).toBeNull();
+    });
+
+    it('offers every shelf, its compartments and the records without space', () => {
+      fixture.componentRef.setInput('storageShelves', shelves);
+      fixture.detectChanges();
+
+      const values = Array.from(select()!.options).map((o) => o.value);
+      expect(values).toEqual(['', '3', '3:1', '3:2', '5', '5:1', 'unplaced']);
+
+      const emitted: string[] = [];
+      component.storageFilterChange.subscribe((v) => emitted.push(v));
+      select()!.value = '3:2';
+      select()!.dispatchEvent(new Event('change'));
+      expect(emitted).toEqual(['3:2']);
+    });
+
+    it('shows the active filter as badge that clears it', () => {
+      fixture.componentRef.setInput('storageShelves', shelves);
+      fixture.componentRef.setInput('storageFilter', '3:2');
+      fixture.detectChanges();
+      expect(component.storageFilterLabel()).toMatch(/^Kallax-1 · (Fach|Compartment) 2$/);
+      expect(badge()?.textContent).toContain('Kallax-1');
+
+      const emitted: string[] = [];
+      component.storageFilterChange.subscribe((v) => emitted.push(v));
+      badge()!.querySelector('button')!.click();
+      expect(emitted).toEqual(['']);
+    });
+
+    it('labels whole shelves, unknown shelves and records without space', () => {
+      fixture.componentRef.setInput('storageShelves', shelves);
+      fixture.componentRef.setInput('storageFilter', '5');
+      expect(component.storageFilterLabel()).toBe('CD-1');
+      fixture.componentRef.setInput('storageFilter', '9');
+      expect(component.storageFilterLabel()).toBe('9');
+      fixture.componentRef.setInput('storageFilter', 'unplaced');
+      expect(component.storageFilterLabel()).toMatch(/Ohne Platz|No space/);
+      fixture.componentRef.setInput('storageFilter', '');
+      expect(component.storageFilterLabel()).toBe('');
+    });
+  });
+
   it('should emit searchChange on onSearchInput', () => {
     vi.spyOn(component.searchChange, 'emit').mockReturnValue(undefined);
     component.onSearchInput('Beatles');

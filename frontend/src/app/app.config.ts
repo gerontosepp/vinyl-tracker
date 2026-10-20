@@ -1,4 +1,11 @@
-import { ApplicationConfig, provideZoneChangeDetection, isDevMode, LOCALE_ID } from '@angular/core';
+import {
+  ApplicationConfig,
+  provideZoneChangeDetection,
+  isDevMode,
+  LOCALE_ID,
+  inject,
+  provideAppInitializer,
+} from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptors, withXhr } from '@angular/common/http';
 import { registerLocaleData } from '@angular/common';
@@ -8,6 +15,7 @@ import { routes } from './app.routes';
 import { provideServiceWorker } from '@angular/service-worker';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { LanguageService } from './core/services/language.service';
+import { ThemeService } from './core/services/theme.service';
 
 registerLocaleData(localeDe);
 registerLocaleData(localeEn);
@@ -16,6 +24,10 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
+    // Apply the saved/system theme on every page, not only once the settings inject the service
+    provideAppInitializer(() => {
+      inject(ThemeService);
+    }),
     provideHttpClient(withXhr(), withInterceptors([authInterceptor])),
     {
       provide: LOCALE_ID,

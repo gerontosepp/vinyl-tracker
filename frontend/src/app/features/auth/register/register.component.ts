@@ -106,7 +106,7 @@ import { APP_VERSION } from '../../../core/constants/release-info.data';
         </form>
         <div class="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
           Already have an account?{{ ' ' }}
-          <a routerLink="/login" class="text-blue-600 dark:text-blue-400 hover:underline">
+          <a routerLink="/login" class="text-indigo-600 dark:text-indigo-400 hover:underline">
             Login here
           </a>
         </div>

@@ -33,7 +33,7 @@ impl VinylMcpServer {
     /// Retrieve the user's vinyl collection with optional pagination, sorting, search, and min_plays filter.
     #[tool(
         name = "get_user_collection",
-        description = "Retrieve the user's vinyl collection from Vinyl Tracker. Supports pagination (page, per_page), sorting ('artist', 'listens', 'addedAt'), sort order ('asc', 'desc'), minimum plays filter, search terms, category filter ('all', 'vinyl', 'cd'), genres filter (e.g. ['Jazz', 'Rock']), and years filter (e.g. '1970-1972, 1975')."
+        description = "Retrieve the user's vinyl collection from Vinyl Tracker. Supports pagination (page, per_page), sorting ('artist', 'listens', 'addedAt'), sort order ('asc', 'desc'), minimum plays filter, search terms, category filter ('all', 'vinyl', 'cd'), genres filter (e.g. ['Jazz', 'Rock']), years filter (e.g. '1970-1972, 1975') and storage filter (storage_unit = shelf ID or 'unplaced', optional compartment). Each release carries its computed shelf position in `storage` when shelves are configured."
     )]
     async fn get_user_collection(
         &self,
@@ -67,10 +67,18 @@ impl VinylMcpServer {
         Parameters(args): Parameters<AddToCollectionArgs>,
     ) -> Result<String, String> {
         let result = self.client.add_to_collection(args.release_id).await?;
-        Ok(format!(
+        let mut message = format!(
             "Successfully added release {} to collection. Sync result: {} added, {} updated, {} removed ({} records in total).",
             args.release_id, result.added, result.updated, result.removed, result.total
-        ))
+        );
+        if let Some(placement) = &result.placement {
+            message.push_str(&format!(
+                " Shelf placement: {}",
+                serde_json::to_string(placement)
+                    .map_err(|e| format!("Failed to serialize placement: {}", e))?
+            ));
+        }
+        Ok(message)
     }
 
     /// Remove an album from the user's vinyl collection and connected Discogs account.
@@ -337,6 +345,36 @@ impl VinylMcpServer {
         let status = self.client.get_roon_status().await?;
         serde_json::to_string_pretty(&status)
             .map_err(|e| format!("Failed to serialize Roon status: {}", e))
+    }
+
+    /// Shelf position of a record: slot, neighbors and moves.
+    #[tool(
+        name = "get_record_placement",
+        description = "Tells where a record of the collection belongs on the user's shelves (computed from artist A-Z order): shelf, compartment (row/column), the neighboring records and, for a just added record, the records that have to move to make room (also returned by add_to_collection). Returns a notice if no shelf is configured for the record's medium."
+    )]
+    async fn get_record_placement(
+        &self,
+        Parameters(args): Parameters<GetRecordPlacementArgs>,
+    ) -> Result<String, String> {
+        match self.client.get_record_placement(args.discogs_id).await? {
+            Some(placement) => serde_json::to_string_pretty(&placement)
+                .map_err(|e| format!("Failed to serialize placement: {}", e)),
+            None => Ok(format!(
+                "No shelf is configured for the medium of release {}.",
+                args.discogs_id
+            )),
+        }
+    }
+
+    /// Overview of all shelves with fill level per compartment.
+    #[tool(
+        name = "get_storage_layout",
+        description = "Returns the user's shelves per medium (vinyl, cd) with their compartment grid: capacity, used discs, number of records and the first and last artist per compartment, plus the number of records without a place."
+    )]
+    async fn get_storage_layout(&self) -> Result<String, String> {
+        let layout = self.client.get_storage_layout().await?;
+        serde_json::to_string_pretty(&layout)
+            .map_err(|e| format!("Failed to serialize storage layout: {}", e))
     }
 
     /// Export the user's vinyl collection in JSON or CSV format.
@@ -647,6 +685,12 @@ mod tests {
 
         let t23 = VinylMcpServer::export_collection_tool_attr();
         assert_eq!(t23.name, "export_collection");
+
+        let t24 = VinylMcpServer::get_record_placement_tool_attr();
+        assert_eq!(t24.name, "get_record_placement");
+
+        let t25 = VinylMcpServer::get_storage_layout_tool_attr();
+        assert_eq!(t25.name, "get_storage_layout");
     }
 
     #[test]

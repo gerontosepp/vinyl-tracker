@@ -1,14 +1,16 @@
 //! Shelf-based storage (#41). Compartment boundaries are stored, the slot of every copy is
 //! computed from them (see ADR 0020 and [`layout`]).
 
+pub mod backup;
 pub mod config;
 pub mod layout;
 
 use crate::{
     error::AppError,
     models::storage::{
-        MediaLayoutDto, RedistributePreviewDto, StorageCompartmentDto, StorageLayoutDto,
-        StorageMedia, StorageMoveDto, StoragePlacementDto, StorageSlotDto, StorageUnitLayoutDto,
+        MediaLayoutDto, RedistributePreviewDto, StorageCompartmentDto, StorageFilter,
+        StorageLayoutDto, StorageMedia, StorageMoveDto, StoragePlacementDto, StorageSlotDto,
+        StorageUnitLayoutDto,
     },
     services::collection_query::{SHELF_ARTIST_KEY_SQL, SHELF_TITLE_KEY_SQL},
 };
@@ -27,6 +29,16 @@ pub fn media_condition_sql(media: StorageMedia) -> &'static str {
 struct Shelf {
     spec: ShelfSpec,
     type_name: String,
+}
+
+/// Computed position of a copy.
+#[derive(Debug, Clone)]
+pub struct StoragePosition {
+    pub slot: StorageSlotDto,
+    /// Compartment index over all media in shelf order, `usize::MAX` when unplaced
+    pub compartment: usize,
+    /// Index of the copy over all media in shelf order
+    pub rank: usize,
 }
 
 pub struct StorageService;
@@ -317,20 +329,78 @@ impl StorageService {
         })
     }
 
+    /// Position of every copy (by instance ID) of the media that have shelves.
+    pub async fn positions(
+        pool: &PgPool,
+        user_id: i64,
+    ) -> Result<HashMap<i64, StoragePosition>, AppError> {
+        let mut positions = HashMap::new();
+        let (mut compartment_offset, mut item_offset) = (0, 0);
+        for media in StorageMedia::ALL {
+            if let Some(layout) = Self::current_layout(pool, user_id, media).await? {
+                for (index, item) in layout.items.iter().enumerate() {
+                    let compartment =
+                        layout.assignment[index].map_or(usize::MAX, |c| compartment_offset + c);
+                    positions.insert(
+                        item.key.instance_id,
+                        StoragePosition {
+                            slot: layout.slot(index),
+                            compartment,
+                            rank: item_offset + index,
+                        },
+                    );
+                }
+                compartment_offset += layout.compartments.len();
+                item_offset += layout.items.len();
+            }
+        }
+        Ok(positions)
+    }
+
     /// Slot of every copy (by instance ID) of the media that have shelves.
     pub async fn slots(
         pool: &PgPool,
         user_id: i64,
     ) -> Result<HashMap<i64, StorageSlotDto>, AppError> {
-        let mut slots = HashMap::new();
-        for media in StorageMedia::ALL {
-            if let Some(layout) = Self::current_layout(pool, user_id, media).await? {
-                for (index, item) in layout.items.iter().enumerate() {
-                    slots.insert(item.key.instance_id, layout.slot(index));
-                }
+        Ok(Self::positions(pool, user_id)
+            .await?
+            .into_iter()
+            .map(|(instance_id, position)| (instance_id, position.slot))
+            .collect())
+    }
+
+    /// Instance IDs matching a storage filter of the collection view. Copies of media without
+    /// shelves count as unplaced.
+    pub async fn filter_instances(
+        pool: &PgPool,
+        user_id: i64,
+        filter: StorageFilter,
+    ) -> Result<Vec<i64>, AppError> {
+        let positions = Self::positions(pool, user_id).await?;
+        Ok(match filter {
+            StorageFilter::Unit {
+                unit_id,
+                compartment,
+            } => positions
+                .into_iter()
+                .filter(|(_, p)| {
+                    p.slot.unit_id == Some(unit_id)
+                        && compartment.is_none_or(|c| p.slot.compartment == Some(c))
+                })
+                .map(|(instance_id, _)| instance_id)
+                .collect(),
+            StorageFilter::Unplaced => {
+                let all: Vec<i64> = sqlx::query_scalar(
+                    "SELECT instance_id FROM collection_item WHERE user_id = $1",
+                )
+                .bind(user_id)
+                .fetch_all(pool)
+                .await?;
+                all.into_iter()
+                    .filter(|id| positions.get(id).is_none_or(|p| p.slot.unplaced))
+                    .collect()
             }
-        }
-        Ok(slots)
+        })
     }
 
     /// Medium and first copy (lowest instance ID) of a record in the user's collection.

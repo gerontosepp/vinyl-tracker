@@ -36,7 +36,7 @@
         <ng-container [ngTemplateOutlet]="viewSwitch" />
       </div>
       <div class="flex-1 overflow-y-auto p-2 md:p-6 bg-slate-50/30 dark:bg-slate-900/20">
-        <app-shelf-view />
+        <app-shelf-view (filterSelected)="openStorageFilter($event)" />
       </div>
     } @else {
     <!-- Header, Actions, Controls & Pagination Toolbar -->
@@ -59,6 +59,8 @@
       [availableGenres]="availableGenres()"
       [selectedGenres]="selectedGenres()"
       [years]="years()"
+      [storageShelves]="storageShelves()"
+      [storageFilter]="storageFilter()"
       (searchChange)="onSearchChange($event)"
       (clearSearch)="clearSearch()"
       (sortChange)="onSortChange($event)"
@@ -76,6 +78,7 @@
       (clearSelection)="clearSelection()"
       (genresChange)="onGenresChange($event)"
       (yearsChange)="onYearsChange($event)"
+      (storageFilterChange)="onStorageFilterChange($event)"
       (clearAllFilters)="clearAllFilters()"
     >
       <ng-container viewSwitch [ngTemplateOutlet]="viewSwitch" />

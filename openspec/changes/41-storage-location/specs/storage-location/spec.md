@@ -136,14 +136,18 @@ Das System MUST über `GET /api/storage/layout` je Medium die Regale mit ihren F
 - **THEN** öffnet sich die Sammlung gefiltert auf dieses Regal und Fach
 
 ### Requirement: Nach Lagerplatz filtern
-`GET /api/collection` MUST die Filter `storageUnit` (Regal-ID) und optional `compartment` (Fachnummer) sowie den Sonderwert „ohne Platz“ unterstützen und mit den übrigen Filtern kombinieren. Die Toolbar MUST diese Filter anbieten, wenn Regale konfiguriert sind.
+`GET /api/collection` MUST die Filter `storage_unit` (Regal-ID oder `unplaced`) und optional `compartment` (Fachnummer) unterstützen und mit den übrigen Filtern kombinieren. Die Toolbar MUST diese Filter anbieten, wenn Regale konfiguriert sind.
 
 #### Scenario: Fach filtern
 - **WHEN** der Nutzer nach „Kallax-1“, Fach 2 filtert
 - **THEN** enthält das Ergebnis genau die Exemplare, die laut Belegung in diesem Fach liegen
 
+#### Scenario: Ohne Platz filtern
+- **WHEN** der Nutzer „Ohne Platz“ wählt
+- **THEN** enthält das Ergebnis die Exemplare ohne Platz, einschließlich der Exemplare eines Mediums ohne Regale
+
 ### Requirement: Lagerung im Backup
-Der JSON-Export MUST Lagertypen, Regale und Fachgrenzen enthalten (Format-Version 3). Die Wiederherstellung MUST fehlende Lagertypen und Regale anhand des Namens anlegen und vorhandene unverändert lassen; Backups der Version 2 MUST weiterhin wiederhergestellt werden können.
+Der JSON-Export MUST Lagertypen sowie Regale mit ihren Fachgrenzen enthalten (Format-Version 3). Die Wiederherstellung MUST fehlende Lagertypen und Regale anhand des Namens anlegen und vorhandene unverändert lassen; Backups der Version 2 MUST weiterhin wiederhergestellt werden können.
 
 #### Scenario: Konfiguration wiederherstellen
 - **WHEN** ein Backup mit „Kallax-1“ in eine Installation ohne Regale eingespielt wird
@@ -151,11 +155,11 @@ Der JSON-Export MUST Lagertypen, Regale und Fachgrenzen enthalten (Format-Versio
 
 #### Scenario: Vorhandene Regale
 - **WHEN** die Installation bereits Regale für das Medium hat
-- **THEN** bleiben deren Fachgrenzen unverändert
+- **THEN** bleiben deren Fachgrenzen unverändert, fehlende Regale werden ohne Grenzen hinten angefügt
 
 ### Requirement: Lagerung über MCP
 Der MCP-Server MUST den Lagerplatz in `get_user_collection` ausgeben und die Tools `get_record_placement` (Lagerplatz, Nachbarn und Verschiebungen zu einer Discogs-ID) und `get_storage_layout` (Regal-Übersicht) bereitstellen.
 
 #### Scenario: Wohin mit der neuen Platte
 - **WHEN** ein MCP-Client `get_record_placement` mit der Discogs-ID einer gerade hinzugefügten Platte aufruft
-- **THEN** erhält er Regal, Fach, Nachbarn und die nötigen Verschiebungen
+- **THEN** erhält er Regal, Fach und Nachbarn; die nötigen Verschiebungen nennt bereits `add_to_collection`

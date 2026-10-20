@@ -136,7 +136,8 @@ export class ApiService {
     genres?: string[],
     years?: string,
     notPlayedSince?: string,
-    unplayedOnly?: boolean
+    unplayedOnly?: boolean,
+    storage: { storage_unit?: string; compartment?: number } = {}
   ): Observable<CollectionResponse> {
     let params = new HttpParams()
       .set('page', page.toString())
@@ -165,6 +166,12 @@ export class ApiService {
     }
     if (unplayedOnly) {
       params = params.set('unplayed_only', 'true');
+    }
+    if (storage.storage_unit) {
+      params = params.set('storage_unit', storage.storage_unit);
+    }
+    if (storage.compartment) {
+      params = params.set('compartment', storage.compartment.toString());
     }
     return this.http.get<CollectionResponse>(`${this.baseUrl}/collection`, { params });
   }

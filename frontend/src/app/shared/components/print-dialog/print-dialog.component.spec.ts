@@ -111,6 +111,25 @@ describe('PrintDialogComponent', () => {
     expect(query('start-position')).toBeNull();
   });
 
+  it('offers the inventory list and counts CDs with the storage filter', async () => {
+    const shelfFilter: PrintFilter = { sort: 'artist', sort_order: 'asc', storage_unit: '3', compartment: 2 };
+    await setup({ filter: shelfFilter, cdCount: cdPage(0) });
+
+    expect(component.templates).toContain('inventory');
+    expect(mockApiService.getCollection).toHaveBeenCalledWith(
+      1, 1, 0, 'artist', 'asc', undefined, 'cd', undefined, undefined, undefined, undefined,
+      { storage_unit: '3', compartment: 2 }
+    );
+
+    query('template-inventory')!.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    expect(component.buildRequest()).toEqual({
+      template: 'inventory',
+      scope: { type: 'filter', filter: shelfFilter },
+      options: { language: 'de' },
+    });
+  });
+
   it('sends the start label for partially used sheets and validates it', async () => {
     await setup({ selectedIds: [1] });
     const input = query('start-position')!;
@@ -187,7 +206,8 @@ describe('PrintDialogComponent', () => {
       await setup({ cdCount: cdPage(80) });
 
       expect(mockApiService.getCollection).toHaveBeenCalledWith(
-        1, 1, 0, undefined, undefined, undefined, 'cd', undefined, undefined, undefined, undefined
+        1, 1, 0, undefined, undefined, undefined, 'cd', undefined, undefined, undefined, undefined,
+        { storage_unit: undefined, compartment: undefined }
       );
       expect(component.cdCount()).toBe(80);
       expect(query('cd-warning')?.textContent).toContain('print.cdWarning.all');
@@ -205,7 +225,8 @@ describe('PrintDialogComponent', () => {
       await setup({ filter: { ...filter, search: 'Pink Floyd', genres: 'Rock,Pop' }, cdCount: cdPage(0) });
 
       expect(mockApiService.getCollection).toHaveBeenCalledWith(
-        1, 1, 0, 'artist', 'asc', 'Pink Floyd', 'cd', ['Rock', 'Pop'], undefined, undefined, undefined
+        1, 1, 0, 'artist', 'asc', 'Pink Floyd', 'cd', ['Rock', 'Pop'], undefined, undefined, undefined,
+        { storage_unit: undefined, compartment: undefined }
       );
       expect(component.needsCdConfirmation()).toBe(false);
       expect(query('cd-warning')).toBeNull();

@@ -86,6 +86,17 @@ describe('ShelfViewComponent', () => {
     expect(el('unplaced-count')?.textContent).toContain('3 Platten ohne Platz');
   });
 
+  it('opens the collection filtered to a clicked compartment or to the records without space', () => {
+    const selected: string[] = [];
+    component.filterSelected.subscribe((value) => selected.push(value));
+
+    (fixture.nativeElement.querySelectorAll('[data-testid="compartment"]')[1] as HTMLElement).click();
+    el('unplaced-count')!.click();
+
+    const unitId = component.layout()!.media[0].units[0].id;
+    expect(selected).toEqual([`${unitId}:2`, 'unplaced']);
+  });
+
   it('shows the management only on demand once shelves exist', () => {
     expect(el('type-list')).toBeNull();
     expect(el('manage-toggle')?.textContent).toContain('Regale verwalten');

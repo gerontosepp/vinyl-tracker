@@ -1,3 +1,4 @@
+use super::storage::{StorageBackup, StorageFilter};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 pub use vinyl_api_types::collection::{
@@ -19,6 +20,9 @@ pub struct CollectionQueryParams {
     pub not_played_since: Option<String>,
     pub unplayed_only: Option<bool>,
     pub min_plays: Option<i32>,
+    /// Shelf ID or `unplaced`
+    pub storage_unit: Option<String>,
+    pub compartment: Option<i32>,
 }
 
 #[derive(Debug, Clone)]
@@ -34,6 +38,9 @@ pub struct ParsedCollectionFilter {
     pub not_played_since: Option<DateTime<Utc>>,
     pub unplayed_only: bool,
     pub min_plays: Option<i32>,
+    pub storage: Option<StorageFilter>,
+    /// Instance IDs resolved from `storage` by the query service
+    pub instance_ids: Option<Vec<i64>>,
 }
 
 impl From<CollectionQueryParams> for ParsedCollectionFilter {
@@ -84,6 +91,7 @@ impl From<CollectionQueryParams> for ParsedCollectionFilter {
 
         let unplayed_only = params.unplayed_only.unwrap_or(false);
         let min_plays = params.min_plays.filter(|p| *p > 0);
+        let storage = StorageFilter::parse(params.storage_unit.as_deref(), params.compartment);
 
         Self {
             page,
@@ -97,6 +105,8 @@ impl From<CollectionQueryParams> for ParsedCollectionFilter {
             not_played_since,
             unplayed_only,
             min_plays,
+            storage,
+            instance_ids: None,
         }
     }
 }
@@ -107,6 +117,8 @@ impl From<CollectionQueryParams> for ParsedCollectionFilter {
 pub struct CollectionBackupRequest {
     pub format_version: Option<u32>,
     pub releases: Vec<BackupRelease>,
+    /// Storage configuration (format version 3); missing in older backups
+    pub storage: Option<StorageBackup>,
 }
 
 #[derive(Debug, Clone, Deserialize)]

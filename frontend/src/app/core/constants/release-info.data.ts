@@ -14,6 +14,18 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "isUnreleased": true,
     "items": [
       {
+        "title": "Feature: Lagerung in Regalen (`#41`, Teil 2)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "**Nach Lagerplatz filtern**: In der Sammlung gibt es den Filter „Lagerplatz“ (Regal, Fach oder „Ohne Platz“). Ein Klick auf ein Fach in der Regal-Übersicht öffnet die Liste mit genau diesen Platten.",
+          "**Inventurliste**: Neue Druckvorlage, nach Regal und Fach gruppiert, mit Ankreuzfeld je Platte und „Ohne Platz“ am Ende. Der Lagerplatz-Filter gilt auch beim Drucken.",
+          "**MCP**: Neue Tools `get_record_placement` (wohin gehört die Platte?) und `get_storage_layout` (Regal-Übersicht); `get_user_collection` filtert nach Lagerplatz, `add_to_collection` nennt den Platz und die nötigen Verschiebungen.",
+          "**Backup**: Das JSON-Backup enthält Lagertypen, Regale und Fachgrenzen (`format_version: 3`). Beim Wiederherstellen werden fehlende Regale ergänzt, vorhandene bleiben unverändert.",
+          "**API**: `GET /api/collection` mit `storage_unit` (Regal-ID oder `unplaced`) und `compartment`; Druckvorlage `inventory`."
+        ]
+      },
+      {
         "title": "Feature: Lagerung in Regalen (`#41`, Teil 1)",
         "type": "feat",
         "typeLabel": "Feature",

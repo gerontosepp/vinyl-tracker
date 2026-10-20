@@ -680,3 +680,327 @@ async fn test_cd_shelf_and_placement_endpoint() {
     let (_, layout) = call(&app, &other, Method::GET, "/api/storage/layout", None).await;
     assert_eq!(layout, json!({ "media": [] }));
 }
+
+/// Discogs IDs of the collection view for a query string (one page of up to 100).
+async fn collection_ids(app: &axum::Router, cookie: &str, query: &str) -> Vec<i64> {
+    let (status, body) = call(
+        app,
+        cookie,
+        Method::GET,
+        &format!("/api/collection?sort=artist&per_page=100&{query}"),
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    assert_eq!(
+        body["pagination"]["items"].as_u64().unwrap() as usize,
+        body["releases"].as_array().unwrap().len()
+    );
+    body["releases"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|r| r["id"].as_i64().unwrap())
+        .collect()
+}
+
+/// Posts a print request and returns the status and the PDF text (empty for errors).
+async fn print_text(app: &axum::Router, cookie: &str, request: Value) -> (StatusCode, String) {
+    let res = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/api/print")
+                .header(header::COOKIE, cookie)
+                .header(header::CONTENT_TYPE, "application/json")
+                .body(Body::from(request.to_string()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    let status = res.status();
+    let bytes = res.into_body().collect().await.unwrap().to_bytes();
+    if status != StatusCode::OK {
+        return (status, String::new());
+    }
+    let doc = lopdf::Document::load_mem(&bytes).expect("valid PDF");
+    let mut text = String::new();
+    for page_id in doc.get_pages().into_values() {
+        for operation in doc.get_and_decode_page_content(page_id).unwrap().operations {
+            if operation.operator == "Tj" {
+                for operand in &operation.operands {
+                    if let lopdf::Object::String(bytes, _) = operand {
+                        text.extend(bytes.iter().map(|&b| b as char));
+                        text.push('\n');
+                    }
+                }
+            }
+        }
+    }
+    (status, text)
+}
+
+#[tokio::test]
+async fn test_storage_filter_and_inventory_list() {
+    let (app, state) = setup_app().await;
+    let (user_id, cookie) = create_user(&app).await;
+    let mut lps = Vec::new();
+    for artist in ["Abba", "Beatles", "Cream", "Doors", "Eagles", "Faces"] {
+        lps.push(add_lp(&state, user_id, artist, "Album").await.0);
+    }
+    let (cd_id, _) = add_copy(
+        &state,
+        user_id,
+        Some("Adele"),
+        "21",
+        Some("2011"),
+        "CD",
+        None,
+    )
+    .await;
+
+    // Before any shelf exists, every copy is without a place.
+    assert_eq!(
+        collection_ids(&app, &cookie, "storage_unit=unplaced")
+            .await
+            .len(),
+        7
+    );
+
+    let kallax = create_type(&app, &cookie, "Kallax 1×2", "vinyl", 1, 2, 2).await;
+    let (unit_id, _) = create_unit(&app, &cookie, "Kallax-1", kallax).await;
+    // 6 LPs, 4 places: 2 per compartment, Eagles and Faces have no place.
+    assert_eq!(compartment_usage(&app, &cookie).await, vec![2, 2]);
+
+    assert_eq!(
+        collection_ids(&app, &cookie, &format!("storage_unit={unit_id}")).await,
+        lps[..4].to_vec()
+    );
+    assert_eq!(
+        collection_ids(
+            &app,
+            &cookie,
+            &format!("storage_unit={unit_id}&compartment=2")
+        )
+        .await,
+        lps[2..4].to_vec()
+    );
+    // Combined with the other filters
+    assert_eq!(
+        collection_ids(
+            &app,
+            &cookie,
+            &format!("storage_unit={unit_id}&compartment=2&search=doors")
+        )
+        .await,
+        vec![lps[3]]
+    );
+    let mut unplaced = collection_ids(&app, &cookie, "storage_unit=unplaced").await;
+    unplaced.sort();
+    let mut expected = vec![lps[4], lps[5], cd_id];
+    expected.sort();
+    assert_eq!(unplaced, expected, "CDs without a CD shelf have no place");
+    assert!(
+        collection_ids(&app, &cookie, "storage_unit=999999999")
+            .await
+            .is_empty()
+    );
+
+    // Inventory list of the whole collection: compartments in shelf order, unplaced last.
+    let (status, text) = print_text(
+        &app,
+        &cookie,
+        json!({ "template": "inventory", "options": { "language": "de" } }),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    let at = |needle: &str| {
+        text.find(needle)
+            .unwrap_or_else(|| panic!("missing {needle} in {text}"))
+    };
+    assert!(at("Kallax-1 · Fach 1 (2)") < at("Kallax-1 · Fach 2 (2)"));
+    assert!(at("Kallax-1 · Fach 2 (2)") < at("Ohne Platz (3)"));
+    assert!(at("Abba") < at("Beatles") && at("Beatles") < at("Kallax-1 · Fach 2"));
+    assert!(at("Ohne Platz") < at("Eagles"));
+
+    // Print scope "filter" with a shelf contains exactly the copies of that shelf.
+    let (status, text) = print_text(
+        &app,
+        &cookie,
+        json!({
+            "template": "scan-list",
+            "scope": { "type": "filter", "filter": { "storage_unit": unit_id.to_string(), "compartment": 1 } }
+        }),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(text.contains("2 Platten"), "{text}");
+    assert!(text.contains("Abba") && text.contains("Beatles") && !text.contains("Cream"));
+
+    // An empty compartment filter is an empty scope.
+    let (status, _) = print_text(
+        &app,
+        &cookie,
+        json!({
+            "template": "inventory",
+            "scope": { "type": "filter", "filter": { "storage_unit": "999999999" } }
+        }),
+    )
+    .await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+}
+
+async fn export_backup(app: &axum::Router, cookie: &str) -> Value {
+    let (status, backup) = call(
+        app,
+        cookie,
+        Method::GET,
+        "/api/collection/export?format=json",
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    backup
+}
+
+async fn stored_boundaries(state: &AppState, user_id: i64) -> Vec<(String, i16, String)> {
+    sqlx::query(
+        "SELECT su.name, sb.compartment, sb.title_key
+         FROM storage_boundary sb JOIN storage_unit su ON su.id = sb.unit_id
+         WHERE su.user_id = $1 ORDER BY su.sort_order, sb.compartment",
+    )
+    .bind(user_id)
+    .fetch_all(&state.pool)
+    .await
+    .unwrap()
+    .into_iter()
+    .map(|row| {
+        (
+            row.get("name"),
+            row.get("compartment"),
+            row.get("title_key"),
+        )
+    })
+    .collect()
+}
+
+#[tokio::test]
+async fn test_backup_contains_and_restores_the_storage_configuration() {
+    let (app, state) = setup_app().await;
+    let (source_id, source) = create_user(&app).await;
+    for i in 0..8 {
+        add_lp(
+            &state,
+            source_id,
+            &format!("Artist {i}"),
+            &format!("Album {i}"),
+        )
+        .await;
+    }
+    let kallax = create_type(&app, &source, "Kallax 2×2", "vinyl", 2, 2, 5).await;
+    let cd = create_type(&app, &source, "CD-Regal", "cd", 12, 1, 11).await;
+    create_unit(&app, &source, "Kallax-1", kallax).await;
+    create_unit(&app, &source, "Kallax-2", kallax).await;
+    create_unit(&app, &source, "CD-1", cd).await;
+
+    let backup = export_backup(&app, &source).await;
+    assert_eq!(backup["format_version"], 3);
+    assert_eq!(backup["storage"]["types"].as_array().unwrap().len(), 2);
+    let units: Vec<&str> = backup["storage"]["units"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|u| u["name"].as_str().unwrap())
+        .collect();
+    assert_eq!(units, vec!["Kallax-1", "Kallax-2", "CD-1"]);
+    let expected = stored_boundaries(&state, source_id).await;
+    assert!(!expected.is_empty());
+
+    // Fresh installation: types, shelves (same order) and boundaries are restored.
+    let (target_id, target) = create_user(&app).await;
+    let (status, result) = call(
+        &app,
+        &target,
+        Method::POST,
+        "/api/collection/restore",
+        Some(backup.clone()),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{result}");
+    assert_eq!(result["format_version"], 3);
+    assert_eq!(stored_boundaries(&state, target_id).await, expected);
+    assert_eq!(
+        compartment_usage(&app, &target).await,
+        compartment_usage(&app, &source).await
+    );
+
+    // Existing shelves keep their boundaries; missing ones are added after them.
+    let (other_id, other) = create_user(&app).await;
+    for i in 0..8 {
+        add_lp(
+            &state,
+            other_id,
+            &format!("Artist {i}"),
+            &format!("Album {i}"),
+        )
+        .await;
+    }
+    let own = create_type(&app, &other, "Kallax 2×2", "vinyl", 1, 4, 10).await;
+    create_unit(&app, &other, "Kallax-2", own).await;
+    let before = stored_boundaries(&state, other_id).await;
+    let (status, _) = call(
+        &app,
+        &other,
+        Method::POST,
+        "/api/collection/restore",
+        Some(backup.clone()),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    let (_, types) = call(&app, &other, Method::GET, "/api/storage/types", None).await;
+    let kallax_type = types
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|t| t["name"] == "Kallax 2×2")
+        .unwrap();
+    assert_eq!(kallax_type["rows"], 1, "existing type unchanged");
+    let (_, units) = call(&app, &other, Method::GET, "/api/storage/units", None).await;
+    let names: Vec<&str> = units
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|u| u["name"].as_str().unwrap())
+        .collect();
+    assert_eq!(names, vec!["Kallax-2", "Kallax-1", "CD-1"]);
+    let after = stored_boundaries(&state, other_id).await;
+    assert_eq!(
+        after
+            .iter()
+            .filter(|(name, _, _)| name == "Kallax-2")
+            .cloned()
+            .collect::<Vec<_>>(),
+        before,
+        "8 LPs fit into Kallax-2, so its boundaries stay"
+    );
+
+    // Invalid storage sections are rejected as a whole.
+    let mut invalid = backup;
+    invalid["storage"]["units"][0]["type_name"] = json!("Billy");
+    let (status, problem) = call(
+        &app,
+        &target,
+        Method::POST,
+        "/api/collection/restore",
+        Some(invalid),
+    )
+    .await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+    assert!(
+        problem["detail"]
+            .as_str()
+            .unwrap()
+            .contains("unknown storage type 'Billy'")
+    );
+}

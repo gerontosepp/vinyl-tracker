@@ -17,7 +17,7 @@ const MAX_NAME_LENGTH: usize = 100;
 const GRID_RANGE: std::ops::RangeInclusive<i32> = 1..=12;
 const CAPACITY_RANGE: std::ops::RangeInclusive<i32> = 1..=500;
 
-fn validate_name(name: &str) -> Result<String, AppError> {
+pub(super) fn validate_name(name: &str) -> Result<String, AppError> {
     let name = name.trim();
     if name.is_empty() || name.chars().count() > MAX_NAME_LENGTH {
         return Err(AppError::BadRequest(format!(
@@ -27,7 +27,7 @@ fn validate_name(name: &str) -> Result<String, AppError> {
     Ok(name.to_string())
 }
 
-fn validate_grid(rows: i32, columns: i32, capacity: i32) -> Result<(), AppError> {
+pub(super) fn validate_grid(rows: i32, columns: i32, capacity: i32) -> Result<(), AppError> {
     if !GRID_RANGE.contains(&rows) || !GRID_RANGE.contains(&columns) {
         return Err(AppError::BadRequest(
             "Rows and columns must be between 1 and 12".to_string(),

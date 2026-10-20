@@ -14,7 +14,7 @@ export type PrintScopeType = PrintScope['type'];
 /** Labels per Avery 3474 sheet – valid start positions are 1..LABELS_PER_SHEET. */
 export const LABELS_PER_SHEET = 24;
 
-const TEMPLATES: PrintTemplate[] = ['avery-3474', 'scan-list', 'qr-cards'];
+const TEMPLATES: PrintTemplate[] = ['avery-3474', 'scan-list', 'qr-cards', 'inventory'];
 
 /** CD count that could not be determined. */
 const UNKNOWN_CD_COUNT = -1;
@@ -268,7 +268,8 @@ export class PrintDialogComponent {
           filter.genres ? filter.genres.split(',') : undefined,
           filter.years,
           filter.not_played_since,
-          filter.unplayed_only
+          filter.unplayed_only,
+          { storage_unit: filter.storage_unit, compartment: filter.compartment }
         )
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({

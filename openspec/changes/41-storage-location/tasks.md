@@ -44,29 +44,29 @@
 
 ## 6. Filter
 
-- [ ] 6.1 `collection_query`: Filter `storageUnit`/`compartment`/`unplaced` per `instance_id = ANY(...)`; Integrationstests
-- [ ] 6.2 Frontend: Toolbar-Filter Regal/Fach/ohne Platz, in `printFilter` übernommen; Klick auf ein Fach in der Übersicht öffnet die gefilterte Sammlung
+- [x] 6.1 `collection_query`: Filter `storageUnit`/`compartment`/`unplaced` per `instance_id = ANY(...)`; Integrationstests
+- [x] 6.2 Frontend: Toolbar-Filter Regal/Fach/ohne Platz, in `printFilter` übernommen; Klick auf ein Fach in der Übersicht öffnet die gefilterte Sammlung
 
 ## 7. Druck
 
-- [ ] 7.1 `PrintRecord` um Lagerplatz erweitern; `load_records` nutzt die Belegung; Vorlage `inventory` registrieren
-- [ ] 7.2 `services/print/inventory.rs`: Gruppen je Regal/Fach, „Ohne Platz“ am Ende, Fortsetzung über Seitenwechsel, Ankreuzfeld, DE/EN
-- [ ] 7.3 Tests: Gruppenreihenfolge, ohne Regale, Seitenwechsel, englische Texte, Filter-Umfang mit Regal
-- [ ] 7.4 Druck-Dialog: Vorlage „Inventurliste“
+- [x] 7.1 `PrintRecord` um Lagerplatz erweitern; `load_records` nutzt die Belegung; Vorlage `inventory` registrieren
+- [x] 7.2 `services/print/inventory.rs`: Gruppen je Regal/Fach, „Ohne Platz“ am Ende, Fortsetzung über Seitenwechsel, Ankreuzfeld, DE/EN
+- [x] 7.3 Tests: Gruppenreihenfolge, ohne Regale, Seitenwechsel, englische Texte, Filter-Umfang mit Regal
+- [x] 7.4 Druck-Dialog: Vorlage „Inventurliste“
 
 ## 8. MCP
 
-- [ ] 8.1 `get_user_collection`: Lagerplatz ausgeben
-- [ ] 8.2 Tools `get_record_placement` und `get_storage_layout`
-- [ ] 8.3 Contract-Tests in `mcp/src/server/contract_tests.rs`
+- [x] 8.1 `get_user_collection`: Lagerplatz ausgeben
+- [x] 8.2 Tools `get_record_placement` und `get_storage_layout`
+- [x] 8.3 Contract-Tests in `mcp/src/server/contract_tests.rs`
 
 ## 9. Backup
 
-- [ ] 9.1 Export Version 3 mit `storage { types, units, boundaries }`
-- [ ] 9.2 Restore akzeptiert Version 2 und 3; Typen/Regale (mit Grenzen) per Name zusammenführen, danach `commit`; Tests
+- [x] 9.1 Export Version 3 mit `storage { types, units, boundaries }`
+- [x] 9.2 Restore akzeptiert Version 2 und 3; Typen/Regale (mit Grenzen) per Name zusammenführen, danach `commit`; Tests
 
 ## 10. Doku & Abschluss PR 2
 
-- [ ] 10.1 README (Filter, Inventurliste, MCP-Tools, Backup), arc42 (Druckvorlagen), Release-Info „Unreleased“
-- [ ] 10.2 Übersetzungen DE/EN und Vitest-Specs für die geänderten Komponenten
-- [ ] 10.3 Lokale Qualitätsprüfung wie 5.3
+- [x] 10.1 README (Filter, Inventurliste, MCP-Tools, Backup), arc42 (Druckvorlagen), Release-Info „Unreleased“
+- [x] 10.2 Übersetzungen DE/EN und Vitest-Specs für die geänderten Komponenten
+- [x] 10.3 Lokale Qualitätsprüfung wie 5.3

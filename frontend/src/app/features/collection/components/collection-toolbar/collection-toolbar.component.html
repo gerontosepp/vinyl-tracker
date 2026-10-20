@@ -270,6 +270,35 @@
         }
       </div>
 
+      <!-- Storage Filter (only with configured shelves) -->
+      @if (storageShelves().length > 0) {
+        <div class="relative group min-w-[130px] max-w-[190px] shrink-0">
+          <svg
+            lucideArchive
+            [size]="15"
+            class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none"
+          ></svg>
+          <select
+            [ngModel]="storageFilter()"
+            (ngModelChange)="storageFilterChange.emit($event)"
+            [attr.aria-label]="'storage.filter' | translate"
+            data-testid="storage-filter"
+            class="pl-8 pr-6 py-1.5 border border-slate-200 dark:border-slate-600 rounded-xl bg-white/70 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100 w-full text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 shadow-sm cursor-pointer"
+          >
+            <option value="">{{ 'storage.filterAll' | translate }}</option>
+            @for (shelf of storageShelves(); track shelf.id) {
+              <optgroup [label]="shelf.name">
+                <option [value]="'' + shelf.id">{{ shelf.name }} · {{ 'storage.filterWholeShelf' | translate }}</option>
+                @for (n of compartmentNumbers(shelf); track n) {
+                  <option [value]="shelf.id + ':' + n">{{ shelf.name }} · {{ 'storage.compartment' | translate: { number: n } }}</option>
+                }
+              </optgroup>
+            }
+            <option value="unplaced">{{ 'storage.unplaced' | translate }}</option>
+          </select>
+        </div>
+      }
+
       <!-- Filter Toggles -->
       <div class="flex items-center gap-2 shrink-0">
         <button
@@ -495,7 +524,7 @@
   </div>
 
   <!-- Active Filter Badges Bar -->
-  @if (selectedGenres().length > 0 || (years() && years().trim().length > 0) || unplayedOnly() || (notPlayedSince() && notPlayedSince().trim().length > 0)) {
+  @if (selectedGenres().length > 0 || (years() && years().trim().length > 0) || unplayedOnly() || (notPlayedSince() && notPlayedSince().trim().length > 0) || storageFilter()) {
     <div class="flex flex-wrap items-center gap-2 pt-2.5 mt-2 border-t border-slate-200/50 dark:border-slate-700/60 text-xs">
       <span class="text-slate-400 dark:text-slate-500 text-[11px] font-semibold uppercase tracking-wider mr-1">
         Aktive Filter:
@@ -555,6 +584,22 @@
             type="button"
             (click)="onNotPlayedSinceSelect('')"
             class="text-violet-400 hover:text-violet-700 dark:hover:text-violet-100 p-0.5 rounded-full cursor-pointer transition-colors"
+          >
+            <svg lucideX [size]="12"></svg>
+          </button>
+        </span>
+      }
+      @if (storageFilter()) {
+        <span
+          class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 text-xs font-medium shadow-xs"
+          data-testid="storage-filter-badge"
+        >
+          <svg lucideArchive [size]="12" class="text-emerald-500"></svg>
+          <span>{{ storageFilterLabel() }}</span>
+          <button
+            type="button"
+            (click)="storageFilterChange.emit('')"
+            class="text-emerald-500 hover:text-emerald-800 dark:hover:text-emerald-100 p-0.5 rounded-full cursor-pointer transition-colors"
           >
             <svg lucideX [size]="12"></svg>
           </button>

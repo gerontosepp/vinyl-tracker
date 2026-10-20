@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, OnInit, computed, inject, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { ApiService } from '../../../../core/services/api.service';
@@ -86,9 +86,14 @@ const INPUT_CLASS =
             </button>
           </div>
           @if (media.unplacedCount > 0) {
-            <p class="text-sm font-semibold text-amber-700 dark:text-amber-300" data-testid="unplaced-count">
+            <button
+              type="button"
+              (click)="filterSelected.emit('unplaced')"
+              class="text-sm font-semibold text-amber-700 dark:text-amber-300 hover:underline cursor-pointer"
+              data-testid="unplaced-count"
+            >
               {{ 'storage.unplacedCount' | translate: { count: media.unplacedCount } }}
-            </p>
+            </button>
           }
           <div class="flex flex-wrap gap-6">
             @for (unit of media.units; track unit.id) {
@@ -96,7 +101,13 @@ const INPUT_CLASS =
                 <p class="text-sm font-bold text-slate-800 dark:text-slate-200 mb-2">{{ unit.name }} <span class="text-xs font-medium text-slate-500">· {{ unit.typeName }}</span></p>
                 <div class="grid gap-1.5" [style.grid-template-columns]="'repeat(' + unit.columns + ', minmax(7rem, 1fr))'">
                   @for (c of unit.compartments; track c.number) {
-                    <div class="rounded-lg border border-slate-200 dark:border-slate-600 p-2 bg-slate-50 dark:bg-slate-900/40 text-[11px] space-y-1" data-testid="compartment">
+                    <button
+                      type="button"
+                      (click)="filterSelected.emit(unit.id + ':' + c.number)"
+                      [title]="'storage.openCompartment' | translate"
+                      class="text-left rounded-lg border border-slate-200 dark:border-slate-600 p-2 bg-slate-50 dark:bg-slate-900/40 hover:border-indigo-400 dark:hover:border-indigo-500 text-[11px] space-y-1 cursor-pointer"
+                      data-testid="compartment"
+                    >
                       <div class="flex justify-between font-bold text-slate-700 dark:text-slate-300">
                         <span>{{ 'storage.compartment' | translate: { number: c.number } }}</span>
                         <span [class.text-amber-600]="fillPercent(c) >= 100">{{ c.used }} / {{ c.capacity }}</span>
@@ -105,7 +116,7 @@ const INPUT_CLASS =
                         <div class="h-full rounded-full" [class]="fillPercent(c) >= 100 ? 'bg-amber-500' : 'bg-indigo-500'" [style.width.%]="fillPercent(c)"></div>
                       </div>
                       <p class="truncate text-slate-500 dark:text-slate-400" [title]="artistRange(c)">{{ artistRange(c) }}</p>
-                    </div>
+                    </button>
                   }
                 </div>
               </div>
@@ -302,6 +313,9 @@ export class ShelfViewComponent implements OnInit {
 
   readonly presets = STORAGE_PRESETS;
   readonly inputClass = INPUT_CLASS;
+
+  /** Storage filter of the collection list (`<unitId>:<compartment>` or `unplaced`). */
+  readonly filterSelected = output<string>();
 
   readonly types = signal<StorageType[]>([]);
   readonly units = signal<StorageUnit[]>([]);

@@ -9,6 +9,13 @@
 
 ## Unreleased
 
+- **Feature: Lagerung in Regalen (`#41`, Teil 2)**:
+  - **Nach Lagerplatz filtern**: In der Sammlung gibt es den Filter „Lagerplatz“ (Regal, Fach oder „Ohne Platz“). Ein Klick auf ein Fach in der Regal-Übersicht öffnet die Liste mit genau diesen Platten.
+  - **Inventurliste**: Neue Druckvorlage, nach Regal und Fach gruppiert, mit Ankreuzfeld je Platte und „Ohne Platz“ am Ende. Der Lagerplatz-Filter gilt auch beim Drucken.
+  - **MCP**: Neue Tools `get_record_placement` (wohin gehört die Platte?) und `get_storage_layout` (Regal-Übersicht); `get_user_collection` filtert nach Lagerplatz, `add_to_collection` nennt den Platz und die nötigen Verschiebungen.
+  - **Backup**: Das JSON-Backup enthält Lagertypen, Regale und Fachgrenzen (`format_version: 3`). Beim Wiederherstellen werden fehlende Regale ergänzt, vorhandene bleiben unverändert.
+  - **API**: `GET /api/collection` mit `storage_unit` (Regal-ID oder `unplaced`) und `compartment`; Druckvorlage `inventory`.
+
 - **Feature: Lagerung in Regalen (`#41`, Teil 1)**:
   - **Regale beschreiben**: In der Sammlung gibt es neben der Liste die Ansicht „Regale“. Dort legst du Lagertypen (Fach-Raster und Discs pro Fach, Vorlagen für IKEA Kallax mit 70 Platten und das IKEA-CD-Regal mit 11 CDs pro Fach) und deine Regale in ihrer Reihenfolge an.
   - **Gleichmäßig verteilt**: Die Sammlung (Künstler A–Z) wird gleichmäßig auf alle Fächer aller Regale verteilt, jedes Fach behält Luft. Doppel-LPs und Boxen belegen so viele Plätze, wie sie Discs haben.

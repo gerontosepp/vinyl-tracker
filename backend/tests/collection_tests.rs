@@ -1488,7 +1488,7 @@ async fn test_collection_backup_restore_roundtrip() {
     assert_eq!(export_res.status(), StatusCode::OK);
     let backup_bytes = export_res.into_body().collect().await.unwrap().to_bytes();
     let backup: Value = serde_json::from_slice(&backup_bytes).unwrap();
-    assert_eq!(backup["format_version"], 2);
+    assert_eq!(backup["format_version"], 3);
     let played = backup["releases"]
         .as_array()
         .unwrap()
@@ -1518,7 +1518,7 @@ async fn test_collection_backup_restore_roundtrip() {
     // 4. Restore into the empty target collection
     let (status, result) = post_restore(&app, &target_cookie, backup_bytes.to_vec()).await;
     assert_eq!(status, StatusCode::OK, "{result}");
-    assert_eq!(result["format_version"], 2);
+    assert_eq!(result["format_version"], 3);
     assert_eq!(result["records_total"], 2);
     assert_eq!(result["records_added"], 2);
     assert_eq!(result["records_updated"], 0);

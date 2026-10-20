@@ -3,7 +3,7 @@
 import { ReleaseEntry } from '../models/release-info.model';
 
 // Application version from frontend/package.json – single source for all version badges.
-export const APP_VERSION = '0.11.0';
+export const APP_VERSION = '0.12.0';
 
 export const RELEASE_INFO_DATA: ReleaseEntry[] = [
   {
@@ -12,6 +12,14 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "tag": "In Entwicklung",
     "isCurrent": false,
     "isUnreleased": true,
+    "items": []
+  },
+  {
+    "version": "v0.12.0",
+    "rawHeader": "v0.12.0 (2026-10-21)",
+    "date": "2026-10-21",
+    "isCurrent": true,
+    "isUnreleased": false,
     "items": [
       {
         "title": "Feature: Sortier-Modus auf dem Handy (`#172`)",
@@ -88,7 +96,7 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "version": "v0.11.0",
     "rawHeader": "v0.11.0 (2026-10-20)",
     "date": "2026-10-20",
-    "isCurrent": true,
+    "isCurrent": false,
     "isUnreleased": false,
     "items": [
       {

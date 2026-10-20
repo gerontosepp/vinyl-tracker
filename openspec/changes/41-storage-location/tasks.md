@@ -28,7 +28,7 @@
 ## 4. Frontend: Kern
 
 - [x] 4.1 Typen und `ApiService` (Typen/Regale CRUD, Reihenfolge, Layout, Neu verteilen + Vorschau, Placement)
-- [x] 4.2 Einstellungen „Lagerung“: Lagertypen mit Vorlagen (Kallax 1×4, 2×2, 2×4, 4×4, 5×5 mit 70; CD-Regal 12×1 mit 11), Regale mit Reihenfolge; Hinweis bei automatischem Neu-Verteilen
+- [x] 4.2 Sammlung, Ansicht „Regale“ (Umschalter „Liste | Regale“, Verwaltung über „Regale verwalten“): Lagertypen mit Vorlagen (Kallax 1×4, 2×2, 2×4, 4×4, 5×5 mit 70; CD-Regal 12×1 mit 11), Regale mit Reihenfolge; Hinweis bei automatischem Neu-Verteilen
 - [x] 4.3 Regal-Übersicht als Raster mit Füllstand und Künstlerbereich; Anzahl „ohne Platz“; „Neu verteilen“ mit Vorschau und Bestätigung
 - [x] 4.4 Komponente `storage-placement` (Slot, Nachbarn, zusammengefasste Verschiebungen); Anzeige nach dem Hinzufügen (Suche/Scan) und im Detail-Modal
 - [x] 4.5 Tabelle (Spalte Lagerplatz) und mobile Liste

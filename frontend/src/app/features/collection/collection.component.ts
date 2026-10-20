@@ -1,10 +1,13 @@
 import { Component, OnInit, OnDestroy, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 
 import { LayoutComponent } from '../../shared/components/layout/layout.component';
 import { CollectionToolbarComponent } from './components/collection-toolbar/collection-toolbar.component';
 import { CollectionTableComponent } from './components/collection-table/collection-table.component';
 import { CollectionCardListComponent } from './components/collection-card-list/collection-card-list.component';
 import { RecordDetailModalComponent } from './components/record-detail-modal/record-detail-modal.component';
+import { ShelfViewComponent } from './components/shelf-view/shelf-view.component';
+import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { AuthService } from '../../core/services/auth.service';
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
@@ -25,6 +28,9 @@ import { Subscription } from 'rxjs';
     CollectionCardListComponent,
     RecordDetailModalComponent,
     PrintDialogComponent,
+    ShelfViewComponent,
+    NgTemplateOutlet,
+    TranslatePipe,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './collection.component.html',
@@ -34,6 +40,10 @@ export class CollectionComponent implements OnInit, OnDestroy {
   readonly apiService = inject(ApiService);
   readonly toastService = inject(ToastService);
   readonly languageService = inject(LanguageService);
+
+  /** List of records or the shelf view (storage overview and management). */
+  readonly view = signal<'list' | 'shelves'>('list');
+  readonly viewOptions = ['list', 'shelves'] as const;
 
   readonly selectedRecord = signal<CollectionRelease | null>(null);
   readonly recordDetail = signal<RecordDetailDto | null>(null);
@@ -112,6 +122,13 @@ export class CollectionComponent implements OnInit, OnDestroy {
     if (this.yearsTimer) {
       clearTimeout(this.yearsTimer);
     }
+  }
+
+  /** Back in the list, slots may have changed (shelves edited or redistributed). */
+  switchView(view: 'list' | 'shelves'): void {
+    if (this.view() === view) return;
+    this.view.set(view);
+    if (view === 'list') this.loadData();
   }
 
   loadGenres(): void {

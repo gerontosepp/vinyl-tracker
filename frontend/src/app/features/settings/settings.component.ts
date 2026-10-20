@@ -12,10 +12,9 @@ import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { ScannerService } from '../../core/services/scanner.service';
 import { getErrorMessage } from '../../core/utils/error';
 import { RoonStatus } from '../../core/types';
-import { LucideDownload, LucideLogOut, LucideSettings, LucideHistory, LucideUpload, LucidePrinter, LucideArchive } from '@lucide/angular';
+import { LucideDownload, LucideLogOut, LucideSettings, LucideHistory, LucideUpload, LucidePrinter } from '@lucide/angular';
 import { PrintDialogComponent } from '../../shared/components/print-dialog/print-dialog.component';
 import { ReleaseNotesComponent } from './components/release-notes/release-notes.component';
-import { StorageSettingsComponent } from './components/storage-settings/storage-settings.component';
 import { APP_VERSION } from '../../core/constants/release-info.data';
 
 interface PendingRestore {
@@ -37,10 +36,8 @@ interface PendingRestore {
     LucideHistory,
     LucideUpload,
     LucidePrinter,
-    LucideArchive,
     PrintDialogComponent,
     ReleaseNotesComponent,
-    StorageSettingsComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   template: `
@@ -70,23 +67,6 @@ interface PendingRestore {
             >
               <svg lucideSettings [size]="16"></svg>
               {{ 'settings.tabSettings' | translate }}
-            </button>
-
-            <button
-              type="button"
-              (click)="activeTab.set('storage')"
-              data-testid="tab-storage"
-              class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer select-none"
-              [class.bg-white]="activeTab() === 'storage'"
-              [class.dark:bg-slate-700]="activeTab() === 'storage'"
-              [class.text-indigo-600]="activeTab() === 'storage'"
-              [class.dark:text-indigo-400]="activeTab() === 'storage'"
-              [class.shadow-xs]="activeTab() === 'storage'"
-              [class.text-slate-600]="activeTab() !== 'storage'"
-              [class.dark:text-slate-400]="activeTab() !== 'storage'"
-            >
-              <svg lucideArchive [size]="16"></svg>
-              {{ 'settings.tabStorage' | translate }}
             </button>
 
             <button
@@ -620,13 +600,6 @@ interface PendingRestore {
           </div>
         }
 
-        <!-- TAB: LAGERUNG / STORAGE -->
-        @if (activeTab() === 'storage') {
-          <div class="animate-fade-in">
-            <app-storage-settings />
-          </div>
-        }
-
         <!-- TAB 2: VERSIONS-HINWEISE / CHANGES -->
         @if (activeTab() === 'changes') {
           <div class="max-w-4xl mx-auto space-y-6 animate-fade-in">
@@ -717,7 +690,7 @@ export class SettingsComponent {
   token = '';
   password = '';
   readonly showResetConfirm = signal<boolean>(false);
-  readonly activeTab = signal<'settings' | 'storage' | 'changes'>('settings');
+  readonly activeTab = signal<'settings' | 'changes'>('settings');
 
   // Roon Integration
   roonHost = this.authService.user()?.roonHost || '';

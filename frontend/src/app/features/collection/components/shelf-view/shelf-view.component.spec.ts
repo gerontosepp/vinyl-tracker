@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
-import { StorageSettingsComponent, STORAGE_PRESETS } from './storage-settings.component';
+import { ShelfViewComponent, STORAGE_PRESETS } from './shelf-view.component';
 import { ApiService } from '../../../../core/services/api.service';
 import { LanguageService } from '../../../../core/services/language.service';
 import { ToastService } from '../../../../core/services/toast.service';
@@ -34,9 +34,9 @@ const layout: StorageLayout = {
   ],
 };
 
-describe('StorageSettingsComponent', () => {
-  let fixture: ComponentFixture<StorageSettingsComponent>;
-  let component: StorageSettingsComponent;
+describe('ShelfViewComponent', () => {
+  let fixture: ComponentFixture<ShelfViewComponent>;
+  let component: ShelfViewComponent;
   let api: Record<string, ReturnType<typeof vi.fn>>;
   let toast: { showToast: ReturnType<typeof vi.fn> };
 
@@ -58,7 +58,7 @@ describe('StorageSettingsComponent', () => {
     toast = { showToast: vi.fn() };
 
     await TestBed.configureTestingModule({
-      imports: [StorageSettingsComponent],
+      imports: [ShelfViewComponent],
       providers: [
         { provide: ApiService, useValue: api },
         { provide: ToastService, useValue: toast },
@@ -66,7 +66,7 @@ describe('StorageSettingsComponent', () => {
     }).compileComponents();
     TestBed.inject(LanguageService).setLanguage('de');
 
-    fixture = TestBed.createComponent(StorageSettingsComponent);
+    fixture = TestBed.createComponent(ShelfViewComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
@@ -77,7 +77,6 @@ describe('StorageSettingsComponent', () => {
   it('loads types, shelves and the overview with fill level and artist range', () => {
     expect(component.types().length).toBe(2);
     expect(component.mediaWithUnits()).toEqual(['vinyl']);
-    expect(el('unit-list-vinyl')?.textContent).toContain('Kallax-2');
 
     const compartments = fixture.nativeElement.querySelectorAll('[data-testid="compartment"]');
     expect(compartments.length).toBe(2);
@@ -87,7 +86,26 @@ describe('StorageSettingsComponent', () => {
     expect(el('unplaced-count')?.textContent).toContain('3 Platten ohne Platz');
   });
 
+  it('shows the management only on demand once shelves exist', () => {
+    expect(el('type-list')).toBeNull();
+    expect(el('manage-toggle')?.textContent).toContain('Regale verwalten');
+
+    el('manage-toggle')!.click();
+    fixture.detectChanges();
+    expect(el('unit-list-vinyl')?.textContent).toContain('Kallax-2');
+    expect(el('manage-toggle')?.textContent).toContain('Fertig');
+  });
+
+  it('opens the management directly before the first shelf', () => {
+    component.units.set([]);
+    fixture.detectChanges();
+    expect(el('manage-toggle')).toBeNull();
+    expect(el('type-list')).not.toBeNull();
+  });
+
   it('only offers deleting unused storage types', () => {
+    component.managing.set(true);
+    fixture.detectChanges();
     const typeList = el('type-list')!;
     const rows = typeList.querySelectorAll('li');
     expect(rows[0].textContent).not.toContain('Löschen');

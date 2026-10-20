@@ -58,7 +58,7 @@ Der Filter `storageUnit`/`compartment` berechnet die Belegung und schränkt die 
 `vinyl-api-types`: `StorageSlotDto { unitId, unitName, compartment, row, column, oversized }`, als `storage: Option<StorageSlotDto>` (`#[serde(default)]`) in `CollectionRelease` und `RecordDetailDto`; im Detail zusätzlich `storageNeighbors`. Antwort von `POST /api/collection/releases/{id}` erhält optional `placement`. Die Sammlungsabfrage berechnet die Belegung nur, wenn für den Nutzer Regale existieren.
 
 ### 10. Frontend
-- Einstellungen → Bereich „Lagerung“ (`features/settings/storage`): Typen (Vorlagen, Kallax mit 70, CD-Regal 12×1 mit 11), Regale (Name, Typ, Reihenfolge per Hoch/Runter), Übersicht als CSS-Grid je Regal mit Füllbalken und Künstlerbereich, „Neu verteilen“ mit Vorschau.
+- Sammlung → Ansicht „Regale“ (`features/collection/components/shelf-view`, Umschalter „Liste | Regale“ neben dem Titel): oben die Übersicht, „Regale verwalten“ blendet Typen (Vorlagen, Kallax mit 70, CD-Regal 12×1 mit 11), Regale (Name, Typ, Reihenfolge per Hoch/Runter), Übersicht als CSS-Grid je Regal mit Füllbalken und Künstlerbereich, „Neu verteilen“ mit Vorschau.
 - Komponente `storage-placement` (Slot, Nachbarn, Verschiebungen) nach dem Hinzufügen und im Detail-Modal.
 - Tabelle: Spalte „Lagerplatz“; mobile Liste: kleine Zeile „Kallax-1 · 3“.
 
@@ -66,7 +66,7 @@ Der Filter `storageUnit`/`compartment` berechnet die Belegung und schränkt die 
 `CollectionBackupDto.storage: { types, units, boundaries }`, `BACKUP_FORMAT_VERSION = 3`. Restore akzeptiert 2 und 3; Typen per Name, Regale per Name anlegen, falls nicht vorhanden (mit ihren Grenzen); vorhandene Regale und Grenzen bleiben unverändert; danach `commit`.
 
 ### 12. Auslieferung in zwei PRs
-- **PR 1 – Kern**: Migration, DTOs, Disc-Anzahl, Konfiguration, Verteilen/Einsortieren/Ausgleich, Commit nach Hinzufügen und Sync, Einsortier-Hinweis, Lagerplatz in Sammlung und Detail, Einstellungen mit Übersicht und „Neu verteilen“.
+- **PR 1 – Kern**: Migration, DTOs, Disc-Anzahl, Konfiguration, Verteilen/Einsortieren/Ausgleich, Commit nach Hinzufügen und Sync, Einsortier-Hinweis, Lagerplatz in Sammlung und Detail, Ansicht „Regale“ mit Übersicht, Verwaltung und „Neu verteilen“.
 - **PR 2 – Nutzung**: Filter (Backend + Toolbar + Klick aus der Übersicht), Inventurliste, MCP, Backup.
 
 Der Change wird erst nach PR 2 archiviert.

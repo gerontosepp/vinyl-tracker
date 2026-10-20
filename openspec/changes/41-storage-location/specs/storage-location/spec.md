@@ -117,11 +117,15 @@ Das System MUST über `GET /api/storage/placement/{discogsId}` für eine Platte 
 - **THEN** zeigt das Frontend nach dem Hinzufügen keinen Einsortier-Hinweis, sondern wie bisher nur die Erfolgsmeldung
 
 ### Requirement: Regal-Übersicht
-Das System MUST über `GET /api/storage/layout` je Medium die Regale mit ihren Fächern liefern: Belegung und Kapazität in Discs, Anzahl Exemplare sowie erster und letzter Künstler; dazu die Anzahl der Exemplare ohne Platz. Das Frontend MUST in den Einstellungen Lagertypen und Regale verwalten lassen und jedes Regal als Raster mit Füllstand und Künstlerbereich je Fach darstellen. Alle Texte MUST auf Deutsch und Englisch vorliegen.
+Das System MUST über `GET /api/storage/layout` je Medium die Regale mit ihren Fächern (Belegung, Kapazität, Anzahl, erster und letzter Künstler) und die Anzahl der Exemplare ohne Platz liefern. Das Frontend MUST in der Sammlung eine Ansicht „Regale“ bieten, die jedes Regal als Raster mit Füllstand und Künstlerbereich je Fach darstellt und Lagertypen und Regale verwalten lässt (DE/EN).
 
 #### Scenario: Übersicht ansehen
-- **WHEN** der Nutzer die Lagerung in den Einstellungen öffnet
+- **WHEN** der Nutzer in der Sammlung die Ansicht „Regale“ öffnet
 - **THEN** sieht er „Kallax-1“ als 2×2-Raster, jedes Fach mit z. B. „Abba – Beatles“ und Füllstand „68 / 70“
+
+#### Scenario: Regale verwalten
+- **WHEN** Regale existieren und der Nutzer „Regale verwalten“ wählt
+- **THEN** zeigt die Ansicht Lagertypen und Regale zum Anlegen, Bearbeiten, Umsortieren und Löschen; vor dem ersten Regal ist die Verwaltung direkt geöffnet
 
 #### Scenario: Neu verteilen auslösen
 - **WHEN** der Nutzer in der Übersicht eines Mediums „Neu verteilen“ wählt und die Vorschau bestätigt

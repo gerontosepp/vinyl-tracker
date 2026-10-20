@@ -205,7 +205,10 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'print.error': 'Fehler beim Erstellen des PDFs',
 
     // Storage (shelves)
-    'settings.tabStorage': 'Lagerung',
+    'collection.viewList': 'Liste',
+    'collection.viewShelves': 'Regale',
+    'storage.manage': 'Regale verwalten',
+    'storage.manageDone': 'Fertig',
     'storage.slot': '{unit} · Fach {compartment}',
     'storage.slotShort': '{unit} · {compartment}',
     'storage.position': 'Zeile {row}, Spalte {column}',
@@ -534,7 +537,10 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'print.error': 'Failed to create the PDF',
 
     // Storage (shelves)
-    'settings.tabStorage': 'Storage',
+    'collection.viewList': 'List',
+    'collection.viewShelves': 'Shelves',
+    'storage.manage': 'Manage shelves',
+    'storage.manageDone': 'Done',
     'storage.slot': '{unit} · compartment {compartment}',
     'storage.slotShort': '{unit} · {compartment}',
     'storage.position': 'row {row}, column {column}',

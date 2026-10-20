@@ -10,7 +10,7 @@
 ## Unreleased
 
 - **Feature: Lagerung in Regalen (`#41`, Teil 1)**:
-  - **Regale beschreiben**: Unter Einstellungen → „Lagerung“ legst du Lagertypen (Fach-Raster und Discs pro Fach, Vorlagen für IKEA Kallax mit 70 Platten und das IKEA-CD-Regal mit 11 CDs pro Fach) und deine Regale in ihrer Reihenfolge an.
+  - **Regale beschreiben**: In der Sammlung gibt es neben der Liste die Ansicht „Regale“. Dort legst du Lagertypen (Fach-Raster und Discs pro Fach, Vorlagen für IKEA Kallax mit 70 Platten und das IKEA-CD-Regal mit 11 CDs pro Fach) und deine Regale in ihrer Reihenfolge an.
   - **Gleichmäßig verteilt**: Die Sammlung (Künstler A–Z) wird gleichmäßig auf alle Fächer aller Regale verteilt, jedes Fach behält Luft. Doppel-LPs und Boxen belegen so viele Plätze, wie sie Discs haben.
   - **Einsortieren ohne Kettenreaktion**: Neue Platten – per App oder Discogs-Sync – kommen in das Fach, in das sie alphabetisch gehören. Nur wenn ein Fach voll ist, wandern einzelne Platten ins nächste Fach mit Platz.
   - **Wohin damit?**: Nach dem Hinzufügen zeigt der Tracker Regal, Fach (Zeile/Spalte), die Nachbarn und welche Platten umgestellt werden müssen. Tabelle, mobile Liste und Detailansicht zeigen den Lagerplatz.

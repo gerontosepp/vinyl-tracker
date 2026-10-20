@@ -54,167 +54,24 @@ const INPUT_CLASS =
   'w-full border border-slate-200 dark:border-slate-600 rounded-xl py-2 px-3 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-slate-100 text-sm font-semibold focus:ring-2 focus:ring-indigo-500/50 outline-none';
 
 @Component({
-  selector: 'app-storage-settings',
+  selector: 'app-shelf-view',
   standalone: true,
   imports: [FormsModule, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <div class="space-y-6">
-      <p class="text-sm text-slate-600 dark:text-slate-400 font-medium px-2">{{ 'storage.intro' | translate }}</p>
-
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- Storage types -->
-        <section class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-600 p-6 space-y-4">
-          <div>
-            <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">{{ 'storage.typesTitle' | translate }}</h3>
-            <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">{{ 'storage.typesDesc' | translate }}</p>
-          </div>
-
-          <ul class="divide-y divide-slate-100 dark:divide-slate-700" data-testid="type-list">
-            @for (type of types(); track type.id) {
-              <li class="py-2 flex items-center justify-between gap-3">
-                <div class="min-w-0">
-                  <p class="font-semibold text-slate-800 dark:text-slate-200 truncate">
-                    {{ type.name }}
-                    <span class="text-xs font-medium text-slate-500">· {{ 'storage.media.' + type.media | translate }}</span>
-                  </p>
-                  <p class="text-xs text-slate-500 dark:text-slate-400">
-                    {{ 'storage.grid' | translate: { rows: type.rows, columns: type.columns, capacity: type.capacity } }}
-                  </p>
-                </div>
-                <div class="flex gap-2 shrink-0">
-                  <button type="button" (click)="editType(type)" class="text-xs font-bold text-indigo-600 dark:text-indigo-400 cursor-pointer">
-                    {{ 'storage.edit' | translate }}
-                  </button>
-                  @if (type.unitCount === 0) {
-                    <button type="button" (click)="deleteType(type)" class="text-xs font-bold text-red-600 dark:text-red-400 cursor-pointer">
-                      {{ 'storage.delete' | translate }}
-                    </button>
-                  }
-                </div>
-              </li>
-            } @empty {
-              <li class="py-2 text-sm text-slate-500 dark:text-slate-400">{{ 'storage.noTypes' | translate }}</li>
-            }
-          </ul>
-
-          @if (typeForm(); as form) {
-            <form (ngSubmit)="saveType()" class="space-y-3 border-t border-slate-100 dark:border-slate-700 pt-4" data-testid="type-form">
-              @if (form.id === null) {
-                <label class="block text-xs font-bold text-slate-600 dark:text-slate-300">
-                  {{ 'storage.preset' | translate }}
-                  <select [class]="inputClass" name="preset" [ngModel]="form.preset" (ngModelChange)="applyPreset($event)">
-                    @for (preset of presets; track preset.key) {
-                      <option [value]="preset.key">{{ preset.name }}</option>
-                    }
-                    <option value="custom">{{ 'storage.presetCustom' | translate }}</option>
-                  </select>
-                </label>
-              }
-              <label class="block text-xs font-bold text-slate-600 dark:text-slate-300">
-                {{ 'storage.name' | translate }}
-                <input [class]="inputClass" name="name" [(ngModel)]="form.name" required maxlength="100" />
-              </label>
-              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <label class="block text-xs font-bold text-slate-600 dark:text-slate-300">
-                  {{ 'storage.media' | translate }}
-                  <select [class]="inputClass" name="media" [(ngModel)]="form.media" [disabled]="form.id !== null">
-                    <option value="vinyl">{{ 'storage.media.vinyl' | translate }}</option>
-                    <option value="cd">{{ 'storage.media.cd' | translate }}</option>
-                  </select>
-                </label>
-                <label class="block text-xs font-bold text-slate-600 dark:text-slate-300">
-                  {{ 'storage.rows' | translate }}
-                  <input [class]="inputClass" type="number" name="rows" min="1" max="12" [(ngModel)]="form.rows" />
-                </label>
-                <label class="block text-xs font-bold text-slate-600 dark:text-slate-300">
-                  {{ 'storage.columns' | translate }}
-                  <input [class]="inputClass" type="number" name="columns" min="1" max="12" [(ngModel)]="form.columns" />
-                </label>
-                <label class="block text-xs font-bold text-slate-600 dark:text-slate-300">
-                  {{ 'storage.capacity' | translate }}
-                  <input [class]="inputClass" type="number" name="capacity" min="1" max="500" [(ngModel)]="form.capacity" />
-                </label>
-              </div>
-              <p class="text-xs text-slate-500 dark:text-slate-400">{{ 'storage.capacityHint' | translate }}</p>
-              <div class="flex gap-2">
-                <button type="button" (click)="typeForm.set(null)" class="flex-1 bg-slate-100 dark:bg-slate-900/50 text-slate-600 dark:text-slate-300 font-bold px-4 py-2 rounded-xl cursor-pointer">
-                  {{ 'storage.cancel' | translate }}
-                </button>
-                <button type="submit" [disabled]="saving()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold px-4 py-2 rounded-xl cursor-pointer">
-                  {{ 'storage.save' | translate }}
-                </button>
-              </div>
-            </form>
-          } @else {
-            <button type="button" (click)="startNewType()" data-testid="add-type" class="w-full py-2 rounded-xl border border-dashed border-indigo-300 dark:border-indigo-700 text-indigo-600 dark:text-indigo-400 font-bold text-sm cursor-pointer">
-              + {{ 'storage.addType' | translate }}
-            </button>
-          }
-        </section>
-
-        <!-- Shelves -->
-        <section class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-600 p-6 space-y-4">
-          <div>
-            <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">{{ 'storage.unitsTitle' | translate }}</h3>
-            <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">{{ 'storage.unitsDesc' | translate }}</p>
-          </div>
-
-          @for (media of mediaWithUnits(); track media) {
-            <div>
-              <p class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">{{ 'storage.media.' + media | translate }}</p>
-              <ul class="divide-y divide-slate-100 dark:divide-slate-700" [attr.data-testid]="'unit-list-' + media">
-                @for (unit of unitsOf(media); track unit.id; let first = $first; let last = $last) {
-                  <li class="py-2 flex items-center justify-between gap-3">
-                    <div class="min-w-0">
-                      <p class="font-semibold text-slate-800 dark:text-slate-200 truncate">{{ unit.name }}</p>
-                      <p class="text-xs text-slate-500 dark:text-slate-400">{{ typeName(unit.typeId) }}</p>
-                    </div>
-                    <div class="flex items-center gap-2 shrink-0">
-                      <button type="button" (click)="moveUnit(unit, -1)" [disabled]="first" [attr.aria-label]="'storage.moveUp' | translate" class="px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 disabled:opacity-30 cursor-pointer">↑</button>
-                      <button type="button" (click)="moveUnit(unit, 1)" [disabled]="last" [attr.aria-label]="'storage.moveDown' | translate" class="px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 disabled:opacity-30 cursor-pointer">↓</button>
-                      <button type="button" (click)="editUnit(unit)" class="text-xs font-bold text-indigo-600 dark:text-indigo-400 cursor-pointer">{{ 'storage.edit' | translate }}</button>
-                      <button type="button" (click)="deleteUnit(unit)" class="text-xs font-bold text-red-600 dark:text-red-400 cursor-pointer">{{ 'storage.delete' | translate }}</button>
-                    </div>
-                  </li>
-                }
-              </ul>
-            </div>
-          } @empty {
-            <p class="text-sm text-slate-500 dark:text-slate-400">{{ 'storage.noUnits' | translate }}</p>
-          }
-
-          @if (unitForm(); as form) {
-            <form (ngSubmit)="saveUnit()" class="space-y-3 border-t border-slate-100 dark:border-slate-700 pt-4" data-testid="unit-form">
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <label class="block text-xs font-bold text-slate-600 dark:text-slate-300">
-                  {{ 'storage.unitName' | translate }}
-                  <input [class]="inputClass" name="unitName" [(ngModel)]="form.name" required maxlength="100" />
-                </label>
-                <label class="block text-xs font-bold text-slate-600 dark:text-slate-300">
-                  {{ 'storage.type' | translate }}
-                  <select [class]="inputClass" name="typeId" [(ngModel)]="form.typeId">
-                    @for (type of types(); track type.id) {
-                      <option [ngValue]="type.id">{{ type.name }}</option>
-                    }
-                  </select>
-                </label>
-              </div>
-              <div class="flex gap-2">
-                <button type="button" (click)="unitForm.set(null)" class="flex-1 bg-slate-100 dark:bg-slate-900/50 text-slate-600 dark:text-slate-300 font-bold px-4 py-2 rounded-xl cursor-pointer">
-                  {{ 'storage.cancel' | translate }}
-                </button>
-                <button type="submit" [disabled]="saving()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold px-4 py-2 rounded-xl cursor-pointer">
-                  {{ 'storage.save' | translate }}
-                </button>
-              </div>
-            </form>
-          } @else if (types().length > 0) {
-            <button type="button" (click)="startNewUnit()" data-testid="add-unit" class="w-full py-2 rounded-xl border border-dashed border-indigo-300 dark:border-indigo-700 text-indigo-600 dark:text-indigo-400 font-bold text-sm cursor-pointer">
-              + {{ 'storage.addUnit' | translate }}
-            </button>
-          }
-        </section>
+      <div class="flex flex-wrap items-center justify-between gap-3 px-2">
+        <p class="text-sm text-slate-600 dark:text-slate-400 font-medium max-w-2xl">{{ 'storage.intro' | translate }}</p>
+        @if (units().length > 0) {
+          <button
+            type="button"
+            (click)="managing.set(!managing())"
+            data-testid="manage-toggle"
+            class="text-sm font-bold px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 cursor-pointer"
+          >
+            ⚙ {{ (managing() ? 'storage.manageDone' : 'storage.manage') | translate }}
+          </button>
+        }
       </div>
 
       <!-- Overview -->
@@ -257,6 +114,164 @@ const INPUT_CLASS =
         </section>
       }
 
+      @if (managing() || units().length === 0) {
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Storage types -->
+          <section class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-600 p-6 space-y-4">
+            <div>
+              <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">{{ 'storage.typesTitle' | translate }}</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">{{ 'storage.typesDesc' | translate }}</p>
+            </div>
+
+            <ul class="divide-y divide-slate-100 dark:divide-slate-700" data-testid="type-list">
+              @for (type of types(); track type.id) {
+                <li class="py-2 flex items-center justify-between gap-3">
+                  <div class="min-w-0">
+                    <p class="font-semibold text-slate-800 dark:text-slate-200 truncate">
+                      {{ type.name }}
+                      <span class="text-xs font-medium text-slate-500">· {{ 'storage.media.' + type.media | translate }}</span>
+                    </p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">
+                      {{ 'storage.grid' | translate: { rows: type.rows, columns: type.columns, capacity: type.capacity } }}
+                    </p>
+                  </div>
+                  <div class="flex gap-2 shrink-0">
+                    <button type="button" (click)="editType(type)" class="text-xs font-bold text-indigo-600 dark:text-indigo-400 cursor-pointer">
+                      {{ 'storage.edit' | translate }}
+                    </button>
+                    @if (type.unitCount === 0) {
+                      <button type="button" (click)="deleteType(type)" class="text-xs font-bold text-red-600 dark:text-red-400 cursor-pointer">
+                        {{ 'storage.delete' | translate }}
+                      </button>
+                    }
+                  </div>
+                </li>
+              } @empty {
+                <li class="py-2 text-sm text-slate-500 dark:text-slate-400">{{ 'storage.noTypes' | translate }}</li>
+              }
+            </ul>
+
+            @if (typeForm(); as form) {
+              <form (ngSubmit)="saveType()" class="space-y-3 border-t border-slate-100 dark:border-slate-700 pt-4" data-testid="type-form">
+                @if (form.id === null) {
+                  <label class="block text-xs font-bold text-slate-600 dark:text-slate-300">
+                    {{ 'storage.preset' | translate }}
+                    <select [class]="inputClass" name="preset" [ngModel]="form.preset" (ngModelChange)="applyPreset($event)">
+                      @for (preset of presets; track preset.key) {
+                        <option [value]="preset.key">{{ preset.name }}</option>
+                      }
+                      <option value="custom">{{ 'storage.presetCustom' | translate }}</option>
+                    </select>
+                  </label>
+                }
+                <label class="block text-xs font-bold text-slate-600 dark:text-slate-300">
+                  {{ 'storage.name' | translate }}
+                  <input [class]="inputClass" name="name" [(ngModel)]="form.name" required maxlength="100" />
+                </label>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <label class="block text-xs font-bold text-slate-600 dark:text-slate-300">
+                    {{ 'storage.media' | translate }}
+                    <select [class]="inputClass" name="media" [(ngModel)]="form.media" [disabled]="form.id !== null">
+                      <option value="vinyl">{{ 'storage.media.vinyl' | translate }}</option>
+                      <option value="cd">{{ 'storage.media.cd' | translate }}</option>
+                    </select>
+                  </label>
+                  <label class="block text-xs font-bold text-slate-600 dark:text-slate-300">
+                    {{ 'storage.rows' | translate }}
+                    <input [class]="inputClass" type="number" name="rows" min="1" max="12" [(ngModel)]="form.rows" />
+                  </label>
+                  <label class="block text-xs font-bold text-slate-600 dark:text-slate-300">
+                    {{ 'storage.columns' | translate }}
+                    <input [class]="inputClass" type="number" name="columns" min="1" max="12" [(ngModel)]="form.columns" />
+                  </label>
+                  <label class="block text-xs font-bold text-slate-600 dark:text-slate-300">
+                    {{ 'storage.capacity' | translate }}
+                    <input [class]="inputClass" type="number" name="capacity" min="1" max="500" [(ngModel)]="form.capacity" />
+                  </label>
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400">{{ 'storage.capacityHint' | translate }}</p>
+                <div class="flex gap-2">
+                  <button type="button" (click)="typeForm.set(null)" class="flex-1 bg-slate-100 dark:bg-slate-900/50 text-slate-600 dark:text-slate-300 font-bold px-4 py-2 rounded-xl cursor-pointer">
+                    {{ 'storage.cancel' | translate }}
+                  </button>
+                  <button type="submit" [disabled]="saving()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold px-4 py-2 rounded-xl cursor-pointer">
+                    {{ 'storage.save' | translate }}
+                  </button>
+                </div>
+              </form>
+            } @else {
+              <button type="button" (click)="startNewType()" data-testid="add-type" class="w-full py-2 rounded-xl border border-dashed border-indigo-300 dark:border-indigo-700 text-indigo-600 dark:text-indigo-400 font-bold text-sm cursor-pointer">
+                + {{ 'storage.addType' | translate }}
+              </button>
+            }
+          </section>
+
+          <!-- Shelves -->
+          <section class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-600 p-6 space-y-4">
+            <div>
+              <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">{{ 'storage.unitsTitle' | translate }}</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">{{ 'storage.unitsDesc' | translate }}</p>
+            </div>
+
+            @for (media of mediaWithUnits(); track media) {
+              <div>
+                <p class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">{{ 'storage.media.' + media | translate }}</p>
+                <ul class="divide-y divide-slate-100 dark:divide-slate-700" [attr.data-testid]="'unit-list-' + media">
+                  @for (unit of unitsOf(media); track unit.id; let first = $first; let last = $last) {
+                    <li class="py-2 flex items-center justify-between gap-3">
+                      <div class="min-w-0">
+                        <p class="font-semibold text-slate-800 dark:text-slate-200 truncate">{{ unit.name }}</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">{{ typeName(unit.typeId) }}</p>
+                      </div>
+                      <div class="flex items-center gap-2 shrink-0">
+                        <button type="button" (click)="moveUnit(unit, -1)" [disabled]="first" [attr.aria-label]="'storage.moveUp' | translate" class="px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 disabled:opacity-30 cursor-pointer">↑</button>
+                        <button type="button" (click)="moveUnit(unit, 1)" [disabled]="last" [attr.aria-label]="'storage.moveDown' | translate" class="px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 disabled:opacity-30 cursor-pointer">↓</button>
+                        <button type="button" (click)="editUnit(unit)" class="text-xs font-bold text-indigo-600 dark:text-indigo-400 cursor-pointer">{{ 'storage.edit' | translate }}</button>
+                        <button type="button" (click)="deleteUnit(unit)" class="text-xs font-bold text-red-600 dark:text-red-400 cursor-pointer">{{ 'storage.delete' | translate }}</button>
+                      </div>
+                    </li>
+                  }
+                </ul>
+              </div>
+            } @empty {
+              <p class="text-sm text-slate-500 dark:text-slate-400">{{ 'storage.noUnits' | translate }}</p>
+            }
+
+            @if (unitForm(); as form) {
+              <form (ngSubmit)="saveUnit()" class="space-y-3 border-t border-slate-100 dark:border-slate-700 pt-4" data-testid="unit-form">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <label class="block text-xs font-bold text-slate-600 dark:text-slate-300">
+                    {{ 'storage.unitName' | translate }}
+                    <input [class]="inputClass" name="unitName" [(ngModel)]="form.name" required maxlength="100" />
+                  </label>
+                  <label class="block text-xs font-bold text-slate-600 dark:text-slate-300">
+                    {{ 'storage.type' | translate }}
+                    <select [class]="inputClass" name="typeId" [(ngModel)]="form.typeId">
+                      @for (type of types(); track type.id) {
+                        <option [ngValue]="type.id">{{ type.name }}</option>
+                      }
+                    </select>
+                  </label>
+                </div>
+                <div class="flex gap-2">
+                  <button type="button" (click)="unitForm.set(null)" class="flex-1 bg-slate-100 dark:bg-slate-900/50 text-slate-600 dark:text-slate-300 font-bold px-4 py-2 rounded-xl cursor-pointer">
+                    {{ 'storage.cancel' | translate }}
+                  </button>
+                  <button type="submit" [disabled]="saving()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold px-4 py-2 rounded-xl cursor-pointer">
+                    {{ 'storage.save' | translate }}
+                  </button>
+                </div>
+              </form>
+            } @else if (types().length > 0) {
+              <button type="button" (click)="startNewUnit()" data-testid="add-unit" class="w-full py-2 rounded-xl border border-dashed border-indigo-300 dark:border-indigo-700 text-indigo-600 dark:text-indigo-400 font-bold text-sm cursor-pointer">
+                + {{ 'storage.addUnit' | translate }}
+              </button>
+            }
+          </section>
+        </div>
+
+      }
+
       @if (preview(); as p) {
         <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-600 p-8 max-w-md animate-fade-in" data-testid="redistribute-confirm">
@@ -280,7 +295,7 @@ const INPUT_CLASS =
     </div>
   `,
 })
-export class StorageSettingsComponent implements OnInit {
+export class ShelfViewComponent implements OnInit {
   private readonly apiService = inject(ApiService);
   private readonly languageService = inject(LanguageService);
   private readonly toastService = inject(ToastService);
@@ -295,6 +310,8 @@ export class StorageSettingsComponent implements OnInit {
   readonly typeForm = signal<TypeForm | null>(null);
   readonly unitForm = signal<UnitForm | null>(null);
   readonly preview = signal<RedistributePreview | null>(null);
+  /** Storage types and shelves are edited on demand (always shown before the first shelf). */
+  readonly managing = signal(false);
 
   readonly mediaWithUnits = computed<StorageMedia[]>(() =>
     (['vinyl', 'cd'] as StorageMedia[]).filter((media) => this.units().some((u) => u.media === media))

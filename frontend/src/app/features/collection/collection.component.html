@@ -1,7 +1,44 @@
 <app-layout [fullWidth]="true">
+  <ng-template #viewSwitch>
+    <div
+      class="inline-flex items-center p-1 bg-slate-200/70 dark:bg-slate-900/60 rounded-xl border border-slate-200/80 dark:border-slate-700 text-xs font-bold"
+      role="tablist"
+    >
+      @for (option of viewOptions; track option) {
+        <button
+          type="button"
+          role="tab"
+          (click)="switchView(option)"
+          [attr.aria-selected]="view() === option"
+          [attr.data-testid]="'view-' + option"
+          class="px-3 py-1 rounded-lg transition-colors cursor-pointer"
+          [class.bg-white]="view() === option"
+          [class.dark:bg-slate-700]="view() === option"
+          [class.text-indigo-600]="view() === option"
+          [class.dark:text-indigo-400]="view() === option"
+          [class.text-slate-600]="view() !== option"
+          [class.dark:text-slate-400]="view() !== option"
+        >
+          {{ (option === 'list' ? 'collection.viewList' : 'collection.viewShelves') | translate }}
+        </button>
+      }
+    </div>
+  </ng-template>
+
   <div
     class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm flex flex-col h-[calc(100vh-6rem)] md:h-[calc(100vh-5rem)] transition-colors border border-slate-200/50 dark:border-slate-600 overflow-hidden"
   >
+    @if (view() === 'shelves') {
+      <div class="px-4 py-3 md:p-6 border-b border-slate-100 dark:border-slate-600 flex items-center gap-3">
+        <h1 class="text-xl md:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+          {{ 'collection.title' | translate }}
+        </h1>
+        <ng-container [ngTemplateOutlet]="viewSwitch" />
+      </div>
+      <div class="flex-1 overflow-y-auto p-2 md:p-6 bg-slate-50/30 dark:bg-slate-900/20">
+        <app-shelf-view />
+      </div>
+    } @else {
     <!-- Header, Actions, Controls & Pagination Toolbar -->
     <app-collection-toolbar
       [search]="search()"
@@ -40,7 +77,9 @@
       (genresChange)="onGenresChange($event)"
       (yearsChange)="onYearsChange($event)"
       (clearAllFilters)="clearAllFilters()"
-    />
+    >
+      <ng-container viewSwitch [ngTemplateOutlet]="viewSwitch" />
+    </app-collection-toolbar>
 
     <!-- List Content -->
     <div class="flex-1 overflow-y-auto p-2 md:p-6 bg-slate-50/30 dark:bg-slate-900/20 relative">
@@ -110,6 +149,7 @@
         </div>
       }
     </div>
+    }
   </div>
 
   <!-- Detail Modal -->

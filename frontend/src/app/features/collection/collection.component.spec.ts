@@ -48,6 +48,20 @@ describe('CollectionComponent', () => {
     expect(component).toBeTruthy();
   });
 
+  it('switches between list and shelves and reloads the list when coming back', () => {
+    const loadData = vi.spyOn(component, 'loadData').mockImplementation(() => {});
+    expect(component.view()).toBe('list');
+
+    component.switchView('shelves');
+    expect(component.view()).toBe('shelves');
+    expect(loadData).not.toHaveBeenCalled();
+
+    component.switchView('shelves');
+    component.switchView('list');
+    expect(component.view()).toBe('list');
+    expect(loadData).toHaveBeenCalledTimes(1);
+  });
+
   describe('getFormatType', () => {
     it('should return cd when format string contains cd', () => {
       const release = {

@@ -45,9 +45,9 @@ import { Subscription, firstValueFrom, forkJoin, of, catchError } from 'rxjs';
           </div>
         </div>
       } @else {
-        <div class="flex flex-col lg:grid lg:grid-cols-3 gap-6">
+        <div class="flex flex-col lg:grid lg:grid-cols-3 gap-4 md:gap-6">
           <!-- Left/Center content: Top Records & Recent Listens -->
-          <div class="lg:col-span-2 flex flex-col space-y-6">
+          <div class="lg:col-span-2 flex flex-col space-y-4 md:space-y-6">
             <app-top-records [data]="topRecords()" class="min-h-0">
               <!-- Date Filter Controls projected here -->
               <div
@@ -113,7 +113,7 @@ import { Subscription, firstValueFrom, forkJoin, of, catchError } from 'rxjs';
           </div>
 
           <!-- Right side panel: Collection Value & Genre Breakdown -->
-          <div class="lg:col-span-1 flex flex-col space-y-6">
+          <div class="lg:col-span-1 flex flex-col space-y-4 md:space-y-6">
             <!-- Collection Value widget -->
             <app-statistic-widget
               [title]="'dashboard.collectionValue' | translate"

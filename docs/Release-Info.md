@@ -9,6 +9,12 @@
 
 ## Unreleased
 
+- **UX: Kompaktere Mobil-Ansicht (`#165`)**:
+  - **Startseite**: „Zuletzt gehört“ ist auf dem Handy eine kompakte Liste mit kleinen Covern wie „Meistgespielte Alben“ (statt großer Kacheln); Abstände von Karten und Spalten sind kleiner. Der Lösch-Button ist auf Touch-Geräten jetzt sichtbar (bisher nur per Hover).
+  - **Versionsnummer** erscheint auf dem Handy neben dem Logo.
+  - **Sammlung**: Auf dem Handy kompakte Zeilen mit kleinem Cover, Künstler, Jahr, Format, Zustand, Wert und Anzahl Hördurchgänge statt zweispaltiger Kacheln; weniger Rand in Kopfzeile und Liste.
+  - Desktop-Ansichten bleiben unverändert.
+
 - **Design: Farbschema „Vinyl“ und Theme ab dem App-Start (`#164`)**:
   - **Theme greift sofort**: Hell, Dunkel oder System gilt jetzt ab dem ersten Laden auf jeder Seite. Bisher wurde es erst beim Öffnen von „Profil“ angewendet – die App wechselte dann scheinbar grundlos ins dunkle Design. Ein kleines Skript setzt das Theme schon vor dem App-Start, damit dunkle Systeme nicht kurz hell aufblitzen.
   - **Warmes dunkles Design**: Braunschwarz statt Dunkelblau für Hintergründe, Karten und Rahmen.

@@ -7,6 +7,17 @@
     "isUnreleased": true,
     "items": [
       {
+        "title": "UX: Kompaktere Mobil-Ansicht (`#165`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "**Startseite**: „Zuletzt gehört“ ist auf dem Handy eine kompakte Liste mit kleinen Covern wie „Meistgespielte Alben“ (statt großer Kacheln); Abstände von Karten und Spalten sind kleiner. Der Lösch-Button ist auf Touch-Geräten jetzt sichtbar (bisher nur per Hover).",
+          "**Versionsnummer** erscheint auf dem Handy neben dem Logo.",
+          "**Sammlung**: Auf dem Handy kompakte Zeilen mit kleinem Cover, Künstler, Jahr, Format, Zustand, Wert und Anzahl Hördurchgänge statt zweispaltiger Kacheln; weniger Rand in Kopfzeile und Liste.",
+          "Desktop-Ansichten bleiben unverändert."
+        ]
+      },
+      {
         "title": "Design: Farbschema „Vinyl“ und Theme ab dem App-Start (`#164`)",
         "type": "feat",
         "typeLabel": "Feature",

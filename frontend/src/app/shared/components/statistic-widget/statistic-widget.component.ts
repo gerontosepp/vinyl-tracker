@@ -7,7 +7,7 @@ import { Component, input, ChangeDetectionStrategy } from '@angular/core';
   template: `
     <div
       [class]="
-        'bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-600 p-5 shadow-sm flex flex-col transition-colors h-full ' +
+        'bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-600 p-4 md:p-5 shadow-sm flex flex-col transition-colors h-full ' +
         className()
       "
     >

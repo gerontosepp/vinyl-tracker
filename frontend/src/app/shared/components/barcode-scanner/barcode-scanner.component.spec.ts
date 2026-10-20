@@ -140,6 +140,25 @@ describe('BarcodeScannerComponent', () => {
     expect(component.addSuccessMessage()).toContain('Platte erfolgreich zu Discogs hinzugefügt');
     expect(toastServiceMock.showToast).toHaveBeenCalledWith('Erfolgreich zu deiner Discogs-Sammlung hinzugefügt!', 'success');
     expect(component.isAddingToCollection()).toBe(false);
+    expect(component.placement()).toBeNull();
+  });
+
+  it('should show where the added record belongs on the shelf', async () => {
+    vi.useFakeTimers();
+    const slot = { unitId: 1, unitName: 'Kallax-1', compartment: 2, row: 1, column: 2, oversized: false, unplaced: false };
+    const syncResult: SyncResult = {
+      added: 1,
+      removed: 0,
+      placement: { discogsId: 501, slot, neighbors: { previous: null, next: null }, moves: [] },
+    };
+    apiServiceMock.addReleaseToCollection.mockReturnValue(of(syncResult));
+
+    component.addToDiscogs(501);
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(component.placement()?.slot.unitName).toBe('Kallax-1');
+    component.handleReset();
+    expect(component.placement()).toBeNull();
   });
 
   it('should handle error when adding release to Discogs fails', async () => {

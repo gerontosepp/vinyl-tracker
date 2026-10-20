@@ -7,13 +7,14 @@ import { ApiService } from '../../../core/services/api.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ScannerService } from '../../../core/services/scanner.service';
 import { TranslatePipe } from '../../../core/pipes/translate.pipe';
-import { ScanResult, DiscogsMatch, SyncResult } from '../../../core/types';
+import { ScanResult, DiscogsMatch, SyncResult, StoragePlacement } from '../../../core/types';
+import { StoragePlacementComponent } from '../storage-placement/storage-placement.component';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-barcode-scanner',
   standalone: true,
-  imports: [FormsModule, TranslatePipe],
+  imports: [FormsModule, TranslatePipe, StoragePlacementComponent],
   changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <div class="flex flex-col items-center p-4 h-full">
@@ -139,6 +140,16 @@ import { firstValueFrom } from 'rxjs';
                 </div>
                 <p class="text-xs mt-1">{{ successMsg }}</p>
               </div>
+              @if (placement(); as place) {
+                <div class="mb-4">
+                  <app-storage-placement
+                    [slot]="place.slot"
+                    [neighbors]="place.neighbors"
+                    [moves]="place.moves"
+                    [showMoves]="true"
+                  />
+                </div>
+              }
             } @else {
               <!-- Pressings list if multiple -->
               @if (result.discogsMatches.length > 1) {
@@ -293,6 +304,8 @@ export class BarcodeScannerComponent implements AfterViewInit, OnDestroy {
   readonly isAddingToCollection = signal<boolean>(false);
   readonly selectedMatchId = signal<number | null>(null);
   readonly addSuccessMessage = signal<string | null>(null);
+  /** Where the newly added record belongs on the shelf (only with configured shelves). */
+  readonly placement = signal<StoragePlacement | null>(null);
   readonly addErrorMessage = signal<string | null>(null);
   readonly manualQuery = signal<string>('');
   readonly isSearchingManual = signal<boolean>(false);
@@ -448,6 +461,7 @@ export class BarcodeScannerComponent implements AfterViewInit, OnDestroy {
       this.addSuccessMessage.set(
         `Platte erfolgreich zu Discogs hinzugefügt und synchronisiert! (${syncResult.added} neu synchronisiert)`
       );
+      this.placement.set(syncResult.placement ?? null);
       this.toastService.showToast(
         'Erfolgreich zu deiner Discogs-Sammlung hinzugefügt!',
         'success'
@@ -471,6 +485,7 @@ export class BarcodeScannerComponent implements AfterViewInit, OnDestroy {
     this.selectedMatchId.set(null);
     this.addSuccessMessage.set(null);
     this.addErrorMessage.set(null);
+    this.placement.set(null);
     this.manualQuery.set('');
     this.isSearchingManual.set(false);
     this.isScanning.set(true);

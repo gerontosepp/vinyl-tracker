@@ -7,11 +7,23 @@ use crate::{
         },
         discogs::{DiscogsArtist, DiscogsPagination},
     },
+    services::storage::StorageService,
 };
 use sqlx::{PgPool, Row};
 use std::collections::HashMap;
 
 pub struct CollectionQueryService;
+
+/// Shelf sort key columns (artist without a leading "The", year, title). The storage layout
+/// compares the selected values byte-wise, which matches `COLLATE "C"` in [`shelf_order_sql`].
+pub const SHELF_ARTIST_KEY_SQL: &str = r#"REGEXP_REPLACE(LOWER(rc.artist), '^the\s+', '', 'i')"#;
+pub const SHELF_TITLE_KEY_SQL: &str = "COALESCE(LOWER(rc.title), '')";
+/// Shelf order of the collection view ("artist", ascending) and of the storage layout.
+pub fn shelf_order_sql() -> String {
+    format!(
+        r#"{SHELF_ARTIST_KEY_SQL} COLLATE "C" ASC NULLS LAST, rc.release_year COLLATE "C" ASC NULLS LAST, {SHELF_TITLE_KEY_SQL} COLLATE "C" ASC, ci.instance_id ASC"#
+    )
+}
 
 impl CollectionQueryService {
     pub async fn get_collection(
@@ -58,8 +70,14 @@ impl CollectionQueryService {
         let limit = filter.per_page as i64;
         let limit_clause = format!("LIMIT {limit} OFFSET {offset}");
 
-        let releases =
+        let mut releases =
             Self::fetch_and_map_releases(pool, user_id, &filter, Some(&limit_clause)).await?;
+        let slots = StorageService::slots(pool, user_id).await?;
+        if !slots.is_empty() {
+            for release in &mut releases {
+                release.storage = slots.get(&release.instance_id).cloned();
+            }
+        }
 
         let total_pages = ((total_items as f64) / (filter.per_page as f64)).ceil() as u32;
 
@@ -140,14 +158,12 @@ impl CollectionQueryService {
                     "COALESCE(le.listen_count, 0) {dir}, {normalized_artist_asc} NULLS LAST, rc.release_year ASC NULLS LAST"
                 )
             }
-            "artist" => {
-                let dir = if sort_order == "desc" {
-                    normalized_artist_desc
-                } else {
-                    normalized_artist_asc
-                };
-                format!("{dir} NULLS LAST, rc.release_year ASC NULLS LAST, rc.title ASC")
+            "artist" if sort_order == "desc" => {
+                format!(
+                    "{normalized_artist_desc} NULLS LAST, rc.release_year ASC NULLS LAST, rc.title ASC"
+                )
             }
+            "artist" => shelf_order_sql(),
             _ => {
                 let dir = if sort_order == "desc" { "DESC" } else { "ASC" };
                 format!("ci.added_at {dir}")
@@ -266,6 +282,7 @@ impl CollectionQueryService {
                 last_played_at: last_played_at
                     .map(|lp| lp.format("%Y-%m-%dT%H:%M:%SZ").to_string()),
                 notes: Some(notes),
+                storage: None,
                 basic_information: BasicInformation {
                     id: discogs_id,
                     title,
@@ -400,6 +417,7 @@ impl CollectionQueryService {
             sleeve_condition: sleeve_cond,
             last_played_at: last_played_at.map(|lp| lp.format("%Y-%m-%dT%H:%M:%SZ").to_string()),
             notes: Some(notes),
+            storage: None,
             basic_information: BasicInformation {
                 id: discogs_id,
                 title,

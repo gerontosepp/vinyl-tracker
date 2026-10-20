@@ -29,6 +29,7 @@ Als Format dient der bewährte Standard für Architecture Decision Records (ange
 | [ADR-0017](0017-datenbank-migrationen-mit-sqlx-migrate.md) | 2026-10-19 | Datenbank-Migrationen mit `sqlx::migrate` statt `refinery` | `Accepted` |
 | [ADR-0018](0018-frontend-unit-tests-mit-vitest.md) | 2026-10-19 | Frontend-Unit-Tests mit Vitest statt Karma/Jasmine | `Accepted` |
 | [ADR-0019](0019-druck-modul-mit-vorlagen-renderern.md) | 2026-10-20 | Druck-Modul mit Vorlagen-Renderern (`POST /api/print`) | `Accepted` |
+| [ADR-0020](0020-lagerposition-aus-gespeicherten-fachgrenzen.md) | 2026-10-20 | Lagerposition aus gespeicherten Fachgrenzen (Regale) | `Accepted` |
 
 ---
 

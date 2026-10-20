@@ -95,12 +95,12 @@ The system consists of three main containers:
 
 The backend (`backend/src/`) follows a strict layered architecture (see `.agent/rules/coding_standards.md`):
 
-- **Routes** (`routes/`): Axum routers and handlers per area – `users`, `collection`, `records`, `scan`, `analytics`, `discogs`, `roon`, `proxy`, `actuator` (health/info). Handlers parse requests, resolve the user via the `CurrentUser` extractor and delegate to services. Cross-cutting layers: CORS, `TraceLayer`, request timeouts (`routes/timeout.rs`) and the per-IP auth rate limit.
-- **Services** (`services/`): Business logic and data access with SQLx queries (no separate repository layer) – `user_service`, `collection_query`, `collection_sync`, `record_service`, `scan_service`, `analytics_service`, `marketplace` (condition-based pricing), `export_service` (CSV/JSON/PDF), `collection_restore` (merging JSON backup restore in one transaction), `print/` (print module: template renderers for Avery labels, scan list and QR cards via `printpdf`, `fast_qr`), `image_proxy` (SSRF-protected), `crypto_service` (AES-256-GCM), `roon/` (SOOD discovery, WebSocket MOO/1 client, pairing, browse-and-play).
+- **Routes** (`routes/`): Axum routers and handlers per area – `users`, `collection`, `records`, `scan`, `analytics`, `discogs`, `print`, `storage`, `roon`, `proxy`, `actuator` (health/info). Handlers parse requests, resolve the user via the `CurrentUser` extractor and delegate to services. Cross-cutting layers: CORS, `TraceLayer`, request timeouts (`routes/timeout.rs`) and the per-IP auth rate limit.
+- **Services** (`services/`): Business logic and data access with SQLx queries (no separate repository layer) – `user_service`, `collection_query`, `collection_sync`, `record_service`, `scan_service`, `analytics_service`, `marketplace` (condition-based pricing), `export_service` (CSV/JSON/PDF), `collection_restore` (merging JSON backup restore in one transaction), `print/` (print module: template renderers for Avery labels, scan list and QR cards via `printpdf`, `fast_qr`), `storage/` (shelf storage: storage types and shelves, even distribution, insertion by stored compartment boundaries and balancing of full compartments – ADR-0020), `image_proxy` (SSRF-protected), `crypto_service` (AES-256-GCM), `roon/` (SOOD discovery, WebSocket MOO/1 client, pairing, browse-and-play).
 - **Clients** (`clients/discogs.rs`): `reqwest`-based Discogs API client with `governor` rate limiting and `moka` caches.
 - **Models** (`models/`): Domain types (e.g. `AppUser` with `sqlx::FromRow`) and backend-internal DTOs. REST request/response DTOs shared with the MCP server live in the workspace crate `vinyl-api-types` and are re-exported here.
 - **Infrastructure**: `auth/` (JWT, `CurrentUser` extractor, client IP resolution), `db/` (connection pool with startup retries, `sqlx::migrate` migrations), `config.rs` (environment configuration), `state.rs` (`AppState` shared by all handlers), `error.rs` (`AppError` → RFC 7807 `ProblemDetail`).
-- **Persistence model**: Tables `app_user`, `record_cache` (+ `record_genres`), `collection_item` (user ↔ record incl. media/sleeve condition) and `listen_event`. Play counts and "last played" timestamps are computed from `listen_event`.
+- **Persistence model**: Tables `app_user`, `record_cache` (+ `record_genres`, incl. `disc_count`), `collection_item` (user ↔ record incl. media/sleeve condition) and `listen_event`. Play counts and "last played" timestamps are computed from `listen_event`. Shelf storage (migration `10`): `storage_type` (grid, capacity per compartment, medium), `storage_unit` (shelf, order per medium) and `storage_boundary` (shelf sort key of the first record per compartment); the slot of every copy is computed from these boundaries, not stored.
 
 ## 6. Runtime View
 
@@ -166,6 +166,13 @@ The backend (`backend/src/`) follows a strict layered architecture (see `.agent/
 6.  **Backend** `DiscogsClient` (`clients/discogs.rs`) synchronizes the custom fields to the user's Discogs collection instance (`POST /users/{username}/collection/folders/0/releases/{release_id}/instances/{instance_id}/fields/{field_id}`).
 7.  **Backend** returns the updated `RecordDetailDto`.
 8.  **Frontend** updates the modal, live condition badges, estimated value, and collection view reactively.
+
+### 6.8 Scenario: Adding a Record to the Shelves
+1.  **User** adds a record via scan or search (`POST /api/collection/releases/{id}`).
+2.  **Backend** `collection_sync` adds it to Discogs and the local collection, then calls `StorageService::place_new_copy`.
+3.  **`storage`** loads the copies of the record's medium and the stored compartment boundaries, computes the layout without and with the new copy (assignment by boundaries, then balancing of overflowing compartments towards the nearest compartment with space) and stores the new boundaries.
+4.  **Backend** returns the placement hint in the `SyncResult`: shelf, compartment (row/column), neighbors and the copies that move to another compartment.
+5.  **Frontend** shows the hint below the success message. Discogs syncs and backup restores sort in new copies the same way (`StorageService::commit_all`).
 
 ## 7. Deployment View
 
@@ -245,6 +252,7 @@ Architectural decisions in Vinyl Tracker are maintained as formal **Architecture
 | [ADR-0017](adr/0017-datenbank-migrationen-mit-sqlx-migrate.md) | 2026-10-19 | Database migrations with `sqlx::migrate` instead of `refinery` | `Accepted` |
 | [ADR-0018](adr/0018-frontend-unit-tests-mit-vitest.md) | 2026-10-19 | Frontend unit tests with Vitest instead of Karma/Jasmine | `Accepted` |
 | [ADR-0019](adr/0019-druck-modul-mit-vorlagen-renderern.md) | 2026-10-20 | Print module with template renderers (`POST /api/print`) | `Accepted` |
+| [ADR-0020](adr/0020-lagerposition-aus-gespeicherten-fachgrenzen.md) | 2026-10-20 | Shelf position computed from stored compartment boundaries | `Accepted` |
 
 ## 10. Quality Requirements
 

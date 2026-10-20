@@ -1,4 +1,5 @@
 use crate::discogs::{DiscogsFormat, DiscogsLabel, DiscogsTrack};
+use crate::storage::{StorageNeighborsDto, StorageSlotDto};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -41,6 +42,10 @@ pub struct RecordDetailDto {
     pub notes: Option<String>,
     pub country: Option<String>,
     pub released: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub storage: Option<StorageSlotDto>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub storage_neighbors: Option<StorageNeighborsDto>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

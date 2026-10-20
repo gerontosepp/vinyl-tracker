@@ -22,6 +22,7 @@ fn sync_result() -> SyncResultDto {
         updated: 2,
         removed: 1,
         total: 120,
+        placement: None,
     }
 }
 

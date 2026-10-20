@@ -1318,6 +1318,12 @@ async fn test_collection_sync_service_full_workflow() {
         .unwrap();
     let media_cond: Option<String> = item_row.get("media_condition");
     assert_eq!(media_cond.as_deref(), Some("Near Mint (NM or M-)"));
+    let disc_count: Option<i16> =
+        sqlx::query_scalar("SELECT disc_count FROM record_cache WHERE discogs_id = 98765")
+            .fetch_one(&state.pool)
+            .await
+            .unwrap();
+    assert_eq!(disc_count, Some(1), "disc count is stored during the sync");
 
     // 5. Test refresh_collection_prices
     let price_res = CollectionSyncService::refresh_collection_prices(

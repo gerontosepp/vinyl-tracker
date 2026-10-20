@@ -1,7 +1,7 @@
 use crate::{
     error::AppError,
     models::collection::{BackupRelease, CollectionBackupRequest, RestoreResultDto},
-    services::export_service::BACKUP_FORMAT_VERSION,
+    services::{export_service::BACKUP_FORMAT_VERSION, storage::StorageService},
 };
 use chrono::{DateTime, NaiveDateTime, Utc};
 use sqlx::{PgPool, Postgres, Row, Transaction};
@@ -223,6 +223,7 @@ impl CollectionRestoreService {
         }
 
         tx.commit().await.map_err(AppError::Database)?;
+        StorageService::commit_all(pool, user_id).await?;
 
         tracing::info!(
             "Collection restore for user {user_id}: added={}, updated={}, listens_added={}, listens_skipped={}",

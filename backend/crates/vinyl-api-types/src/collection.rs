@@ -1,4 +1,5 @@
 use crate::discogs::{DiscogsArtist, DiscogsFormat, DiscogsLabel, DiscogsPagination, DiscogsTrack};
+use crate::storage::{StoragePlacementDto, StorageSlotDto};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -52,6 +53,9 @@ pub struct CollectionRelease {
     #[serde(rename = "last_played_at")]
     pub last_played_at: Option<String>,
     pub notes: Option<Vec<CollectionNote>>,
+    /// Computed storage slot; `None` when no shelf is configured for the medium.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub storage: Option<StorageSlotDto>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -67,6 +71,9 @@ pub struct SyncResultDto {
     pub updated: i32,
     pub removed: i32,
     pub total: i32,
+    /// Placement hint for a newly added record (only when shelves exist for its medium).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub placement: Option<StoragePlacementDto>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

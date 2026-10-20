@@ -166,8 +166,12 @@ async fn test_refinery_history_is_imported_without_rerunning_migrations() {
         .await
         .expect("Refinery-managed database must start without re-running migrations");
     let history = db.sqlx_history().await;
-    assert_eq!(imported(&history), all_versions());
-    assert!(executed(&history).is_empty());
+    assert_eq!(imported(&history), (1..=9).collect::<Vec<_>>());
+    assert_eq!(
+        executed(&history),
+        vec![10],
+        "Migrations newer than the legacy history still run"
+    );
 
     let refinery_rows: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM refinery_schema_history")
         .fetch_one(&db.pool)
@@ -200,7 +204,7 @@ async fn test_flyway_history_is_imported_and_pending_migrations_run() {
     assert_eq!(imported(&history), (1..=8).collect::<Vec<_>>());
     assert_eq!(
         executed(&history),
-        vec![9],
+        vec![9, 10],
         "Failed Flyway entries count as pending"
     );
     assert!(db.column_exists("record_cache", "median_price").await);
@@ -216,7 +220,7 @@ async fn test_schema_without_history_is_detected_heuristically() {
     run_migrations(&db.pool).await.unwrap();
     let history = db.sqlx_history().await;
     assert_eq!(imported(&history), (1..=7).collect::<Vec<_>>());
-    assert_eq!(executed(&history), vec![8, 9]);
+    assert_eq!(executed(&history), vec![8, 9, 10]);
     assert!(db.column_exists("collection_item", "media_condition").await);
 
     db.drop().await;

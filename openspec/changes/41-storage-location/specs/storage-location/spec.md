@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Lagertypen verwalten
-Das System MUST pro Nutzer Lagertypen mit Name, Medium (`vinyl` oder `cd`), Zeilen, Spalten (je 1–10) und Kapazität pro Fach in Discs (1–500) speichern. Das Frontend MUST Vorlagen für Kallax 1×4, 2×2, 2×4, 4×4, 5×5 (Platten, vorbelegt mit 70 Discs pro Fach) und das IKEA-CD-Regal 12×1 (11 Discs pro Fach) anbieten.
+Das System MUST pro Nutzer Lagertypen mit Name, Medium (`vinyl` oder `cd`), Zeilen, Spalten (je 1–12) und Kapazität pro Fach in Discs (1–500) speichern. Das Frontend MUST Vorlagen für Kallax 1×4, 2×2, 2×4, 4×4, 5×5 (Platten, vorbelegt mit 70 Discs pro Fach) und das IKEA-CD-Regal 12×1 (11 Discs pro Fach) anbieten.
 
 #### Scenario: Lagertyp aus Vorlage anlegen
 - **WHEN** der Nutzer die Vorlage „Kallax 2×4“ wählt und ohne Änderung speichert

@@ -9,6 +9,7 @@ use crate::{
     services::{
         crypto_service::CryptoService,
         marketplace::{extract_suggested_price, validate_goldmine_condition},
+        storage::StorageService,
     },
 };
 use chrono::Utc;
@@ -259,6 +260,16 @@ impl RecordService {
         let country: Option<String> = discogs_release.as_ref().and_then(|r| r.country.clone());
         let released: Option<String> = discogs_release.as_ref().and_then(|r| r.released.clone());
 
+        let placement = if in_collection {
+            StorageService::placement_for_record(pool, user.id, discogs_id).await?
+        } else {
+            None
+        };
+        let (storage, storage_neighbors) = match placement {
+            Some(p) => (Some(p.slot), Some(p.neighbors)),
+            None => (None, None),
+        };
+
         Ok(RecordDetailDto {
             id: local_record_id,
             discogs_id,
@@ -285,6 +296,8 @@ impl RecordService {
             notes,
             country,
             released,
+            storage,
+            storage_neighbors,
         })
     }
 

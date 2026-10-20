@@ -39,6 +39,15 @@
             {{ release.basic_information.artists.length > 0 ? release.basic_information.artists[0].name : 'Unknown' }} ·
             {{ release.basic_information.year || '—' }}
           </span>
+          @if (release.storage; as slot) {
+            <span
+              class="text-[10px] font-semibold truncate"
+              [class]="slot.unplaced ? 'text-amber-600 dark:text-amber-400' : 'text-indigo-600 dark:text-indigo-400'"
+              data-testid="card-storage"
+            >
+              🗄️ {{ slot | storageSlot: true }}
+            </span>
+          }
           @if (release.media_condition || release.sleeve_condition || release.basic_information.median_price != null) {
             <span class="flex items-center gap-1 text-[10px] min-w-0 overflow-hidden">
               @if (release.media_condition) {

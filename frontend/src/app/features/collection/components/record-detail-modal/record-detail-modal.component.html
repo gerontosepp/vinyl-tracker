@@ -260,6 +260,16 @@
             </div>
           </div>
 
+          <!-- Shelf location (computed from the configured shelves) -->
+          @if (detail()?.storage; as slot) {
+            <div class="space-y-2" data-testid="detail-storage">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                {{ 'storage.column' | translate }}
+              </h3>
+              <app-storage-placement [slot]="slot" [neighbors]="detail()?.storage_neighbors" [title]="false" />
+            </div>
+          }
+
           <!-- Condition / Grading Section -->
           @if (detail()?.in_collection !== false || detail()?.media_condition || detail()?.sleeve_condition || record()?.media_condition || record()?.sleeve_condition) {
             <div class="space-y-2">

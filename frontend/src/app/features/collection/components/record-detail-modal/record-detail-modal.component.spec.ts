@@ -205,6 +205,26 @@ describe('RecordDetailModalComponent', () => {
     expect(text).toContain('Oct 8, 2026');
   });
 
+  it('should show the shelf slot and neighbors only when shelves are configured', () => {
+    fixture.componentRef.setInput('record', { id: 42, basic_information: { id: 123456, title: 'Abbey Road', artists: [] } } as any);
+    fixture.componentRef.setInput('detail', mockDetail);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-testid="detail-storage"]')).toBeNull();
+
+    TestBed.inject(LanguageService).setLanguage('de');
+    fixture.componentRef.setInput('detail', {
+      ...mockDetail,
+      storage: { unitId: 1, unitName: 'Kallax-1', compartment: 2, row: 1, column: 2, oversized: false, unplaced: false },
+      storage_neighbors: { previous: { discogsId: 7, artist: 'Abba', title: 'Gold' }, next: null },
+    });
+    fixture.detectChanges();
+
+    const section: HTMLElement = fixture.nativeElement.querySelector('[data-testid="detail-storage"]');
+    expect(section.textContent).toContain('Kallax-1 · Fach 2');
+    expect(section.textContent).toContain('Abba – Gold');
+    expect(section.textContent).toContain('ganz hinten');
+  });
+
   it('should display media and sleeve conditions when present', () => {
     const mockRecord = {
       id: 42,

@@ -74,6 +74,8 @@ export interface ScanResult {
 export interface SyncResult {
   added: number;
   removed: number;
+  /** Placement hint for a newly added record (only when shelves exist for its medium). */
+  placement?: StoragePlacement;
 }
 
 /** Result of `POST /api/collection/restore` (merge of a JSON backup). */
@@ -170,6 +172,8 @@ export interface RecordDetailDto {
   notes?: string;
   country?: string;
   released?: string;
+  storage?: StorageSlot;
+  storage_neighbors?: StorageNeighbors;
 }
 
 export interface CollectionRelease {
@@ -182,6 +186,8 @@ export interface CollectionRelease {
   last_played_at?: string;
   media_condition?: string;
   sleeve_condition?: string;
+  /** Computed shelf slot; absent when no shelf is configured for the medium. */
+  storage?: StorageSlot;
 }
 
 export interface CollectionPagination {
@@ -259,4 +265,116 @@ export interface PriceRefreshResult {
   updatedCount: number;
   totalCount: number;
   message: string;
+}
+
+// --- Shelf storage (#41) ---
+
+export type StorageMedia = 'vinyl' | 'cd';
+
+export interface StorageType {
+  id: number;
+  name: string;
+  media: StorageMedia;
+  rows: number;
+  columns: number;
+  /** Discs per compartment */
+  capacity: number;
+  unitCount: number;
+}
+
+export interface StorageTypeRequest {
+  name: string;
+  media?: StorageMedia;
+  rows: number;
+  columns: number;
+  capacity: number;
+}
+
+export interface StorageTypesResult {
+  types: StorageType[];
+  /** Media that were redistributed because of the change */
+  redistributed: StorageMedia[];
+}
+
+export interface StorageUnit {
+  id: number;
+  name: string;
+  typeId: number;
+  media: StorageMedia;
+  sortOrder: number;
+}
+
+export interface StorageUnitsResult {
+  units: StorageUnit[];
+  redistributed: StorageMedia[];
+}
+
+export interface StorageSlot {
+  unitId: number | null;
+  unitName: string | null;
+  compartment: number | null;
+  row: number | null;
+  column: number | null;
+  oversized: boolean;
+  unplaced: boolean;
+}
+
+export interface StorageRecordRef {
+  discogsId: number;
+  artist: string | null;
+  title: string;
+}
+
+export interface StorageNeighbors {
+  previous: StorageRecordRef | null;
+  next: StorageRecordRef | null;
+}
+
+export interface StorageMove {
+  record: StorageRecordRef;
+  from: StorageSlot;
+  to: StorageSlot;
+}
+
+export interface StoragePlacement {
+  discogsId: number;
+  slot: StorageSlot;
+  neighbors: StorageNeighbors;
+  moves: StorageMove[];
+}
+
+export interface StorageCompartment {
+  number: number;
+  row: number;
+  column: number;
+  capacity: number;
+  used: number;
+  count: number;
+  firstArtist: string | null;
+  lastArtist: string | null;
+  oversized: boolean;
+}
+
+export interface StorageUnitLayout {
+  id: number;
+  name: string;
+  typeName: string;
+  rows: number;
+  columns: number;
+  compartments: StorageCompartment[];
+}
+
+export interface MediaLayout {
+  media: StorageMedia;
+  units: StorageUnitLayout[];
+  unplacedCount: number;
+}
+
+export interface StorageLayout {
+  media: MediaLayout[];
+}
+
+export interface RedistributePreview {
+  media: StorageMedia;
+  movedCount: number;
 }

@@ -18,7 +18,7 @@ import { APP_VERSION } from '../../../core/constants/release-info.data';
       >
         <div class="flex flex-col items-center justify-center gap-3 mb-6">
           <img
-            src="/logo.png"
+            src="/favicon.svg"
             alt="Vinyl Tracker Logo"
             class="w-20 h-20 rounded-full shadow-lg"
           />

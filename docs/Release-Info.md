@@ -9,7 +9,7 @@
 
 ## Unreleased
 
-- **Fix: Eigenes Favicon (`#180`)**: Der Browser-Tab zeigt statt des Angular-Icons eine rote Platte mit weiß-blauem Label im Stil des App-Logos (`favicon.svg`, `favicon.ico` als Fallback).
+- **Fix: Eigenes Favicon (`#180`)**: Der Browser-Tab zeigt statt des Angular-Icons eine rote Platte mit weiß-blauem Label im Stil des App-Logos (`favicon.svg`, `favicon.ico` als Fallback). Kopfzeile, Login und Registrierung zeigen dasselbe Logo.
 
 - **Feature: Meistgespielte Interpreten (`#178`)**:
   - **Zweiter Tab**: Der Block „Meistgespielt“ auf der Startseite wechselt zwischen „Alben“ und „Interpreten“; der Zeitraum-Filter gilt für beide.

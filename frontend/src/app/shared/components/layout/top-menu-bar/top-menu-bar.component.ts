@@ -25,7 +25,7 @@ import { LucideLogOut, LucideSettings, LucideGlobe } from '@lucide/angular';
           title="Home"
         >
           <img
-            src="/logo.png"
+            src="/favicon.svg"
             alt="Logo"
             class="w-8 h-8 md:w-10 md:h-10 rounded-full shadow-sm group-hover:scale-105 transition-transform"
           />

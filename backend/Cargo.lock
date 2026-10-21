@@ -275,7 +275,7 @@ checksum = "343e24eeae9f09f61afeafcc7112e8d62f965bf0c6b30cedb5f89cc0b200380f"
 
 [[package]]
 name = "backend-rs"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "aes 0.8.4",
  "aes-gcm",
@@ -3625,7 +3625,7 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
 name = "vinyl-api-types"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "serde",
  "serde_json",

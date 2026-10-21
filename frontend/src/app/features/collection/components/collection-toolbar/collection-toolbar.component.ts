@@ -19,7 +19,18 @@ import {
   LucideCalendar,
   LucideChevronDown,
   LucideArchive,
+  LucideSlidersHorizontal,
 } from '@lucide/angular';
+
+const FILTERS_OPEN_KEY = 'collection.filtersOpen';
+
+function readFiltersOpen(): boolean {
+  try {
+    return localStorage.getItem(FILTERS_OPEN_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
 
 @Component({
   selector: 'app-collection-toolbar',
@@ -40,6 +51,7 @@ import {
     LucideCalendar,
     LucideChevronDown,
     LucideArchive,
+    LucideSlidersHorizontal,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './collection-toolbar.component.html',
@@ -92,6 +104,20 @@ export class CollectionToolbarComponent {
   readonly isGenreDropdownOpen = signal<boolean>(false);
   readonly isNotPlayedPopoverOpen = signal<boolean>(false);
   readonly genreSearchTerm = signal<string>('');
+  /** Phone only: filters, sorting and page size are collapsed so just the search stays visible. */
+  readonly filtersOpen = signal<boolean>(readFiltersOpen());
+
+  readonly collapsibleClass = computed(() => (this.filtersOpen() ? '' : 'max-md:hidden'));
+
+  readonly activeFilterCount = computed(
+    () =>
+      (this.category() !== 'all' ? 1 : 0) +
+      this.selectedGenres().length +
+      (this.years().trim() ? 1 : 0) +
+      (this.storageFilter() ? 1 : 0) +
+      (this.showPlayedOnly() ? 1 : 0) +
+      (this.unplayedOnly() || this.notPlayedSince().trim() ? 1 : 0),
+  );
 
   readonly filteredGenres = computed(() => {
     const list = this.availableGenres();
@@ -115,6 +141,15 @@ export class CollectionToolbarComponent {
   /** 1..n for the compartment options of a shelf. */
   compartmentNumbers(shelf: StorageShelfOption): number[] {
     return Array.from({ length: shelf.compartments }, (_, i) => i + 1);
+  }
+
+  toggleFilters(): void {
+    this.filtersOpen.update((open) => !open);
+    try {
+      localStorage.setItem(FILTERS_OPEN_KEY, String(this.filtersOpen()));
+    } catch {
+      // Storage unavailable: the state just isn't remembered
+    }
   }
 
   onSearchInput(value: string): void {

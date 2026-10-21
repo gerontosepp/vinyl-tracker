@@ -12,7 +12,15 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "tag": "In Entwicklung",
     "isCurrent": false,
     "isUnreleased": true,
-    "items": []
+    "items": [
+      {
+        "title": "Handy: Filter der Sammlung einklappbar (`#194`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Am Handy sind Filter, Sortierung und Seitengröße der Sammlung standardmäßig eingeklappt; oben bleiben Suche, eine kompakte Seitenumschaltung und ein Filter-Button mit der Anzahl aktiver Filter. Der Zustand wird im Browser gemerkt.",
+        "details": []
+      }
+    ]
   },
   {
     "version": "v0.13.0",

@@ -184,7 +184,7 @@ The application requires environment variables for configuration (database crede
 2. Add your shelves in the order they stand, e.g. *Kallax-1*, *Kallax-2*. The first shelf distributes your collection immediately; adding, removing or reordering shelves redistributes automatically.
 3. Sort your records into the compartments as shown in the overview. From now on, adding a record tells you exactly where it goes and which records have to move.
 4. To check a compartment, click it in the overview (or pick it in the toolbar's location filter) and print the **inventory list** from the print dialog to tick off the records on paper.
-5. To (re)sort a stack of records on your phone, tap **Sammlung sortieren / Sort collection** on the home page, choose the shelf and the start compartment (row:column) and step through the records with **Weiter / Next** – the screen shows cover, title, artist, compartment and the position within it, highlights every new compartment and stays on while sorting.
+5. To (re)sort a stack of records on your phone, tap the shelf icon (**Sammlung sortieren / Sort collection**) in the bottom bar, choose the shelf and the start compartment (row:column) and step through the records with **Weiter / Next** – the screen shows cover, title, artist, compartment and the position within it, highlights every new compartment and stays on while sorting.
 
 ### Hardware Scanner Setup (Eyoyo EY-009P)
 Vinyl Tracker supports handheld 2D barcode imagers like the **Eyoyo EY-009P** out of the box via HID keyboard emulation:

@@ -71,7 +71,6 @@ describe('DashboardComponent', () => {
       getGenreBreakdown: vi.fn().mockName('getGenreBreakdown').mockReturnValue(of(mockGenres)),
       getCollection: vi.fn().mockName('getCollection').mockReturnValue(of({ releases: [], pagination: { total: 0, items: 0, pages: 1, page: 1, per_page: 1 } })),
       deleteScan: vi.fn().mockName('deleteScan').mockReturnValue(of(void 0)),
-      getStorageUnits: vi.fn().mockName('getStorageUnits').mockReturnValue(of([])),
     };
 
     mockToastService = {
@@ -133,22 +132,6 @@ describe('DashboardComponent', () => {
     component.loadData();
     expect(component.topArtists()).toEqual([]);
     expect(component.topRecords().length).toBeGreaterThan(0);
-  });
-
-  it('offers the sort mode on phones only when shelves exist', async () => {
-    const button = () => fixture.nativeElement.querySelector('[data-testid="sort-mode-button"]') as HTMLAnchorElement | null;
-    expect(button()).toBeNull();
-
-    mockApiService.getStorageUnits.mockReturnValue(of([{ id: 1, name: 'Kallax-1', typeId: 1, media: 'vinyl', sortOrder: 1 }]));
-    component.ngOnInit();
-    fixture.detectChanges();
-    expect(button()?.getAttribute('href')).toBe('/sort');
-    expect(button()?.classList.contains('md:hidden')).toBe(true);
-
-    mockApiService.getStorageUnits.mockReturnValue(throwError(() => new Error('down')));
-    component.ngOnInit();
-    fixture.detectChanges();
-    expect(button()).toBeNull();
   });
 
   it('should create and initialize with default 7-day range', () => {

@@ -5,25 +5,6 @@ TBD - created by archiving change 172-sort-mode. Update Purpose after archive.
 
 ## Requirements
 
-### Requirement: Sortier-Modus starten
-Die Startseite MUST in der Mobil-Ansicht einen Button „Sortieren“ anzeigen, wenn für den Nutzer mindestens ein Regal konfiguriert ist; in der Desktop-Ansicht und ohne Regale MUST er fehlen. Der Start-Screen MUST ein Regal (vorbelegt mit dem ersten in Regal-Reihenfolge) und ein Startfach als Zeile und Spalte innerhalb des Regal-Rasters abfragen.
-
-#### Scenario: Button nur mobil mit Regalen
-- **WHEN** der Nutzer mit konfigurierten Regalen die Startseite auf dem Handy öffnet
-- **THEN** sieht er den Button „Sortieren“; am Desktop oder ohne Regale ist er nicht sichtbar
-
-#### Scenario: Startfach wählen
-- **WHEN** der Nutzer „Kallax-2“ und Zeile 1, Spalte 3 wählt und startet
-- **THEN** beginnt der Sortier-Modus mit der ersten Platte, die laut Belegung in Kallax-2 Fach 1:3 liegt
-
-#### Scenario: Leeres Startfach
-- **WHEN** das gewählte Fach leer ist
-- **THEN** beginnt der Sortier-Modus mit der ersten Platte des nächsten belegten Fachs in Regal-Reihenfolge
-
-#### Scenario: Ungültiges Fach
-- **WHEN** Zeile oder Spalte außerhalb des Rasters des Regals liegen
-- **THEN** lässt sich der Modus nicht starten und das Feld wird als ungültig markiert
-
 ### Requirement: Sortier-Screen
 Der Sortier-Screen MUST im Vollbild ohne Navigation laufen und nur Cover, Titel, Interpret, das aktuelle Fach („Regal · Zeile:Spalte“) und den Fortschritt im Fach („12 / 70“: Position und Anzahl der Platten des Fachs) anzeigen. Wechselt die angezeigte Platte gegenüber der vorherigen das Fach, MUST ein deutlich hervorgehobener Hinweis „Neues Fach“ erscheinen; auch die erste Platte zeigt ihr Fach so an.
 
@@ -71,3 +52,26 @@ Während der Sortier-Screen sichtbar ist, MUST der Modus eine Screen Wake Lock a
 #### Scenario: Reihenfolge
 - **WHEN** der Client die Sequenz für Platten abruft
 - **THEN** stimmt die Reihenfolge mit der Regal-Übersicht überein und jedes Exemplar trägt seinen Lagerplatz
+
+### Requirement: Sortier-Modus über die untere Leiste starten
+Die untere Navigationsleiste der Mobil-Ansicht MUST einen Eintrag „Sortieren“ mit Regal-Icon enthalten, der den Sortier-Modus öffnet; er MUST in Größe und Stil den übrigen Einträgen entsprechen. Ohne Regale MUST der Sortier-Modus einen Hinweis zeigen, zuerst ein Regal anzulegen. Der Start-Screen MUST ein Regal (vorbelegt mit dem ersten in Regal-Reihenfolge) und ein Startfach als Zeile und Spalte innerhalb des Regal-Rasters abfragen.
+
+#### Scenario: Einstieg über die untere Leiste
+- **WHEN** der Nutzer am Handy in der unteren Leiste auf „Sortieren“ tippt
+- **THEN** öffnet sich der Start-Screen des Sortier-Modus
+
+#### Scenario: Ohne Regale
+- **WHEN** der Nutzer ohne konfigurierte Regale den Sortier-Modus öffnet
+- **THEN** sieht er den Hinweis, zuerst in der Sammlung ein Regal anzulegen
+
+#### Scenario: Startfach wählen
+- **WHEN** der Nutzer „Kallax-2“ und Zeile 1, Spalte 3 wählt und startet
+- **THEN** beginnt der Sortier-Modus mit der ersten Platte, die laut Belegung in Kallax-2 Fach 1:3 liegt
+
+#### Scenario: Leeres Startfach
+- **WHEN** das gewählte Fach leer ist
+- **THEN** beginnt der Sortier-Modus mit der ersten Platte des nächsten belegten Fachs in Regal-Reihenfolge
+
+#### Scenario: Ungültiges Fach
+- **WHEN** Zeile oder Spalte außerhalb des Rasters des Regals liegen
+- **THEN** lässt sich der Modus nicht starten und das Feld wird als ungültig markiert

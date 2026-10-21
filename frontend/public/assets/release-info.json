@@ -7,6 +7,13 @@
     "isUnreleased": true,
     "items": [
       {
+        "title": "Handy: Sortieren in der unteren Leiste (`#187`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Der Sortier-Modus startet über ein eigenes Kallax-Icon in der unteren Leiste statt über den Button auf der Startseite. Der Scan-Button ist jetzt ein Eintrag wie Start, Sammlung und Profil, gleich groß und im selben Stil.",
+        "details": []
+      },
+      {
         "title": "Fix: Neue Version kommt zuverlässig an (`#185`)",
         "type": "fix",
         "typeLabel": "Fix",

@@ -5,6 +5,14 @@
     "tag": "In Entwicklung",
     "isCurrent": false,
     "isUnreleased": true,
+    "items": []
+  },
+  {
+    "version": "v0.14.0",
+    "rawHeader": "v0.14.0 (2026-10-21)",
+    "date": "2026-10-21",
+    "isCurrent": true,
+    "isUnreleased": false,
     "items": [
       {
         "title": "Handy: Filter der Sammlung einklappbar (`#194`)",
@@ -19,7 +27,7 @@
     "version": "v0.13.0",
     "rawHeader": "v0.13.0 (2026-10-21)",
     "date": "2026-10-21",
-    "isCurrent": true,
+    "isCurrent": false,
     "isUnreleased": false,
     "items": [
       {

@@ -20,7 +20,7 @@ The project follows a modern containerized micro-architecture:
 - **Framework / Runtime**: Axum 0.8, Tokio 1.x, Tower-HTTP
 - **Language**: Rust (2024 edition)
 - **Database Access**: PostgreSQL via `sqlx` with automatic, embedded migrations (`sqlx::migrate`, files `backend/migrations/<n>_<name>.sql`; existing refinery/Flyway histories are imported automatically)
-- **Features**: JWT-Auth (HMAC-SHA256 tokens, BCrypt password hashing), AES-256-GCM encryption of Discogs tokens (PBKDF2-derived key), Discogs REST Client with rate-limiting (`governor`) & caching (`moka`), SSRF-protected image proxy, Roon MOO WebSocket Engine & SOOD discovery, native vector-based QR-Code & PDF generation (`fast_qr`, `printpdf`).
+- **Features**: JWT-Auth (HMAC-SHA256 tokens, BCrypt password hashing), AES-256-GCM encryption of Discogs tokens (PBKDF2-derived key), Discogs REST Client with rate-limiting (`governor`) & caching (`moka`), SSRF-protected image proxy, Roon MOO WebSocket Engine, native vector-based QR-Code & PDF generation (`fast_qr`, `printpdf`).
 - **Location**: `backend/` directory.
 
 ### Database

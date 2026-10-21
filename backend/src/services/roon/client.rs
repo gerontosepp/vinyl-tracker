@@ -14,8 +14,6 @@ use tokio_tungstenite::tungstenite::Message;
 
 #[derive(Clone)]
 pub struct RoonClient {
-    host: String,
-    port: i32,
     token: Arc<RwLock<Option<String>>>,
     connected: Arc<AtomicBool>,
     paired: Arc<AtomicBool>,
@@ -86,8 +84,6 @@ impl RoonClient {
         });
 
         let client = Self {
-            host,
-            port,
             token: token.clone(),
             connected: connected.clone(),
             paired: paired.clone(),
@@ -266,14 +262,6 @@ impl RoonClient {
 
     pub async fn get_core_name(&self) -> Option<String> {
         self.core_name.read().await.clone()
-    }
-
-    pub fn get_host(&self) -> &str {
-        &self.host
-    }
-
-    pub fn get_port(&self) -> i32 {
-        self.port
     }
 
     pub async fn get_zones(&self) -> Vec<RoonZoneDto> {

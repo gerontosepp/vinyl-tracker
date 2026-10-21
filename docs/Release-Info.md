@@ -3,11 +3,19 @@
 Übersicht der Änderungen und Meilensteine des Projekts **Vinyl Tracker**.
 
 > [!NOTE]
-> Mit Version **v0.2.1** wurde das Versionsschema re-baselined (vorherige Versionen trugen historisch `v1.x` / `v2.x`-Bezeichnungen), um den Work-in-Progress (WiP) / Beta-Charakter des Projekts klar zu kennzeichnen. Frühere Versionen sind hier chronologisch in konsistente Meilensteine zusammengefasst.
+> Mit Version **v0.2.1** wurde das Versionsschema re-baselined (vorherige Versionen trugen historisch `v1.x` / `v2.x`-Bezeichnungen), um den Beta-Charakter des Projekts zu kennzeichnen; die alten Git-Tags heißen inzwischen `legacy/v1.x` / `legacy/v2.x`. Mit **v1.0.0** endet die Beta-Phase: REST-API, MCP-Tools und das JSON-Backup-Format (`format_version: 3`) ändern sich ab jetzt nur noch abwärtskompatibel, inkompatible Änderungen erst mit v2.0.0.
 
 ---
 
 ## Unreleased
+
+---
+
+## v1.0.0 (2026-10-21)
+
+- **Erste stabile Version**: Vinyl Tracker verlässt die Beta-Phase. REST-API, MCP-Tools und JSON-Backup (`format_version: 3`) ändern sich ab jetzt nur noch abwärtskompatibel.
+- **Geprüft für den Dauerbetrieb**: Update-Hinweis für installierte Apps im echten Betrieb getestet, JSON-Backup auf einer frischen Instanz vollständig wiederhergestellt, Erreichbarkeit per IPv4 und IPv6.
+- **Doku**: Vergleich JSON-Backup und Datenbank-Dump (inkl. Sicherung der `.env` für den verschlüsselten Discogs-Token) sowie Betrieb an IPv6-only-Anschlüssen mit IPv4-Proxy in `docs/DEPLOYMENT.md` (`#198`).
 
 ---
 

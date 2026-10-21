@@ -51,3 +51,5 @@ Das Rust-Backend implementiert einen **nativen MOO/1-Protokoll-Client** direkt �
 
 ### Nachteile & Risiken
 * **Protokoll-Wartung:** Änderungen im proprietären Roon MOO/1-Protokoll müssen eigenständig im Rust-Code gepflegt werden (wobei das MOO/1-Protokoll seit Jahren stabil ist).
+
+> **Nachtrag (2026-10-21, #204):** Die automatische UDP-Discovery wurde nie an die Einstellungen angebunden und ist entfernt worden. Der Roon Core wird über Host und Port in den Benutzereinstellungen konfiguriert.

@@ -1,12 +1,11 @@
 use aes::Aes256;
 use aes_gcm::{Aes256Gcm, KeyInit, Nonce, aead::Aead};
 use cbc::{
-    Decryptor, Encryptor,
-    cipher::{BlockDecryptMut, BlockEncryptMut, KeyIvInit, block_padding::Pkcs7},
+    Decryptor,
+    cipher::{BlockDecryptMut, KeyIvInit, block_padding::Pkcs7},
 };
 use rand::RngCore;
 
-type Aes256CbcEnc = Encryptor<Aes256>;
 type Aes256CbcDec = Decryptor<Aes256>;
 
 const MODERN_PREFIX: &str = "v2:";
@@ -73,29 +72,6 @@ impl CryptoService {
         Some(format!("{MODERN_PREFIX}{}", hex::encode(combined)))
     }
 
-    /// Encrypts plaintext using legacy AES-256-CBC with PKCS7 padding.
-    /// Retained primarily for testing legacy backward-compatibility migrations.
-    pub fn encrypt_legacy(&self, plaintext: &str) -> Option<String> {
-        if plaintext.is_empty() {
-            return None;
-        }
-
-        let mut iv = [0u8; 16];
-        rand::thread_rng().fill_bytes(&mut iv);
-
-        let encryptor = Aes256CbcEnc::new(&self.legacy_key.into(), &iv.into());
-        let mut buf = vec![0u8; plaintext.len() + 16];
-        let ct = encryptor
-            .encrypt_padded_b2b_mut::<Pkcs7>(plaintext.as_bytes(), &mut buf)
-            .ok()?;
-
-        let mut combined = Vec::with_capacity(16 + ct.len());
-        combined.extend_from_slice(&iv);
-        combined.extend_from_slice(ct);
-
-        Some(hex::encode(combined))
-    }
-
     /// Decrypts encrypted string into plaintext string.
     /// Transparently supports:
     /// 1. Modern AES-256-GCM tokens (`v2:<hex>`)
@@ -144,6 +120,29 @@ impl CryptoService {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use cbc::{Encryptor, cipher::BlockEncryptMut};
+
+    /// Legacy AES-256-CBC encryption, only to produce fixtures for the backward-compatibility test.
+    fn encrypt_legacy(crypto: &CryptoService, plaintext: &str) -> Option<String> {
+        if plaintext.is_empty() {
+            return None;
+        }
+
+        let mut iv = [0u8; 16];
+        rand::thread_rng().fill_bytes(&mut iv);
+
+        let encryptor = Encryptor::<Aes256>::new(&crypto.legacy_key.into(), &iv.into());
+        let mut buf = vec![0u8; plaintext.len() + 16];
+        let ct = encryptor
+            .encrypt_padded_b2b_mut::<Pkcs7>(plaintext.as_bytes(), &mut buf)
+            .ok()?;
+
+        let mut combined = Vec::with_capacity(16 + ct.len());
+        combined.extend_from_slice(&iv);
+        combined.extend_from_slice(ct);
+
+        Some(hex::encode(combined))
+    }
 
     #[test]
     fn test_modern_encrypt_decrypt_roundtrip() {
@@ -165,9 +164,8 @@ mod tests {
             .expect("Initialization must succeed");
 
         let secret = "legacy_discogs_token_xyz987";
-        let legacy_encrypted = crypto
-            .encrypt_legacy(secret)
-            .expect("Legacy encryption must succeed");
+        let legacy_encrypted =
+            encrypt_legacy(&crypto, secret).expect("Legacy encryption must succeed");
         assert!(!legacy_encrypted.starts_with("v2:"));
 
         let decrypted = crypto
@@ -199,7 +197,7 @@ mod tests {
     fn test_empty_and_garbage_input_returns_none() {
         let crypto = CryptoService::new("test-password", "12345678").unwrap();
         assert!(crypto.encrypt("").is_none());
-        assert!(crypto.encrypt_legacy("").is_none());
+        assert!(encrypt_legacy(&crypto, "").is_none());
         assert!(crypto.decrypt("").is_none());
         assert!(crypto.decrypt("invalid-garbage").is_none());
         assert!(crypto.decrypt("v2:invalid-garbage").is_none());

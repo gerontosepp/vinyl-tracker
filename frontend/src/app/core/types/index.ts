@@ -274,12 +274,6 @@ export interface GenreBreakdownItem {
   value: number;
 }
 
-export interface PriceRefreshResult {
-  updatedCount: number;
-  totalCount: number;
-  message: string;
-}
-
 // --- Shelf storage (#41) ---
 
 export type StorageMedia = 'vinyl' | 'cd';

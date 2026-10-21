@@ -192,7 +192,7 @@ The system is deployed as a multi-container Docker application orchestrated by D
 **Docker Compose Structure**:
 - `postgres`: Database service containing the `vinyl_tracker` data. Includes a robust `pg_isready` healthcheck.
 - `backend`: Rust/Axum binary (minimal Debian image), depends on `postgres` being `service_healthy`; runs migrations on startup and shuts down gracefully on `SIGTERM`. Port 8080 (production compose: bound to `127.0.0.1` only).
-- `frontend`: Nginx (Production, port 80, proxies `/api` to the backend) or Angular dev-server (Development, port 5173). Serves the built Angular PWA.
+- `frontend`: Nginx (Production, port 80, proxies `/api` to the backend) or Angular dev-server (Development, port 5173). Serves the built Angular PWA: hashed bundles are cached as `immutable`, everything else (`index.html`, `ngsw.json`, `ngsw-worker.js`, icons) with `no-cache`. The frontend checks for a new service-worker version whenever the app returns to the foreground and offers a reload (`AppUpdateService`).
 
 ## 8. Cross-cutting Concepts
 

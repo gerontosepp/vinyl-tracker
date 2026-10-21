@@ -1,10 +1,13 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { AppComponent } from './app.component';
+import { AppUpdateService } from './core/services/app-update.service';
 
 describe('AppComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [AppComponent],
+      providers: [{ provide: AppUpdateService, useValue: { updateReady: signal(false) } }],
     }).compileComponents();
   });
 
@@ -25,5 +28,6 @@ describe('AppComponent', () => {
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('app-toast')).toBeTruthy();
+    expect(compiled.querySelector('app-update-banner')).toBeTruthy();
   });
 });

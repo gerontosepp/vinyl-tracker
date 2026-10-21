@@ -14,6 +14,13 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "isUnreleased": true,
     "items": [
       {
+        "title": "Fix: Neue Version kommt zuverlässig an (`#185`)",
+        "type": "fix",
+        "typeLabel": "Fix",
+        "summary": "Ist nach einem Update eine neue Version bereit, zeigt die App oben den Hinweis „Eine neue Version ist verfügbar“ mit „Neu laden“. Geprüft wird beim Zurückkehren in die App, ein defekter Service-Worker-Cache lädt automatisch neu. nginx speichert nur noch gehashte Dateien dauerhaft, `index.html`, Service Worker und Icons werden bei jedem Aufruf geprüft.",
+        "details": []
+      },
+      {
         "title": "Fix: Homescreen-Icons im neuen Design (`#183`)",
         "type": "fix",
         "typeLabel": "Fix",

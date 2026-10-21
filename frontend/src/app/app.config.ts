@@ -16,6 +16,7 @@ import { provideServiceWorker } from '@angular/service-worker';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { LanguageService } from './core/services/language.service';
 import { ThemeService } from './core/services/theme.service';
+import { AppUpdateService } from './core/services/app-update.service';
 
 registerLocaleData(localeDe);
 registerLocaleData(localeEn);
@@ -27,6 +28,9 @@ export const appConfig: ApplicationConfig = {
     // Apply the saved/system theme on every page, not only once the settings inject the service
     provideAppInitializer(() => {
       inject(ThemeService);
+    }),
+    provideAppInitializer(() => {
+      inject(AppUpdateService).init();
     }),
     provideHttpClient(withXhr(), withInterceptors([authInterceptor])),
     {

@@ -46,6 +46,11 @@ describe('TopMenuBarComponent', () => {
     expect(badge.classList.contains('md:hidden')).toBe(true);
   });
 
+  it('shows the app logo in the design of the favicon', () => {
+    const logo: HTMLImageElement = fixture.nativeElement.querySelector('img[alt="Logo"]');
+    expect(logo.getAttribute('src')).toBe('/favicon.svg');
+  });
+
   it('renders nothing without a user', () => {
     mockAuthService.user.set(null);
     fixture.detectChanges();

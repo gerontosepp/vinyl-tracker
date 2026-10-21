@@ -12,3 +12,4 @@ trigger: always_on
    - Frontend: Always run unit tests non-interactively: `cd frontend && npm test -- --watch=false && npm run build`.
    - ALL tests and checks must pass with 0 errors/warnings. Do not leave skipped or commented-out failing tests.
 5. **Linting & Types**: Before completing a task, ensure no new TypeScript compiler or build errors were introduced. Fix any type mismatches rather than using `any` or `@ts-ignore`. Always ensure code is properly formatted via `cargo fmt`.
+6. **Local Stack**: At the end of every feature or fix, update the local Docker stack so the change can be tried right away: `docker compose up --build -d backend` when the backend changed, and make sure the frontend dev server rebuilt without errors (`docker compose logs --tail 5 frontend`, otherwise `docker compose restart frontend`). See the `ticket-workflow` skill, section 6.

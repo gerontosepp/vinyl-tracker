@@ -9,6 +9,10 @@
 
 ## Unreleased
 
+---
+
+## v0.13.0 (2026-10-21)
+
 - **Handy: Sortieren in der unteren Leiste (`#187`)**: Der Sortier-Modus startet über ein eigenes Kallax-Icon in der unteren Leiste statt über den Button auf der Startseite. Der Scan-Button ist jetzt ein Eintrag wie Start, Sammlung und Profil, gleich groß und im selben Stil.
 
 - **Fix: Neue Version kommt zuverlässig an (`#185`)**: Ist nach einem Update eine neue Version bereit, zeigt die App oben den Hinweis „Eine neue Version ist verfügbar“ mit „Neu laden“. Geprüft wird beim Zurückkehren in die App, ein defekter Service-Worker-Cache lädt automatisch neu. nginx speichert nur noch gehashte Dateien dauerhaft, `index.html`, Service Worker und Icons werden bei jedem Aufruf geprüft.

@@ -101,7 +101,27 @@ Update project documentation immediately alongside code changes (see [`documenta
 
 ---
 
-## 6. Commit, Push & Pull Request
+## 6. Update the Local Stack
+
+At the end of every feature or fix, bring the local Docker stack to the new state so the user can try it right away (browser, phone via `https://<LAN-IP>:5173`):
+
+1. **Backend** (if `backend/` changed): rebuild and restart the container – it runs a built image, not the source:
+   ```bash
+   docker compose up --build -d backend
+   ```
+   Wait until it is `healthy` (`docker compose ps`); new migrations run on startup.
+2. **Frontend**: the dev container mounts `./frontend` and serves the working tree, but the Angular dev server can crash on branch switches (`Failed to read index HTML file`) and then keeps serving a stale build. Check the log and restart if needed:
+   ```bash
+   docker compose logs --tail 5 frontend
+   docker compose restart frontend   # if the last rebuild failed
+   ```
+   After `package.json` changes rebuild instead: `docker compose up --build -d frontend` (`node_modules` lives in the image).
+3. **Verify**: `docker compose logs --since 2m frontend` shows `Application bundle generation complete`, the backend is `healthy`, and the change is visible at `https://localhost:5173`.
+4. Tell the user which branch the stack is serving (the frontend shows the checked-out working tree).
+
+---
+
+## 7. Commit, Push & Pull Request
 
 `develop` and `main` are protected – never push to them directly; every change goes through a PR against `develop`.
 
@@ -124,7 +144,7 @@ Update project documentation immediately alongside code changes (see [`documenta
 
 ---
 
-## 7. Merge (only on explicit user instruction)
+## 8. Merge (only on explicit user instruction)
 
 **CRITICAL**: Never merge without an explicit instruction from the user (e.g. "merge #123"). A green CI is not an approval.
 
@@ -143,7 +163,7 @@ Update project documentation immediately alongside code changes (see [`documenta
 
 ---
 
-## 8. Parallel PRs & Release-Info Conflicts
+## 9. Parallel PRs & Release-Info Conflicts
 
 Every PR adds its entry at the top of `## Unreleased` in `docs/Release-Info.md` and regenerates `release-info.data.ts` / `release-info.json`, so two open PRs always conflict there. After the first one is merged, rebase the other:
 

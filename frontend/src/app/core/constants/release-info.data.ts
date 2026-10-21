@@ -3,7 +3,7 @@
 import { ReleaseEntry } from '../models/release-info.model';
 
 // Application version from frontend/package.json – single source for all version badges.
-export const APP_VERSION = '0.12.0';
+export const APP_VERSION = '0.13.0';
 
 export const RELEASE_INFO_DATA: ReleaseEntry[] = [
   {
@@ -15,10 +15,58 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "items": []
   },
   {
+    "version": "v0.13.0",
+    "rawHeader": "v0.13.0 (2026-10-21)",
+    "date": "2026-10-21",
+    "isCurrent": true,
+    "isUnreleased": false,
+    "items": [
+      {
+        "title": "Handy: Sortieren in der unteren Leiste (`#187`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Der Sortier-Modus startet über ein eigenes Kallax-Icon in der unteren Leiste statt über den Button auf der Startseite. Der Scan-Button ist jetzt ein Eintrag wie Start, Sammlung und Profil, gleich groß und im selben Stil.",
+        "details": []
+      },
+      {
+        "title": "Fix: Neue Version kommt zuverlässig an (`#185`)",
+        "type": "fix",
+        "typeLabel": "Fix",
+        "summary": "Ist nach einem Update eine neue Version bereit, zeigt die App oben den Hinweis „Eine neue Version ist verfügbar“ mit „Neu laden“. Geprüft wird beim Zurückkehren in die App, ein defekter Service-Worker-Cache lädt automatisch neu. nginx speichert nur noch gehashte Dateien dauerhaft, `index.html`, Service Worker und Icons werden bei jedem Aufruf geprüft.",
+        "details": []
+      },
+      {
+        "title": "Fix: Homescreen-Icons im neuen Design (`#183`)",
+        "type": "fix",
+        "typeLabel": "Fix",
+        "summary": "Die PWA-Icons und ein neues `apple-touch-icon` zeigen die rote Platte des Favicons auf dunklem Grund. Bereits installierte Homescreen-Apps übernehmen das Icon erst nach erneutem Hinzufügen.",
+        "details": []
+      },
+      {
+        "title": "Fix: Eigenes Favicon (`#180`)",
+        "type": "fix",
+        "typeLabel": "Fix",
+        "summary": "Der Browser-Tab zeigt statt des Angular-Icons eine rote Platte mit weiß-blauem Label im Stil des App-Logos (`favicon.svg`, `favicon.ico` als Fallback). Kopfzeile, Login und Registrierung zeigen dasselbe Logo.",
+        "details": []
+      },
+      {
+        "title": "Feature: Meistgespielte Interpreten (`#178`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "details": [
+          "**Zweiter Tab**: Der Block „Meistgespielt“ auf der Startseite wechselt zwischen „Alben“ und „Interpreten“; der Zeitraum-Filter gilt für beide.",
+          "**Rangliste**: Die 10 meistgehörten Interpreten mit Anzahl der Hördurchgänge und gehörten Alben, als Bild eine kleine Collage aus ihren meistgehörten Covern.",
+          "**Ein Klick** auf einen Interpreten öffnet die Sammlung mit der Suche nach ihm.",
+          "**API & MCP**: `GET /api/analytics/top-artists`, neues MCP-Tool `get_top_artists`."
+        ]
+      }
+    ]
+  },
+  {
     "version": "v0.12.0",
     "rawHeader": "v0.12.0 (2026-10-21)",
     "date": "2026-10-21",
-    "isCurrent": true,
+    "isCurrent": false,
     "isUnreleased": false,
     "items": [
       {

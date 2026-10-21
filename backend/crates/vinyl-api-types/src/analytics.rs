@@ -8,6 +8,19 @@ pub struct ListenEventDto {
     pub timestamp: String,
 }
 
+/// A most-played artist (`GET /api/analytics/top-artists`).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TopArtistDto {
+    pub artist: String,
+    /// Listens in the period
+    pub count: i64,
+    /// Releases of the artist listened to in the period
+    pub record_count: i64,
+    /// Covers of the most played releases (at most 4, most played first) for the collage
+    pub thumb_urls: Vec<String>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TopRecordDto {
     /// Discogs release ID; lets clients open the record's details. Defaults to 0 for

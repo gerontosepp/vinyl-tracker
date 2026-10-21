@@ -1,6 +1,7 @@
 use serde::Deserialize;
 pub use vinyl_api_types::analytics::{
-    CollectionValueData, CollectionValueResponse, GenreBreakdownItem, ListenEventDto, TopRecordDto,
+    CollectionValueData, CollectionValueResponse, GenreBreakdownItem, ListenEventDto, TopArtistDto,
+    TopRecordDto,
 };
 
 #[derive(Debug, Clone, Deserialize, Default)]

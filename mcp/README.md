@@ -30,6 +30,7 @@ Der Server implementiert **Option 1 (REST-Client)**: Er kommuniziert direkt übe
 | `reset_all_listens` | Setzt alle Hör-Events des Nutzers zurück | *keine* |
 | `get_recent_listens` | Historie der zuletzt gehörten Platten | `from` (YYYY-MM-DD), `to` (YYYY-MM-DD) |
 | `get_top_records` | Meistgehörte Alben im Zeitraum | `from` (YYYY-MM-DD), `to` (YYYY-MM-DD) |
+| `get_top_artists` | Meistgehörte Interpreten im Zeitraum mit Anzahl der gehörten Releases | `from` (YYYY-MM-DD), `to` (YYYY-MM-DD) |
 | `get_collection_value` | Schätzwert der Sammlung von Discogs (min, med, max) | *keine* |
 | `get_genre_breakdown` | Verteilung der Genres in der Sammlung | *keine* |
 | `get_current_user` | Profilinformationen des eingeloggten Nutzers | *keine* |

@@ -126,6 +126,25 @@ Anpassbar über Umgebungsvariablen: `VINYL_DB_CONTAINER`, `VINYL_BACKEND_CONTAIN
 
 Nach einem Restore die zum Backup passende Anwendungsversion starten (`./scripts/deploy_proxmox.sh <version>`). Da `--restore` auch `_sqlx_migrations` zurücksetzt, findet eine ältere Version ihre Migrationshistorie unverändert vor.
 
+### JSON-Backup oder Datenbank-Dump?
+
+Es gibt zwei Arten von Backups. Für eine vollständige Wiederherstellung des Servers ist nur der Datenbank-Dump ausreichend.
+
+| | JSON-Backup (Einstellungen → Datenverwaltung) | Datenbank-Dump (`backup_db.sh`) |
+|---|---|---|
+| Sammlung inkl. Zustand, Bewertung, Notizen, Hinzufügedatum | ✅ | ✅ |
+| Hörhistorie (Play-Count, zuletzt gehört, alle Hördurchgänge) | ✅ | ✅ |
+| Regale (Lagertypen, Regale, Fachgrenzen) | ✅ | ✅ |
+| Benutzerkonto, Passwort | ❌ | ✅ |
+| Discogs-Token, Roon- und sonstige Einstellungen | ❌ | ✅ |
+| Wiederherstellung | in einen beliebigen Account, ergänzt vorhandene Daten | ersetzt die gesamte Datenbank |
+| Typischer Einsatz | Umzug in einen anderen Account oder eine andere Instanz, Sicherung durch den Nutzer | Server-Ausfall, Update-Rollback |
+
+Ein JSON-Backup wurde für v1.0.0 auf einer frischen Instanz eingespielt und wieder exportiert: Platten, Sammlungswert, Hörhistorie und Regale waren identisch. Nur die Darstellung kann abweichen: Genres werden alphabetisch sortiert, Leerzeichen am Textende (z. B. in Titeln oder Zustandsangaben) entfernt. Nach einem Totalverlust mit nur einem JSON-Backup müssen Konto und Einstellungen (Discogs-Token, Roon) neu angelegt werden.
+
+> [!IMPORTANT]
+> Der Discogs-Token liegt im Datenbank-Dump verschlüsselt (AES-256-GCM). Lesbar ist er nur mit denselben Werten für `VINYL_ENCRYPTION_PASSWORD` und `VINYL_ENCRYPTION_SALT` – sichern Sie die `.env` deshalb zusammen mit den Dumps an einem sicheren Ort. Ohne sie muss der Token nach dem Restore neu eingetragen werden.
+
 ## 5. Deployment hinter einem Reverse Proxy (z.B. Proxmox)
 
 Für den produktiven Einsatz auf einem Server (z.B. als Docker-VM unter Proxmox) wird ein vorgeschalteter **Reverse Proxy** (wie Nginx Proxy Manager, Traefik oder Caddy) dringend empfohlen. Dieser übernimmt das SSL-Zertifikatsmanagement zentral für alle Dienste, sodass `mkcert` überflüssig wird.
@@ -163,6 +182,26 @@ Für den produktiven Einsatz auf einem Server (z.B. als Docker-VM unter Proxmox)
    > `CORS_ALLOWED_ORIGINS` ist hier nicht nötig: Frontend und API werden über nginx unter derselben Domain ausgeliefert (gleicher Origin). Die Liste ist nur relevant, wenn das Frontend von einem anderen Origin auf die API zugreift (z. B. Entwicklungsserver auf `https://localhost:5173`).
 
 Ab jetzt erreicht jedes Gerät (auch dein Smartphone) die App über `https://vinyl.meinedomain.de` mit einem zu 100% gültigen und vertrauenswürdigen Zertifikat. Der Kamera-Zugriff für das Barcode-Scanning wird ohne Warnungen gestattet!
+
+### IPv6-only-Anschluss (DS-Lite) und IPv4-Proxy
+
+Hat der Internetanschluss keine eigene öffentliche IPv4-Adresse (z. B. DS-Lite bei Kabelanbietern), ist die App zunächst nur per IPv6 erreichbar. Geräte ohne IPv6 (manche Mobilfunk- oder Gast-WLANs) erreichen sie dann nicht, eine installierte App zeigt weiter die zwischengespeicherte alte Version. Abhilfe schafft ein IPv4-Proxy des DynDNS-Anbieters (z. B. IPv64.net): Der A-Record zeigt auf den Proxy, der die Anfragen per IPv6 an den Server weiterreicht.
+
+> [!NOTE]
+> Der IPv4-Proxy von IPv64.net sendet kein `X-Forwarded-For` mit der Adresse des Besuchers. Für das Backend kommen deshalb alle IPv4-Zugriffe von derselben Adresse, und sie teilen sich das Login-Rate-Limit (`AUTH_RATE_LIMIT_FOR_PERIOD`, Standard 10 Anfragen pro Minute). Viele Fehlversuche über IPv4 sperren das Login dann kurz für alle IPv4-Zugriffe; IPv6- und LAN-Zugriffe bleiben getrennt. Die Proxy-Adresse in `TRUSTED_PROXIES` einzutragen hilft nicht, weil keine echte Client-IP mitkommt. Für eine private Instanz ist das vertretbar; wer die echte IP braucht, nutzt einen Proxy, der `X-Forwarded-For` setzt (z. B. einen Cloudflare Tunnel mit eigener Domain).
+
+So prüfen Sie, welche Adressen ankommen:
+
+```bash
+# Von einem Rechner außerhalb: je eine markierte Anfrage per IPv4 und IPv6
+curl -4 -s -o /dev/null -A probe-v4 https://vinyl.meinedomain.de/favicon.svg
+curl -6 -s -o /dev/null -A probe-v6 https://vinyl.meinedomain.de/favicon.svg
+
+# Auf dem Server: erste Spalte = direkter Absender, letztes Feld = X-Forwarded-For
+docker logs vinyl-frontend-prod 2>&1 | grep probe-v
+```
+
+Steht im letzten Feld die öffentliche Adresse des Test-Rechners, wird die Client-IP korrekt weitergegeben. Steht dort nur die Adresse des Proxys, gilt die Einschränkung oben.
 
 ### Lokales Setup / Entwicklung (Ohne Domain)
 Für die reine Entwicklung auf einem lokalen Laptop ohne eigene Domain wird weiterhin `docker-compose.yml` (`npm run dev`) zusammen mit `mkcert` verwendet, da hier kein Reverse Proxy zur Verfügung steht, der Let's Encrypt Zertifikate validieren könnte. (Siehe Haupt-README).

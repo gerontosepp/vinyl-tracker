@@ -35,7 +35,7 @@ The **Vinyl Tracker** is a personal web application designed for vinyl enthusias
     - **MCP Server**: Rust (`rmcp` v3.5 SDK, stdio JSON-RPC).
     - **Database**: PostgreSQL 16.
     - **Caching & Rate Limiting**: `moka` (in-memory caches), `governor` (Discogs client and auth endpoints).
-    - **Migrations**: `sqlx::migrate` (`backend/migrations/<n>_<name>.sql`, embedded at compile time, history in `_sqlx_migrations`). Existing refinery/Flyway histories are imported once on first start ([ADR-0017](adr/0017-datenbank-migrationen-mit-sqlx-migrate.md)).
+    - **Migrations**: `sqlx::migrate` (`backend/migrations/<n>_<name>.sql`, embedded at compile time, history in `_sqlx_migrations`; the one-time import of refinery/Flyway histories was removed after v1.0.0, [ADR-0017](adr/0017-datenbank-migrationen-mit-sqlx-migrate.md)).
     - **API Errors**: RFC 7807 Problem Details (`AppError` → `ProblemDetail`). No OpenAPI/Swagger endpoint.
     - **Containerization**: Docker & Docker Compose (`cargo-chef` multi-stage build).
 - **License**: MIT License (Open Source).
@@ -201,7 +201,7 @@ The system is deployed as a multi-container Docker application orchestrated by D
 - **Rate Limiting & Brute-Force Protection**: Public authentication endpoints (`/api/users/login`, `/api/users/register`, `/api/users/reset-password`) are protected by a keyed `governor` rate limiter (`auth_rate_limit_middleware`). Limits are enforced per client IP (configurable via `AUTH_RATE_LIMIT_FOR_PERIOD`, default 10 requests/minute). The client IP is the TCP peer; `X-Forwarded-For` / `X-Real-IP` are only honoured from `TRUSTED_PROXIES` ([ADR-0016](adr/0016-vertrauenswuerdige-proxies-fuer-client-ip-ermittlung.md)). Requests exceeding the limit receive HTTP 429 as RFC-7807 `ProblemDetail`.
 - **Data Protection**:
     - User passwords are hashed with **BCrypt** (`bcrypt` crate; the salt is embedded in the hash, the former `salt` column was dropped in migration `5`).
-    - Discogs tokens are encrypted with **AES-256-GCM** (key derived via PBKDF2-HMAC-SHA256 from `VINYL_ENCRYPTION_PASSWORD`/`VINYL_ENCRYPTION_SALT`); legacy AES-CBC values from the Java era are still decrypted ([ADR-0004](adr/0004-aead-aes-256-gcm-kryptografie-fuer-tokens.md)).
+    - Discogs tokens are encrypted with **AES-256-GCM** (key derived via PBKDF2-HMAC-SHA256 from `VINYL_ENCRYPTION_PASSWORD`/`VINYL_ENCRYPTION_SALT`); values without the `v2:` prefix (AES-CBC from the Java era) are no longer decrypted since v1.0.0 ([ADR-0004](adr/0004-aead-aes-256-gcm-kryptografie-fuer-tokens.md)).
 - **Network Exposure**: In the production compose files backend (8080) and PostgreSQL (5432) are only bound to `127.0.0.1`; external access goes through nginx.
 - **Supply Chain**: GitHub Actions are pinned to commit SHAs and updated by Dependabot; fork PR workflows require maintainer approval.
 

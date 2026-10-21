@@ -222,30 +222,6 @@ async fn test_register_login_and_me_lifecycle() {
 }
 
 #[tokio::test]
-async fn test_existing_database_discogs_token_decryption() {
-    let (_, state) = setup_app().await;
-
-    // Check if opolm user exists in DB and verify their encrypted Discogs token can be decrypted
-    let row: Option<(String, Option<String>)> = sqlx::query_as(
-        "SELECT discogs_username, discogs_token FROM app_user WHERE username = 'opolm'",
-    )
-    .fetch_optional(&state.pool)
-    .await
-    .unwrap();
-
-    if let Some((discogs_user, Some(enc_token))) = row {
-        assert_eq!(discogs_user, "gerontosepp");
-        let decrypted = state.crypto.decrypt(&enc_token);
-        assert!(
-            decrypted.is_some(),
-            "Existing database token must decrypt cleanly"
-        );
-        let pat = decrypted.unwrap();
-        assert!(!pat.is_empty(), "Decrypted token must not be empty");
-    }
-}
-
-#[tokio::test]
 async fn test_legacy_user_login() {
     let (app, state) = setup_app().await;
 

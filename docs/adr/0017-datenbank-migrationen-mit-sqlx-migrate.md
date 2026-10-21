@@ -55,3 +55,5 @@ Mit [ADR-0001](0001-backend-migration-spring-boot-zu-rust-axum.md) wurde `refine
 * **Namenskonvention:** Neue Migrationen heißen `<n>_<beschreibung>.sql` (nächste: `10_…`), nicht mehr `V<n>__…`.
 * **Rollback:** Ein Rückschritt auf eine Version mit `refinery` ist möglich, solange keine neue Migration (ab `10_…`) hinzugekommen ist – diese wäre nur in `_sqlx_migrations` erfasst.
 * **Unveränderlichkeit:** Bereits ausgelieferte Migrationsdateien dürfen nicht mehr editiert werden (auch keine Kommentare), sonst bricht der Start mit einem Checksummen-Fehler ab.
+
+> **Nachtrag (2026-10-21, #206):** Die einmalige Baseline-Übernahme aus refinery/Flyway/Hibernate wurde nach v1.0.0 entfernt, da alle bekannten Installationen übernommen sind. Datenbanken aus der Zeit davor müssen zuerst mit v1.0.0 gestartet werden.

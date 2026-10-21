@@ -36,12 +36,9 @@ dotenvy = "0.15"
 bcrypt = "0.17"
 jsonwebtoken = "9"
 pbkdf2 = { version = "0.12", default-features = false, features = ["hmac"] }
-sha1 = { version = "0.10", default-features = false }
 sha2 = { version = "0.10", default-features = false }
 hmac = "0.12"
-aes = "0.8"
 aes-gcm = "0.10"
-cbc = { version = "0.1", features = ["block-padding"] }
 hex = "0.4"
 rand = "0.8"
 

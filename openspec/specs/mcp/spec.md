@@ -104,3 +104,10 @@ Der MCP-Server MUST Backend-Antworten mit denselben Datentypen deserialisieren, 
 #### Scenario: Barcode-Scan ohne Treffer in der Sammlung
 - **WHEN** der MCP-Client das Tool `scan_barcode` mit einem Barcode aufruft, der nicht in der Sammlung ist, für den Discogs aber Releases kennt
 - **THEN** enthält das Ergebnis die Discogs-Vorschläge, damit der Benutzer eines der Releases hinzufügen kann.
+
+### Requirement: Meistgespielte Interpreten per MCP
+Der MCP-Server MUST das Tool `get_top_artists` mit optionalem Zeitraum (`from`, `to` als `YYYY-MM-DD`) bereitstellen, das die Rangliste aus `GET /api/analytics/top-artists` mit Interpret, Hördurchgängen und Anzahl der Releases ausgibt.
+
+#### Scenario: Wen höre ich am meisten?
+- **WHEN** ein MCP-Client `get_top_artists` ohne Zeitraum aufruft
+- **THEN** erhält er die Interpreten absteigend nach Hördurchgängen mit Anzahl der Hördurchgänge und Releases

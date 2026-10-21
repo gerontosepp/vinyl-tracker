@@ -14,6 +14,13 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "isUnreleased": true,
     "items": [
       {
+        "title": "Fix: Homescreen-Icons im neuen Design (`#183`)",
+        "type": "fix",
+        "typeLabel": "Fix",
+        "summary": "Die PWA-Icons und ein neues `apple-touch-icon` zeigen die rote Platte des Favicons auf dunklem Grund. Bereits installierte Homescreen-Apps übernehmen das Icon erst nach erneutem Hinzufügen.",
+        "details": []
+      },
+      {
         "title": "Fix: Eigenes Favicon (`#180`)",
         "type": "fix",
         "typeLabel": "Fix",

@@ -9,6 +9,8 @@
 
 ## Unreleased
 
+- **Fix: Homescreen-Icons im neuen Design (`#183`)**: Die PWA-Icons und ein neues `apple-touch-icon` zeigen die rote Platte des Favicons auf dunklem Grund. Bereits installierte Homescreen-Apps übernehmen das Icon erst nach erneutem Hinzufügen.
+
 - **Fix: Eigenes Favicon (`#180`)**: Der Browser-Tab zeigt statt des Angular-Icons eine rote Platte mit weiß-blauem Label im Stil des App-Logos (`favicon.svg`, `favicon.ico` als Fallback). Kopfzeile, Login und Registrierung zeigen dasselbe Logo.
 
 - **Feature: Meistgespielte Interpreten (`#178`)**:

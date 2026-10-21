@@ -11,6 +11,12 @@
 
 ---
 
+## v0.14.0 (2026-10-21)
+
+- **Handy: Filter der Sammlung einklappbar (`#194`)**: Am Handy sind Filter, Sortierung und Seitengröße der Sammlung standardmäßig eingeklappt; oben bleiben Suche, eine kompakte Seitenumschaltung und ein Filter-Button mit der Anzahl aktiver Filter. Der Zustand wird im Browser gemerkt.
+
+---
+
 ## v0.13.0 (2026-10-21)
 
 - **Handy: Sortieren in der unteren Leiste (`#187`)**: Der Sortier-Modus startet über ein eigenes Kallax-Icon in der unteren Leiste statt über den Button auf der Startseite. Der Scan-Button ist jetzt ein Eintrag wie Start, Sammlung und Profil, gleich groß und im selben Stil.

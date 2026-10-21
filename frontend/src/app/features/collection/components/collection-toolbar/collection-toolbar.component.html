@@ -68,8 +68,59 @@
         }
       </div>
 
+      <!-- Phone: compact pager while the filters are collapsed, and the filter toggle -->
+      <div class="md:hidden flex items-center gap-1.5 shrink-0">
+        @if (!filtersOpen() && totalPages() > 1) {
+          <div class="flex items-center gap-1" data-testid="compact-pager">
+            <button
+              type="button"
+              [disabled]="page() <= 1"
+              (click)="prevPage.emit()"
+              [attr.aria-label]="'collection.prevPage' | translate"
+              class="p-1 px-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-transparent text-slate-600 dark:text-slate-300 disabled:opacity-40 shadow-sm cursor-pointer text-xs"
+            >
+              &lt;
+            </button>
+            <span class="text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap text-xs">{{ page() }}/{{ totalPages() }}</span>
+            <button
+              type="button"
+              [disabled]="page() >= totalPages()"
+              (click)="nextPage.emit()"
+              [attr.aria-label]="'collection.nextPage' | translate"
+              class="p-1 px-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-transparent text-slate-600 dark:text-slate-300 disabled:opacity-40 shadow-sm cursor-pointer text-xs"
+            >
+              &gt;
+            </button>
+          </div>
+        }
+        <button
+          type="button"
+          data-testid="filters-toggle"
+          (click)="toggleFilters()"
+          [attr.aria-expanded]="filtersOpen()"
+          [attr.aria-label]="(filtersOpen() ? 'collection.hideFilters' : 'collection.showFilters') | translate"
+          [class]="
+            'relative p-2 rounded-xl border shadow-sm cursor-pointer transition-colors ' +
+            (filtersOpen()
+              ? 'bg-indigo-600 border-indigo-600 text-white'
+              : 'bg-white/70 dark:bg-slate-800/70 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300')
+          "
+        >
+          <svg lucideSlidersHorizontal [size]="16"></svg>
+          @if (activeFilterCount() > 0) {
+            <span
+              data-testid="filters-count"
+              class="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-indigo-500 text-white text-[10px] font-bold flex items-center justify-center"
+            >
+              {{ activeFilterCount() }}
+            </span>
+          }
+        </button>
+      </div>
+
       <!-- Category Segmented Control (Alle / Platten / CDs) -->
       <div
+        [class]="collapsibleClass()"
         class="inline-flex items-center p-0.5 rounded-xl bg-slate-200/70 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs font-semibold shrink-0 shadow-inner"
         role="group"
         aria-label="Kategorie Filter"
@@ -138,7 +189,7 @@
       </div>
 
       <!-- Genre Filter Popover Button -->
-      <div class="relative shrink-0">
+      <div class="relative shrink-0" [class]="collapsibleClass()">
         <button
           type="button"
           (click)="toggleGenreDropdown()"
@@ -243,6 +294,7 @@
 
       <!-- Year Filter Input -->
       <div
+        [class]="collapsibleClass()"
         class="relative group min-w-[130px] max-w-[160px] shrink-0"
         title="Einzeljahre oder Bereiche (z.B. 1970, 1971 oder 1970-1972)"
       >
@@ -272,7 +324,7 @@
 
       <!-- Storage Filter (only with configured shelves) -->
       @if (storageShelves().length > 0) {
-        <div class="relative group min-w-[130px] max-w-[190px] shrink-0">
+        <div class="relative group min-w-[130px] max-w-[190px] shrink-0" [class]="collapsibleClass()">
           <svg
             lucideArchive
             [size]="15"
@@ -300,7 +352,7 @@
       }
 
       <!-- Filter Toggles -->
-      <div class="flex items-center gap-2 shrink-0">
+      <div class="flex items-center gap-2 shrink-0" [class]="collapsibleClass()">
         <button
           (click)="toggleSelectAllPage.emit()"
           class="hidden md:flex items-center gap-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium transition-colors cursor-pointer px-2 py-1.5 rounded-lg hover:bg-white dark:hover:bg-slate-800"
@@ -434,7 +486,7 @@
     </div>
 
     <!-- Right Group: Sort & Pagination in one fluid line -->
-    <div class="flex items-center gap-2.5 sm:gap-3 shrink-0">
+    <div class="flex items-center gap-2.5 sm:gap-3 shrink-0" [class]="collapsibleClass()">
       <!-- Sort Controls -->
       <div class="flex items-center gap-1.5 shrink-0">
         <span class="text-slate-500 dark:text-slate-400 font-medium hidden md:inline text-xs sm:text-sm">

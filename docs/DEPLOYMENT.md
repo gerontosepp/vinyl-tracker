@@ -75,7 +75,7 @@ wget https://raw.githubusercontent.com/gerontosepp/vinyl-tracker/main/.env.examp
       IMAGE_TAG=latest
       ```
 5.  **Datenbank-Migrationen**:
-    Das Backend führt beim Start automatisch alle ausstehenden Migrationen aus (`sqlx::migrate`, Historie in `_sqlx_migrations`). Bestehende Datenbanken mit `refinery_schema_history` oder `flyway_schema_history` werden beim ersten Start automatisch übernommen, ohne Migrationen erneut auszuführen ([ADR-0017](adr/0017-datenbank-migrationen-mit-sqlx-migrate.md)). Erstellen Sie vor Updates trotzdem ein Backup (siehe [Datenbank-Backup](#datenbank-backup--wiederherstellung)).
+    Das Backend führt beim Start automatisch alle ausstehenden Migrationen aus (`sqlx::migrate`, Historie in `_sqlx_migrations`). Datenbanken aus der Spring-Boot-Zeit (`flyway_schema_history`) oder mit `refinery_schema_history` werden nicht mehr automatisch übernommen: Sie zuerst mit v1.0.0 starten, das die Historie einmalig importiert, dann aktualisieren ([ADR-0017](adr/0017-datenbank-migrationen-mit-sqlx-migrate.md)). Erstellen Sie vor Updates trotzdem ein Backup (siehe [Datenbank-Backup](#datenbank-backup--wiederherstellung)).
 6.  **Weitere Backend-Einstellungen**:
     Alle Umgebungsvariablen des Backends mit Defaults sind im [README](../README.md#2-setup-environment-variables) aufgeführt. Für den Produktivbetrieb wichtig: `APP_ENV=production` (aktiviert `Secure`-Cookies und verbietet den Entwicklungs-`JWT_SECRET`) sowie eigene Werte für `VINYL_ENCRYPTION_PASSWORD`/`VINYL_ENCRYPTION_SALT`.
 7.  **Logging**:

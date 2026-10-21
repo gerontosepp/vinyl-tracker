@@ -9,6 +9,8 @@
 
 ## Unreleased
 
+- **Handy: Filter der Sammlung einklappbar (`#194`)**: Am Handy sind Filter, Sortierung und Seitengröße der Sammlung standardmäßig eingeklappt; oben bleiben Suche, eine kompakte Seitenumschaltung und ein Filter-Button mit der Anzahl aktiver Filter. Der Zustand wird im Browser gemerkt.
+
 ---
 
 ## v0.13.0 (2026-10-21)

@@ -230,5 +230,71 @@ describe('CollectionToolbarComponent', () => {
     component.onClearNotPlayed();
     expect(component.clearNotPlayedFilters.emit).toHaveBeenCalled();
   });
+  describe('collapsible filters (phone)', () => {
+    const el = (): HTMLElement => fixture.nativeElement as HTMLElement;
+    const toggle = (): HTMLButtonElement => el().querySelector('[data-testid="filters-toggle"]')!;
+    const categoryBlock = (): HTMLElement => el().querySelector('[role="group"]')!;
+
+    afterEach(() => localStorage.removeItem('collection.filtersOpen'));
+
+    it('starts collapsed, keeps static classes and expands on toggle', () => {
+      const block = categoryBlock();
+      expect(component.filtersOpen()).toBe(false);
+      expect(block.classList.contains('max-md:hidden')).toBe(true);
+      expect(block.classList.contains('inline-flex')).toBe(true);
+      expect(toggle().getAttribute('aria-expanded')).toBe('false');
+
+      toggle().click();
+      fixture.detectChanges();
+
+      expect(block.classList.contains('max-md:hidden')).toBe(false);
+      expect(block.classList.contains('inline-flex')).toBe(true);
+      expect(toggle().getAttribute('aria-expanded')).toBe('true');
+      expect(localStorage.getItem('collection.filtersOpen')).toBe('true');
+    });
+
+    it('remembers the expanded state', () => {
+      localStorage.setItem('collection.filtersOpen', 'true');
+      const again = TestBed.createComponent(CollectionToolbarComponent);
+      expect(again.componentInstance.filtersOpen()).toBe(true);
+    });
+
+    it('counts the active filters on the toggle', () => {
+      expect(el().querySelector('[data-testid="filters-count"]')).toBeNull();
+
+      fixture.componentRef.setInput('category', 'vinyl');
+      fixture.componentRef.setInput('selectedGenres', ['Jazz', 'Rock']);
+      fixture.componentRef.setInput('years', '1970-1972');
+      fixture.componentRef.setInput('storageFilter', '3');
+      fixture.componentRef.setInput('showPlayedOnly', true);
+      fixture.componentRef.setInput('notPlayedSince', '2026-01-01');
+      fixture.detectChanges();
+
+      expect(component.activeFilterCount()).toBe(7);
+      expect(el().querySelector('[data-testid="filters-count"]')?.textContent?.trim()).toBe('7');
+    });
+
+    it('shows a compact pager only while collapsed with several pages', () => {
+      const pager = (): HTMLElement | null => el().querySelector('[data-testid="compact-pager"]');
+      expect(pager()).toBeNull();
+
+      fixture.componentRef.setInput('page', 2);
+      fixture.componentRef.setInput('totalPages', 13);
+      fixture.detectChanges();
+      expect(pager()?.textContent).toContain('2/13');
+
+      const pages: string[] = [];
+      component.prevPage.subscribe(() => pages.push('prev'));
+      component.nextPage.subscribe(() => pages.push('next'));
+      const [prev, next] = Array.from(pager()!.querySelectorAll('button'));
+      prev.click();
+      next.click();
+      expect(pages).toEqual(['prev', 'next']);
+
+      toggle().click();
+      fixture.detectChanges();
+      expect(pager()).toBeNull();
+    });
+  });
 });
 

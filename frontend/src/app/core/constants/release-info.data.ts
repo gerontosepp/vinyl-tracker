@@ -14,6 +14,13 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "isUnreleased": true,
     "items": [
       {
+        "title": "Artikel bei der Künstlersortierung (`#211`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Neben „The“ werden jetzt auch „A“, „An“, „Der“, „Die“, „Das“, „Le“, „La“ und „Les“ ignoriert – *Die Sterne* steht unter **S**, *A Flock of Seagulls* unter **F**. Das gilt für die Sammlungsansicht und die Regalbelegung; betroffene Platten können dadurch ihr Fach wechseln.",
+        "details": []
+      },
+      {
         "title": "Platten ohne Barcode per Label-Foto erkennen (`#208`)",
         "type": "feat",
         "typeLabel": "Feature",

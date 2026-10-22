@@ -408,3 +408,25 @@ export interface RedistributePreview {
   media: StorageMedia;
   movedCount: number;
 }
+
+/** Status of a label photo in the inbox (`/api/label-photos`). */
+export type LabelPhotoStatus = 'pending' | 'identified' | 'failed';
+
+/** A label photo waiting to be identified by Claude via MCP. */
+export interface LabelPhoto {
+  id: number;
+  status: LabelPhotoStatus;
+  discogsId: number | null;
+  createdAt: string;
+  processedAt: string | null;
+}
+
+export interface LabelPhotosResult {
+  photos: LabelPhoto[];
+  pendingCount: number;
+}
+
+export interface LabelPhotoUploadResult {
+  id: number;
+  pendingCount: number;
+}

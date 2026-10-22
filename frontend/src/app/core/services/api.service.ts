@@ -28,6 +28,9 @@ import {
   StorageLayout,
   StorageSequence,
   RedistributePreview,
+  LabelPhotoStatus,
+  LabelPhotosResult,
+  LabelPhotoUploadResult,
 } from '../types';
 
 @Injectable({
@@ -39,6 +42,20 @@ export class ApiService {
 
   scanBarcode(barcode: string): Observable<ScanResult> {
     return this.http.post<ScanResult>(`${this.baseUrl}/scan`, { barcode });
+  }
+
+  /** Stores a label photo (JPEG) in the inbox for identification via MCP. */
+  uploadLabelPhoto(image: Blob): Observable<LabelPhotoUploadResult> {
+    return this.http.post<LabelPhotoUploadResult>(`${this.baseUrl}/label-photos`, image, {
+      headers: { 'Content-Type': image.type || 'image/jpeg' },
+    });
+  }
+
+  getLabelPhotos(status?: LabelPhotoStatus, limit?: number): Observable<LabelPhotosResult> {
+    let params = new HttpParams();
+    if (status) params = params.set('status', status);
+    if (limit) params = params.set('limit', limit);
+    return this.http.get<LabelPhotosResult>(`${this.baseUrl}/label-photos`, { params });
   }
 
   deleteScan(id: number): Observable<void> {

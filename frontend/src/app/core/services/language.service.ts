@@ -126,6 +126,13 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'scanner.hardwareReady': 'Hardware-Scanner bereit',
     'scanner.hardwareHint': 'Halte den Scanner an den Barcode des Plattencovers oder deinen Vinyl-Tracker QR-Code.',
     'scanner.badgeHardware': 'Eyoyo EY-009P aktiv',
+    'scanner.labelPhotoTitle': 'Kein Barcode?',
+    'scanner.labelPhotoButton': 'Label fotografieren',
+    'scanner.labelPhotoUploading': 'Foto wird gespeichert...',
+    'scanner.labelPhotoHint': 'Das Foto landet in der Label-Inbox. Claude erkennt die Platte später über den MCP-Prompt „process_label_inbox“.',
+    'scanner.labelPhotoPending': '{count} in der Inbox',
+    'scanner.labelPhotoSaved': 'Foto in der Label-Inbox gespeichert ({count} offen).',
+    'scanner.labelPhotoError': 'Das Foto konnte nicht gespeichert werden.',
 
     // Dashboard
     'dashboard.all': 'Alle',
@@ -451,6 +458,13 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'scanner.hardwareReady': 'Hardware Scanner Ready',
     'scanner.hardwareHint': 'Aim the scanner at the record sleeve barcode or Vinyl Tracker QR code.',
     'scanner.badgeHardware': 'Eyoyo EY-009P active',
+    'scanner.labelPhotoTitle': 'No barcode?',
+    'scanner.labelPhotoButton': 'Take label photo',
+    'scanner.labelPhotoUploading': 'Saving photo...',
+    'scanner.labelPhotoHint': 'The photo goes to the label inbox. Claude identifies the record later via the MCP prompt "process_label_inbox".',
+    'scanner.labelPhotoPending': '{count} in inbox',
+    'scanner.labelPhotoSaved': 'Photo saved to the label inbox ({count} open).',
+    'scanner.labelPhotoError': 'The photo could not be saved.',
 
     // Dashboard
     'dashboard.all': 'All',

@@ -14,6 +14,13 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "isUnreleased": true,
     "items": [
       {
+        "title": "LP mit Bonus-CD als LP erkennen (`#223`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Releases mit Vinyl und beiliegender CD (z. B. *The Flaming Lips – With A Little Help From My Fwends*) wurden als CD eingestuft und im CD-Regal einsortiert. Sobald ein Release Vinyl enthält, gilt es jetzt als LP bzw. Doppel-LP; der nächste Discogs-Sync korrigiert bestehende Einträge.",
+        "details": []
+      },
+      {
         "title": "Aktuelle Daten nach Gerätewechsel (`#220`)",
         "type": "feat",
         "typeLabel": "Feature",

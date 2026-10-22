@@ -14,6 +14,13 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "isUnreleased": true,
     "items": [
       {
+        "title": "Aktuelle Daten nach Gerätewechsel (`#220`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Kommt die App nach mindestens 30 Sekunden im Hintergrund wieder nach vorn, laden Sammlung und Dashboard ihre Daten neu – Änderungen von einem anderen Gerät (z. B. eine am Mac gelöschte Platte) erscheinen so ohne Neustart der App.",
+        "details": []
+      },
+      {
         "title": "Label-Inbox in der App bearbeiten (`#218`)",
         "type": "feat",
         "typeLabel": "Feature",

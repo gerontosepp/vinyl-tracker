@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { LayoutComponent } from '../../shared/components/layout/layout.component';
 import { CollectionToolbarComponent } from './components/collection-toolbar/collection-toolbar.component';
@@ -13,6 +14,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
 import { LanguageService } from '../../core/services/language.service';
+import { AppResumeService } from '../../core/services/app-resume.service';
 import {
   CollectionRelease,
   QrCodeItem,
@@ -50,6 +52,14 @@ export class CollectionComponent implements OnInit, OnDestroy {
   readonly toastService = inject(ToastService);
   readonly languageService = inject(LanguageService);
   private readonly route = inject(ActivatedRoute);
+
+  /** Back from the background, records may have changed on another device. */
+  private readonly resumeSub = inject(AppResumeService)
+    .resumed$.pipe(takeUntilDestroyed())
+    .subscribe(() => {
+      this.loadShelves();
+      this.loadData();
+    });
 
   /** List of records or the shelf view (storage overview and management). */
   readonly view = signal<'list' | 'shelves'>('list');

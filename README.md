@@ -12,7 +12,7 @@ The project follows a modern containerized micro-architecture:
 - **Framework**: Angular 22
 - **Language**: TypeScript
 - **Features**: 
-  - Progressive Web App (PWA) capabilities for mobile usage.
+  - Progressive Web App (PWA) capabilities for mobile usage; collection and dashboard reload when the app returns from the background (≥ 30 s), so changes made on another device show up.
   - Barcode scanning integration (using `html5-qrcode`).
   - Secure Context support via local SSL.
 

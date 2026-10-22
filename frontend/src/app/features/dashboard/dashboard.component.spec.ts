@@ -4,9 +4,10 @@ import { AuthService } from '../../core/services/auth.service';
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
 import { ScannerService } from '../../core/services/scanner.service';
+import { AppResumeService } from '../../core/services/app-resume.service';
 import { LanguageService } from '../../core/services/language.service';
 import { signal, NO_ERRORS_SCHEMA } from '@angular/core';
-import { of, throwError } from 'rxjs';
+import { of, throwError, Subject } from 'rxjs';
 import { Router, provideRouter } from '@angular/router';
 import { AnalyticsTopRecord, CollectionValueResponse, GenreBreakdownItem, ListenEvent } from '../../core/types';
 
@@ -17,6 +18,7 @@ describe('DashboardComponent', () => {
   let mockApiService: any;
   let mockToastService: any;
   let mockScannerService: any;
+  const resumed = new Subject<void>();
   let mockLanguageService: any;
 
   const mockListens: ListenEvent[] = [
@@ -105,6 +107,7 @@ describe('DashboardComponent', () => {
         { provide: ToastService, useValue: mockToastService },
         { provide: ScannerService, useValue: mockScannerService },
         { provide: LanguageService, useValue: mockLanguageService },
+        { provide: AppResumeService, useValue: { resumed$: resumed } },
       ],
       schemas: [NO_ERRORS_SCHEMA],
     }).compileComponents();
@@ -112,6 +115,12 @@ describe('DashboardComponent', () => {
     fixture = TestBed.createComponent(DashboardComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
+  });
+
+  it('reloads the statistics when the app returns from the background', () => {
+    const loadData = vi.spyOn(component, 'loadData').mockImplementation(() => undefined);
+    resumed.next();
+    expect(loadData).toHaveBeenCalledTimes(1);
   });
 
   it('loads the top artists with the period and opens the collection searched for an artist', () => {

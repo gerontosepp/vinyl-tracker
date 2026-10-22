@@ -5,7 +5,9 @@ use axum::{
 use backend_rs::{
     config::Config,
     db::init_pool,
-    models::label_photo::{LabelPhotoDto, LabelPhotoStatus, LabelPhotoUploadDto, LabelPhotosDto},
+    models::label_photo::{
+        LabelPhotoDeleteDto, LabelPhotoDto, LabelPhotoStatus, LabelPhotoUploadDto, LabelPhotosDto,
+    },
     routes::create_app,
     state::AppState,
 };
@@ -344,4 +346,106 @@ async fn test_label_photo_upload_validation() {
         .await
         .unwrap();
     assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
+}
+
+#[tokio::test]
+async fn test_delete_all_pending_label_photos() {
+    let app = setup_app().await;
+    let token = register(&app).await;
+    let other = register(&app).await;
+
+    let mut ids = Vec::new();
+    for owner in [&token, &token, &token, &other] {
+        let (_, body) = call(
+            &app,
+            Method::POST,
+            "/api/label-photos",
+            owner,
+            "image/jpeg",
+            jpeg(10, 10),
+        )
+        .await;
+        ids.push(
+            serde_json::from_slice::<LabelPhotoUploadDto>(&body)
+                .unwrap()
+                .id,
+        );
+    }
+    // One photo is already identified and must survive "delete pending"
+    let (status, _) = call(
+        &app,
+        Method::PATCH,
+        &format!("/api/label-photos/{}", ids[0]),
+        &token,
+        "application/json",
+        serde_json::to_vec(&json!({"status": "identified", "discogsId": 1})).unwrap(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+
+    let (status, body) = call(
+        &app,
+        Method::DELETE,
+        "/api/label-photos?status=pending",
+        &token,
+        "application/json",
+        vec![],
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    let result: LabelPhotoDeleteDto = serde_json::from_slice(&body).unwrap();
+    assert_eq!((result.deleted, result.pending_count), (2, 0));
+
+    let (_, body) = call(
+        &app,
+        Method::GET,
+        "/api/label-photos",
+        &token,
+        "application/json",
+        vec![],
+    )
+    .await;
+    let list: LabelPhotosDto = serde_json::from_slice(&body).unwrap();
+    assert_eq!(
+        list.photos.iter().map(|p| p.id).collect::<Vec<_>>(),
+        vec![ids[0]]
+    );
+
+    // Other users keep their photos
+    let (_, body) = call(
+        &app,
+        Method::GET,
+        "/api/label-photos?status=pending",
+        &other,
+        "application/json",
+        vec![],
+    )
+    .await;
+    let list: LabelPhotosDto = serde_json::from_slice(&body).unwrap();
+    assert_eq!(list.pending_count, 1);
+
+    // Without status everything of the user is deleted
+    let (status, body) = call(
+        &app,
+        Method::DELETE,
+        "/api/label-photos",
+        &token,
+        "application/json",
+        vec![],
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    let result: LabelPhotoDeleteDto = serde_json::from_slice(&body).unwrap();
+    assert_eq!(result.deleted, 1);
+
+    let (status, _) = call(
+        &app,
+        Method::DELETE,
+        "/api/label-photos?status=unknown",
+        &token,
+        "application/json",
+        vec![],
+    )
+    .await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
 }

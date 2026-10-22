@@ -1,6 +1,8 @@
 use crate::{
     error::AppError,
-    models::label_photo::{LabelPhotoDto, LabelPhotoStatus, LabelPhotoUploadDto, LabelPhotosDto},
+    models::label_photo::{
+        LabelPhotoDeleteDto, LabelPhotoDto, LabelPhotoStatus, LabelPhotoUploadDto, LabelPhotosDto,
+    },
 };
 use chrono::NaiveDateTime;
 use image::{DynamicImage, ImageDecoder, ImageReader, codecs::jpeg::JpegEncoder};
@@ -146,6 +148,26 @@ impl LabelPhotoService {
             return Err(not_found(id));
         }
         Ok(())
+    }
+
+    /// Deletes all photos of the user, or only those with the given status.
+    pub async fn delete_all(
+        pool: &PgPool,
+        user_id: i64,
+        status: Option<LabelPhotoStatus>,
+    ) -> Result<LabelPhotoDeleteDto, AppError> {
+        let result = sqlx::query(
+            "DELETE FROM label_photo WHERE user_id = $1 AND ($2::text IS NULL OR status = $2)",
+        )
+        .bind(user_id)
+        .bind(status.map(LabelPhotoStatus::as_str))
+        .execute(pool)
+        .await
+        .map_err(AppError::Database)?;
+        Ok(LabelPhotoDeleteDto {
+            deleted: result.rows_affected() as i64,
+            pending_count: Self::pending_count(pool, user_id).await?,
+        })
     }
 
     async fn pending_count(pool: &PgPool, user_id: i64) -> Result<i64, AppError> {

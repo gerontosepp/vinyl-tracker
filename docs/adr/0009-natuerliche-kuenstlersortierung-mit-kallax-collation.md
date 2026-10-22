@@ -52,6 +52,8 @@ Die Sortierung in `CollectionQueryService` und `QrPdfService` wird auf eine **dr
 
 Der ursprüngliche Künstlername bleibt für die Anzeige unverändert erhalten.
 
+**Ergänzung (`#213`):** Ein in der Detailansicht gesetzter eigener Sortier-String (`collection_item.sort_key`) ersetzt den automatischen Künstler-Schlüssel (`COALESCE(LOWER(ci.sort_key), …)`); Jahr und Titel bleiben nachrangig. Damit lassen sich Sonderfälle wie *Les Paul* gezielt einsortieren.
+
 ## Konsequenzen
 
 ### Positive Effekte
@@ -60,4 +62,4 @@ Der ursprüngliche Künstlername bleibt für die Anzeige unverändert erhalten.
 * **Server- und Client-Konsistenz:** Paginierte API-Abfragen und PDF-Exports liefern identische Reihenfolgen.
 
 ### Nachteile & Risiken
-* **Sprachspezifische Artikel:** Die Artikelliste ist fest (englisch, deutsch, französisch). Namen, deren erstes Wort zufällig wie ein Artikel lautet (z. B. *Les Paul*), werden ebenfalls unter dem zweiten Wort einsortiert.
+* **Sprachspezifische Artikel:** Die Artikelliste ist fest (englisch, deutsch, französisch). Namen, deren erstes Wort zufällig wie ein Artikel lautet (z. B. *Les Paul*), werden ebenfalls unter dem zweiten Wort einsortiert; dafür gibt es den eigenen Sortier-String pro Platte (`#213`).

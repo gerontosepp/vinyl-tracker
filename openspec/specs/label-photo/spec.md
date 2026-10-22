@@ -1,7 +1,7 @@
 # label-photo Specification
 
 ## Purpose
-TBD - created by archiving change 208-label-photo-identification. Update Purpose after archive.
+Records without a barcode are identified from a photo of their label: the PWA collects label photos in a per-user inbox, and Claude processes them through the MCP server.
 
 ## Requirements
 

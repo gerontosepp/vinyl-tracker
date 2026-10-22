@@ -3,7 +3,8 @@ import { CollectionComponent } from './collection.component';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
+import { AppResumeService } from '../../core/services/app-resume.service';
 import { signal, NO_ERRORS_SCHEMA } from '@angular/core';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { CollectionRelease } from '../../core/types';
@@ -14,6 +15,7 @@ describe('CollectionComponent', () => {
   let mockApiService: any;
   let mockAuthService: any;
   let mockToastService: any;
+  const resumed = new Subject<void>();
 
   beforeEach(async () => {
     mockApiService = {
@@ -37,6 +39,7 @@ describe('CollectionComponent', () => {
         { provide: ApiService, useValue: mockApiService },
         { provide: AuthService, useValue: mockAuthService },
         { provide: ToastService, useValue: mockToastService },
+        { provide: AppResumeService, useValue: { resumed$: resumed } },
       ],
       schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
@@ -47,6 +50,16 @@ describe('CollectionComponent', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('reloads records and shelves when the app returns from the background', () => {
+    const loadData = vi.spyOn(component, 'loadData').mockImplementation(() => undefined);
+    const loadShelves = vi.spyOn(component, 'loadShelves').mockImplementation(() => undefined);
+
+    resumed.next();
+
+    expect(loadData).toHaveBeenCalledTimes(1);
+    expect(loadShelves).toHaveBeenCalledTimes(1);
   });
 
   it('takes the search from the URL, e.g. from the dashboard top artists', async () => {

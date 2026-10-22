@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, inject, signal, computed, effect, ChangeD
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { LayoutComponent } from '../../shared/components/layout/layout.component';
 import { BarcodeScannerComponent } from '../../shared/components/barcode-scanner/barcode-scanner.component';
 import { RecentListensComponent } from './components/recent-listens/recent-listens.component';
@@ -11,6 +12,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
 import { ScannerService } from '../../core/services/scanner.service';
+import { AppResumeService } from '../../core/services/app-resume.service';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import {
   ListenEvent,
@@ -221,6 +223,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
   readonly toastService = inject(ToastService);
   readonly scannerService = inject(ScannerService);
   private readonly router = inject(Router);
+
+  /** Back from the background, listens may have been logged on another device. */
+  private readonly resumeSub = inject(AppResumeService)
+    .resumed$.pipe(takeUntilDestroyed())
+    .subscribe(() => this.loadData());
 
   /** Shows the sort mode button (phones only) once shelves exist. */
   readonly recentListens = signal<ListenEvent[]>([]);

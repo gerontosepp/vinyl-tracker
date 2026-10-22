@@ -9,6 +9,7 @@
 
 ## Unreleased
 
+- **Aktuelle Daten nach Gerätewechsel (`#220`)**: Kommt die App nach mindestens 30 Sekunden im Hintergrund wieder nach vorn, laden Sammlung und Dashboard ihre Daten neu – Änderungen von einem anderen Gerät (z. B. eine am Mac gelöschte Platte) erscheinen so ohne Neustart der App.
 - **Label-Inbox in der App bearbeiten (`#218`)**: Ein Tipp auf den Inbox-Zähler der Scan-Seite öffnet die Label-Inbox. Sie zeigt die wartenden Fotos mit Aufnahmedatum; einzelne Fotos oder alle offenen lassen sich löschen (`DELETE /api/label-photos?status=pending`).
 
 ---

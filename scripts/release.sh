@@ -26,7 +26,16 @@ sedi() {
 echo "Updating Frontend to $NEW_VERSION..."
 # Update package.json version
 sedi "s/\"version\": \"$CURRENT_VERSION\"/\"version\": \"$NEW_VERSION\"/" frontend/package.json
-sedi "s/\"version\": \"$CURRENT_VERSION\"/\"version\": \"$NEW_VERSION\"/" frontend/package-lock.json 2>/dev/null || true
+# Only the project's own entries (root and packages[""]): a blind replace would also hit
+# dependencies that happen to share the version number
+node -e '
+const fs = require("fs");
+const file = "frontend/package-lock.json";
+const lock = JSON.parse(fs.readFileSync(file, "utf8"));
+lock.version = process.argv[1];
+lock.packages[""].version = process.argv[1];
+fs.writeFileSync(file, JSON.stringify(lock, null, 2) + "\n");
+' "$NEW_VERSION"
 
 echo "Updating Backend, shared API types and MCP server to $NEW_VERSION..."
 # Update Cargo.toml versions (backend workspace incl. vinyl-api-types, MCP server)

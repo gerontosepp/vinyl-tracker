@@ -11,6 +11,14 @@
 
 ---
 
+## v1.2.0 (2026-10-22)
+
+- **LP mit Bonus-CD als LP erkennen (`#223`)**: Releases mit Vinyl und beiliegender CD (z. B. *The Flaming Lips – With A Little Help From My Fwends*) wurden als CD eingestuft und im CD-Regal einsortiert. Sobald ein Release Vinyl enthält, gilt es jetzt als LP bzw. Doppel-LP; der nächste Discogs-Sync korrigiert bestehende Einträge.
+- **Aktuelle Daten nach Gerätewechsel (`#220`)**: Kommt die App nach mindestens 30 Sekunden im Hintergrund wieder nach vorn, laden Sammlung und Dashboard ihre Daten neu – Änderungen von einem anderen Gerät (z. B. eine am Mac gelöschte Platte) erscheinen so ohne Neustart der App.
+- **Label-Inbox in der App bearbeiten (`#218`)**: Ein Tipp auf den Inbox-Zähler der Scan-Seite öffnet die Label-Inbox. Sie zeigt die wartenden Fotos mit Aufnahmedatum; einzelne Fotos oder alle offenen lassen sich löschen (`DELETE /api/label-photos?status=pending`).
+
+---
+
 ## v1.1.0 (2026-10-22)
 
 - **Eigene Sortierung pro Platte (`#213`)**: In der Album-Detailansicht lässt sich unter **Sortierung** ein eigener Sortier-String eingeben, der statt des Künstlers für die Reihenfolge in der Sammlung und im Regal gilt – z. B. *Les Paul* unter **L** oder ein Soloalbum neben der Band. Ein leeres Feld bzw. **Zurücksetzen** stellt die automatische Sortierung wieder her. Der Wert gilt für alle Exemplare und ist im JSON-Backup enthalten.

@@ -242,17 +242,16 @@ pub fn determine_format(formats: Option<&[DiscogsFormat]>) -> String {
         }
     }
 
+    // Vinyl wins: a CD in a release with vinyl is a bonus inside the LP sleeve
+    if has_vinyl {
+        let double = has_double_lp || vinyl_qty >= 2;
+        return if double { "Double LP" } else { "LP" }.to_string();
+    }
     if has_double_cd || cd_qty >= 2 {
         return "Double CD".to_string();
     }
-    if has_double_lp || vinyl_qty >= 2 {
-        return "Double LP".to_string();
-    }
     if has_cd {
         return "CD".to_string();
-    }
-    if has_vinyl {
-        return "LP".to_string();
     }
 
     "LP".to_string()
@@ -404,6 +403,30 @@ mod tests {
             Some(2),
             "vinyl release counts LPs only"
         );
+    }
+
+    #[test]
+    fn test_determine_format_vinyl_with_bonus_cd_is_lp() {
+        // The Flaming Lips – With A Little Help From My Fwends (Discogs 6246137)
+        let lp_with_cd = [
+            format("Vinyl", Some("1"), &["LP", "Album", "Limited Edition"]),
+            format("CD", Some("1"), &["Album"]),
+            format("All Media", Some("1"), &[]),
+        ];
+        assert_eq!(determine_format(Some(&lp_with_cd)), "LP");
+        assert_eq!(disc_count(Some(&lp_with_cd)), Some(1));
+
+        let lp_with_double_cd = [
+            format("Vinyl", Some("1"), &["LP"]),
+            format("CD", Some("2"), &["Album"]),
+        ];
+        assert_eq!(determine_format(Some(&lp_with_double_cd)), "LP");
+
+        let cd_with_dvd = [
+            format("CD", Some("1"), &["Album"]),
+            format("DVD", Some("1"), &[]),
+        ];
+        assert_eq!(determine_format(Some(&cd_with_dvd)), "CD");
     }
 
     #[test]

@@ -54,6 +54,14 @@ pub struct LabelPhotoUploadDto {
     pub pending_count: i64,
 }
 
+/// Result of deleting several label photos at once.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LabelPhotoDeleteDto {
+    pub deleted: i64,
+    pub pending_count: i64,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateLabelPhotoRequest {

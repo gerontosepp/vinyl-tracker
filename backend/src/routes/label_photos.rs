@@ -2,7 +2,7 @@ use crate::{
     auth::CurrentUser,
     error::AppError,
     models::label_photo::{
-        LabelPhotoDto, LabelPhotoStatus, LabelPhotoUploadDto, LabelPhotosDto,
+        LabelPhotoDeleteDto, LabelPhotoDto, LabelPhotoStatus, LabelPhotoUploadDto, LabelPhotosDto,
         UpdateLabelPhotoRequest,
     },
     services::label_photo_service::LabelPhotoService,
@@ -28,6 +28,7 @@ pub fn router() -> Router<AppState> {
             "/",
             get(list_photos)
                 .post(upload_photo)
+                .delete(delete_photos)
                 .layer(DefaultBodyLimit::max(UPLOAD_BODY_LIMIT)),
         )
         .route(
@@ -35,6 +36,20 @@ pub fn router() -> Router<AppState> {
             axum::routing::patch(update_photo).delete(delete_photo),
         )
         .route("/{id}/image", get(photo_image))
+}
+
+#[derive(Deserialize)]
+struct StatusQuery {
+    status: Option<String>,
+}
+
+fn parse_status(status: Option<&str>) -> Result<Option<LabelPhotoStatus>, AppError> {
+    status
+        .map(|s| {
+            LabelPhotoStatus::parse(s)
+                .ok_or_else(|| AppError::BadRequest(format!("Unknown label photo status '{s}'")))
+        })
+        .transpose()
 }
 
 #[derive(Deserialize)]
@@ -60,17 +75,22 @@ async fn list_photos(
     CurrentUser(user): CurrentUser,
     Query(query): Query<ListQuery>,
 ) -> Result<Json<LabelPhotosDto>, AppError> {
-    let status = query
-        .status
-        .as_deref()
-        .map(|s| {
-            LabelPhotoStatus::parse(s)
-                .ok_or_else(|| AppError::BadRequest(format!("Unknown label photo status '{s}'")))
-        })
-        .transpose()?;
+    let status = parse_status(query.status.as_deref())?;
     let limit = query.limit.unwrap_or(50).clamp(1, MAX_LIST_LIMIT);
     Ok(Json(
         LabelPhotoService::list(&state.pool, user.id, status, limit).await?,
+    ))
+}
+
+/// Deletes all photos of the user, or only those with `?status=`.
+async fn delete_photos(
+    State(state): State<AppState>,
+    CurrentUser(user): CurrentUser,
+    Query(query): Query<StatusQuery>,
+) -> Result<Json<LabelPhotoDeleteDto>, AppError> {
+    let status = parse_status(query.status.as_deref())?;
+    Ok(Json(
+        LabelPhotoService::delete_all(&state.pool, user.id, status).await?,
     ))
 }
 

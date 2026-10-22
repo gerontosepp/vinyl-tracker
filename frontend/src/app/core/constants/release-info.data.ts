@@ -3,7 +3,7 @@
 import { ReleaseEntry } from '../models/release-info.model';
 
 // Application version from frontend/package.json – single source for all version badges.
-export const APP_VERSION = '1.1.0';
+export const APP_VERSION = '1.2.0';
 
 export const RELEASE_INFO_DATA: ReleaseEntry[] = [
   {
@@ -15,10 +15,40 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "items": []
   },
   {
+    "version": "v1.2.0",
+    "rawHeader": "v1.2.0 (2026-10-22)",
+    "date": "2026-10-22",
+    "isCurrent": true,
+    "isUnreleased": false,
+    "items": [
+      {
+        "title": "LP mit Bonus-CD als LP erkennen (`#223`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Releases mit Vinyl und beiliegender CD (z. B. *The Flaming Lips – With A Little Help From My Fwends*) wurden als CD eingestuft und im CD-Regal einsortiert. Sobald ein Release Vinyl enthält, gilt es jetzt als LP bzw. Doppel-LP; der nächste Discogs-Sync korrigiert bestehende Einträge.",
+        "details": []
+      },
+      {
+        "title": "Aktuelle Daten nach Gerätewechsel (`#220`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Kommt die App nach mindestens 30 Sekunden im Hintergrund wieder nach vorn, laden Sammlung und Dashboard ihre Daten neu – Änderungen von einem anderen Gerät (z. B. eine am Mac gelöschte Platte) erscheinen so ohne Neustart der App.",
+        "details": []
+      },
+      {
+        "title": "Label-Inbox in der App bearbeiten (`#218`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Ein Tipp auf den Inbox-Zähler der Scan-Seite öffnet die Label-Inbox. Sie zeigt die wartenden Fotos mit Aufnahmedatum; einzelne Fotos oder alle offenen lassen sich löschen (`DELETE /api/label-photos?status=pending`).",
+        "details": []
+      }
+    ]
+  },
+  {
     "version": "v1.1.0",
     "rawHeader": "v1.1.0 (2026-10-22)",
     "date": "2026-10-22",
-    "isCurrent": true,
+    "isCurrent": false,
     "isUnreleased": false,
     "items": [
       {

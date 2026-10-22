@@ -40,9 +40,9 @@ In der bisherigen SQL-Sortierung (`ORDER BY artist ASC`) wurden alle Bands mit �
 ## Entscheidung
 
 Die Sortierung in `CollectionQueryService` und `QrPdfService` wird auf eine **dreistufige natürliche Kallax-Sortierung** umgestellt:
-1. **Artikel-Bereinigung:** Führende Artikel „The “ werden für die Sortierung ignoriert:
+1. **Artikel-Bereinigung:** Führende Artikel werden für die Sortierung ignoriert – englisch „The“, „A“, „An“, deutsch „Der“, „Die“, „Das“ und französisch „Le“, „La“, „Les“ (ergänzt mit `#211`; *Die Sterne* unter **S**):
    ```sql
-   REGEXP_REPLACE(artist, '^(?i)the\s+', '') COLLATE "C" ASC
+   REGEXP_REPLACE(LOWER(artist), '^(the|an?|der|die|das|les?|la)\s+', '', 'i') COLLATE "C" ASC
    ```
 2. **Punkt-Collation:** Durch `COLLATE "C"` sortieren Satzzeichen (wie Punkte in `A.R. & Machines`) nach ASCII-Wert deterministisch vor Klein- und Großbuchstaben (`Adele`).
 3. **Sekundäre Chronologie:** Bei Namensgleichheit wird aufsteigend nach Veröffentlichungsjahr und abschließend nach Albumtitel sortiert:
@@ -60,4 +60,4 @@ Der ursprüngliche Künstlername bleibt für die Anzeige unverändert erhalten.
 * **Server- und Client-Konsistenz:** Paginierte API-Abfragen und PDF-Exports liefern identische Reihenfolgen.
 
 ### Nachteile & Risiken
-* **Sprachspezifische Artikel:** Aktuell ist die Normalisierung auf das englische „The “ fokussiert; fremdsprachige Artikel (wie „Die “, „Les “) können bei Bedarf in zukünftigen Schritten erweitert werden.
+* **Sprachspezifische Artikel:** Die Artikelliste ist fest (englisch, deutsch, französisch). Namen, deren erstes Wort zufällig wie ein Artikel lautet (z. B. *Les Paul*), werden ebenfalls unter dem zweiten Wort einsortiert.

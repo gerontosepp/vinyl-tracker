@@ -14,9 +14,11 @@ use std::collections::HashMap;
 
 pub struct CollectionQueryService;
 
-/// Shelf sort key columns (artist without a leading "The", year, title). The storage layout
+/// Shelf sort key columns (artist without a leading article, year, title). The storage layout
 /// compares the selected values byte-wise, which matches `COLLATE "C"` in [`shelf_order_sql`].
-pub const SHELF_ARTIST_KEY_SQL: &str = r#"REGEXP_REPLACE(LOWER(rc.artist), '^the\s+', '', 'i')"#;
+/// Ignored articles: The, A, An, Der, Die, Das, Le, La, Les ("Die Sterne" sorts under S).
+pub const SHELF_ARTIST_KEY_SQL: &str =
+    r#"REGEXP_REPLACE(LOWER(rc.artist), '^(the|an?|der|die|das|les?|la)\s+', '', 'i')"#;
 pub const SHELF_TITLE_KEY_SQL: &str = "COALESCE(LOWER(rc.title), '')";
 /// Shelf order of the collection view ("artist", ascending) and of the storage layout.
 pub fn shelf_order_sql() -> String {
@@ -149,10 +151,8 @@ impl CollectionQueryService {
     }
 
     fn build_order_by(sort: &str, sort_order: &str) -> String {
-        let normalized_artist_asc =
-            r#"REGEXP_REPLACE(LOWER(rc.artist), '^the\s+', '', 'i') COLLATE "C" ASC"#;
-        let normalized_artist_desc =
-            r#"REGEXP_REPLACE(LOWER(rc.artist), '^the\s+', '', 'i') COLLATE "C" DESC"#;
+        let normalized_artist_asc = format!(r#"{SHELF_ARTIST_KEY_SQL} COLLATE "C" ASC"#);
+        let normalized_artist_desc = format!(r#"{SHELF_ARTIST_KEY_SQL} COLLATE "C" DESC"#);
 
         match sort {
             "year" => {

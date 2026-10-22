@@ -5,7 +5,7 @@
 use crate::models::storage::{StorageNeighborsDto, StorageRecordRefDto, StorageSlotDto};
 use std::cmp::Ordering;
 
-/// Shelf sort key: artist without a leading "The" (lowercase), year, title (lowercase), copy.
+/// Shelf sort key: artist without a leading article (lowercase), year, title (lowercase), copy.
 /// Strings compare byte-wise like PostgreSQL's `COLLATE "C"`; missing artist/year sort last.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ShelfKey {

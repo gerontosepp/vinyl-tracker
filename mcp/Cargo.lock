@@ -2035,6 +2035,7 @@ name = "vinyl-mcp-server"
 version = "1.0.0"
 dependencies = [
  "axum",
+ "base64",
  "dotenvy",
  "reqwest",
  "rmcp",

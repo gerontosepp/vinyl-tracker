@@ -129,16 +129,51 @@ pub struct GetRecordDetailsArgs {
 }
 
 /// Arguments for searching the global Discogs database.
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+///
+/// Set `query` for free-text search and/or the structured filters. For records without a
+/// barcode, `catno` plus `label` (as printed on the record label) is the most precise search.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, Default)]
 pub struct SearchDiscogsArgs {
-    /// Search query (album title, artist name, barcode, etc.)
-    pub query: String,
+    /// Free-text search query (album title, artist name, barcode, etc.)
+    pub query: Option<String>,
+    /// Catalog number as printed on the label (e.g. "SHVL 804")
+    pub catno: Option<String>,
+    /// Record label name (e.g. "Harvest")
+    pub label: Option<String>,
+    /// Artist name
+    pub artist: Option<String>,
+    /// Release (album) title
+    pub release_title: Option<String>,
+    /// Release year (e.g. "1973")
+    pub year: Option<String>,
+    /// Country of release (e.g. "Germany", "UK", "US")
+    pub country: Option<String>,
+    /// Format (e.g. "Vinyl", "CD")
+    pub format: Option<String>,
     /// Discogs entity type filter (default: "release", or "master", "artist")
     pub r#type: Option<String>,
     /// Page number (default: 1)
     pub page: Option<i32>,
     /// Items per page (default: 50)
     pub per_page: Option<i32>,
+}
+
+/// Arguments for fetching open label photos from the inbox.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, Default)]
+pub struct GetLabelInboxArgs {
+    /// Maximum number of photos to return (default: 5, max: 10)
+    pub limit: Option<i64>,
+}
+
+/// Arguments for completing a label photo of the inbox.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub struct ResolveLabelPhotoArgs {
+    /// ID of the label photo (from `get_label_inbox`)
+    pub id: i64,
+    /// New status: "identified", "failed" or "pending"
+    pub status: String,
+    /// Discogs release ID of the identified record (for status "identified")
+    pub discogs_id: Option<i64>,
 }
 
 /// Arguments for exporting the user's vinyl collection.
@@ -161,6 +196,21 @@ pub struct RecommendRecordPromptArgs {
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, Default)]
 pub struct GradingAuditPromptArgs {
     /// Optional maximum number of unrated records to audit (default: 10)
+    pub limit: Option<i32>,
+}
+
+/// Arguments for the label photo identification prompt template.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, Default)]
+pub struct IdentifyRecordPromptArgs {
+    /// What to do with the identified record: "add" (add to collection), "listen" (log a
+    /// listen) or "ask" (ask the user, default)
+    pub action: Option<String>,
+}
+
+/// Arguments for the label inbox processing prompt template.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, Default)]
+pub struct ProcessLabelInboxPromptArgs {
+    /// Optional number of photos to process per batch (default: 5)
     pub limit: Option<i32>,
 }
 
@@ -194,6 +244,7 @@ pub use vinyl_api_types::{
     },
     collection::{CollectionRelease, CollectionResponse, PriceRefreshResultDto, SyncResultDto},
     discogs::DiscogsSearchResponse,
+    label_photo::{LabelPhotoDto, LabelPhotoStatus, LabelPhotosDto, UpdateLabelPhotoRequest},
     record::{RecordDetailDto, UpdateConditionRequestDto},
     roon::{RoonPlayRequestDto, RoonPlayResponseDto, RoonStatusDto, RoonZoneDto},
     scan::{ResetResultDto, ScanRequest, ScanResultDto},

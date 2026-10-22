@@ -749,8 +749,22 @@ impl VinylApiClient {
         let url = format!("{}/api/discogs/search", self.base_url);
         let headers = self.build_auth_headers().await;
 
+        let filters = [
+            ("query", &args.query),
+            ("catno", &args.catno),
+            ("label", &args.label),
+            ("artist", &args.artist),
+            ("release_title", &args.release_title),
+            ("year", &args.year),
+            ("country", &args.country),
+            ("format", &args.format),
+        ];
         let mut req = self.http_client.get(&url).headers(headers);
-        req = req.query(&[("query", &args.query)]);
+        for (key, value) in filters {
+            if let Some(v) = value {
+                req = req.query(&[(key, v)]);
+            }
+        }
         if let Some(t) = &args.r#type {
             req = req.query(&[("type", t)]);
         }
@@ -777,6 +791,87 @@ impl VinylApiClient {
         res.json::<DiscogsSearchResponse>()
             .await
             .map_err(|e| format!("Failed to parse Discogs search JSON: {}", e))
+    }
+
+    pub async fn list_label_photos(
+        &self,
+        status: LabelPhotoStatus,
+        limit: i64,
+    ) -> Result<LabelPhotosDto, String> {
+        self.ensure_authenticated().await?;
+        let url = format!("{}/api/label-photos", self.base_url);
+        let res = self
+            .http_client
+            .get(&url)
+            .headers(self.build_auth_headers().await)
+            .query(&[("status", status.as_str()), ("limit", &limit.to_string())])
+            .send()
+            .await
+            .map_err(|e| format!("Request to /api/label-photos failed: {}", e))?;
+        Self::check_status(res)
+            .await?
+            .json::<LabelPhotosDto>()
+            .await
+            .map_err(|e| format!("Failed to parse label photos JSON: {}", e))
+    }
+
+    /// Returns the image bytes of a label photo and their MIME type.
+    pub async fn get_label_photo_image(&self, id: i64) -> Result<(Vec<u8>, String), String> {
+        self.ensure_authenticated().await?;
+        let url = format!("{}/api/label-photos/{}/image", self.base_url, id);
+        let res = self
+            .http_client
+            .get(&url)
+            .headers(self.build_auth_headers().await)
+            .send()
+            .await
+            .map_err(|e| format!("Request to label photo image failed: {}", e))?;
+        let res = Self::check_status(res).await?;
+        let mime_type = res
+            .headers()
+            .get(reqwest::header::CONTENT_TYPE)
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or("image/jpeg")
+            .to_string();
+        let bytes = res
+            .bytes()
+            .await
+            .map_err(|e| format!("Failed to read label photo image: {}", e))?;
+        Ok((bytes.to_vec(), mime_type))
+    }
+
+    pub async fn update_label_photo(
+        &self,
+        id: i64,
+        request: &UpdateLabelPhotoRequest,
+    ) -> Result<LabelPhotoDto, String> {
+        self.ensure_authenticated().await?;
+        let url = format!("{}/api/label-photos/{}", self.base_url, id);
+        let res = self
+            .http_client
+            .patch(&url)
+            .headers(self.build_auth_headers().await)
+            .json(request)
+            .send()
+            .await
+            .map_err(|e| format!("Request to update label photo failed: {}", e))?;
+        Self::check_status(res)
+            .await?
+            .json::<LabelPhotoDto>()
+            .await
+            .map_err(|e| format!("Failed to parse label photo JSON: {}", e))
+    }
+
+    async fn check_status(res: reqwest::Response) -> Result<reqwest::Response, String> {
+        if res.status().is_success() {
+            Ok(res)
+        } else {
+            Err(format!(
+                "Backend error {}: {}",
+                res.status(),
+                res.text().await.unwrap_or_default()
+            ))
+        }
     }
 
     pub async fn play_on_roon(

@@ -53,6 +53,9 @@ pub struct CollectionRelease {
     #[serde(rename = "last_played_at")]
     pub last_played_at: Option<String>,
     pub notes: Option<Vec<CollectionNote>>,
+    /// Custom sort string replacing the automatic artist sort key; `None` uses the automatic key.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sort_key: Option<String>,
     /// Computed storage slot; `None` when no shelf is configured for the medium.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub storage: Option<StorageSlotDto>,

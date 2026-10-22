@@ -27,6 +27,12 @@ pub struct RecordDetailDto {
     pub media_condition: Option<String>,
     #[serde(rename = "sleeve_condition")]
     pub sleeve_condition: Option<String>,
+    /// Custom sort string of the record; `None` uses `default_sort_key`.
+    #[serde(default)]
+    pub sort_key: Option<String>,
+    /// Automatic artist sort key (artist without a leading article, lowercase).
+    #[serde(default)]
+    pub default_sort_key: Option<String>,
     #[serde(rename = "lowest_price")]
     pub lowest_price: Option<f64>,
     #[serde(rename = "median_price")]
@@ -56,4 +62,11 @@ pub struct UpdateConditionRequestDto {
     pub media_condition: Option<String>,
     #[serde(alias = "sleeveCondition")]
     pub sleeve_condition: Option<String>,
+}
+
+/// Sets (`Some`) or resets (`None` or blank) the custom sort string of a record.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UpdateSortKeyRequestDto {
+    #[serde(default, alias = "sortKey")]
+    pub sort_key: Option<String>,
 }

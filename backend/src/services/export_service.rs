@@ -968,6 +968,7 @@ mod tests {
             sleeve_condition: Some("Very Good Plus (VG+)".to_string()),
             last_played_at: Some("2026-04-12T15:30:00Z".to_string()),
             notes: None,
+            sort_key: None,
             storage: None,
             basic_information: BasicInformation {
                 id,

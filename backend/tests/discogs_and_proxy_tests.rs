@@ -403,3 +403,108 @@ async fn test_live_discogs_search_if_token_available() {
         );
     }
 }
+
+#[tokio::test]
+async fn test_discogs_structured_search() {
+    use axum::{Router, extract::Query, routing::get};
+    use std::collections::HashMap;
+
+    // Mock Discogs that echoes the received criteria in the result title
+    let mock_discogs = Router::new().route(
+        "/database/search",
+        get(|Query(params): Query<HashMap<String, String>>| async move {
+            let title = format!(
+                "catno={} label={} q={}",
+                params.get("catno").cloned().unwrap_or_default(),
+                params.get("label").cloned().unwrap_or_default(),
+                params.get("q").cloned().unwrap_or_default()
+            );
+            axum::Json(json!({
+                "pagination": {"page": 1, "pages": 1, "per_page": 50, "items": 1},
+                "results": [{"id": 42, "title": title, "label": ["Harvest"], "catno": "SHVL 804"}]
+            }))
+        }),
+    );
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    tokio::spawn(async move {
+        axum::serve(listener, mock_discogs).await.unwrap();
+    });
+
+    dotenvy::dotenv().ok();
+    let mut config = Config::from_env();
+    config.discogs_api_base_url = format!("http://{addr}");
+    let pool = init_pool(&config).await.unwrap();
+    backend_rs::db::migrations::run_migrations(&pool)
+        .await
+        .unwrap();
+    let state = AppState::new(pool, config);
+    let app = create_app(state.clone());
+
+    let reg_res = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/api/users/register")
+                .header(header::CONTENT_TYPE, "application/json")
+                .body(Body::from(
+                    serde_json::to_vec(&json!({
+                        "username": format!("discogs_filter_{}", chrono::Utc::now().timestamp_nanos_opt().unwrap_or(0)),
+                        "password": "Password123!"
+                    }))
+                    .unwrap(),
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    let reg_json: Value =
+        serde_json::from_slice(&reg_res.into_body().collect().await.unwrap().to_bytes()).unwrap();
+    let token = reg_json["token"].as_str().unwrap().to_string();
+    sqlx::query("UPDATE app_user SET discogs_token = $1 WHERE id = $2")
+        .bind(state.crypto.encrypt("mock_token"))
+        .bind(reg_json["id"].as_i64().unwrap())
+        .execute(&state.pool)
+        .await
+        .unwrap();
+
+    let search = |uri: &'static str| {
+        let app = app.clone();
+        let token = token.clone();
+        async move {
+            app.oneshot(
+                Request::builder()
+                    .uri(uri)
+                    .header(header::AUTHORIZATION, format!("Bearer {token}"))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap()
+        }
+    };
+
+    // Structured filters without free text are passed through to Discogs
+    let res = search("/api/discogs/search?catno=SHVL+804&label=Harvest").await;
+    assert_eq!(res.status(), StatusCode::OK);
+    let body: DiscogsSearchResponse =
+        serde_json::from_slice(&res.into_body().collect().await.unwrap().to_bytes()).unwrap();
+    assert_eq!(body.results[0].title, "catno=SHVL 804 label=Harvest q=");
+    assert_eq!(
+        body.results[0].label.as_deref(),
+        Some(&["Harvest".to_string()][..])
+    );
+
+    // Neither free text nor filter -> 400
+    let res = search("/api/discogs/search?catno=+&page=2").await;
+    assert_eq!(res.status(), StatusCode::BAD_REQUEST);
+    let err: Value =
+        serde_json::from_slice(&res.into_body().collect().await.unwrap().to_bytes()).unwrap();
+    assert!(
+        err["detail"]
+            .as_str()
+            .unwrap()
+            .contains("at least one filter")
+    );
+}

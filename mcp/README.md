@@ -36,8 +36,8 @@ Der Server implementiert **Option 1 (REST-Client)**: Er kommuniziert direkt übe
 | `get_current_user` | Profilinformationen des eingeloggten Nutzers | *keine* |
 | `get_random_record` | Zufällige Plattenempfehlung mit Genre- und Ungespielt-Filter | `genre` (str, optional), `unplayed_only` (bool, default `false`) |
 | `get_unplayed_records` | Ungespielte Platten der Sammlung ("Shelf of Shame") | `page` (int), `per_page` (int) |
-| `get_record_details` | Vollständige Album-Details mit Tracklist, Formaten, Labels & Play-History | `id` (int, interne Record-ID oder Discogs-Release-ID) |
-| `search_discogs` | Globale Discogs-Datenbanksuche nach Alben/Künstlern | `query` (str), `type` (str, optional), `page` (int), `per_page` (int) |
+| `get_record_details` | Vollständige Album-Details mit Tracklist, Formaten, Labels, Identifiers (Matrix/Runout, Label Code) & Play-History – auch für Releases außerhalb der Sammlung | `id` (int, interne Record-ID oder Discogs-Release-ID) |
+| `search_discogs` | Globale Discogs-Datenbanksuche, als Freitext und/oder strukturiert (für Platten ohne Barcode am besten `catno` + `label`) | `query` (str, optional), `catno`, `label`, `artist`, `release_title`, `year`, `country`, `format` (str, optional), `type` (str, optional), `page` (int), `per_page` (int) |
 | `get_roon_zones` | Ruft aktive Roon-Audiozonen und Ausgaberäume ab | *keine* |
 | `get_roon_status` | Prüft Verbindungs- und Pairing-Status des lokalen Roon Cores | *keine* |
 | `play_record_on_roon` | Startet direkte Wiedergabe ('Play Now') eines Albums auf einem konfigurierten Roon Core | `artist` (str), `title` (str), `zone_id` (str, optional) |
@@ -46,6 +46,8 @@ Der Server implementiert **Option 1 (REST-Client)**: Er kommuniziert direkt übe
 | `export_collection` | Exportiert die komplette Nutzersammlung als strukturierte Daten | `format` (`json` oder `csv`) |
 | `get_record_placement` | Lagerplatz einer Platte: Regal, Fach (Zeile/Spalte) und Nachbarn | `discogs_id` (int) |
 | `get_storage_layout` | Regal-Übersicht je Medium mit Füllstand und Künstlerbereich pro Fach | *keine* |
+| `get_label_inbox` | Offene Label-Fotos aus der App als Bilder (älteste zuerst) samt IDs | `limit` (int, optional, Standard: 5, max. 10) |
+| `resolve_label_photo` | Schließt ein Label-Foto ab (`identified` mit Discogs-Release-ID, `failed` oder zurück auf `pending`) | `id` (int), `status` (str), `discogs_id` (int, optional) |
 
 ---
 
@@ -65,6 +67,8 @@ Der Server implementiert **Option 1 (REST-Client)**: Er kommuniziert direkt übe
 | :--- | :--- | :--- |
 | `recommend_record` | Kuratierte Empfehlungsvorlage für Vinyl-Alben basierend auf Genre und Stimmung | `genre` (str, optional), `mood` (str, optional) |
 | `grading_audit` | Interaktive Prüfung und Einstufung unbewerteter Alben nach Goldmine-Standard | `limit` (int, optional, Standard: 10) |
+| `identify_record_from_label` | Erkennt eine Platte (z. B. ältere Pressung ohne Barcode) anhand eines angehängten Label-Fotos und fügt sie nach Bestätigung hinzu oder loggt ein Hören | `action` (`add`, `listen` oder `ask`, optional, Standard: `ask`) |
+| `process_label_inbox` | Arbeitet die in der App fotografierten Labels ab: erkennen, Bestätigungsliste, hinzufügen, Fotos abschließen | `limit` (int, optional, Standard: 5) |
 
 ---
 

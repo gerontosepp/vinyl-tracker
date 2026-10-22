@@ -2,6 +2,7 @@ pub mod actuator;
 pub mod analytics;
 pub mod collection;
 pub mod discogs;
+pub mod label_photos;
 pub mod print;
 pub mod proxy;
 pub mod records;
@@ -93,6 +94,8 @@ pub fn create_app(state: AppState) -> Router {
         .nest("/api/scan", scan::router())
         // Discogs search endpoint (nested under /api/discogs)
         .nest("/api/discogs", discogs::router())
+        // Label photo inbox for identification via MCP (nested under /api/label-photos)
+        .nest("/api/label-photos", label_photos::router())
         // Image Proxy endpoint (nested under /api/proxy)
         .nest("/api/proxy", proxy::router())
         // Analytics & Dashboard endpoints (nested under /api/analytics)

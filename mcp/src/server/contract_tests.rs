@@ -9,14 +9,14 @@ use axum::{
     extract::{Path, Query},
     http::StatusCode,
     response::IntoResponse,
-    routing::{get, post},
+    routing::{get, patch, post},
 };
 use rmcp::handler::server::wrapper::Parameters;
 use std::collections::HashMap;
 use vinyl_api_types::{
     analytics::CollectionValueData,
     collection::BasicInformation,
-    discogs::{DiscogsArtist, DiscogsPagination},
+    discogs::{DiscogsArtist, DiscogsPagination, DiscogsSearchResult},
     scan::{DiscogsMatchDto, TrackedRecordDto},
     storage::{
         MediaLayoutDto, StorageCompartmentDto, StorageMedia, StorageMoveDto, StorageNeighborsDto,
@@ -141,8 +141,84 @@ fn storage_layout() -> StorageLayoutDto {
     }
 }
 
+fn label_photo(id: i64, status: LabelPhotoStatus, discogs_id: Option<i64>) -> LabelPhotoDto {
+    LabelPhotoDto {
+        id,
+        status,
+        discogs_id,
+        created_at: "2026-10-22T09:00:00Z".to_string(),
+        processed_at: None,
+    }
+}
+
 async fn mock_backend() -> VinylMcpServer {
     let app = Router::new()
+        .route(
+            "/api/discogs/search",
+            get(|Query(query): Query<HashMap<String, String>>| async move {
+                // Echo the received criteria so the test sees what was passed on
+                let mut criteria: Vec<String> =
+                    query.iter().map(|(k, v)| format!("{k}={v}")).collect();
+                criteria.sort();
+                Json(DiscogsSearchResponse {
+                    pagination: DiscogsPagination {
+                        page: 1,
+                        pages: 1,
+                        per_page: 50,
+                        items: 1,
+                    },
+                    results: vec![DiscogsSearchResult {
+                        id: 804,
+                        title: criteria.join("&"),
+                        thumb: None,
+                        cover_image: None,
+                        year: Some("1973".to_string()),
+                        format: None,
+                        genre: None,
+                        style: None,
+                        barcode: None,
+                        catno: Some("SHVL 804".to_string()),
+                        label: Some(vec!["Harvest".to_string()]),
+                        country: Some("UK".to_string()),
+                        type_name: Some("release".to_string()),
+                    }],
+                })
+            }),
+        )
+        .route(
+            "/api/label-photos",
+            get(|Query(query): Query<HashMap<String, String>>| async move {
+                assert_eq!(query.get("status").map(String::as_str), Some("pending"));
+                let limit: usize = query["limit"].parse().unwrap();
+                let photos: Vec<LabelPhotoDto> = [5, 6, 7]
+                    .into_iter()
+                    .take(limit)
+                    .map(|id| label_photo(id, LabelPhotoStatus::Pending, None))
+                    .collect();
+                Json(LabelPhotosDto {
+                    photos,
+                    pending_count: 3,
+                })
+            }),
+        )
+        .route(
+            "/api/label-photos/{id}/image",
+            get(|Path(id): Path<i64>| async move {
+                ([("content-type", "image/jpeg")], format!("jpeg-{id}"))
+            }),
+        )
+        .route(
+            "/api/label-photos/{id}",
+            patch(
+                |Path(id): Path<i64>, Json(req): Json<UpdateLabelPhotoRequest>| async move {
+                    if id == 404 {
+                        StatusCode::NOT_FOUND.into_response()
+                    } else {
+                        Json(label_photo(id, req.status, req.discogs_id)).into_response()
+                    }
+                },
+            ),
+        )
         .route(
             "/api/collection/sync",
             post(|| async { Json(sync_result()) }),
@@ -463,4 +539,116 @@ async fn test_scan_barcode_returns_discogs_suggestions_for_unknown_barcode() {
     let json: serde_json::Value = serde_json::from_str(&output).unwrap();
     assert_eq!(json["success"], false);
     assert_eq!(json["discogsMatches"][0]["id"], 7);
+}
+
+#[tokio::test]
+async fn test_search_discogs_passes_structured_filters() {
+    let server = mock_backend().await;
+    let output = server
+        .search_discogs(Parameters(SearchDiscogsArgs {
+            catno: Some("SHVL 804".to_string()),
+            label: Some("Harvest".to_string()),
+            ..SearchDiscogsArgs::default()
+        }))
+        .await
+        .expect("search must succeed");
+    let json: serde_json::Value = serde_json::from_str(&output).unwrap();
+    assert_eq!(json["results"][0]["title"], "catno=SHVL 804&label=Harvest");
+    assert_eq!(json["results"][0]["label"][0], "Harvest");
+}
+
+#[tokio::test]
+async fn test_get_label_inbox_returns_images() {
+    let server = mock_backend().await;
+    let result = server
+        .get_label_inbox(Parameters(GetLabelInboxArgs { limit: Some(2) }))
+        .await
+        .expect("inbox must succeed");
+    let json = serde_json::to_value(&result).unwrap();
+    let content = json["content"].as_array().unwrap();
+
+    assert_eq!(
+        content.len(),
+        5,
+        "summary + (caption, image) per photo: {json}"
+    );
+    let summary = content[0]["text"].as_str().unwrap();
+    assert!(
+        summary.starts_with("2 of 3 open label photo(s)"),
+        "{summary}"
+    );
+    assert_eq!(content[1]["text"], "Label photo 5:");
+    assert_eq!(content[2]["type"], "image");
+    assert_eq!(content[2]["mimeType"], "image/jpeg");
+    let decoded = base64::Engine::decode(
+        &base64::engine::general_purpose::STANDARD,
+        content[2]["data"].as_str().unwrap(),
+    )
+    .unwrap();
+    assert_eq!(decoded, b"jpeg-5");
+    assert_eq!(content[3]["text"], "Label photo 6:");
+}
+
+#[tokio::test]
+async fn test_resolve_label_photo_sets_status() {
+    let server = mock_backend().await;
+    let output = server
+        .resolve_label_photo(Parameters(ResolveLabelPhotoArgs {
+            id: 5,
+            status: "identified".to_string(),
+            discogs_id: Some(804),
+        }))
+        .await
+        .expect("resolve must succeed");
+    assert_eq!(output, "Label photo 5 marked as identified.");
+
+    let err = server
+        .resolve_label_photo(Parameters(ResolveLabelPhotoArgs {
+            id: 5,
+            status: "done".to_string(),
+            discogs_id: None,
+        }))
+        .await
+        .unwrap_err();
+    assert!(err.contains("Invalid status 'done'"), "{err}");
+
+    let err = server
+        .resolve_label_photo(Parameters(ResolveLabelPhotoArgs {
+            id: 404,
+            status: "failed".to_string(),
+            discogs_id: None,
+        }))
+        .await
+        .unwrap_err();
+    assert!(err.contains("404"), "{err}");
+}
+
+#[tokio::test]
+async fn test_label_prompts_require_confirmation() {
+    let server = mock_backend().await;
+    let text = |messages: Vec<rmcp::model::PromptMessage>| {
+        serde_json::to_value(&messages).unwrap()[0]["content"]["text"]
+            .as_str()
+            .unwrap()
+            .to_string()
+    };
+
+    let identify = text(
+        server
+            .identify_record_from_label(Parameters(IdentifyRecordPromptArgs {
+                action: Some("add".to_string()),
+            }))
+            .await,
+    );
+    assert!(identify.contains("`search_discogs` with `catno` and `label`"));
+    assert!(identify.contains("Never add or log anything before the user has confirmed"));
+    assert!(identify.contains("add the record with `add_to_collection`"));
+
+    let inbox = text(
+        server
+            .process_label_inbox(Parameters(ProcessLabelInboxPromptArgs { limit: Some(3) }))
+            .await,
+    );
+    assert!(inbox.contains("Fetch up to 3 open photos with `get_label_inbox`"));
+    assert!(inbox.contains("`resolve_label_photo`"));
 }

@@ -5,6 +5,7 @@ pub mod collection_sync;
 pub mod crypto_service;
 pub mod export_service;
 pub mod image_proxy;
+pub mod label_photo_service;
 pub mod marketplace;
 pub mod print;
 pub mod record_service;

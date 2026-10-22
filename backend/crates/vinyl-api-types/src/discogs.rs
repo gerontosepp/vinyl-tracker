@@ -28,6 +28,15 @@ pub struct DiscogsLabel {
     pub catno: Option<String>,
 }
 
+/// Release identifier such as matrix/runout, label code or rights society.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DiscogsIdentifier {
+    #[serde(rename = "type")]
+    pub type_name: String,
+    pub value: String,
+    pub description: Option<String>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DiscogsPagination {
     pub page: u32,
@@ -48,6 +57,8 @@ pub struct DiscogsSearchResult {
     pub style: Option<Vec<String>>,
     pub barcode: Option<Vec<String>>,
     pub catno: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub label: Option<Vec<String>>,
     pub country: Option<String>,
     #[serde(rename = "type")]
     pub type_name: Option<String>,

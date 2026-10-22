@@ -9,6 +9,9 @@
 
 ## Unreleased
 
+- **Platten ohne Barcode per Label-Foto erkennen (`#208`)**: Auf der Scan-Seite lässt sich das Label einer Platte fotografieren. Das Foto landet verkleinert und ohne Standortdaten in der Label-Inbox, ein Zähler zeigt die offenen Fotos. In Claude Desktop oder Claude Code erkennt Claude die Platten über den MCP-Prompt `process_label_inbox` mit dem eigenen Claude-Abo, zeigt eine Bestätigungsliste und fügt die bestätigten Platten hinzu. Einzelne Fotos gehen auch direkt mit dem Prompt `identify_record_from_label`.
+- **Discogs-Suche nach Katalognummer und Label**: `GET /api/discogs/search` und das MCP-Tool `search_discogs` suchen zusätzlich strukturiert nach `catno`, `label`, `artist`, `release_title`, `year`, `country` und `format`. Die Album-Details enthalten die Identifiers des Releases (Matrix/Runout, Label Code, Rechtegesellschaft).
+
 ---
 
 ## v1.0.0 (2026-10-21)

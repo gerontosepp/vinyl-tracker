@@ -32,7 +32,8 @@ describe('BarcodeScannerComponent', () => {
     apiServiceMock = {
       scanBarcode: vi.fn().mockName("ApiService.scanBarcode"),
       addReleaseToCollection: vi.fn().mockName("ApiService.addReleaseToCollection"),
-      getProxiedImageUrl: vi.fn().mockName("ApiService.getProxiedImageUrl")
+      getProxiedImageUrl: vi.fn().mockName("ApiService.getProxiedImageUrl"),
+      getLabelPhotos: vi.fn().mockName("ApiService.getLabelPhotos").mockReturnValue(of({ photos: [], pendingCount: 0 }))
     } as unknown as MockedObject<ApiService>;
     apiServiceMock.getProxiedImageUrl.mockImplementation((url: string) => url);
 
@@ -59,6 +60,11 @@ describe('BarcodeScannerComponent', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('offers the label photo capture below the manual input', () => {
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-label-photo-capture')).not.toBeNull();
   });
 
   it('should display success card when scanResult is successful', () => {

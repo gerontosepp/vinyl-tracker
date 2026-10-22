@@ -1,15 +1,30 @@
 use crate::client::VinylApiClient;
 use crate::models::*;
+use base64::Engine;
 use rmcp::{
     ServerHandler,
     handler::server::{
         router::{prompt::PromptRouter, tool::ToolRouter},
         wrapper::Parameters,
     },
-    model::{PromptMessage, Role},
+    model::{CallToolResult, ContentBlock, PromptMessage, Role},
     prompt, prompt_handler, prompt_router, tool, tool_handler, tool_router,
 };
 use std::sync::Arc;
+
+/// Steps shared by the label identification prompts: read the label, search Discogs in a
+/// structured way, verify candidates and only act after the user confirmed.
+const LABEL_IDENTIFICATION_STEPS: &str = "\
+1. Read everything printed on the label photo: artist, title, record label, catalog number, side (A/B), \
+country, year or (c)/(p) notes, rights society (e.g. GEMA, BIEM), label code (LC) and the label design or colour. \
+If the photo shows the run-out groove, also read the matrix / runout etching.\n\
+2. Call `search_discogs` with `catno` and `label`. Without results, try catalog number variants (with and without spaces \
+or hyphens), then `artist` + `release_title`, and finally a free-text `query`.\n\
+3. Check the most promising candidates with `get_record_details` and compare country, year, label variant, catalog number \
+and identifiers (matrix / runout, rights society, label code) with the photo.\n\
+4. Present the best match with its Discogs release ID, your reasoning and a confidence level, and list close alternatives. \
+If the pressing cannot be determined reliably, ask for another photo (other side, run-out groove, back cover).\n\
+5. Never add or log anything before the user has confirmed the match.";
 
 #[derive(Clone)]
 pub struct VinylMcpServer {
@@ -269,7 +284,7 @@ impl VinylMcpServer {
     /// Retrieve comprehensive album details including tracklist, formats, labels, and listen history.
     #[tool(
         name = "get_record_details",
-        description = "Fetches comprehensive details for a record by its database ID or Discogs release ID, including tracklist, release formats, labels, release notes, and personal listen history."
+        description = "Fetches comprehensive details for a record by its database ID or Discogs release ID, including tracklist, release formats, labels, identifiers (matrix / runout, label code, rights society), release notes, and personal listen history. Also works for Discogs releases that are not in the collection, e.g. to verify search candidates."
     )]
     async fn get_record_details(
         &self,
@@ -283,7 +298,7 @@ impl VinylMcpServer {
     /// Search the global Discogs database for albums, artists, or releases.
     #[tool(
         name = "search_discogs",
-        description = "Searches the global Discogs database for vinyl records and releases by album title, artist, barcode, or catalog number."
+        description = "Searches the global Discogs database for releases. Use the free-text `query` and/or the structured filters `catno`, `label`, `artist`, `release_title`, `year`, `country` and `format`. For records without a barcode, `catno` plus `label` as printed on the record label is the most precise search. Results include catalog number, labels, country and year."
     )]
     async fn search_discogs(
         &self,
@@ -394,6 +409,76 @@ impl VinylMcpServer {
             .map_err(|e| format!("Failed to serialize storage layout: {}", e))
     }
 
+    /// Fetch open label photos from the inbox as images.
+    #[tool(
+        name = "get_label_inbox",
+        description = "Returns open (pending) photos of record labels the user took in the Vinyl Tracker app, oldest first, as images together with their IDs. Identify each record from its label and complete the photo with `resolve_label_photo`."
+    )]
+    async fn get_label_inbox(
+        &self,
+        Parameters(args): Parameters<GetLabelInboxArgs>,
+    ) -> Result<CallToolResult, String> {
+        let limit = args.limit.unwrap_or(5).clamp(1, 10);
+        let inbox = self
+            .client
+            .list_label_photos(LabelPhotoStatus::Pending, limit)
+            .await?;
+        if inbox.photos.is_empty() {
+            return Ok(CallToolResult::success(vec![ContentBlock::text(
+                "The label inbox is empty.",
+            )]));
+        }
+
+        let mut content = vec![ContentBlock::text(format!(
+            "{} of {} open label photo(s), in this order: {}",
+            inbox.photos.len(),
+            inbox.pending_count,
+            serde_json::to_string(&inbox.photos)
+                .map_err(|e| format!("Failed to serialize label photos: {}", e))?
+        ))];
+        for photo in &inbox.photos {
+            let (bytes, mime_type) = self.client.get_label_photo_image(photo.id).await?;
+            content.push(ContentBlock::text(format!("Label photo {}:", photo.id)));
+            content.push(ContentBlock::image(
+                base64::engine::general_purpose::STANDARD.encode(bytes),
+                mime_type,
+            ));
+        }
+        Ok(CallToolResult::success(content))
+    }
+
+    /// Complete a label photo of the inbox.
+    #[tool(
+        name = "resolve_label_photo",
+        description = "Completes a label photo of the inbox: status 'identified' (with the Discogs release ID of the record), 'failed' (could not be identified) or 'pending' (keep it in the inbox)."
+    )]
+    async fn resolve_label_photo(
+        &self,
+        Parameters(args): Parameters<ResolveLabelPhotoArgs>,
+    ) -> Result<String, String> {
+        let status = LabelPhotoStatus::parse(args.status.trim()).ok_or_else(|| {
+            format!(
+                "Invalid status '{}'. Use 'identified', 'failed' or 'pending'.",
+                args.status
+            )
+        })?;
+        let photo = self
+            .client
+            .update_label_photo(
+                args.id,
+                &UpdateLabelPhotoRequest {
+                    status,
+                    discogs_id: args.discogs_id,
+                },
+            )
+            .await?;
+        Ok(format!(
+            "Label photo {} marked as {}.",
+            photo.id,
+            photo.status.as_str()
+        ))
+    }
+
     /// Export the user's vinyl collection in JSON or CSV format.
     #[tool(
         name = "export_collection",
@@ -456,6 +541,59 @@ impl VinylMcpServer {
              4. Guide the user through standard Goldmine condition gradings: Mint (M), Near Mint (NM or M-), Very Good Plus (VG+), Very Good (VG), Good Plus (G+), Good (G), Fair (F), Poor (P).\n\
              5. When the user confirms, offer to update the record condition using `update_record_condition`.",
             limit
+        );
+
+        vec![PromptMessage::new_text(Role::User, instructions)]
+    }
+
+    /// Identify a record from a photo of its label.
+    #[prompt(
+        name = "identify_record_from_label",
+        description = "Guides the identification of a record (e.g. an older pressing without barcode) from an attached photo of its label and adds it to the collection or logs a listen."
+    )]
+    pub async fn identify_record_from_label(
+        &self,
+        Parameters(args): Parameters<IdentifyRecordPromptArgs>,
+    ) -> Vec<PromptMessage> {
+        let action = match args.action.as_deref().map(str::trim) {
+            Some("add") => {
+                "After confirmation, add the record with `add_to_collection` and report the shelf placement."
+            }
+            Some("listen") => {
+                "After confirmation, log a listen with `scan_barcode` and the code `discogs-id:<release ID>`."
+            }
+            _ => {
+                "After confirmation, ask whether to add the record to the collection (`add_to_collection`) or to log a listen (`scan_barcode` with `discogs-id:<release ID>`)."
+            }
+        };
+        let instructions = format!(
+            "You are a vinyl record identification expert for Vinyl Tracker. Identify the exact Discogs release \
+             of the record whose label photo the user attaches.\n{LABEL_IDENTIFICATION_STEPS}\n6. {action}"
+        );
+
+        vec![PromptMessage::new_text(Role::User, instructions)]
+    }
+
+    /// Work through the label photo inbox filled from the Vinyl Tracker app.
+    #[prompt(
+        name = "process_label_inbox",
+        description = "Works through the label photos taken in the Vinyl Tracker app: identifies each record, asks for confirmation, adds the records to the collection and completes the photos."
+    )]
+    pub async fn process_label_inbox(
+        &self,
+        Parameters(args): Parameters<ProcessLabelInboxPromptArgs>,
+    ) -> Vec<PromptMessage> {
+        let limit = args.limit.unwrap_or(5);
+        let instructions = format!(
+            "You are a vinyl record identification expert for Vinyl Tracker. Work through the user's label photo inbox.\n\
+             Fetch up to {limit} open photos with `get_label_inbox` and apply these steps to every photo:\n\
+             {LABEL_IDENTIFICATION_STEPS}\n\
+             6. Then show one confirmation list with all photos: photo ID, proposed release (artist, title, label, catalog number, \
+             country, year, Discogs release ID) and confidence.\n\
+             7. For every match the user confirms, call `add_to_collection` and then `resolve_label_photo` with status \
+             'identified' and the Discogs release ID. Mark photos that cannot be identified as 'failed' only after the user agreed; \
+             otherwise leave them pending.\n\
+             8. If more photos are open, offer to continue with the next batch."
         );
 
         vec![PromptMessage::new_text(Role::User, instructions)]
@@ -711,6 +849,12 @@ mod tests {
 
         let t26 = VinylMcpServer::get_top_artists_tool_attr();
         assert_eq!(t26.name, "get_top_artists");
+
+        let t27 = VinylMcpServer::get_label_inbox_tool_attr();
+        assert_eq!(t27.name, "get_label_inbox");
+
+        let t28 = VinylMcpServer::resolve_label_photo_tool_attr();
+        assert_eq!(t28.name, "resolve_label_photo");
     }
 
     #[test]
@@ -720,6 +864,12 @@ mod tests {
 
         let p2 = VinylMcpServer::grading_audit_prompt_attr();
         assert_eq!(p2.name, "grading_audit");
+
+        let p3 = VinylMcpServer::identify_record_from_label_prompt_attr();
+        assert_eq!(p3.name, "identify_record_from_label");
+
+        let p4 = VinylMcpServer::process_label_inbox_prompt_attr();
+        assert_eq!(p4.name, "process_label_inbox");
     }
 
     #[test]

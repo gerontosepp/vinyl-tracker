@@ -7,6 +7,13 @@
     "isUnreleased": true,
     "items": [
       {
+        "title": "Eigene Sortierung pro Platte (`#213`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "In der Album-Detailansicht lässt sich unter **Sortierung** ein eigener Sortier-String eingeben, der statt des Künstlers für die Reihenfolge in der Sammlung und im Regal gilt – z. B. *Les Paul* unter **L** oder ein Soloalbum neben der Band. Ein leeres Feld bzw. **Zurücksetzen** stellt die automatische Sortierung wieder her. Der Wert gilt für alle Exemplare und ist im JSON-Backup enthalten.",
+        "details": []
+      },
+      {
         "title": "Artikel bei der Künstlersortierung (`#211`)",
         "type": "feat",
         "typeLabel": "Feature",

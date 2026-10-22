@@ -110,6 +110,11 @@ export class ApiService {
     return this.http.patch<RecordDetailDto>(`${this.baseUrl}/records/${id}/condition`, conditions);
   }
 
+  /** Sets the custom sort string of a record; `null` resets it to the automatic artist key. */
+  updateRecordSortKey(id: number, sortKey: string | null): Observable<RecordDetailDto> {
+    return this.http.patch<RecordDetailDto>(`${this.baseUrl}/records/${id}/sort-key`, { sort_key: sortKey });
+  }
+
   logRecordListen(id: number): Observable<RecordDetailDto> {
     return this.http.post<RecordDetailDto>(`${this.baseUrl}/records/${id}/listen`, {});
   }

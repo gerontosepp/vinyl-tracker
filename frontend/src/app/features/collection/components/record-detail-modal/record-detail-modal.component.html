@@ -356,6 +356,48 @@
             </div>
           }
 
+          <!-- Custom sort string (replaces the automatic artist sort key) -->
+          @if (detail()?.in_collection) {
+            <div class="space-y-2" data-testid="detail-sort-key">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                <label for="sort-key-input">{{ 'collection.sortKey' | translate }}</label>
+              </h3>
+              <form class="flex flex-wrap gap-2" (submit)="$event.preventDefault(); saveSortKey()">
+                <input
+                  id="sort-key-input"
+                  type="text"
+                  maxlength="200"
+                  autocomplete="off"
+                  [value]="sortKeyValue()"
+                  (input)="onSortKeyInput($any($event.target).value)"
+                  [placeholder]="detail()?.default_sort_key || ''"
+                  [disabled]="isSavingSortKey()"
+                  class="flex-1 min-w-0 text-sm rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 py-1.5 px-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+                />
+                <button
+                  type="submit"
+                  data-testid="sort-key-save"
+                  [disabled]="!sortKeyChanged() || isSavingSortKey()"
+                  class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {{ 'collection.sortKeySave' | translate }}
+                </button>
+                @if (storedSortKey()) {
+                  <button
+                    type="button"
+                    data-testid="sort-key-reset"
+                    (click)="resetSortKey()"
+                    [disabled]="isSavingSortKey()"
+                    class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40"
+                  >
+                    {{ 'collection.sortKeyReset' | translate }}
+                  </button>
+                }
+              </form>
+              <p class="text-[11px] text-slate-400 dark:text-slate-500">{{ 'collection.sortKeyHint' | translate }}</p>
+            </div>
+          }
+
           <!-- Details Section -->
           <div class="space-y-3">
             <h3

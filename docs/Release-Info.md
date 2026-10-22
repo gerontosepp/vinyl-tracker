@@ -9,6 +9,8 @@
 
 ## Unreleased
 
+- **Label-Inbox in der App bearbeiten (`#218`)**: Ein Tipp auf den Inbox-Zähler der Scan-Seite öffnet die Label-Inbox. Sie zeigt die wartenden Fotos mit Aufnahmedatum; einzelne Fotos oder alle offenen lassen sich löschen (`DELETE /api/label-photos?status=pending`).
+
 ---
 
 ## v1.1.0 (2026-10-22)

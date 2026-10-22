@@ -5,6 +5,14 @@
     "tag": "In Entwicklung",
     "isCurrent": false,
     "isUnreleased": true,
+    "items": []
+  },
+  {
+    "version": "v1.2.0",
+    "rawHeader": "v1.2.0 (2026-10-22)",
+    "date": "2026-10-22",
+    "isCurrent": true,
+    "isUnreleased": false,
     "items": [
       {
         "title": "LP mit Bonus-CD als LP erkennen (`#223`)",
@@ -33,7 +41,7 @@
     "version": "v1.1.0",
     "rawHeader": "v1.1.0 (2026-10-22)",
     "date": "2026-10-22",
-    "isCurrent": true,
+    "isCurrent": false,
     "isUnreleased": false,
     "items": [
       {

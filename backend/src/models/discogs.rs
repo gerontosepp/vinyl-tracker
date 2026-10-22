@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 pub use vinyl_api_types::discogs::{
-    DiscogsArtist, DiscogsFormat, DiscogsLabel, DiscogsPagination, DiscogsSearchResponse,
-    DiscogsSearchResult, DiscogsTrack,
+    DiscogsArtist, DiscogsFormat, DiscogsIdentifier, DiscogsLabel, DiscogsPagination,
+    DiscogsSearchResponse, DiscogsSearchResult, DiscogsTrack,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -17,6 +17,7 @@ pub struct DiscogsRelease {
     pub tracklist: Option<Vec<DiscogsTrack>>,
     pub formats: Option<Vec<DiscogsFormat>>,
     pub labels: Option<Vec<DiscogsLabel>>,
+    pub identifiers: Option<Vec<DiscogsIdentifier>>,
     pub genres: Option<Vec<String>>,
     pub styles: Option<Vec<String>>,
     pub lowest_price: Option<f64>,
@@ -25,6 +26,57 @@ pub struct DiscogsRelease {
     pub notes: Option<String>,
     pub country: Option<String>,
     pub released: Option<String>,
+}
+
+/// Criteria for `GET /database/search`: free text and/or structured fields.
+///
+/// Older pressings without barcode are found most reliably by catalog number plus label.
+#[derive(Debug, Clone, Default)]
+pub struct DiscogsSearchFilter {
+    pub query: Option<String>,
+    pub catno: Option<String>,
+    pub label: Option<String>,
+    pub artist: Option<String>,
+    pub release_title: Option<String>,
+    pub year: Option<String>,
+    pub country: Option<String>,
+    pub format: Option<String>,
+}
+
+impl DiscogsSearchFilter {
+    pub fn query(query: impl Into<String>) -> Self {
+        Self {
+            query: Some(query.into()),
+            ..Self::default()
+        }
+    }
+
+    /// Discogs query parameters of all non-blank criteria (free text maps to `q`).
+    pub fn query_pairs(&self) -> Vec<(&'static str, &str)> {
+        [
+            ("q", &self.query),
+            ("catno", &self.catno),
+            ("label", &self.label),
+            ("artist", &self.artist),
+            ("release_title", &self.release_title),
+            ("year", &self.year),
+            ("country", &self.country),
+            ("format", &self.format),
+        ]
+        .into_iter()
+        .filter_map(|(key, value)| {
+            value
+                .as_deref()
+                .map(str::trim)
+                .filter(|v| !v.is_empty())
+                .map(|v| (key, v))
+        })
+        .collect()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.query_pairs().is_empty()
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -237,6 +289,29 @@ pub fn disc_count(formats: Option<&[DiscogsFormat]>) -> Option<i16> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_search_filter_query_pairs_skip_blank_values() {
+        let filter = DiscogsSearchFilter {
+            query: Some("  ".into()),
+            catno: Some(" SHVL 804 ".into()),
+            label: Some("Harvest".into()),
+            country: Some(String::new()),
+            ..DiscogsSearchFilter::default()
+        };
+        assert_eq!(
+            filter.query_pairs(),
+            vec![("catno", "SHVL 804"), ("label", "Harvest")]
+        );
+        assert!(!filter.is_empty());
+    }
+
+    #[test]
+    fn test_search_filter_free_text_maps_to_q() {
+        let filter = DiscogsSearchFilter::query("Abbey Road");
+        assert_eq!(filter.query_pairs(), vec![("q", "Abbey Road")]);
+        assert!(DiscogsSearchFilter::default().is_empty());
+    }
 
     #[test]
     fn test_determine_format_double_lp() {

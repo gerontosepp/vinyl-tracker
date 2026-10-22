@@ -1,4 +1,4 @@
-use crate::discogs::{DiscogsFormat, DiscogsLabel, DiscogsTrack};
+use crate::discogs::{DiscogsFormat, DiscogsIdentifier, DiscogsLabel, DiscogsTrack};
 use crate::storage::{StorageNeighborsDto, StorageSlotDto};
 use serde::{Deserialize, Serialize};
 
@@ -39,6 +39,8 @@ pub struct RecordDetailDto {
     pub format: String,
     pub formats: Vec<DiscogsFormat>,
     pub labels: Vec<DiscogsLabel>,
+    #[serde(default)]
+    pub identifiers: Vec<DiscogsIdentifier>,
     pub notes: Option<String>,
     pub country: Option<String>,
     pub released: Option<String>,

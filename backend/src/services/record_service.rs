@@ -2,7 +2,10 @@ use crate::{
     clients::discogs::DiscogsClient,
     error::AppError,
     models::{
-        discogs::{DiscogsFormat, DiscogsLabel, DiscogsRelease, DiscogsTrack, determine_format},
+        discogs::{
+            DiscogsFormat, DiscogsIdentifier, DiscogsLabel, DiscogsRelease, DiscogsTrack,
+            determine_format,
+        },
         record::{RecordDetailDto, UpdateConditionRequestDto},
         user::AppUser,
     },
@@ -256,6 +259,10 @@ impl RecordService {
             .as_ref()
             .and_then(|r| r.labels.clone())
             .unwrap_or_default();
+        let identifiers: Vec<DiscogsIdentifier> = discogs_release
+            .as_ref()
+            .and_then(|r| r.identifiers.clone())
+            .unwrap_or_default();
         let notes: Option<String> = discogs_release.as_ref().and_then(|r| r.notes.clone());
         let country: Option<String> = discogs_release.as_ref().and_then(|r| r.country.clone());
         let released: Option<String> = discogs_release.as_ref().and_then(|r| r.released.clone());
@@ -293,6 +300,7 @@ impl RecordService {
             format,
             formats,
             labels,
+            identifiers,
             notes,
             country,
             released,

@@ -749,6 +749,7 @@ async fn test_record_service_comprehensive_scenarios() {
                             "styles": ["Modal"],
                             "formats": [{"name": "Vinyl", "descriptions": ["LP"]}],
                             "labels": [{"name": "Columbia", "catno": "CL 1355"}],
+                            "identifiers": [{"type": "Matrix / Runout", "value": "XLP 47324-1A", "description": "Side A"}],
                             "thumb": "https://img.discogs.com/miles.jpg",
                             "lowest_price": 50.0
                         })),
@@ -852,6 +853,9 @@ async fn test_record_service_comprehensive_scenarios() {
         Some("Discogs Record 665544")
     );
     assert!(!discogs_details.in_collection);
+    assert_eq!(discogs_details.identifiers.len(), 1);
+    assert_eq!(discogs_details.identifiers[0].type_name, "Matrix / Runout");
+    assert_eq!(discogs_details.identifiers[0].value, "XLP 47324-1A");
 
     // 3. Record in collection without median price -> fetches price suggestions
     let row = sqlx::query("INSERT INTO record_cache (discogs_id, title, artist, release_year, format) VALUES (665545, 'Blue Train', 'John Coltrane', '1957', 'Vinyl') ON CONFLICT (discogs_id) DO UPDATE SET title = EXCLUDED.title, median_price = NULL RETURNING id")

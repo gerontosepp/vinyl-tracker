@@ -6,7 +6,7 @@ use serde_json::{Value, json};
 use vinyl_api_types::{
     analytics::{CollectionValueData, CollectionValueResponse, TopArtistDto, TopRecordDto},
     collection::SyncResultDto,
-    discogs::{DiscogsPagination, DiscogsSearchResponse, DiscogsSearchResult},
+    discogs::{DiscogsIdentifier, DiscogsPagination, DiscogsSearchResponse, DiscogsSearchResult},
     roon::{RoonPlayRequestDto, RoonStatusDto, RoonZoneDto},
     scan::{DiscogsMatchDto, ScanResultDto, TrackedRecordDto},
     storage::{
@@ -450,12 +450,43 @@ fn test_discogs_search_wire_format() {
             genre: None,
             style: None,
             barcode: None,
-            catno: None,
+            catno: Some("SHVL 804".into()),
+            label: Some(vec!["Harvest".into()]),
             country: None,
             type_name: Some("release".into()),
         }],
     };
     let json = serde_json::to_value(&dto).unwrap();
     assert_eq!(json["results"][0]["type"], "release");
+    assert_eq!(json["results"][0]["label"], json!(["Harvest"]));
     assert_eq!(json["pagination"]["per_page"], 50);
+}
+
+#[test]
+fn test_discogs_identifier_wire_format() {
+    let identifier: DiscogsIdentifier = serde_json::from_value(json!({
+        "type": "Matrix / Runout",
+        "value": "SHVL 804 A-2",
+        "description": "Side A"
+    }))
+    .unwrap();
+    assert_eq!(identifier.type_name, "Matrix / Runout");
+    assert_eq!(identifier.description.as_deref(), Some("Side A"));
+    assert_eq!(
+        serde_json::to_value(&identifier).unwrap()["type"],
+        "Matrix / Runout"
+    );
+}
+
+#[test]
+fn test_discogs_search_result_without_label() {
+    let result: DiscogsSearchResult =
+        serde_json::from_value(json!({"id": 1, "title": "A - B"})).unwrap();
+    assert!(result.label.is_none());
+    assert!(
+        serde_json::to_value(&result)
+            .unwrap()
+            .get("label")
+            .is_none()
+    );
 }

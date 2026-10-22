@@ -9,6 +9,10 @@
 
 ## Unreleased
 
+---
+
+## v1.1.0 (2026-10-22)
+
 - **Eigene Sortierung pro Platte (`#213`)**: In der Album-Detailansicht lässt sich unter **Sortierung** ein eigener Sortier-String eingeben, der statt des Künstlers für die Reihenfolge in der Sammlung und im Regal gilt – z. B. *Les Paul* unter **L** oder ein Soloalbum neben der Band. Ein leeres Feld bzw. **Zurücksetzen** stellt die automatische Sortierung wieder her. Der Wert gilt für alle Exemplare und ist im JSON-Backup enthalten.
 - **Artikel bei der Künstlersortierung (`#211`)**: Neben „The“ werden jetzt auch „A“, „An“, „Der“, „Die“, „Das“, „Le“, „La“ und „Les“ ignoriert – *Die Sterne* steht unter **S**, *A Flock of Seagulls* unter **F**. Das gilt für die Sammlungsansicht und die Regalbelegung; betroffene Platten können dadurch ihr Fach wechseln.
 - **Platten ohne Barcode per Label-Foto erkennen (`#208`)**: Auf der Scan-Seite lässt sich das Label einer Platte fotografieren. Das Foto landet verkleinert und ohne Standortdaten in der Label-Inbox, ein Zähler zeigt die offenen Fotos. In Claude Desktop oder Claude Code erkennt Claude die Platten über den MCP-Prompt `process_label_inbox` mit dem eigenen Claude-Abo, zeigt eine Bestätigungsliste und fügt die bestätigten Platten hinzu. Einzelne Fotos gehen auch direkt mit dem Prompt `identify_record_from_label`.

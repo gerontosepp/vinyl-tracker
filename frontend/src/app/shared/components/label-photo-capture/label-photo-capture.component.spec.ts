@@ -7,6 +7,8 @@ import { ApiService } from '../../../core/services/api.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { LanguageService } from '../../../core/services/language.service';
 import { IMAGE_DOWNSCALER } from '../../../core/utils/image';
+import { Router } from '@angular/router';
+import { ScannerService } from '../../../core/services/scanner.service';
 
 describe('LabelPhotoCaptureComponent', () => {
   let fixture: ComponentFixture<LabelPhotoCaptureComponent>;
@@ -50,6 +52,19 @@ describe('LabelPhotoCaptureComponent', () => {
 
   beforeEach(() => {
     downscale = vi.fn().mockResolvedValue(downscaled);
+  });
+
+  it('opens the label inbox from the badge and closes the scanner', async () => {
+    await setup(2);
+    const router = TestBed.inject(Router);
+    const navigate = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+    const scanner = TestBed.inject(ScannerService);
+    scanner.openScanner();
+
+    fixture.nativeElement.querySelector('[data-testid="label-inbox-count"]').click();
+
+    expect(scanner.showScanner()).toBe(false);
+    expect(navigate).toHaveBeenCalledWith(['/label-inbox']);
   });
 
   it('shows the button and the number of open photos', async () => {

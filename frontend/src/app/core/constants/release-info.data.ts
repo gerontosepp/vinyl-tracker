@@ -12,7 +12,15 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "tag": "In Entwicklung",
     "isCurrent": false,
     "isUnreleased": true,
-    "items": []
+    "items": [
+      {
+        "title": "Label-Inbox in der App bearbeiten (`#218`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Ein Tipp auf den Inbox-Zähler der Scan-Seite öffnet die Label-Inbox. Sie zeigt die wartenden Fotos mit Aufnahmedatum; einzelne Fotos oder alle offenen lassen sich löschen (`DELETE /api/label-photos?status=pending`).",
+        "details": []
+      }
+    ]
   },
   {
     "version": "v1.1.0",

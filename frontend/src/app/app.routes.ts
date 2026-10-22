@@ -30,6 +30,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/sort-mode/sort-mode.component').then(m => m.SortModeComponent),
   },
   {
+    path: 'label-inbox',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/label-inbox/label-inbox.component').then(m => m.LabelInboxComponent),
+  },
+  {
     path: 'profile',
     canActivate: [authGuard],
     loadComponent: () => import('./features/settings/settings.component').then(m => m.SettingsComponent),

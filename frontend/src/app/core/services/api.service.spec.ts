@@ -62,4 +62,24 @@ describe('ApiService label photos', () => {
     expect(reset.request.body).toEqual({ sort_key: null });
     reset.flush({});
   });
+
+  it('deletes label photos one by one or by status', () => {
+    expect(service.labelPhotoImageUrl(7)).toBe('/api/label-photos/7/image');
+
+    service.deleteLabelPhoto(7).subscribe();
+    const single = http.expectOne('/api/label-photos/7');
+    expect(single.request.method).toBe('DELETE');
+    single.flush(null);
+
+    service.deleteLabelPhotos('pending').subscribe();
+    const pending = http.expectOne((r) => r.url === '/api/label-photos');
+    expect(pending.request.method).toBe('DELETE');
+    expect(pending.request.params.get('status')).toBe('pending');
+    pending.flush({ deleted: 3, pendingCount: 0 });
+
+    service.deleteLabelPhotos().subscribe();
+    const everything = http.expectOne((r) => r.url === '/api/label-photos');
+    expect(everything.request.params.keys()).toEqual([]);
+    everything.flush({ deleted: 1, pendingCount: 0 });
+  });
 });

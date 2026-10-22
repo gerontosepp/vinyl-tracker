@@ -31,6 +31,7 @@ import {
   LabelPhotoStatus,
   LabelPhotosResult,
   LabelPhotoUploadResult,
+  LabelPhotoDeleteResult,
 } from '../types';
 
 @Injectable({
@@ -56,6 +57,21 @@ export class ApiService {
     if (status) params = params.set('status', status);
     if (limit) params = params.set('limit', limit);
     return this.http.get<LabelPhotosResult>(`${this.baseUrl}/label-photos`, { params });
+  }
+
+  /** URL of a label photo; the session cookie authorizes the image request. */
+  labelPhotoImageUrl(id: number): string {
+    return `${this.baseUrl}/label-photos/${id}/image`;
+  }
+
+  deleteLabelPhoto(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/label-photos/${id}`);
+  }
+
+  /** Deletes all label photos, or only those with the given status. */
+  deleteLabelPhotos(status?: LabelPhotoStatus): Observable<LabelPhotoDeleteResult> {
+    const params = status ? new HttpParams().set('status', status) : undefined;
+    return this.http.delete<LabelPhotoDeleteResult>(`${this.baseUrl}/label-photos`, { params });
   }
 
   deleteScan(id: number): Observable<void> {

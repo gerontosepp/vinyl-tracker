@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../../core/services/api.service';
+import { ScannerService } from '../../../core/services/scanner.service';
 import { LanguageService } from '../../../core/services/language.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { TranslatePipe } from '../../../core/pipes/translate.pipe';
@@ -23,12 +25,14 @@ import { getErrorMessage } from '../../../core/utils/error';
           {{ 'scanner.labelPhotoTitle' | translate }}
         </span>
         @if (pendingCount() > 0) {
-          <span
-            class="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 border border-amber-200 dark:border-amber-800/50"
+          <button
+            type="button"
+            (click)="openInbox()"
+            class="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 border border-amber-200 dark:border-amber-800/50 hover:bg-amber-100 dark:hover:bg-amber-900/50 cursor-pointer"
             data-testid="label-inbox-count"
           >
-            {{ 'scanner.labelPhotoPending' | translate: { count: pendingCount() } }}
-          </span>
+            {{ 'scanner.labelPhotoPending' | translate: { count: pendingCount() } }} ›
+          </button>
         }
       </div>
       <input
@@ -65,6 +69,8 @@ export class LabelPhotoCaptureComponent implements OnInit {
   private readonly toastService = inject(ToastService);
   private readonly languageService = inject(LanguageService);
   private readonly downscale = inject(IMAGE_DOWNSCALER);
+  private readonly router = inject(Router);
+  private readonly scannerService = inject(ScannerService);
 
   readonly pendingCount = signal(0);
   readonly isUploading = signal(false);
@@ -76,6 +82,12 @@ export class LabelPhotoCaptureComponent implements OnInit {
     } catch {
       // The badge is optional; the upload reports its own errors
     }
+  }
+
+  /** Closes the scanner and shows the queued photos. */
+  openInbox(): void {
+    this.scannerService.closeScanner();
+    void this.router.navigate(['/label-inbox']);
   }
 
   async onFileSelected(event: Event): Promise<void> {

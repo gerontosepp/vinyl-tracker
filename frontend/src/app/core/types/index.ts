@@ -436,3 +436,8 @@ export interface LabelPhotoUploadResult {
   id: number;
   pendingCount: number;
 }
+
+export interface LabelPhotoDeleteResult {
+  deleted: number;
+  pendingCount: number;
+}

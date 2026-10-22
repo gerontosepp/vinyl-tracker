@@ -95,12 +95,12 @@ The system consists of three main containers:
 
 The backend (`backend/src/`) follows a strict layered architecture (see `.agent/rules/coding_standards.md`):
 
-- **Routes** (`routes/`): Axum routers and handlers per area – `users`, `collection`, `records`, `scan`, `analytics`, `discogs`, `print`, `storage`, `roon`, `proxy`, `actuator` (health/info). Handlers parse requests, resolve the user via the `CurrentUser` extractor and delegate to services. Cross-cutting layers: CORS, `TraceLayer`, request timeouts (`routes/timeout.rs`) and the per-IP auth rate limit.
+- **Routes** (`routes/`): Axum routers and handlers per area – `users`, `collection`, `records`, `scan`, `analytics`, `discogs`, `label_photos`, `print`, `storage`, `roon`, `proxy`, `actuator` (health/info). Handlers parse requests, resolve the user via the `CurrentUser` extractor and delegate to services. Cross-cutting layers: CORS, `TraceLayer`, request timeouts (`routes/timeout.rs`) and the per-IP auth rate limit.
 - **Services** (`services/`): Business logic and data access with SQLx queries (no separate repository layer) – `user_service`, `collection_query`, `collection_sync`, `record_service`, `scan_service`, `analytics_service` (recent listens, top records and top artists per period, collection value, genres), `marketplace` (condition-based pricing), `export_service` (CSV/JSON/PDF), `collection_restore` (merging JSON backup restore in one transaction), `print/` (print module: template renderers for Avery labels, scan list, QR cards and the inventory list via `printpdf`, `fast_qr`), `storage/` (shelf storage: storage types and shelves, even distribution, insertion by stored compartment boundaries and balancing of full compartments – ADR-0020), `image_proxy` (SSRF-protected), `crypto_service` (AES-256-GCM), `roon/` (WebSocket MOO/1 client, pairing, browse-and-play; host/port configured per user).
 - **Clients** (`clients/discogs.rs`): `reqwest`-based Discogs API client with `governor` rate limiting and `moka` caches.
 - **Models** (`models/`): Domain types (e.g. `AppUser` with `sqlx::FromRow`) and backend-internal DTOs. REST request/response DTOs shared with the MCP server live in the workspace crate `vinyl-api-types` and are re-exported here.
 - **Infrastructure**: `auth/` (JWT, `CurrentUser` extractor, client IP resolution), `db/` (connection pool with startup retries, `sqlx::migrate` migrations), `config.rs` (environment configuration), `state.rs` (`AppState` shared by all handlers), `error.rs` (`AppError` → RFC 7807 `ProblemDetail`).
-- **Persistence model**: Tables `app_user`, `record_cache` (+ `record_genres`, incl. `disc_count`), `collection_item` (user ↔ record incl. media/sleeve condition) and `listen_event`. Play counts and "last played" timestamps are computed from `listen_event`. Shelf storage (migration `10`): `storage_type` (grid, capacity per compartment, medium), `storage_unit` (shelf, order per medium) and `storage_boundary` (shelf sort key of the first record per compartment); the slot of every copy is computed from these boundaries, not stored. The JSON backup (`format_version: 3`) carries types, shelves and boundaries (`storage/backup.rs`).
+- **Persistence model**: Tables `app_user`, `record_cache` (+ `record_genres`, incl. `disc_count`), `collection_item` (user ↔ record incl. media/sleeve condition) and `listen_event`. Play counts and "last played" timestamps are computed from `listen_event`. Shelf storage (migration `10`): `storage_type` (grid, capacity per compartment, medium), `storage_unit` (shelf, order per medium) and `storage_boundary` (shelf sort key of the first record per compartment); the slot of every copy is computed from these boundaries, not stored. The JSON backup (`format_version: 3`) carries types, shelves and boundaries (`storage/backup.rs`). Label inbox (migration `11`): `label_photo` holds label photos as downscaled JPEG (`BYTEA`, no EXIF) with status `pending` / `identified` / `failed` and the identified Discogs release ID (ADR-0021).
 
 ## 6. Runtime View
 
@@ -179,6 +179,13 @@ The backend (`backend/src/`) follows a strict layered architecture (see `.agent/
 2.  **User** picks a shelf and the start compartment as row:column; the medium follows from the shelf.
 3.  **Frontend** loads the whole order of the medium once via `GET /api/storage/sequence?media=` (`StorageService::sequence`: copies in shelf order with slot and cover, copies without place last) and requests a Screen Wake Lock.
 4.  **Frontend** pages through the snapshot locally: cover, title, artist, compartment and "x / n" within the compartment, highlighted when the compartment changes; "Next", "Back", "Quit". After the last copy a summary appears and the wake lock is released.
+
+### 6.10 Scenario: Identifying a Record without Barcode from a Label Photo
+1.  **User** taps *Take label photo* on the scan page; the **Frontend** downscales the photo to 1568 px and re-encodes it as JPEG (canvas).
+2.  **Frontend** sends it to `POST /api/label-photos`; the **Backend** normalizes it again (orientation, size, no EXIF) and stores it as `pending`.
+3.  Later, the **User** runs the prompt `process_label_inbox` in Claude Desktop/Code; **Claude** calls `get_label_inbox`, the **MCP Server** fetches the photos from the Backend and returns them as image content.
+4.  **Claude** reads the labels and calls `search_discogs` (`catno` + `label`) and `get_record_details` (identifiers such as matrix/runout) to determine the pressing.
+5.  After the **User** confirmed the matches, **Claude** calls `add_to_collection` and `resolve_label_photo` (`identified` + Discogs release ID).
 
 ## 7. Deployment View
 
@@ -259,6 +266,7 @@ Architectural decisions in Vinyl Tracker are maintained as formal **Architecture
 | [ADR-0018](adr/0018-frontend-unit-tests-mit-vitest.md) | 2026-10-19 | Frontend unit tests with Vitest instead of Karma/Jasmine | `Accepted` |
 | [ADR-0019](adr/0019-druck-modul-mit-vorlagen-renderern.md) | 2026-10-20 | Print module with template renderers (`POST /api/print`) | `Accepted` |
 | [ADR-0020](adr/0020-lagerposition-aus-gespeicherten-fachgrenzen.md) | 2026-10-20 | Shelf position computed from stored compartment boundaries | `Accepted` |
+| [ADR-0021](adr/0021-label-erkennung-ueber-mcp-und-label-inbox.md) | 2026-10-22 | Label photo identification via MCP and a label inbox instead of calling the Claude API from the backend | `Accepted` |
 
 ## 10. Quality Requirements
 

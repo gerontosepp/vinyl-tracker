@@ -12,7 +12,22 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "tag": "In Entwicklung",
     "isCurrent": false,
     "isUnreleased": true,
-    "items": []
+    "items": [
+      {
+        "title": "Platten ohne Barcode per Label-Foto erkennen (`#208`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Auf der Scan-Seite lässt sich das Label einer Platte fotografieren. Das Foto landet verkleinert und ohne Standortdaten in der Label-Inbox, ein Zähler zeigt die offenen Fotos. In Claude Desktop oder Claude Code erkennt Claude die Platten über den MCP-Prompt `process_label_inbox` mit dem eigenen Claude-Abo, zeigt eine Bestätigungsliste und fügt die bestätigten Platten hinzu. Einzelne Fotos gehen auch direkt mit dem Prompt `identify_record_from_label`.",
+        "details": []
+      },
+      {
+        "title": "Discogs-Suche nach Katalognummer und Label",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "`GET /api/discogs/search` und das MCP-Tool `search_discogs` suchen zusätzlich strukturiert nach `catno`, `label`, `artist`, `release_title`, `year`, `country` und `format`. Die Album-Details enthalten die Identifiers des Releases (Matrix/Runout, Label Code, Rechtegesellschaft).",
+        "details": []
+      }
+    ]
   },
   {
     "version": "v1.0.0",

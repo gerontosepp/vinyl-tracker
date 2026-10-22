@@ -51,6 +51,7 @@ describe('RecordDetailModalComponent', () => {
       ])),
       updateRecordCondition: vi.fn().mockName('updateRecordCondition').mockReturnValue(of({ ...mockDetail, media_condition: 'Mint (M)', median_price: 29.99 })),
       removeReleaseFromCollection: vi.fn().mockName('removeReleaseFromCollection').mockReturnValue(of(undefined)),
+      updateRecordSortKey: vi.fn().mockName('updateRecordSortKey').mockReturnValue(of({ ...mockDetail, sort_key: 'Fab Four' })),
     };
 
     mockToastService = {
@@ -307,6 +308,71 @@ describe('RecordDetailModalComponent', () => {
 
     expect(component.isUpdatingCondition()).toBe(false);
     expect(mockToastService.showToast).toHaveBeenCalledWith(expect.stringContaining('Discogs update failed'), 'error');
+  });
+
+  describe('custom sort string', () => {
+    const showDetail = (detail: RecordDetailDto) => {
+      fixture.componentRef.setInput('record', { id: 42, basic_information: { id: 123456, title: 'Abbey Road', artists: [] } } as any);
+      fixture.componentRef.setInput('detail', detail);
+      fixture.detectChanges();
+    };
+    const input = (): HTMLInputElement => fixture.nativeElement.querySelector('#sort-key-input');
+    const type = (value: string) => {
+      input().value = value;
+      input().dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+    };
+
+    it('shows the automatic key as placeholder and only saves a changed value', () => {
+      showDetail({ ...mockDetail, default_sort_key: 'beatles' });
+      expect(input().placeholder).toBe('beatles');
+      expect(input().value).toBe('');
+      const save: HTMLButtonElement = fixture.nativeElement.querySelector('[data-testid="sort-key-save"]');
+      expect(save.disabled).toBe(true);
+      expect(fixture.nativeElement.querySelector('[data-testid="sort-key-reset"]')).toBeNull();
+
+      vi.spyOn(component.sortKeyUpdated, 'emit');
+      type('  Fab Four ');
+      expect(save.disabled).toBe(false);
+      save.click();
+
+      expect(mockApiService.updateRecordSortKey).toHaveBeenCalledWith(42, 'Fab Four');
+      expect(component.sortKeyUpdated.emit).toHaveBeenCalledWith({ ...mockDetail, sort_key: 'Fab Four' });
+      expect(mockToastService.showToast).toHaveBeenCalledWith(languageService.translate('collection.sortKeyUpdated'), 'success');
+    });
+
+    it('resets a stored value and follows the shown record', () => {
+      showDetail({ ...mockDetail, sort_key: 'Fab Four' });
+      expect(input().value).toBe('Fab Four');
+      type('Something else');
+
+      showDetail({ ...mockDetail, id: 43, sort_key: 'Other' });
+      expect(input().value).toBe('Other');
+
+      fixture.nativeElement.querySelector('[data-testid="sort-key-reset"]').click();
+      expect(mockApiService.updateRecordSortKey).toHaveBeenCalledWith(43, null);
+    });
+
+    it('saves an emptied field as reset', () => {
+      showDetail({ ...mockDetail, sort_key: 'Fab Four' });
+      type('   ');
+      component.saveSortKey();
+      expect(mockApiService.updateRecordSortKey).toHaveBeenCalledWith(42, null);
+    });
+
+    it('shows an error toast when saving fails', () => {
+      mockApiService.updateRecordSortKey.mockReturnValue(throwError(() => new Error('boom')));
+      showDetail(mockDetail);
+      type('X');
+      component.saveSortKey();
+      expect(component.isSavingSortKey()).toBe(false);
+      expect(mockToastService.showToast).toHaveBeenCalledWith(expect.any(String), 'error');
+    });
+
+    it('is hidden for records outside the collection', () => {
+      showDetail({ ...mockDetail, in_collection: false });
+      expect(fixture.nativeElement.querySelector('[data-testid="detail-sort-key"]')).toBeNull();
+    });
   });
 
   describe('delete / remove from collection flow', () => {

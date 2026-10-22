@@ -35,7 +35,7 @@ The **Vinyl Tracker** is a personal web application designed for vinyl enthusias
     - **MCP Server**: Rust (`rmcp` v3.5 SDK, stdio JSON-RPC).
     - **Database**: PostgreSQL 16.
     - **Caching & Rate Limiting**: `moka` (in-memory caches), `governor` (Discogs client and auth endpoints).
-    - **Migrations**: `sqlx::migrate` (`backend/migrations/<n>_<name>.sql`, embedded at compile time, history in `_sqlx_migrations`). Existing refinery/Flyway histories are imported once on first start ([ADR-0017](adr/0017-datenbank-migrationen-mit-sqlx-migrate.md)).
+    - **Migrations**: `sqlx::migrate` (`backend/migrations/<n>_<name>.sql`, embedded at compile time, history in `_sqlx_migrations`; the one-time import of refinery/Flyway histories was removed after v1.0.0, [ADR-0017](adr/0017-datenbank-migrationen-mit-sqlx-migrate.md)).
     - **API Errors**: RFC 7807 Problem Details (`AppError` → `ProblemDetail`). No OpenAPI/Swagger endpoint.
     - **Containerization**: Docker & Docker Compose (`cargo-chef` multi-stage build).
 - **License**: MIT License (Open Source).
@@ -95,12 +95,12 @@ The system consists of three main containers:
 
 The backend (`backend/src/`) follows a strict layered architecture (see `.agent/rules/coding_standards.md`):
 
-- **Routes** (`routes/`): Axum routers and handlers per area – `users`, `collection`, `records`, `scan`, `analytics`, `discogs`, `print`, `storage`, `roon`, `proxy`, `actuator` (health/info). Handlers parse requests, resolve the user via the `CurrentUser` extractor and delegate to services. Cross-cutting layers: CORS, `TraceLayer`, request timeouts (`routes/timeout.rs`) and the per-IP auth rate limit.
-- **Services** (`services/`): Business logic and data access with SQLx queries (no separate repository layer) – `user_service`, `collection_query`, `collection_sync`, `record_service`, `scan_service`, `analytics_service` (recent listens, top records and top artists per period, collection value, genres), `marketplace` (condition-based pricing), `export_service` (CSV/JSON/PDF), `collection_restore` (merging JSON backup restore in one transaction), `print/` (print module: template renderers for Avery labels, scan list, QR cards and the inventory list via `printpdf`, `fast_qr`), `storage/` (shelf storage: storage types and shelves, even distribution, insertion by stored compartment boundaries and balancing of full compartments – ADR-0020), `image_proxy` (SSRF-protected), `crypto_service` (AES-256-GCM), `roon/` (SOOD discovery, WebSocket MOO/1 client, pairing, browse-and-play).
+- **Routes** (`routes/`): Axum routers and handlers per area – `users`, `collection`, `records`, `scan`, `analytics`, `discogs`, `label_photos`, `print`, `storage`, `roon`, `proxy`, `actuator` (health/info). Handlers parse requests, resolve the user via the `CurrentUser` extractor and delegate to services. Cross-cutting layers: CORS, `TraceLayer`, request timeouts (`routes/timeout.rs`) and the per-IP auth rate limit.
+- **Services** (`services/`): Business logic and data access with SQLx queries (no separate repository layer) – `user_service`, `collection_query`, `collection_sync`, `record_service`, `scan_service`, `analytics_service` (recent listens, top records and top artists per period, collection value, genres), `marketplace` (condition-based pricing), `export_service` (CSV/JSON/PDF), `collection_restore` (merging JSON backup restore in one transaction), `print/` (print module: template renderers for Avery labels, scan list, QR cards and the inventory list via `printpdf`, `fast_qr`), `storage/` (shelf storage: storage types and shelves, even distribution, insertion by stored compartment boundaries and balancing of full compartments – ADR-0020), `image_proxy` (SSRF-protected), `crypto_service` (AES-256-GCM), `roon/` (WebSocket MOO/1 client, pairing, browse-and-play; host/port configured per user).
 - **Clients** (`clients/discogs.rs`): `reqwest`-based Discogs API client with `governor` rate limiting and `moka` caches.
 - **Models** (`models/`): Domain types (e.g. `AppUser` with `sqlx::FromRow`) and backend-internal DTOs. REST request/response DTOs shared with the MCP server live in the workspace crate `vinyl-api-types` and are re-exported here.
 - **Infrastructure**: `auth/` (JWT, `CurrentUser` extractor, client IP resolution), `db/` (connection pool with startup retries, `sqlx::migrate` migrations), `config.rs` (environment configuration), `state.rs` (`AppState` shared by all handlers), `error.rs` (`AppError` → RFC 7807 `ProblemDetail`).
-- **Persistence model**: Tables `app_user`, `record_cache` (+ `record_genres`, incl. `disc_count`), `collection_item` (user ↔ record incl. media/sleeve condition) and `listen_event`. Play counts and "last played" timestamps are computed from `listen_event`. Shelf storage (migration `10`): `storage_type` (grid, capacity per compartment, medium), `storage_unit` (shelf, order per medium) and `storage_boundary` (shelf sort key of the first record per compartment); the slot of every copy is computed from these boundaries, not stored. The JSON backup (`format_version: 3`) carries types, shelves and boundaries (`storage/backup.rs`).
+- **Persistence model**: Tables `app_user`, `record_cache` (+ `record_genres`, incl. `disc_count`), `collection_item` (user ↔ record incl. media/sleeve condition and the optional custom sort string `sort_key`, migration `12`, which replaces the automatic artist sort key) and `listen_event`. Play counts and "last played" timestamps are computed from `listen_event`. Shelf storage (migration `10`): `storage_type` (grid, capacity per compartment, medium), `storage_unit` (shelf, order per medium) and `storage_boundary` (shelf sort key of the first record per compartment); the slot of every copy is computed from these boundaries, not stored. The JSON backup (`format_version: 3`) carries types, shelves and boundaries (`storage/backup.rs`). Label inbox (migration `11`): `label_photo` holds label photos as downscaled JPEG (`BYTEA`, no EXIF) with status `pending` / `identified` / `failed` and the identified Discogs release ID (ADR-0021).
 
 ## 6. Runtime View
 
@@ -180,6 +180,13 @@ The backend (`backend/src/`) follows a strict layered architecture (see `.agent/
 3.  **Frontend** loads the whole order of the medium once via `GET /api/storage/sequence?media=` (`StorageService::sequence`: copies in shelf order with slot and cover, copies without place last) and requests a Screen Wake Lock.
 4.  **Frontend** pages through the snapshot locally: cover, title, artist, compartment and "x / n" within the compartment, highlighted when the compartment changes; "Next", "Back", "Quit". After the last copy a summary appears and the wake lock is released.
 
+### 6.10 Scenario: Identifying a Record without Barcode from a Label Photo
+1.  **User** taps *Take label photo* on the scan page; the **Frontend** downscales the photo to 1568 px and re-encodes it as JPEG (canvas).
+2.  **Frontend** sends it to `POST /api/label-photos`; the **Backend** normalizes it again (orientation, size, no EXIF) and stores it as `pending`.
+3.  Later, the **User** runs the prompt `process_label_inbox` in Claude Desktop/Code; **Claude** calls `get_label_inbox`, the **MCP Server** fetches the photos from the Backend and returns them as image content.
+4.  **Claude** reads the labels and calls `search_discogs` (`catno` + `label`) and `get_record_details` (identifiers such as matrix/runout) to determine the pressing.
+5.  After the **User** confirmed the matches, **Claude** calls `add_to_collection` and `resolve_label_photo` (`identified` + Discogs release ID).
+
 ## 7. Deployment View
 
 The system is deployed as a multi-container Docker application orchestrated by Docker Compose.
@@ -201,7 +208,7 @@ The system is deployed as a multi-container Docker application orchestrated by D
 - **Rate Limiting & Brute-Force Protection**: Public authentication endpoints (`/api/users/login`, `/api/users/register`, `/api/users/reset-password`) are protected by a keyed `governor` rate limiter (`auth_rate_limit_middleware`). Limits are enforced per client IP (configurable via `AUTH_RATE_LIMIT_FOR_PERIOD`, default 10 requests/minute). The client IP is the TCP peer; `X-Forwarded-For` / `X-Real-IP` are only honoured from `TRUSTED_PROXIES` ([ADR-0016](adr/0016-vertrauenswuerdige-proxies-fuer-client-ip-ermittlung.md)). Requests exceeding the limit receive HTTP 429 as RFC-7807 `ProblemDetail`.
 - **Data Protection**:
     - User passwords are hashed with **BCrypt** (`bcrypt` crate; the salt is embedded in the hash, the former `salt` column was dropped in migration `5`).
-    - Discogs tokens are encrypted with **AES-256-GCM** (key derived via PBKDF2-HMAC-SHA256 from `VINYL_ENCRYPTION_PASSWORD`/`VINYL_ENCRYPTION_SALT`); legacy AES-CBC values from the Java era are still decrypted ([ADR-0004](adr/0004-aead-aes-256-gcm-kryptografie-fuer-tokens.md)).
+    - Discogs tokens are encrypted with **AES-256-GCM** (key derived via PBKDF2-HMAC-SHA256 from `VINYL_ENCRYPTION_PASSWORD`/`VINYL_ENCRYPTION_SALT`); values without the `v2:` prefix (AES-CBC from the Java era) are no longer decrypted since v1.0.0 ([ADR-0004](adr/0004-aead-aes-256-gcm-kryptografie-fuer-tokens.md)).
 - **Network Exposure**: In the production compose files backend (8080) and PostgreSQL (5432) are only bound to `127.0.0.1`; external access goes through nginx.
 - **Supply Chain**: GitHub Actions are pinned to commit SHAs and updated by Dependabot; fork PR workflows require maintainer approval.
 
@@ -259,6 +266,7 @@ Architectural decisions in Vinyl Tracker are maintained as formal **Architecture
 | [ADR-0018](adr/0018-frontend-unit-tests-mit-vitest.md) | 2026-10-19 | Frontend unit tests with Vitest instead of Karma/Jasmine | `Accepted` |
 | [ADR-0019](adr/0019-druck-modul-mit-vorlagen-renderern.md) | 2026-10-20 | Print module with template renderers (`POST /api/print`) | `Accepted` |
 | [ADR-0020](adr/0020-lagerposition-aus-gespeicherten-fachgrenzen.md) | 2026-10-20 | Shelf position computed from stored compartment boundaries | `Accepted` |
+| [ADR-0021](adr/0021-label-erkennung-ueber-mcp-und-label-inbox.md) | 2026-10-22 | Label photo identification via MCP and a label inbox instead of calling the Claude API from the backend | `Accepted` |
 
 ## 10. Quality Requirements
 

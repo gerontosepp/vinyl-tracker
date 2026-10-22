@@ -790,6 +790,11 @@ async fn test_collection_artist_sorting_natural_order_and_collation() {
             "Eye in the Sky",
             1982,
         ),
+        (980006i64, "Die Sterne", "Posen", 1996),
+        (980007i64, "Der Plan", "Geri Reig", 1980),
+        (980008i64, "A Flock of Seagulls", "Listen", 1983),
+        (980009i64, "Dire Straits", "Brothers in Arms", 1985),
+        (980010i64, "Lana Del Rey", "Born to Die", 2012),
     ];
 
     for (discogs_id, artist, title, year) in &artists_and_titles {
@@ -833,6 +838,11 @@ async fn test_collection_artist_sorting_natural_order_and_collation() {
     // 3. The Alan Parsons Project ('The ' stripped -> 'alan parsons project')
     // 4. BAP
     // 5. The Beatles ('The ' stripped -> 'beatles')
+    // 6. Dire Straits (no article)
+    // 7. A Flock of Seagulls ('A ' stripped -> 'flock of seagulls')
+    // 8. Lana Del Rey ('La' only counts as an article when followed by whitespace)
+    // 9. Der Plan ('Der ' stripped -> 'plan')
+    // 10. Die Sterne ('Die ' stripped -> 'sterne')
     let res = app
         .clone()
         .oneshot(
@@ -849,7 +859,7 @@ async fn test_collection_artist_sorting_natural_order_and_collation() {
     assert_eq!(res.status(), StatusCode::OK);
     let bytes = res.into_body().collect().await.unwrap().to_bytes();
     let body: CollectionResponse = serde_json::from_slice(&bytes).unwrap();
-    assert_eq!(body.releases.len(), 5);
+    assert_eq!(body.releases.len(), 10);
 
     let artist_names: Vec<String> = body
         .releases
@@ -865,6 +875,11 @@ async fn test_collection_artist_sorting_natural_order_and_collation() {
             "The Alan Parsons Project",
             "BAP",
             "The Beatles",
+            "Dire Straits",
+            "A Flock of Seagulls",
+            "Lana Del Rey",
+            "Der Plan",
+            "Die Sterne",
         ]
     );
 
@@ -894,6 +909,11 @@ async fn test_collection_artist_sorting_natural_order_and_collation() {
     assert_eq!(
         artist_names_desc,
         vec![
+            "Die Sterne",
+            "Der Plan",
+            "Lana Del Rey",
+            "A Flock of Seagulls",
+            "Dire Straits",
             "The Beatles",
             "BAP",
             "The Alan Parsons Project",

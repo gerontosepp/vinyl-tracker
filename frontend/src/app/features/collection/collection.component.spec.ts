@@ -506,6 +506,18 @@ describe('CollectionComponent', () => {
     });
   });
 
+  describe('onSortKeyUpdated', () => {
+    it('shows the updated detail and reloads the collection in the new order', () => {
+      const loadData = vi.spyOn(component, 'loadData').mockImplementation(() => undefined);
+      const updated = { discogs_id: 100, sort_key: 'Paul, Les', in_collection: true, genres: [], listen_count: 0, tracklist: [], formats: [], labels: [] } as any;
+
+      component.onSortKeyUpdated(updated);
+
+      expect(component.recordDetail()).toEqual(updated);
+      expect(loadData).toHaveBeenCalled();
+    });
+  });
+
   describe('onConditionUpdated', () => {
     it('should update recordDetail and releases array with new conditions and median price', () => {
       const initialRelease = {

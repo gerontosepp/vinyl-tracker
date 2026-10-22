@@ -57,3 +57,5 @@ Der `CryptoService` wird vollständig auf **AES-256-GCM** umgestellt:
 
 ### Nachteile & Risiken
 * **Leicht erhöhter Rechenaufwand:** 100.000 Iterationen beanspruchen minimal mehr CPU bei der Schlüsselableitung (im Rahmen von < 5 ms pro Token-Operation).
+
+> **Nachtrag (2026-10-21, #206):** Die Entschlüsselung alter AES-256-CBC-Werte (Spring Security, PBKDF2-HMAC-SHA1) wurde nach v1.0.0 entfernt, nachdem auf Prod kein Token mehr im alten Format lag. Betroffene Tokens müssen in den Einstellungen neu gespeichert werden.

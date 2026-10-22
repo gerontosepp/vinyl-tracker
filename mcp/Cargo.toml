@@ -1,9 +1,10 @@
 [package]
 name = "vinyl-mcp-server"
-version = "1.0.0"
+version = "1.1.0"
 edition = "2024"
 
 [dependencies]
+base64 = "0.23"
 dotenvy = "0.15.7"
 reqwest = { version = "0.13.5", features = ["json", "cookies", "query"] }
 rmcp = { version = "3.5.0", features = ["macros", "server", "transport-io"] }

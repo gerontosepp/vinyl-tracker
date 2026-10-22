@@ -1,1 +1,3 @@
-pub use vinyl_api_types::record::{RecordDetailDto, UpdateConditionRequestDto};
+pub use vinyl_api_types::record::{
+    RecordDetailDto, UpdateConditionRequestDto, UpdateSortKeyRequestDto,
+};

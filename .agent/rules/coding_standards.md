@@ -20,3 +20,4 @@ trigger: always_on
    - All backend errors must return structured JSON problem details (`ProblemDetail` / RFC 7807 via `AppError`).
    - The frontend must handle API errors gracefully, typically showing user-friendly toast notifications (`ToastService`) instead of failing silently.
    - When introducing new HTTP methods (e.g., `PATCH`), ensure they are allowed in Axum `CorsLayer` configuration.
+5. **Simplicity**: Follow YAGNI principles, and one-liner solutions.

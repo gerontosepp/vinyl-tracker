@@ -1,0 +1,136 @@
+import type { MockedObject } from 'vitest';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { HttpErrorResponse } from '@angular/common/http';
+import { of, throwError } from 'rxjs';
+import { LabelPhotoCaptureComponent } from './label-photo-capture.component';
+import { ApiService } from '../../../core/services/api.service';
+import { ToastService } from '../../../core/services/toast.service';
+import { LanguageService } from '../../../core/services/language.service';
+import { IMAGE_DOWNSCALER } from '../../../core/utils/image';
+
+describe('LabelPhotoCaptureComponent', () => {
+  let fixture: ComponentFixture<LabelPhotoCaptureComponent>;
+  let component: LabelPhotoCaptureComponent;
+  let apiServiceMock: MockedObject<ApiService>;
+  let toastServiceMock: MockedObject<ToastService>;
+  const downscaled = new Blob(['jpeg'], { type: 'image/jpeg' });
+  let downscale: ReturnType<typeof vi.fn>;
+
+  async function setup(pendingCount = 2): Promise<void> {
+    apiServiceMock = {
+      getLabelPhotos: vi.fn().mockReturnValue(of({ photos: [], pendingCount })),
+      uploadLabelPhoto: vi.fn(),
+    } as unknown as MockedObject<ApiService>;
+    toastServiceMock = { showToast: vi.fn() } as unknown as MockedObject<ToastService>;
+
+    await TestBed.configureTestingModule({
+      imports: [LabelPhotoCaptureComponent],
+      providers: [
+        { provide: ApiService, useValue: apiServiceMock },
+        { provide: ToastService, useValue: toastServiceMock },
+        { provide: IMAGE_DOWNSCALER, useValue: downscale },
+      ],
+    }).compileComponents();
+    TestBed.inject(LanguageService).setLanguage('de');
+
+    fixture = TestBed.createComponent(LabelPhotoCaptureComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+  }
+
+  function selectFile(file: File | null): { event: Event; input: HTMLInputElement } {
+    const input = fixture.nativeElement.querySelector('[data-testid="label-photo-input"]') as HTMLInputElement;
+    Object.defineProperty(input, 'files', { value: file ? [file] : [], configurable: true });
+    return { event: { target: input } as unknown as Event, input };
+  }
+
+  const text = () => (fixture.nativeElement as HTMLElement).textContent ?? '';
+
+  beforeEach(() => {
+    downscale = vi.fn().mockResolvedValue(downscaled);
+  });
+
+  it('shows the button and the number of open photos', async () => {
+    await setup(2);
+    expect(apiServiceMock.getLabelPhotos).toHaveBeenCalledWith('pending', 1);
+    expect(text()).toContain('Label fotografieren');
+    expect(fixture.nativeElement.querySelector('[data-testid="label-inbox-count"]').textContent).toContain(
+      '2 in der Inbox'
+    );
+  });
+
+  it('hides the badge when the inbox is empty or cannot be loaded', async () => {
+    await setup(0);
+    expect(fixture.nativeElement.querySelector('[data-testid="label-inbox-count"]')).toBeNull();
+
+    apiServiceMock.getLabelPhotos.mockReturnValue(throwError(() => new Error('offline')));
+    await component.ngOnInit();
+    expect(component.pendingCount()).toBe(0);
+  });
+
+  it('downscales and uploads the photo, then updates the count', async () => {
+    await setup(2);
+    apiServiceMock.uploadLabelPhoto.mockReturnValue(of({ id: 9, pendingCount: 3 }));
+    const photo = new File(['raw'], 'label.heic', { type: 'image/heic' });
+    const { event, input } = selectFile(photo);
+
+    await component.onFileSelected(event);
+    fixture.detectChanges();
+
+    expect(downscale).toHaveBeenCalledWith(photo);
+    expect(apiServiceMock.uploadLabelPhoto).toHaveBeenCalledWith(downscaled);
+    expect(component.pendingCount()).toBe(3);
+    expect(component.isUploading()).toBe(false);
+    expect(input.value).toBe('');
+    expect(toastServiceMock.showToast).toHaveBeenCalledWith(
+      'Foto in der Label-Inbox gespeichert (3 offen).',
+      'success'
+    );
+  });
+
+  it('reports upload errors as toast and keeps the count', async () => {
+    await setup(2);
+    apiServiceMock.uploadLabelPhoto.mockReturnValue(
+      throwError(
+        () =>
+          new HttpErrorResponse({
+            status: 400,
+            error: { detail: 'Invalid image: unsupported format' },
+          })
+      )
+    );
+    const { event } = selectFile(new File(['x'], 'x.jpg'));
+
+    await component.onFileSelected(event);
+
+    expect(component.pendingCount()).toBe(2);
+    expect(component.isUploading()).toBe(false);
+    expect(toastServiceMock.showToast).toHaveBeenCalledWith('Invalid image: unsupported format', 'error');
+  });
+
+  it('uses the fallback message when the photo cannot be processed', async () => {
+    await setup(2);
+    downscale.mockRejectedValue('decode failed');
+    const { event } = selectFile(new File(['x'], 'x.jpg'));
+
+    await component.onFileSelected(event);
+
+    expect(apiServiceMock.uploadLabelPhoto).not.toHaveBeenCalled();
+    expect(toastServiceMock.showToast).toHaveBeenCalledWith(
+      'Das Foto konnte nicht gespeichert werden.',
+      'error'
+    );
+  });
+
+  it('ignores an empty file selection', async () => {
+    await setup(2);
+    const { event } = selectFile(null);
+
+    await component.onFileSelected(event);
+
+    expect(downscale).not.toHaveBeenCalled();
+    expect(toastServiceMock.showToast).not.toHaveBeenCalled();
+  });
+});

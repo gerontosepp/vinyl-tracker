@@ -3,6 +3,7 @@ use crate::{
     models::collection::{BackupRelease, CollectionBackupRequest, RestoreResultDto},
     services::{
         export_service::BACKUP_FORMAT_VERSION,
+        record_service::MAX_SORT_KEY_LEN,
         storage::{StorageService, backup::StorageBackupService},
     },
 };
@@ -33,6 +34,7 @@ pub struct ValidatedRelease {
     pub added_at: NaiveDateTime,
     pub media_condition: Option<String>,
     pub sleeve_condition: Option<String>,
+    pub sort_key: Option<String>,
     pub listens: Vec<NaiveDateTime>,
 }
 
@@ -127,6 +129,14 @@ impl CollectionRestoreService {
             return Err(format!("condition exceeds {MAX_CONDITION_LEN} characters"));
         }
 
+        let sort_key = non_empty(release.sort_key.as_deref());
+        if sort_key
+            .as_ref()
+            .is_some_and(|s| s.chars().count() > MAX_SORT_KEY_LEN)
+        {
+            return Err(format!("sort_key exceeds {MAX_SORT_KEY_LEN} characters"));
+        }
+
         for price in [info.lowest_price, info.median_price].into_iter().flatten() {
             if !price.is_finite() || price < 0.0 {
                 return Err(format!("invalid price {price}"));
@@ -173,6 +183,7 @@ impl CollectionRestoreService {
             added_at,
             media_condition,
             sleeve_condition,
+            sort_key,
             listens,
         })
     }
@@ -296,8 +307,8 @@ impl CollectionRestoreService {
         Ok(record_id)
     }
 
-    /// Returns `true` if the item was newly added. Conditions from the backup win, missing ones
-    /// keep the stored value; `added_at` of existing items is preserved.
+    /// Returns `true` if the item was newly added. Conditions and the sort string from the
+    /// backup win, missing ones keep the stored value; `added_at` of existing items is preserved.
     async fn upsert_collection_item(
         tx: &mut Transaction<'_, Postgres>,
         user_id: i64,
@@ -305,11 +316,12 @@ impl CollectionRestoreService {
         release: &ValidatedRelease,
     ) -> Result<bool, AppError> {
         let row = sqlx::query(
-            "INSERT INTO collection_item (user_id, record_id, instance_id, added_at, media_condition, sleeve_condition)
-             VALUES ($1, $2, $3, $4, $5, $6)
+            "INSERT INTO collection_item (user_id, record_id, instance_id, added_at, media_condition, sleeve_condition, sort_key)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)
              ON CONFLICT (user_id, instance_id)
              DO UPDATE SET media_condition = COALESCE(EXCLUDED.media_condition, collection_item.media_condition),
-                           sleeve_condition = COALESCE(EXCLUDED.sleeve_condition, collection_item.sleeve_condition)
+                           sleeve_condition = COALESCE(EXCLUDED.sleeve_condition, collection_item.sleeve_condition),
+                           sort_key = COALESCE(EXCLUDED.sort_key, collection_item.sort_key)
              RETURNING (xmax = 0) AS inserted",
         )
         .bind(user_id)
@@ -318,6 +330,7 @@ impl CollectionRestoreService {
         .bind(release.added_at)
         .bind(&release.media_condition)
         .bind(&release.sleeve_condition)
+        .bind(&release.sort_key)
         .fetch_one(&mut **tx)
         .await
         .map_err(AppError::Database)?;
@@ -355,6 +368,7 @@ mod tests {
             "rating": null,
             "media_condition": "Near Mint (NM or M-)",
             "sleeve_condition": " ",
+            "sort_key": " Mac, Fleetwood ",
             "last_played_at": "2026-04-12T15:30:00Z",
             "notes": [],
             "basic_information": {
@@ -404,6 +418,7 @@ mod tests {
             r.sleeve_condition, None,
             "blank conditions are treated as missing"
         );
+        assert_eq!(r.sort_key.as_deref(), Some("Mac, Fleetwood"));
         assert_eq!(r.added_at.to_string(), "2026-04-10 12:00:00");
         // Offsets are normalized to UTC, microseconds are kept
         assert_eq!(r.listens[0].to_string(), "2026-04-01 20:00:00");
@@ -467,6 +482,10 @@ mod tests {
             (
                 |r| r["media_condition"] = json!("x".repeat(51)),
                 "condition exceeds",
+            ),
+            (
+                |r| r["sort_key"] = json!("x".repeat(201)),
+                "sort_key exceeds",
             ),
             (
                 |r| r["basic_information"]["lowest_price"] = json!(-1.0),

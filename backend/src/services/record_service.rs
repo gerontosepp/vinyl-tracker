@@ -2,11 +2,15 @@ use crate::{
     clients::discogs::DiscogsClient,
     error::AppError,
     models::{
-        discogs::{DiscogsFormat, DiscogsLabel, DiscogsRelease, DiscogsTrack, determine_format},
-        record::{RecordDetailDto, UpdateConditionRequestDto},
+        discogs::{
+            DiscogsFormat, DiscogsIdentifier, DiscogsLabel, DiscogsRelease, DiscogsTrack,
+            determine_format,
+        },
+        record::{RecordDetailDto, UpdateConditionRequestDto, UpdateSortKeyRequestDto},
         user::AppUser,
     },
     services::{
+        collection_query::DEFAULT_ARTIST_KEY_SQL,
         crypto_service::CryptoService,
         marketplace::{extract_suggested_price, validate_goldmine_condition},
         storage::StorageService,
@@ -15,6 +19,9 @@ use crate::{
 use chrono::Utc;
 use sqlx::{PgPool, Row};
 use std::sync::Arc;
+
+/// Maximum length of a custom sort string (`collection_item.sort_key`).
+pub const MAX_SORT_KEY_LEN: usize = 200;
 
 pub struct RecordService;
 
@@ -67,7 +74,7 @@ impl RecordService {
         // 3. Look up collection_item
         let collection_row = if let Some(rec_id) = local_record_id {
             sqlx::query(
-                "SELECT id, instance_id, added_at, media_condition, sleeve_condition
+                "SELECT id, instance_id, added_at, media_condition, sleeve_condition, sort_key
                  FROM collection_item
                  WHERE user_id = $1 AND record_id = $2
                  LIMIT 1",
@@ -79,7 +86,7 @@ impl RecordService {
             .map_err(AppError::Database)?
         } else {
             sqlx::query(
-                "SELECT ci.id, ci.instance_id, ci.added_at, ci.media_condition, ci.sleeve_condition
+                "SELECT ci.id, ci.instance_id, ci.added_at, ci.media_condition, ci.sleeve_condition, ci.sort_key
                  FROM collection_item ci
                  JOIN record_cache rc ON rc.id = ci.record_id
                  WHERE ci.user_id = $1 AND rc.discogs_id = $2
@@ -103,6 +110,7 @@ impl RecordService {
         let sleeve_condition: Option<String> = collection_row
             .as_ref()
             .and_then(|r| r.get("sleeve_condition"));
+        let sort_key: Option<String> = collection_row.as_ref().and_then(|r| r.get("sort_key"));
 
         // 4. Look up listen history & counts
         let mut listen_count = 0i64;
@@ -256,9 +264,31 @@ impl RecordService {
             .as_ref()
             .and_then(|r| r.labels.clone())
             .unwrap_or_default();
+        let identifiers: Vec<DiscogsIdentifier> = discogs_release
+            .as_ref()
+            .and_then(|r| r.identifiers.clone())
+            .unwrap_or_default();
         let notes: Option<String> = discogs_release.as_ref().and_then(|r| r.notes.clone());
         let country: Option<String> = discogs_release.as_ref().and_then(|r| r.country.clone());
         let released: Option<String> = discogs_release.as_ref().and_then(|r| r.released.clone());
+
+        // The shelf order sorts by the stored artist name, the displayed one may come from Discogs
+        let sort_artist: Option<String> = record_row
+            .as_ref()
+            .and_then(|r| r.get("artist"))
+            .or_else(|| artist.clone());
+        let default_sort_key = match sort_artist.as_deref() {
+            Some(name) => Some(
+                sqlx::query_scalar::<_, String>(&format!(
+                    "SELECT {DEFAULT_ARTIST_KEY_SQL} FROM (SELECT $1::text AS artist) rc"
+                ))
+                .bind(name)
+                .fetch_one(pool)
+                .await
+                .map_err(AppError::Database)?,
+            ),
+            None => None,
+        };
 
         let placement = if in_collection {
             StorageService::placement_for_record(pool, user.id, discogs_id).await?
@@ -285,6 +315,8 @@ impl RecordService {
             added_at,
             media_condition,
             sleeve_condition,
+            sort_key,
+            default_sort_key,
             lowest_price,
             median_price,
             num_for_sale,
@@ -293,6 +325,7 @@ impl RecordService {
             format,
             formats,
             labels,
+            identifiers,
             notes,
             country,
             released,
@@ -552,6 +585,48 @@ impl RecordService {
         }
 
         // Return updated record details
+        Self::get_record_details(pool, discogs_client, crypto, user, record_id).await
+    }
+
+    /// Sets the custom sort string for all copies of a record in the user's collection; a
+    /// missing or blank value resets it to the automatic artist sort key.
+    pub async fn update_sort_key(
+        pool: &PgPool,
+        discogs_client: &DiscogsClient,
+        crypto: &CryptoService,
+        user: &AppUser,
+        id_param: i64,
+        req: UpdateSortKeyRequestDto,
+    ) -> Result<RecordDetailDto, AppError> {
+        let sort_key = req
+            .sort_key
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty());
+        if sort_key
+            .as_ref()
+            .is_some_and(|s| s.chars().count() > MAX_SORT_KEY_LEN)
+        {
+            return Err(AppError::BadRequest(format!(
+                "Sort key exceeds {MAX_SORT_KEY_LEN} characters"
+            )));
+        }
+
+        let record_id: i64 = sqlx::query_scalar(
+            "UPDATE collection_item ci SET sort_key = $1
+             FROM record_cache rc
+             WHERE rc.id = ci.record_id AND ci.user_id = $2 AND (rc.id = $3 OR rc.discogs_id = $3)
+             RETURNING rc.id",
+        )
+        .bind(&sort_key)
+        .bind(user.id)
+        .bind(id_param)
+        .fetch_optional(pool)
+        .await
+        .map_err(AppError::Database)?
+        .ok_or_else(|| {
+            AppError::NotFound(format!("Record is not in your collection (ID: {id_param})"))
+        })?;
+
         Self::get_record_details(pool, discogs_client, crypto, user, record_id).await
     }
 }

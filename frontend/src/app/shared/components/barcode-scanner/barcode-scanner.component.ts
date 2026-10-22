@@ -9,12 +9,13 @@ import { ScannerService } from '../../../core/services/scanner.service';
 import { TranslatePipe } from '../../../core/pipes/translate.pipe';
 import { ScanResult, DiscogsMatch, SyncResult, StoragePlacement } from '../../../core/types';
 import { StoragePlacementComponent } from '../storage-placement/storage-placement.component';
+import { LabelPhotoCaptureComponent } from '../label-photo-capture/label-photo-capture.component';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-barcode-scanner',
   standalone: true,
-  imports: [FormsModule, TranslatePipe, StoragePlacementComponent],
+  imports: [FormsModule, TranslatePipe, StoragePlacementComponent, LabelPhotoCaptureComponent],
   changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <div class="flex flex-col items-center p-4 h-full">
@@ -89,6 +90,8 @@ import { firstValueFrom } from 'rxjs';
             Ziffern unter dem Strichcode auf dem Plattencover eingeben.
           </p>
         </div>
+
+        <app-label-photo-capture />
       }
 
       @if (scanResult(); as result) {

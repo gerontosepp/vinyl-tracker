@@ -17,7 +17,6 @@ import {
   RoonZone,
   RoonSettings,
   RoonPlayRequest,
-  PriceRefreshResult,
   RestoreResult,
   PrintRequest,
   StorageType,
@@ -27,9 +26,11 @@ import {
   StorageUnitsResult,
   StorageMedia,
   StorageLayout,
-  StoragePlacement,
   StorageSequence,
   RedistributePreview,
+  LabelPhotoStatus,
+  LabelPhotosResult,
+  LabelPhotoUploadResult,
 } from '../types';
 
 @Injectable({
@@ -41,6 +42,20 @@ export class ApiService {
 
   scanBarcode(barcode: string): Observable<ScanResult> {
     return this.http.post<ScanResult>(`${this.baseUrl}/scan`, { barcode });
+  }
+
+  /** Stores a label photo (JPEG) in the inbox for identification via MCP. */
+  uploadLabelPhoto(image: Blob): Observable<LabelPhotoUploadResult> {
+    return this.http.post<LabelPhotoUploadResult>(`${this.baseUrl}/label-photos`, image, {
+      headers: { 'Content-Type': image.type || 'image/jpeg' },
+    });
+  }
+
+  getLabelPhotos(status?: LabelPhotoStatus, limit?: number): Observable<LabelPhotosResult> {
+    let params = new HttpParams();
+    if (status) params = params.set('status', status);
+    if (limit) params = params.set('limit', limit);
+    return this.http.get<LabelPhotosResult>(`${this.baseUrl}/label-photos`, { params });
   }
 
   deleteScan(id: number): Observable<void> {
@@ -95,13 +110,13 @@ export class ApiService {
     return this.http.patch<RecordDetailDto>(`${this.baseUrl}/records/${id}/condition`, conditions);
   }
 
-  logRecordListen(id: number): Observable<RecordDetailDto> {
-    return this.http.post<RecordDetailDto>(`${this.baseUrl}/records/${id}/listen`, {});
+  /** Sets the custom sort string of a record; `null` resets it to the automatic artist key. */
+  updateRecordSortKey(id: number, sortKey: string | null): Observable<RecordDetailDto> {
+    return this.http.patch<RecordDetailDto>(`${this.baseUrl}/records/${id}/sort-key`, { sort_key: sortKey });
   }
 
-  refreshPrices(onlyMissing: boolean = true): Observable<PriceRefreshResult> {
-    const params = new HttpParams().set('onlyMissing', onlyMissing.toString());
-    return this.http.post<PriceRefreshResult>(`${this.baseUrl}/collection/prices/refresh`, {}, { params });
+  logRecordListen(id: number): Observable<RecordDetailDto> {
+    return this.http.post<RecordDetailDto>(`${this.baseUrl}/records/${id}/listen`, {});
   }
 
   getGenreBreakdown(): Observable<GenreBreakdownItem[]> {
@@ -308,10 +323,6 @@ export class ApiService {
   /** Emits `null` (HTTP 204) when no shelf exists for the record's medium. */
   getStorageSequence(media: StorageMedia): Observable<StorageSequence> {
     return this.http.get<StorageSequence>(`${this.baseUrl}/storage/sequence`, { params: { media } });
-  }
-
-  getStoragePlacement(discogsId: number): Observable<StoragePlacement | null> {
-    return this.http.get<StoragePlacement | null>(`${this.baseUrl}/storage/placement/${discogsId}`);
   }
 
   getUser(): Observable<User> {

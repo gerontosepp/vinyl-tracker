@@ -3,7 +3,7 @@ use crate::{
     models::discogs::{
         DiscogsAddReleaseResponse, DiscogsCollectionFieldsResponse,
         DiscogsCollectionFolderResponse, DiscogsPriceSuggestion, DiscogsRelease,
-        DiscogsSearchResponse, DiscogsValueResponse,
+        DiscogsSearchFilter, DiscogsSearchResponse, DiscogsValueResponse,
     },
 };
 use governor::{
@@ -168,7 +168,7 @@ impl DiscogsClient {
 
     pub async fn search(
         &self,
-        query: &str,
+        filter: &DiscogsSearchFilter,
         search_type: Option<&str>,
         page: u32,
         per_page: u32,
@@ -179,17 +179,22 @@ impl DiscogsClient {
         let url = format!("{}/database/search", self.base_url);
         let headers = self.auth_headers(token)?;
 
-        let mut req = self.http.get(&url).headers(headers).query(&[
-            ("q", query),
-            ("page", &page.to_string()),
-            ("per_page", &per_page.to_string()),
-        ]);
+        let criteria = filter.query_pairs();
+        let mut req = self
+            .http
+            .get(&url)
+            .headers(headers)
+            .query(&criteria)
+            .query(&[
+                ("page", &page.to_string()),
+                ("per_page", &per_page.to_string()),
+            ]);
 
         if let Some(st) = search_type {
             req = req.query(&[("type", st)]);
         }
 
-        tracing::info!("Searching Discogs API for query: '{query}' (page: {page})");
+        tracing::info!("Searching Discogs API for {criteria:?} (page: {page})");
         let res = req
             .send()
             .await
@@ -730,7 +735,13 @@ mod tests {
 
         // 2. Search
         let search_res = client
-            .search("Abbey Road", Some("release"), 1, 10, token)
+            .search(
+                &DiscogsSearchFilter::query("Abbey Road"),
+                Some("release"),
+                1,
+                10,
+                token,
+            )
             .await
             .unwrap();
         assert_eq!(search_res.results.len(), 1);
@@ -790,5 +801,52 @@ mod tests {
         // Cached call
         let prices2 = client.get_price_suggestions(12345, token).await.unwrap();
         assert_eq!(prices2.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn test_search_sends_structured_filters() {
+        use axum::extract::Query;
+
+        let app = Router::new().route(
+            "/database/search",
+            get(|Query(params): Query<HashMap<String, String>>| async move {
+                let mut keys: Vec<String> =
+                    params.iter().map(|(k, v)| format!("{k}={v}")).collect();
+                keys.sort();
+                axum::Json(json!({
+                    "pagination": {"page": 1, "pages": 1, "per_page": 5, "items": 1},
+                    "results": [{
+                        "id": 1,
+                        "title": keys.join("&"),
+                        "label": ["Harvest", "EMI"]
+                    }]
+                }))
+            }),
+        );
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        tokio::spawn(async move {
+            axum::serve(listener, app).await.unwrap();
+        });
+
+        let client = DiscogsClient::with_base_url(format!("http://{addr}"), "test/1.0".into());
+        let filter = DiscogsSearchFilter {
+            catno: Some("SHVL 804".into()),
+            label: Some("Harvest".into()),
+            ..DiscogsSearchFilter::default()
+        };
+        let res = client
+            .search(&filter, Some("release"), 1, 5, "token")
+            .await
+            .unwrap();
+
+        assert_eq!(
+            res.results[0].title,
+            "catno=SHVL 804&label=Harvest&page=1&per_page=5&type=release"
+        );
+        assert_eq!(
+            res.results[0].label.as_deref(),
+            Some(&["Harvest".to_string(), "EMI".to_string()][..])
+        );
     }
 }

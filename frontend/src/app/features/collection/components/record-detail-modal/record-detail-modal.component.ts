@@ -1,4 +1,4 @@
-import { Component, input, output, inject, signal, computed, ChangeDetectionStrategy, OnInit } from '@angular/core';
+import { Component, input, output, inject, signal, computed, linkedSignal, ChangeDetectionStrategy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../../core/services/api.service';
@@ -60,12 +60,14 @@ export class RecordDetailModalComponent implements OnInit {
   readonly close = output<void>();
   readonly listenLogged = output<RecordDetailDto>();
   readonly conditionUpdated = output<RecordDetailDto>();
+  readonly sortKeyUpdated = output<RecordDetailDto>();
   readonly recordRemoved = output<number>();
 
   readonly isLoggingListen = signal<boolean>(false);
   readonly justListened = signal<boolean>(false);
   readonly isPlayingOnRoon = signal<boolean>(false);
   readonly isUpdatingCondition = signal<boolean>(false);
+  readonly isSavingSortKey = signal<boolean>(false);
   readonly isRemoving = signal<boolean>(false);
   readonly showDeleteConfirm = signal<boolean>(false);
 
@@ -82,6 +84,10 @@ export class RecordDetailModalComponent implements OnInit {
 
   readonly currentMediaCondition = computed(() => this.detail()?.media_condition || this.record()?.media_condition || '');
   readonly currentSleeveCondition = computed(() => this.detail()?.sleeve_condition || this.record()?.sleeve_condition || '');
+  readonly storedSortKey = computed(() => this.detail()?.sort_key ?? '');
+  /** Edited sort string; follows the stored value whenever another record is shown. */
+  readonly sortKeyValue = linkedSignal(() => this.storedSortKey());
+  readonly sortKeyChanged = computed(() => this.sortKeyValue().trim() !== this.storedSortKey());
   private justListenedTimeout?: ReturnType<typeof setTimeout>;
 
   ngOnInit(): void {
@@ -296,6 +302,40 @@ export class RecordDetailModalComponent implements OnInit {
       error: (err) => {
         this.isUpdatingCondition.set(false);
         this.toastService.showToast(getErrorMessage(err, 'Fehler beim Aktualisieren des Zustands'), 'error');
+      },
+    });
+  }
+
+  onSortKeyInput(value: string): void {
+    this.sortKeyValue.set(value);
+  }
+
+  saveSortKey(): void {
+    if (this.sortKeyChanged()) this.submitSortKey(this.sortKeyValue().trim() || null);
+  }
+
+  resetSortKey(): void {
+    this.submitSortKey(null);
+  }
+
+  private submitSortKey(sortKey: string | null): void {
+    const det = this.detail();
+    const targetId = det?.id ?? det?.discogs_id ?? this.record()?.id;
+    if (!targetId || this.isSavingSortKey()) return;
+
+    this.isSavingSortKey.set(true);
+    this.apiService.updateRecordSortKey(targetId, sortKey).subscribe({
+      next: (updatedDetail) => {
+        this.isSavingSortKey.set(false);
+        this.toastService.showToast(this.languageService.translate('collection.sortKeyUpdated'), 'success');
+        this.sortKeyUpdated.emit(updatedDetail);
+      },
+      error: (err) => {
+        this.isSavingSortKey.set(false);
+        this.toastService.showToast(
+          getErrorMessage(err, this.languageService.translate('collection.sortKeyError')),
+          'error'
+        );
       },
     });
   }

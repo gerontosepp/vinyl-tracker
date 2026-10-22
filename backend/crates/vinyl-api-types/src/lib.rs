@@ -7,6 +7,7 @@
 pub mod analytics;
 pub mod collection;
 pub mod discogs;
+pub mod label_photo;
 pub mod record;
 pub mod roon;
 pub mod scan;

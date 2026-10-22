@@ -2,7 +2,7 @@ use crate::{
     clients::discogs::DiscogsClient,
     error::AppError,
     models::{
-        discogs::{DiscogsRelease, DiscogsSearchResult, determine_format},
+        discogs::{DiscogsRelease, DiscogsSearchFilter, DiscogsSearchResult, determine_format},
         scan::{DiscogsMatchDto, ResetResultDto, ScanResultDto, TrackedRecordDto},
         user::AppUser,
     },
@@ -136,7 +136,13 @@ impl ScanService {
             // Fallback 3: General query search (q=barcode)
             if results.is_empty() {
                 let search_res = discogs_client
-                    .search(&clean_barcode, Some("release"), 1, 10, token)
+                    .search(
+                        &DiscogsSearchFilter::query(clean_barcode.as_str()),
+                        Some("release"),
+                        1,
+                        10,
+                        token,
+                    )
                     .await;
                 if let Ok(res) = search_res {
                     results.extend(res.results);

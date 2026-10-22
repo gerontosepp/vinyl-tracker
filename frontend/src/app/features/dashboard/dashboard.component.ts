@@ -209,6 +209,7 @@ import { Subscription, firstValueFrom, forkJoin, of, catchError } from 'rxjs';
         (close)="closeDetail()"
         (listenLogged)="onDetailChanged($event)"
         (conditionUpdated)="onDetailChanged($event)"
+        (sortKeyUpdated)="onDetailChanged($event)"
         (recordRemoved)="onRecordRemoved()"
       />
     </app-layout>

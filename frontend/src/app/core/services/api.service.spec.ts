@@ -49,4 +49,17 @@ describe('ApiService label photos', () => {
     expect(all.request.params.keys()).toEqual([]);
     all.flush({ photos: [], pendingCount: 0 });
   });
+
+  it('sets and resets the custom sort string of a record', () => {
+    service.updateRecordSortKey(42, 'Paul, Les').subscribe();
+    const set = http.expectOne('/api/records/42/sort-key');
+    expect(set.request.method).toBe('PATCH');
+    expect(set.request.body).toEqual({ sort_key: 'Paul, Les' });
+    set.flush({});
+
+    service.updateRecordSortKey(42, null).subscribe();
+    const reset = http.expectOne('/api/records/42/sort-key');
+    expect(reset.request.body).toEqual({ sort_key: null });
+    reset.flush({});
+  });
 });

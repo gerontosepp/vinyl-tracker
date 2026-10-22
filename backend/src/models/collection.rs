@@ -129,6 +129,9 @@ pub struct BackupRelease {
     pub date_added: Option<String>,
     pub media_condition: Option<String>,
     pub sleeve_condition: Option<String>,
+    /// Custom sort string; missing in older backups
+    #[serde(default)]
+    pub sort_key: Option<String>,
     pub basic_information: BackupBasicInformation,
     /// Listen timestamps (format version 2); missing in older backups
     pub listen_history: Option<Vec<String>>,

@@ -1099,3 +1099,89 @@ async fn test_sort_sequence_follows_the_layout_with_unplaced_last() {
     .await;
     assert!(cds["items"].as_array().unwrap().is_empty());
 }
+
+#[tokio::test]
+async fn test_custom_sort_key_moves_record_in_collection_and_shelf() {
+    let (app, state) = setup_app().await;
+    let (user_id, cookie) = create_user(&app).await;
+    let (les_paul, _) = add_lp(&state, user_id, "Les Paul", "The Hit Makers!").await;
+    for artist in ["C", "E", "G", "I", "K", "M", "O"] {
+        add_lp(&state, user_id, artist, "LP").await;
+    }
+    let type_id = create_type(&app, &cookie, "Kallax 2×2", "vinyl", 2, 2, 4).await;
+    create_unit(&app, &cookie, "Kallax-1", type_id).await;
+    // Automatic key "paul": C E | G I | K M | paul O
+    assert_eq!(compartment_usage(&app, &cookie).await, vec![2, 2, 2, 2]);
+
+    let uri = format!("/api/records/{les_paul}/sort-key");
+    let (status, detail) = call(
+        &app,
+        &cookie,
+        Method::PATCH,
+        &uri,
+        Some(json!({ "sort_key": "  A Les Paul " })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{detail}");
+    assert_eq!(detail["sort_key"], "A Les Paul");
+    assert_eq!(detail["default_sort_key"], "paul");
+    assert_eq!(detail["storage"]["compartment"], 1);
+
+    // The custom key replaces the artist key unchanged ("a les paul" sorts first)
+    let (_, collection) = call(
+        &app,
+        &cookie,
+        Method::GET,
+        "/api/collection?sort=artist&sort_order=asc&per_page=100",
+        None,
+    )
+    .await;
+    let releases = collection["releases"].as_array().unwrap();
+    assert_eq!(releases[0]["id"], les_paul);
+    assert_eq!(releases[0]["sort_key"], "A Les Paul");
+    assert!(releases[1].get("sort_key").is_none());
+    assert_eq!(compartment_usage(&app, &cookie).await, vec![3, 2, 2, 1]);
+
+    let backup = export_backup(&app, &cookie).await;
+    let entry = backup["releases"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|r| r["id"] == les_paul)
+        .unwrap();
+    assert_eq!(entry["sort_key"], "A Les Paul");
+
+    // A blank value resets to the automatic key
+    let (status, detail) = call(
+        &app,
+        &cookie,
+        Method::PATCH,
+        &uri,
+        Some(json!({ "sort_key": " " })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(detail["sort_key"].is_null());
+    assert_eq!(detail["storage"]["compartment"], 4);
+
+    let (status, _) = call(
+        &app,
+        &cookie,
+        Method::PATCH,
+        &uri,
+        Some(json!({ "sort_key": "x".repeat(201) })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+
+    let (_, other_cookie) = create_user(&app).await;
+    let (status, _) = call(
+        &app,
+        &other_cookie,
+        Method::PATCH,
+        &uri,
+        Some(json!({ "sort_key": "Paul" })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+}

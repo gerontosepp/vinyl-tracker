@@ -458,6 +458,12 @@ export class CollectionComponent implements OnInit, OnDestroy {
     );
   }
 
+  /** A changed sort string moves the record in the artist order and on the shelf. */
+  onSortKeyUpdated(updated: RecordDetailDto): void {
+    this.recordDetail.set(updated);
+    this.loadData();
+  }
+
   onConditionUpdated(updated: RecordDetailDto): void {
     this.recordDetail.set(updated);
     if (this.selectedRecord()) {

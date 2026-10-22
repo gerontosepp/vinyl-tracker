@@ -169,6 +169,10 @@ export interface RecordDetailDto {
   added_at?: string;
   media_condition?: string;
   sleeve_condition?: string;
+  /** Custom sort string; null uses `default_sort_key`. */
+  sort_key?: string | null;
+  /** Automatic artist sort key (artist without a leading article). */
+  default_sort_key?: string | null;
   listen_count: number;
   last_listened_at?: string;
   lowest_price?: number;
@@ -196,6 +200,8 @@ export interface CollectionRelease {
   last_played_at?: string;
   media_condition?: string;
   sleeve_condition?: string;
+  /** Custom sort string replacing the automatic artist sort key. */
+  sort_key?: string;
   /** Computed shelf slot; absent when no shelf is configured for the medium. */
   storage?: StorageSlot;
 }

@@ -110,6 +110,7 @@ fn collection_release(storage: Option<StorageSlotDto>) -> CollectionRelease {
         sleeve_condition: None,
         last_played_at: None,
         notes: None,
+        sort_key: None,
         storage,
     }
 }

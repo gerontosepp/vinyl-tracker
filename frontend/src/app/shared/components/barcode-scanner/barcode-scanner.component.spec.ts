@@ -33,7 +33,7 @@ describe('BarcodeScannerComponent', () => {
       scanBarcode: vi.fn().mockName("ApiService.scanBarcode"),
       addReleaseToCollection: vi.fn().mockName("ApiService.addReleaseToCollection"),
       getProxiedImageUrl: vi.fn().mockName("ApiService.getProxiedImageUrl"),
-      getLabelPhotos: vi.fn().mockName("ApiService.getLabelPhotos").mockReturnValue(of({ photos: [], pendingCount: 0 }))
+      labelPhotosResource: vi.fn().mockName("ApiService.labelPhotosResource").mockReturnValue({ hasValue: () => true, value: () => ({ photos: [], pendingCount: 0 }) })
     } as unknown as MockedObject<ApiService>;
     apiServiceMock.getProxiedImageUrl.mockImplementation((url: string) => url);
 

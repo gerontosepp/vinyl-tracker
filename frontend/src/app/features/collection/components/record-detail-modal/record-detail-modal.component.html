@@ -364,12 +364,13 @@
               </h3>
               <form class="flex flex-wrap gap-2" (submit)="$event.preventDefault(); saveSortKey()">
                 <input
+                  #sortKeyInput
                   id="sort-key-input"
                   type="text"
                   maxlength="200"
                   autocomplete="off"
                   [value]="sortKeyValue()"
-                  (input)="onSortKeyInput($any($event.target).value)"
+                  (input)="sortKeyValue.set(sortKeyInput.value)"
                   [placeholder]="detail()?.default_sort_key || ''"
                   [disabled]="isSavingSortKey()"
                   class="flex-1 min-w-0 text-sm rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 py-1.5 px-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"

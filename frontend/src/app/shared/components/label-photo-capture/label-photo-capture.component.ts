@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, linkedSignal, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../../core/services/api.service';
@@ -28,10 +28,11 @@ import { getErrorMessage } from '../../../core/utils/error';
           <button
             type="button"
             (click)="openInbox()"
+            [attr.aria-label]="'scanner.labelInboxOpen' | translate: { count: pendingCount() }"
             class="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 border border-amber-200 dark:border-amber-800/50 hover:bg-amber-100 dark:hover:bg-amber-900/50 cursor-pointer"
             data-testid="label-inbox-count"
           >
-            {{ 'scanner.labelPhotoPending' | translate: { count: pendingCount() } }} ›
+            {{ 'scanner.labelPhotoPending' | translate: { count: pendingCount() } }} <span aria-hidden="true">›</span>
           </button>
         }
       </div>
@@ -64,7 +65,7 @@ import { getErrorMessage } from '../../../core/utils/error';
     </div>
   `,
 })
-export class LabelPhotoCaptureComponent implements OnInit {
+export class LabelPhotoCaptureComponent {
   private readonly apiService = inject(ApiService);
   private readonly toastService = inject(ToastService);
   private readonly languageService = inject(LanguageService);
@@ -72,17 +73,11 @@ export class LabelPhotoCaptureComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly scannerService = inject(ScannerService);
 
-  readonly pendingCount = signal(0);
+  /** Only the count is needed; a failed request just hides the optional badge. */
+  private readonly inbox = this.apiService.labelPhotosResource('pending', 1);
+  /** Loaded count, overridden by the count each upload returns. */
+  readonly pendingCount = linkedSignal(() => (this.inbox.hasValue() ? this.inbox.value().pendingCount : 0));
   readonly isUploading = signal(false);
-
-  async ngOnInit(): Promise<void> {
-    try {
-      const inbox = await firstValueFrom(this.apiService.getLabelPhotos('pending', 1));
-      this.pendingCount.set(inbox.pendingCount);
-    } catch {
-      // The badge is optional; the upload reports its own errors
-    }
-  }
 
   /** Closes the scanner and shows the queued photos. */
   openInbox(): void {

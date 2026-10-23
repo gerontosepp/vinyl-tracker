@@ -306,10 +306,6 @@ export class RecordDetailModalComponent implements OnInit {
     });
   }
 
-  onSortKeyInput(value: string): void {
-    this.sortKeyValue.set(value);
-  }
-
   saveSortKey(): void {
     if (this.sortKeyChanged()) this.submitSortKey(this.sortKeyValue().trim() || null);
   }

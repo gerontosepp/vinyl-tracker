@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpResourceRef, httpResource } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
   ScanResult,
@@ -52,11 +52,15 @@ export class ApiService {
     });
   }
 
-  getLabelPhotos(status?: LabelPhotoStatus, limit?: number): Observable<LabelPhotosResult> {
-    let params = new HttpParams();
-    if (status) params = params.set('status', status);
-    if (limit) params = params.set('limit', limit);
-    return this.http.get<LabelPhotosResult>(`${this.baseUrl}/label-photos`, { params });
+  /**
+   * Label photos as a signal-based resource; call it in an injection context (e.g. a component
+   * field initializer). Mutations go through {@link deleteLabelPhoto} / {@link uploadLabelPhoto}.
+   */
+  labelPhotosResource(status?: LabelPhotoStatus, limit?: number): HttpResourceRef<LabelPhotosResult | undefined> {
+    const params: Record<string, string | number> = {};
+    if (status) params['status'] = status;
+    if (limit) params['limit'] = limit;
+    return httpResource<LabelPhotosResult>(() => ({ url: `${this.baseUrl}/label-photos`, params }));
   }
 
   /** URL of a label photo; the session cookie authorizes the image request. */

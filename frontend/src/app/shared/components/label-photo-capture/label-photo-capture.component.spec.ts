@@ -2,6 +2,7 @@ import type { MockedObject } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpErrorResponse } from '@angular/common/http';
 import { of, throwError } from 'rxjs';
+import { signal } from '@angular/core';
 import { LabelPhotoCaptureComponent } from './label-photo-capture.component';
 import { ApiService } from '../../../core/services/api.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -18,9 +19,11 @@ describe('LabelPhotoCaptureComponent', () => {
   const downscaled = new Blob(['jpeg'], { type: 'image/jpeg' });
   let downscale: ReturnType<typeof vi.fn>;
 
-  async function setup(pendingCount = 2): Promise<void> {
+  /** `null` simulates an inbox request that failed. */
+  async function setup(pendingCount: number | null = 2): Promise<void> {
+    const inbox = signal(pendingCount === null ? undefined : { photos: [], pendingCount });
     apiServiceMock = {
-      getLabelPhotos: vi.fn().mockReturnValue(of({ photos: [], pendingCount })),
+      labelPhotosResource: vi.fn().mockReturnValue({ hasValue: () => inbox() !== undefined, value: inbox }),
       uploadLabelPhoto: vi.fn(),
     } as unknown as MockedObject<ApiService>;
     toastServiceMock = { showToast: vi.fn() } as unknown as MockedObject<ToastService>;
@@ -69,20 +72,22 @@ describe('LabelPhotoCaptureComponent', () => {
 
   it('shows the button and the number of open photos', async () => {
     await setup(2);
-    expect(apiServiceMock.getLabelPhotos).toHaveBeenCalledWith('pending', 1);
+    expect(apiServiceMock.labelPhotosResource).toHaveBeenCalledWith('pending', 1);
     expect(text()).toContain('Label fotografieren');
-    expect(fixture.nativeElement.querySelector('[data-testid="label-inbox-count"]').textContent).toContain(
-      '2 in der Inbox'
-    );
+    const badge = fixture.nativeElement.querySelector('[data-testid="label-inbox-count"]');
+    expect(badge.textContent).toContain('2 in der Inbox');
+    expect(badge.getAttribute('aria-label')).toBe('Label-Inbox öffnen (2 offen)');
   });
 
   it('hides the badge when the inbox is empty or cannot be loaded', async () => {
     await setup(0);
     expect(fixture.nativeElement.querySelector('[data-testid="label-inbox-count"]')).toBeNull();
+  });
 
-    apiServiceMock.getLabelPhotos.mockReturnValue(throwError(() => new Error('offline')));
-    await component.ngOnInit();
+  it('hides the badge when the inbox cannot be loaded', async () => {
+    await setup(null);
     expect(component.pendingCount()).toBe(0);
+    expect(fixture.nativeElement.querySelector('[data-testid="label-inbox-count"]')).toBeNull();
   });
 
   it('downscales and uploads the photo, then updates the count', async () => {

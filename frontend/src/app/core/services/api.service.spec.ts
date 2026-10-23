@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { ApplicationRef } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApiService } from './api.service';
@@ -37,14 +38,18 @@ describe('ApiService label photos', () => {
     req.flush({ id: 2, pendingCount: 1 });
   });
 
-  it('lists label photos with optional status and limit', () => {
-    service.getLabelPhotos('pending', 1).subscribe();
-    const filtered = http.expectOne((r) => r.url === '/api/label-photos');
-    expect(filtered.request.params.get('status')).toBe('pending');
-    expect(filtered.request.params.get('limit')).toBe('1');
-    filtered.flush({ photos: [], pendingCount: 0 });
+  it('loads label photos as a resource with optional status and limit', async () => {
+    const filtered = TestBed.runInInjectionContext(() => service.labelPhotosResource('pending', 1));
+    TestBed.tick();
+    const req = http.expectOne((r) => r.url === '/api/label-photos');
+    expect(req.request.params.get('status')).toBe('pending');
+    expect(req.request.params.get('limit')).toBe('1');
+    req.flush({ photos: [], pendingCount: 3 });
+    await TestBed.inject(ApplicationRef).whenStable();
+    expect(filtered.value()).toEqual({ photos: [], pendingCount: 3 });
 
-    service.getLabelPhotos().subscribe();
+    TestBed.runInInjectionContext(() => service.labelPhotosResource());
+    TestBed.tick();
     const all = http.expectOne((r) => r.url === '/api/label-photos');
     expect(all.request.params.keys()).toEqual([]);
     all.flush({ photos: [], pendingCount: 0 });

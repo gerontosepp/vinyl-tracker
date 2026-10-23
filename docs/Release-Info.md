@@ -11,6 +11,13 @@
 
 ---
 
+## v1.2.1 (2026-10-23)
+
+- **Stabilere Label-Inbox (`#227`)**: Kann die Label-Inbox nicht geladen werden, zeigt sie den Fehler direkt an und bietet **Erneut versuchen** an. Löschen-Buttons und der Inbox-Zähler sind für Screenreader eindeutig beschriftet.
+- **Schnellere Foto-Uploads (`#229`)**: Das Verkleinern hochgeladener Label-Fotos läuft getrennt vom übrigen Server und bremst parallele Anfragen nicht mehr aus; die Album-Details kommen mit einer Datenbankabfrage weniger aus.
+
+---
+
 ## v1.2.0 (2026-10-22)
 
 - **LP mit Bonus-CD als LP erkennen (`#223`)**: Releases mit Vinyl und beiliegender CD (z. B. *The Flaming Lips – With A Little Help From My Fwends*) wurden als CD eingestuft und im CD-Regal einsortiert. Sobald ein Release Vinyl enthält, gilt es jetzt als LP bzw. Doppel-LP; der nächste Discogs-Sync korrigiert bestehende Einträge.

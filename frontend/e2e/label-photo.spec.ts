@@ -111,4 +111,59 @@ test.describe('Label photo inbox', () => {
     await expect(page.getByTestId('label-inbox-empty')).toHaveText('The label inbox is empty.');
     expect(deleted).toEqual(['/api/label-photos/1', '/api/label-photos?status=pending']);
   });
+
+  test('confirms an automatically identified pressing from the inbox', async ({ page }) => {
+    const suggestion = {
+      best: {
+        discogsId: 1622788, confidence: 'high', reason: 'Katalognummer 30561 und Label Schneeball passen',
+        artist: 'Embryo (3)', title: "Embryo's Rache", label: 'Schneeball', catno: '30561',
+        country: 'Germany', year: '1996', inCollection: false,
+      },
+      alternatives: [],
+      hint: null,
+    };
+    let photos = [{
+      id: 7, status: 'pending', discogsId: null, createdAt: '2026-10-23T15:00:00Z', processedAt: null,
+      identifyState: 'done', identifyModel: 'anthropic/claude-sonnet-5.5', suggestion,
+    }];
+    let resolved: unknown;
+    await page.route('**/api/users/me/openrouter', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json',
+        body: JSON.stringify({ hasApiKey: true, model: 'anthropic/claude-sonnet-5.5', defaultModel: 'anthropic/claude-sonnet-5.5' }) })
+    );
+    await page.route('**/api/collection/releases/1622788', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
+        added: 1, removed: 0,
+        placement: {
+          discogsId: 1622788,
+          slot: { unitId: 1, unitName: 'Kallax_1', compartment: 4, row: 2, column: 1, oversized: false, unplaced: false },
+          neighbors: { previous: { discogsId: 867775, artist: 'Embryo (3)', title: 'Steig Aus' }, next: null },
+          moves: [],
+        },
+      }) })
+    );
+    await page.route('**/api/label-photos**', async (route) => {
+      const request = route.request();
+      const url = new URL(request.url());
+      if (url.pathname.endsWith('/image')) {
+        await route.fulfill({ status: 200, contentType: 'image/png', body: PNG });
+      } else if (request.method() === 'PATCH') {
+        resolved = request.postDataJSON();
+        photos = [];
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 7, status: 'identified' }) });
+      } else {
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ photos, pendingCount: photos.length }) });
+      }
+    });
+
+    await page.goto('/label-inbox');
+    const card = page.getByTestId('label-photo-suggestion');
+    await expect(card).toContainText("Embryo (3) – Embryo's Rache");
+    await expect(card).toContainText('Certain');
+
+    await page.getByTestId('label-photo-add').click();
+    await expect(page.getByTestId('label-inbox-placement')).toContainText('Kallax_1');
+    await expect(page.getByTestId('label-inbox-photo')).toHaveCount(0);
+    expect(resolved).toEqual({ status: 'identified', discogsId: 1622788 });
+  });
 });

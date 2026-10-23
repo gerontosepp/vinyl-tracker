@@ -15,6 +15,7 @@ import { RoonStatus } from '../../core/types';
 import { LucideDownload, LucideLogOut, LucideSettings, LucideHistory, LucideUpload, LucidePrinter } from '@lucide/angular';
 import { PrintDialogComponent } from '../../shared/components/print-dialog/print-dialog.component';
 import { ReleaseNotesComponent } from './components/release-notes/release-notes.component';
+import { OpenRouterSettingsComponent } from './components/openrouter-settings/openrouter-settings.component';
 import { APP_VERSION } from '../../core/constants/release-info.data';
 
 interface PendingRestore {
@@ -38,6 +39,7 @@ interface PendingRestore {
     LucidePrinter,
     PrintDialogComponent,
     ReleaseNotesComponent,
+    OpenRouterSettingsComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   template: `
@@ -365,6 +367,9 @@ interface PendingRestore {
                 </div>
               </form>
             </div>
+
+            <!-- Automatic label photo identification via OpenRouter -->
+            <app-openrouter-settings />
 
             <!-- Data Management -->
             <div

@@ -32,6 +32,8 @@ import {
   LabelPhotosResult,
   LabelPhotoUploadResult,
   LabelPhotoDeleteResult,
+  LabelPhoto,
+  OpenRouterSettings,
 } from '../types';
 
 @Injectable({
@@ -66,6 +68,26 @@ export class ApiService {
   /** URL of a label photo; the session cookie authorizes the image request. */
   labelPhotoImageUrl(id: number): string {
     return `${this.baseUrl}/label-photos/${id}/image`;
+  }
+
+  /** Queues a photo (again) for the automatic identification via OpenRouter. */
+  identifyLabelPhoto(id: number): Observable<LabelPhoto> {
+    return this.http.post<LabelPhoto>(`${this.baseUrl}/label-photos/${id}/identify`, {});
+  }
+
+  /** Completes a label photo, e.g. `identified` with the confirmed Discogs release. */
+  resolveLabelPhoto(id: number, status: LabelPhotoStatus, discogsId?: number): Observable<LabelPhoto> {
+    return this.http.patch<LabelPhoto>(`${this.baseUrl}/label-photos/${id}`, { status, discogsId: discogsId ?? null });
+  }
+
+  /** OpenRouter settings as a resource; call it in an injection context. */
+  openRouterSettingsResource(): HttpResourceRef<OpenRouterSettings | undefined> {
+    return httpResource<OpenRouterSettings>(() => `${this.baseUrl}/users/me/openrouter`);
+  }
+
+  /** `apiKey`: omit to keep, `''` to remove. `model`: `''` resets to the default. */
+  updateOpenRouterSettings(settings: { apiKey?: string; model?: string }): Observable<OpenRouterSettings> {
+    return this.http.put<OpenRouterSettings>(`${this.baseUrl}/users/me/openrouter`, settings);
   }
 
   deleteLabelPhoto(id: number): Observable<void> {

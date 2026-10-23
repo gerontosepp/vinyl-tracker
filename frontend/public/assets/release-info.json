@@ -8,10 +8,33 @@
     "items": []
   },
   {
+    "version": "v1.2.1",
+    "rawHeader": "v1.2.1 (2026-10-23)",
+    "date": "2026-10-23",
+    "isCurrent": true,
+    "isUnreleased": false,
+    "items": [
+      {
+        "title": "Stabilere Label-Inbox (`#227`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Kann die Label-Inbox nicht geladen werden, zeigt sie den Fehler direkt an und bietet **Erneut versuchen** an. Löschen-Buttons und der Inbox-Zähler sind für Screenreader eindeutig beschriftet.",
+        "details": []
+      },
+      {
+        "title": "Schnellere Foto-Uploads (`#229`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Das Verkleinern hochgeladener Label-Fotos läuft getrennt vom übrigen Server und bremst parallele Anfragen nicht mehr aus; die Album-Details kommen mit einer Datenbankabfrage weniger aus.",
+        "details": []
+      }
+    ]
+  },
+  {
     "version": "v1.2.0",
     "rawHeader": "v1.2.0 (2026-10-22)",
     "date": "2026-10-22",
-    "isCurrent": true,
+    "isCurrent": false,
     "isUnreleased": false,
     "items": [
       {

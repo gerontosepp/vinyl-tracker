@@ -4,6 +4,7 @@ use crate::{
         LabelPhotoDeleteDto, LabelPhotoDto, LabelPhotoStatus, LabelPhotoUploadDto, LabelPhotosDto,
     },
 };
+use bytes::Bytes;
 use chrono::NaiveDateTime;
 use image::{DynamicImage, ImageDecoder, ImageReader, codecs::jpeg::JpegEncoder};
 use sqlx::{PgPool, Row, postgres::PgRow};
@@ -49,9 +50,13 @@ impl LabelPhotoService {
     pub async fn create(
         pool: &PgPool,
         user_id: i64,
-        bytes: &[u8],
+        upload: Bytes,
     ) -> Result<LabelPhotoUploadDto, AppError> {
-        let jpeg = Self::normalize_image(bytes)?;
+        // Decoding and Lanczos resizing of a phone photo takes long enough to stall other
+        // requests on the async worker
+        let jpeg = tokio::task::spawn_blocking(move || Self::normalize_image(&upload))
+            .await
+            .map_err(|e| AppError::Internal(format!("Label photo processing failed: {e}")))??;
         let id: i64 = sqlx::query_scalar(
             "INSERT INTO label_photo (user_id, image, mime_type) VALUES ($1, $2, $3) RETURNING id",
         )
@@ -165,7 +170,7 @@ impl LabelPhotoService {
         .await
         .map_err(AppError::Database)?;
         Ok(LabelPhotoDeleteDto {
-            deleted: result.rows_affected() as i64,
+            deleted: i64::try_from(result.rows_affected()).unwrap_or(i64::MAX),
             pending_count: Self::pending_count(pool, user_id).await?,
         })
     }

@@ -66,7 +66,7 @@ async fn upload_photo(
     if body.is_empty() {
         return Err(AppError::BadRequest("Image body is required".to_string()));
     }
-    let created = LabelPhotoService::create(&state.pool, user.id, &body).await?;
+    let created = LabelPhotoService::create(&state.pool, user.id, body).await?;
     Ok((StatusCode::CREATED, Json(created)))
 }
 

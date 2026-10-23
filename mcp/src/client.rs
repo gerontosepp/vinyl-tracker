@@ -816,7 +816,10 @@ impl VinylApiClient {
     }
 
     /// Returns the image bytes of a label photo and their MIME type.
-    pub async fn get_label_photo_image(&self, id: i64) -> Result<(Vec<u8>, String), String> {
+    pub async fn get_label_photo_image(
+        &self,
+        id: i64,
+    ) -> Result<(impl AsRef<[u8]> + use<>, String), String> {
         self.ensure_authenticated().await?;
         let url = format!("{}/api/label-photos/{}/image", self.base_url, id);
         let res = self
@@ -837,7 +840,7 @@ impl VinylApiClient {
             .bytes()
             .await
             .map_err(|e| format!("Failed to read label photo image: {}", e))?;
-        Ok((bytes.to_vec(), mime_type))
+        Ok((bytes, mime_type))
     }
 
     pub async fn update_label_photo(

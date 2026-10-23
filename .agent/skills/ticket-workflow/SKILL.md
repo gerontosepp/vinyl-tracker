@@ -121,7 +121,21 @@ At the end of every feature or fix, bring the local Docker stack to the new stat
 
 ---
 
-## 7. Commit, Push & Pull Request
+## 7. Code Review
+
+Before committing, review the change with fresh eyes – tests and linters do not catch design problems (e.g. CPU-heavy work on an async worker, an extra database round trip).
+
+1. **When**: for every change to `backend/`, `frontend/src/`, `mcp/` or `backend/migrations/`. Skip it for docs-only changes, OpenSpec archive PRs and release version bumps.
+2. **Review the branch diff** against `develop` with the `code-review` skill:
+   - effort `medium` by default,
+   - effort `high` for migrations, new endpoints, auth/security changes or changes to the MCP tool contract.
+3. **Stack-specific checks**: apply the `angular-developer` skill to Angular code and the `rust-best-practices` skill to Rust code (backend and MCP).
+4. **Handle the findings**: fix confirmed issues on the same branch and re-run the tests (section 4). Findings that are deliberately not addressed go into the PR body with a reason.
+5. **Large features**: suggest `/code-review ultra` (multi-agent review in the cloud) to the user – it is billed and only the user can start it.
+
+---
+
+## 8. Commit, Push & Pull Request
 
 `develop` and `main` are protected – never push to them directly; every change goes through a PR against `develop`.
 
@@ -135,7 +149,7 @@ At the end of every feature or fix, bring the local Docker stack to the new stat
    git push -u origin feat/<ISSUE_ID>-<short-description>
    gh pr create --base develop --title "feat(scope): <short description> (#<ISSUE_ID>)" --body "Closes #<ISSUE_ID> ..."
    ```
-   The PR body lists the changes and the local test results.
+   The PR body lists the changes, the local test results and a **Review** section (effort level, fixed findings, deliberately open points – see section 7).
 3. **Wait for CI** (backend, frontend, MCP jobs on the self-hosted runners, ~10 min):
    ```bash
    gh pr checks <PR> --watch
@@ -144,7 +158,7 @@ At the end of every feature or fix, bring the local Docker stack to the new stat
 
 ---
 
-## 8. Merge (only on explicit user instruction)
+## 9. Merge (only on explicit user instruction)
 
 **CRITICAL**: Never merge without an explicit instruction from the user (e.g. "merge #123"). A green CI is not an approval.
 
@@ -163,7 +177,7 @@ At the end of every feature or fix, bring the local Docker stack to the new stat
 
 ---
 
-## 9. Parallel PRs & Release-Info Conflicts
+## 10. Parallel PRs & Release-Info Conflicts
 
 Every PR adds its entry at the top of `## Unreleased` in `docs/Release-Info.md` and regenerates `release-info.data.ts` / `release-info.json`, so two open PRs always conflict there. After the first one is merged, rebase the other:
 

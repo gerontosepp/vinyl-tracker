@@ -2,6 +2,7 @@ use backend_rs::{
     config::Config,
     db::{init_pool, migrations::run_migrations},
     routes::create_app,
+    services::label_photo_service::LabelPhotoService,
     state::AppState,
 };
 use std::net::SocketAddr;
@@ -42,6 +43,13 @@ async fn main() -> anyhow::Result<()> {
     if let Err(e) = run_migrations(&pool).await {
         tracing::error!("Migration failed: {e}");
         return Err(anyhow::anyhow!("Database migration failure: {e}"));
+    }
+
+    // Identifications cut off by the restart are reported as errors the user can retry
+    match LabelPhotoService::fail_interrupted_identifications(&pool).await {
+        Ok(0) => {}
+        Ok(n) => tracing::warn!("{n} interrupted label identification(s) marked as failed"),
+        Err(e) => tracing::error!("Failed to reset interrupted label identifications: {e}"),
     }
 
     // 6. Assemble AppState and Router

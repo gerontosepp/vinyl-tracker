@@ -244,7 +244,10 @@ pub use vinyl_api_types::{
     },
     collection::{CollectionRelease, CollectionResponse, PriceRefreshResultDto, SyncResultDto},
     discogs::DiscogsSearchResponse,
-    label_photo::{LabelPhotoDto, LabelPhotoStatus, LabelPhotosDto, UpdateLabelPhotoRequest},
+    label_photo::{
+        LABEL_READING_STEPS, LabelPhotoDto, LabelPhotoStatus, LabelPhotosDto,
+        UpdateLabelPhotoRequest,
+    },
     record::{RecordDetailDto, UpdateConditionRequestDto},
     roon::{RoonPlayRequestDto, RoonPlayResponseDto, RoonStatusDto, RoonZoneDto},
     scan::{ResetResultDto, ScanRequest, ScanResultDto},

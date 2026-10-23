@@ -2,10 +2,13 @@ use crate::{
     auth::{CurrentUser, client_ip::resolve_client_ip},
     config::Config,
     error::AppError,
-    models::user::{
-        LoginRequestDto, RegisterRequestDto, ResetPasswordRequestDto, UpdateDiscogsRequestDto,
+    models::{
+        label_photo::{OpenRouterSettingsDto, UpdateOpenRouterSettingsRequest},
+        user::{
+            LoginRequestDto, RegisterRequestDto, ResetPasswordRequestDto, UpdateDiscogsRequestDto,
+        },
     },
-    services::user_service::UserService,
+    services::{openrouter_settings_service::OpenRouterSettingsService, user_service::UserService},
     state::AppState,
 };
 use axum::{
@@ -126,6 +129,25 @@ pub async fn update_discogs_handler(
     Ok((StatusCode::OK, Json(dto)))
 }
 
+pub async fn get_openrouter_handler(
+    State(state): State<AppState>,
+    CurrentUser(user): CurrentUser,
+) -> Result<Json<OpenRouterSettingsDto>, AppError> {
+    Ok(Json(
+        OpenRouterSettingsService::get(&state.pool, &state.crypto, user.id).await?,
+    ))
+}
+
+pub async fn update_openrouter_handler(
+    State(state): State<AppState>,
+    CurrentUser(user): CurrentUser,
+    Json(payload): Json<UpdateOpenRouterSettingsRequest>,
+) -> Result<Json<OpenRouterSettingsDto>, AppError> {
+    Ok(Json(
+        OpenRouterSettingsService::update(&state.pool, &state.crypto, user.id, payload).await?,
+    ))
+}
+
 pub async fn reset_password_handler(
     State(state): State<AppState>,
     Json(payload): Json<ResetPasswordRequestDto>,
@@ -165,5 +187,9 @@ pub fn router(state: &AppState) -> Router<AppState> {
         .merge(rate_limited_routes)
         .route("/me", get(get_me_handler))
         .route("/me/discogs", put(update_discogs_handler))
+        .route(
+            "/me/openrouter",
+            get(get_openrouter_handler).put(update_openrouter_handler),
+        )
         .route("/logout", post(logout_handler))
 }

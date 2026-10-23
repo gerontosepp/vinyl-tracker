@@ -1,12 +1,14 @@
 use crate::{
     error::AppError,
     models::label_photo::{
-        LabelPhotoDeleteDto, LabelPhotoDto, LabelPhotoStatus, LabelPhotoUploadDto, LabelPhotosDto,
+        LabelIdentifyState, LabelPhotoDeleteDto, LabelPhotoDto, LabelPhotoStatus,
+        LabelPhotoUploadDto, LabelPhotosDto, LabelSuggestion,
     },
 };
 use bytes::Bytes;
 use chrono::NaiveDateTime;
 use image::{DynamicImage, ImageDecoder, ImageReader, codecs::jpeg::JpegEncoder};
+use sqlx::types::Json;
 use sqlx::{PgPool, Row, postgres::PgRow};
 use std::io::Cursor;
 
@@ -14,6 +16,9 @@ use std::io::Cursor;
 pub const MAX_EDGE_PX: u32 = 1568;
 const JPEG_QUALITY: u8 = 85;
 const STORED_MIME_TYPE: &str = "image/jpeg";
+/// Columns of [`to_dto`].
+const DTO_COLUMNS: &str = "id, status, discogs_id, created_at, processed_at, identify_state, \
+                           suggestion, identify_error, identify_model";
 
 pub struct LabelPhotoService;
 
@@ -47,10 +52,12 @@ impl LabelPhotoService {
         Ok(out)
     }
 
+    /// Stores the photo; with `identify` it is queued for the automatic identification.
     pub async fn create(
         pool: &PgPool,
         user_id: i64,
         upload: Bytes,
+        identify: bool,
     ) -> Result<LabelPhotoUploadDto, AppError> {
         // Decoding and Lanczos resizing of a phone photo takes long enough to stall other
         // requests on the async worker
@@ -58,11 +65,13 @@ impl LabelPhotoService {
             .await
             .map_err(|e| AppError::Internal(format!("Label photo processing failed: {e}")))??;
         let id: i64 = sqlx::query_scalar(
-            "INSERT INTO label_photo (user_id, image, mime_type) VALUES ($1, $2, $3) RETURNING id",
+            "INSERT INTO label_photo (user_id, image, mime_type, identify_state)
+             VALUES ($1, $2, $3, $4) RETURNING id",
         )
         .bind(user_id)
         .bind(&jpeg)
         .bind(STORED_MIME_TYPE)
+        .bind(identify.then_some(LabelIdentifyState::Queued.as_str()))
         .fetch_one(pool)
         .await
         .map_err(AppError::Database)?;
@@ -70,6 +79,7 @@ impl LabelPhotoService {
         Ok(LabelPhotoUploadDto {
             id,
             pending_count: Self::pending_count(pool, user_id).await?,
+            identifying: identify,
         })
     }
 
@@ -79,13 +89,13 @@ impl LabelPhotoService {
         status: Option<LabelPhotoStatus>,
         limit: i64,
     ) -> Result<LabelPhotosDto, AppError> {
-        let rows = sqlx::query(
-            "SELECT id, status, discogs_id, created_at, processed_at
+        let rows = sqlx::query(&format!(
+            "SELECT {DTO_COLUMNS}
              FROM label_photo
              WHERE user_id = $1 AND ($2::text IS NULL OR status = $2)
              ORDER BY created_at, id
-             LIMIT $3",
-        )
+             LIMIT $3"
+        ))
         .bind(user_id)
         .bind(status.map(LabelPhotoStatus::as_str))
         .bind(limit)
@@ -123,14 +133,14 @@ impl LabelPhotoService {
         status: LabelPhotoStatus,
         discogs_id: Option<i64>,
     ) -> Result<LabelPhotoDto, AppError> {
-        let row = sqlx::query(
+        let row = sqlx::query(&format!(
             "UPDATE label_photo
              SET status = $3,
                  discogs_id = $4,
                  processed_at = CASE WHEN $3 = 'pending' THEN NULL ELSE NOW() AT TIME ZONE 'UTC' END
              WHERE id = $1 AND user_id = $2
-             RETURNING id, status, discogs_id, created_at, processed_at",
-        )
+             RETURNING {DTO_COLUMNS}"
+        ))
         .bind(id)
         .bind(user_id)
         .bind(status.as_str())
@@ -175,6 +185,123 @@ impl LabelPhotoService {
         })
     }
 
+    /// Queues an open photo again for the automatic identification (e.g. after an error). A photo
+    /// that is still queued or running is not queued twice, which would pay for two runs.
+    pub async fn queue_identification(
+        pool: &PgPool,
+        user_id: i64,
+        id: i64,
+    ) -> Result<LabelPhotoDto, AppError> {
+        let current: Option<(String, Option<String>)> = sqlx::query_as(
+            "SELECT status, identify_state FROM label_photo WHERE id = $1 AND user_id = $2",
+        )
+        .bind(id)
+        .bind(user_id)
+        .fetch_optional(pool)
+        .await
+        .map_err(AppError::Database)?;
+        match current {
+            None => return Err(not_found(id)),
+            Some((status, _)) if status != LabelPhotoStatus::Pending.as_str() => {
+                return Err(AppError::Conflict(format!(
+                    "Label photo {id} is already completed"
+                )));
+            }
+            Some((_, Some(state))) if state == "queued" || state == "running" => {
+                return Err(AppError::Conflict(format!(
+                    "Label photo {id} is already being identified"
+                )));
+            }
+            Some(_) => {}
+        }
+        let row = sqlx::query(&format!(
+            "UPDATE label_photo
+             SET identify_state = 'queued', identify_error = NULL
+             WHERE id = $1 AND user_id = $2 AND status = 'pending'
+               AND (identify_state IS NULL OR identify_state IN ('done', 'error'))
+             RETURNING {DTO_COLUMNS}"
+        ))
+        .bind(id)
+        .bind(user_id)
+        .fetch_optional(pool)
+        .await
+        .map_err(AppError::Database)?
+        .ok_or_else(|| not_found(id))?;
+        to_dto(&row)
+    }
+
+    /// Marks a queued photo as running; `false` if it is no longer queued (deleted, resolved).
+    pub async fn start_identification(pool: &PgPool, id: i64) -> Result<bool, AppError> {
+        let result = sqlx::query(
+            "UPDATE label_photo SET identify_state = 'running'
+             WHERE id = $1 AND identify_state = 'queued' AND status = 'pending'",
+        )
+        .bind(id)
+        .execute(pool)
+        .await
+        .map_err(AppError::Database)?;
+        Ok(result.rows_affected() == 1)
+    }
+
+    pub async fn finish_identification(
+        pool: &PgPool,
+        id: i64,
+        model: &str,
+        outcome: Result<&LabelSuggestion, &str>,
+    ) -> Result<(), AppError> {
+        let (state, suggestion, error) = match outcome {
+            Ok(suggestion) => (LabelIdentifyState::Done, Some(Json(suggestion)), None),
+            Err(message) => (LabelIdentifyState::Error, None, Some(message)),
+        };
+        sqlx::query(
+            "UPDATE label_photo
+             SET identify_state = $2, suggestion = COALESCE($3, suggestion), identify_error = $4,
+                 identify_model = $5, identified_at = NOW() AT TIME ZONE 'UTC'
+             WHERE id = $1 AND identify_state = 'running'",
+        )
+        .bind(id)
+        .bind(state.as_str())
+        .bind(suggestion)
+        .bind(error)
+        .bind(model)
+        .execute(pool)
+        .await
+        .map_err(AppError::Database)?;
+        Ok(())
+    }
+
+    /// Ends a queued or running identification that failed outside the normal flow (database
+    /// error, panic), so the photo does not stay "running".
+    pub async fn abort_identification(
+        pool: &PgPool,
+        id: i64,
+        message: &str,
+    ) -> Result<(), AppError> {
+        sqlx::query(
+            "UPDATE label_photo SET identify_state = 'error', identify_error = $2
+             WHERE id = $1 AND identify_state IN ('queued', 'running')",
+        )
+        .bind(id)
+        .bind(message)
+        .execute(pool)
+        .await
+        .map_err(AppError::Database)?;
+        Ok(())
+    }
+
+    /// Identifications cut off by a restart cannot resume; they become errors to retry.
+    pub async fn fail_interrupted_identifications(pool: &PgPool) -> Result<u64, AppError> {
+        let result = sqlx::query(
+            "UPDATE label_photo
+             SET identify_state = 'error', identify_error = 'Interrupted by a server restart'
+             WHERE identify_state IN ('queued', 'running')",
+        )
+        .execute(pool)
+        .await
+        .map_err(AppError::Database)?;
+        Ok(result.rows_affected())
+    }
+
     async fn pending_count(pool: &PgPool, user_id: i64) -> Result<i64, AppError> {
         sqlx::query_scalar(
             "SELECT COUNT(*) FROM label_photo WHERE user_id = $1 AND status = 'pending'",
@@ -197,6 +324,7 @@ fn iso_utc(ts: NaiveDateTime) -> String {
 
 fn to_dto(row: &PgRow) -> Result<LabelPhotoDto, AppError> {
     let status: String = row.get("status");
+    let identify_state: Option<String> = row.get("identify_state");
     Ok(LabelPhotoDto {
         id: row.get("id"),
         status: LabelPhotoStatus::parse(&status)
@@ -206,6 +334,14 @@ fn to_dto(row: &PgRow) -> Result<LabelPhotoDto, AppError> {
         processed_at: row
             .get::<Option<NaiveDateTime>, _>("processed_at")
             .map(iso_utc),
+        identify_state: identify_state
+            .as_deref()
+            .and_then(LabelIdentifyState::parse),
+        suggestion: row
+            .get::<Option<Json<LabelSuggestion>>, _>("suggestion")
+            .map(|Json(suggestion)| suggestion),
+        identify_error: row.get("identify_error"),
+        identify_model: row.get("identify_model"),
     })
 }
 

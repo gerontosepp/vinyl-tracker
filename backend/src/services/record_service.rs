@@ -38,15 +38,16 @@ impl RecordService {
             .as_deref()
             .and_then(|enc| crypto.decrypt(enc));
 
-        // 1. Look up existing local record
-        let record_row = sqlx::query(
+        // 1. Look up existing local record (incl. the automatic sort key of its stored artist)
+        let record_row = sqlx::query(&format!(
             "SELECT id, discogs_id, title, artist, release_year, thumb_url, format,
                     lowest_price::float8 as lowest_price,
-                    median_price::float8 as median_price
-             FROM record_cache
+                    median_price::float8 as median_price,
+                    {DEFAULT_ARTIST_KEY_SQL} AS default_sort_key
+             FROM record_cache rc
              WHERE id = $1 OR discogs_id = $1
-             LIMIT 1",
-        )
+             LIMIT 1"
+        ))
         .bind(id_param)
         .fetch_optional(pool)
         .await
@@ -272,23 +273,9 @@ impl RecordService {
         let country: Option<String> = discogs_release.as_ref().and_then(|r| r.country.clone());
         let released: Option<String> = discogs_release.as_ref().and_then(|r| r.released.clone());
 
-        // The shelf order sorts by the stored artist name, the displayed one may come from Discogs
-        let sort_artist: Option<String> = record_row
-            .as_ref()
-            .and_then(|r| r.get("artist"))
-            .or_else(|| artist.clone());
-        let default_sort_key = match sort_artist.as_deref() {
-            Some(name) => Some(
-                sqlx::query_scalar::<_, String>(&format!(
-                    "SELECT {DEFAULT_ARTIST_KEY_SQL} FROM (SELECT $1::text AS artist) rc"
-                ))
-                .bind(name)
-                .fetch_one(pool)
-                .await
-                .map_err(AppError::Database)?,
-            ),
-            None => None,
-        };
+        // Only cached records can be in the collection and thus on a shelf
+        let default_sort_key: Option<String> =
+            record_row.as_ref().and_then(|r| r.get("default_sort_key"));
 
         let placement = if in_collection {
             StorageService::placement_for_record(pool, user.id, discogs_id).await?

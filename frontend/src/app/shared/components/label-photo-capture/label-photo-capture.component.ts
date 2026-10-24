@@ -96,7 +96,9 @@ export class LabelPhotoCaptureComponent {
       const result = await firstValueFrom(this.apiService.uploadLabelPhoto(photo));
       this.pendingCount.set(result.pendingCount);
       this.toastService.showToast(
-        this.languageService.translate('scanner.labelPhotoSaved', { count: result.pendingCount }),
+        result.identifying
+          ? this.languageService.translate('scanner.labelPhotoIdentifying')
+          : this.languageService.translate('scanner.labelPhotoSaved', { count: result.pendingCount }),
         'success'
       );
     } catch (error) {

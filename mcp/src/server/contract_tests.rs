@@ -149,6 +149,10 @@ fn label_photo(id: i64, status: LabelPhotoStatus, discogs_id: Option<i64>) -> La
         discogs_id,
         created_at: "2026-10-22T09:00:00Z".to_string(),
         processed_at: None,
+        identify_state: None,
+        suggestion: None,
+        identify_error: None,
+        identify_model: None,
     }
 }
 

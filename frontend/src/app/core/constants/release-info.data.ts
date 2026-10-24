@@ -12,7 +12,15 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "tag": "In Entwicklung",
     "isCurrent": false,
     "isUnreleased": true,
-    "items": []
+    "items": [
+      {
+        "title": "Plattenerkennung direkt in der App (`#235`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Mit einem eigenen [OpenRouter](https://openrouter.ai)-API-Key (Einstellungen → **Label-Erkennung**) erkennt die App fotografierte Labels selbst. Nach dem Foto schlägt die Label-Inbox die passende Pressung mit Cover, Katalognummer, Sicherheit, Begründung und Alternativen vor; **Hinzufügen** übernimmt sie in die Sammlung und zeigt den Regalplatz, **Nur abschließen** markiert das Foto. Das Modell ist wählbar (Standard Claude Sonnet, günstiger Claude Haiku) und kann nur suchen, nie selbst etwas ändern. Ohne Key bleibt der Weg über den MCP-Prompt.",
+        "details": []
+      }
+    ]
   },
   {
     "version": "v1.2.1",

@@ -418,13 +418,50 @@ export interface RedistributePreview {
 /** Status of a label photo in the inbox (`/api/label-photos`). */
 export type LabelPhotoStatus = 'pending' | 'identified' | 'failed';
 
-/** A label photo waiting to be identified by Claude via MCP. */
+/** State of the automatic identification via OpenRouter; absent when none was requested. */
+export type LabelIdentifyState = 'queued' | 'running' | 'done' | 'error';
+
+export type LabelMatchConfidence = 'high' | 'medium' | 'low';
+
+/** A Discogs release proposed for a label photo. */
+export interface LabelCandidate {
+  discogsId: number;
+  confidence: LabelMatchConfidence;
+  reason: string;
+  artist?: string | null;
+  title?: string | null;
+  year?: string | null;
+  country?: string | null;
+  label?: string | null;
+  catno?: string | null;
+  thumbUrl?: string | null;
+  inCollection: boolean;
+}
+
+export interface LabelSuggestion {
+  best: LabelCandidate;
+  alternatives: LabelCandidate[];
+  hint?: string | null;
+}
+
+/** A label photo waiting to be identified (automatically via OpenRouter or by Claude via MCP). */
 export interface LabelPhoto {
   id: number;
   status: LabelPhotoStatus;
   discogsId: number | null;
   createdAt: string;
   processedAt: string | null;
+  identifyState?: LabelIdentifyState;
+  suggestion?: LabelSuggestion;
+  identifyError?: string;
+  identifyModel?: string;
+}
+
+/** OpenRouter settings for the automatic label identification; the key is never returned. */
+export interface OpenRouterSettings {
+  hasApiKey: boolean;
+  model: string;
+  defaultModel: string;
 }
 
 export interface LabelPhotosResult {
@@ -435,6 +472,8 @@ export interface LabelPhotosResult {
 export interface LabelPhotoUploadResult {
   id: number;
   pendingCount: number;
+  /** `true` when the photo is identified automatically. */
+  identifying?: boolean;
 }
 
 export interface LabelPhotoDeleteResult {

@@ -110,6 +110,19 @@ describe('LabelPhotoCaptureComponent', () => {
     );
   });
 
+  it('announces the automatic identification when the backend starts it', async () => {
+    await setup(0);
+    apiServiceMock.uploadLabelPhoto.mockReturnValue(of({ id: 9, pendingCount: 1, identifying: true }));
+    const { event } = selectFile(new File(['raw'], 'label.jpg', { type: 'image/jpeg' }));
+
+    await component.onFileSelected(event);
+
+    expect(toastServiceMock.showToast).toHaveBeenCalledWith(
+      'Foto gespeichert – die Platte wird erkannt. Den Vorschlag findest du in der Label-Inbox.',
+      'success'
+    );
+  });
+
   it('reports upload errors as toast and keeps the count', async () => {
     await setup(2);
     apiServiceMock.uploadLabelPhoto.mockReturnValue(

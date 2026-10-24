@@ -9,6 +9,7 @@
 
 ## Unreleased
 
+- **Fix: Fotos in der Label-Inbox wieder sichtbar (`#238`)**: Einen Tag nach der Anmeldung zeigte die Label-Inbox statt der Fotos nur noch schwarze Flächen – das Bild wurde ohne Anmeldedaten geladen, sobald das Anmelde-Cookie abgelaufen war. Die Fotos werden jetzt wie alle anderen Daten mit dem Login-Token geladen.
 - **Plattenerkennung direkt in der App (`#235`)**: Mit einem eigenen [OpenRouter](https://openrouter.ai)-API-Key (Einstellungen → **Label-Erkennung**) erkennt die App fotografierte Labels selbst. Nach dem Foto schlägt die Label-Inbox die passende Pressung mit Cover, Katalognummer, Sicherheit, Begründung und Alternativen vor; **Hinzufügen** übernimmt sie in die Sammlung und zeigt den Regalplatz, **Nur abschließen** markiert das Foto. Das Modell ist wählbar (Standard Claude Sonnet, günstiger Claude Haiku) und kann nur suchen, nie selbst etwas ändern. Ohne Key bleibt der Weg über den MCP-Prompt.
 ---
 

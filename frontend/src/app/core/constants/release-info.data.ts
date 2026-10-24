@@ -14,6 +14,13 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "isUnreleased": true,
     "items": [
       {
+        "title": "Fix: Fotos in der Label-Inbox wieder sichtbar (`#238`)",
+        "type": "fix",
+        "typeLabel": "Fix",
+        "summary": "Einen Tag nach der Anmeldung zeigte die Label-Inbox statt der Fotos nur noch schwarze Flächen – das Bild wurde ohne Anmeldedaten geladen, sobald das Anmelde-Cookie abgelaufen war. Die Fotos werden jetzt wie alle anderen Daten mit dem Login-Token geladen.",
+        "details": []
+      },
+      {
         "title": "Plattenerkennung direkt in der App (`#235`)",
         "type": "feat",
         "typeLabel": "Feature",

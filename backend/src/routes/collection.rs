@@ -5,7 +5,7 @@ use crate::{
     services::{
         collection_query::CollectionQueryService, collection_restore::CollectionRestoreService,
         collection_sync::CollectionSyncService, export_service::ExportService,
-        storage::backup::StorageBackupService,
+        manual_record_service::ManualRecordService, storage::backup::StorageBackupService,
     },
     state::AppState,
 };
@@ -201,11 +201,13 @@ pub async fn export_collection_handler(
             let listen_history =
                 CollectionQueryService::get_listen_history(&state.pool, user.id, &discogs_ids)
                     .await?;
+            let manual = ManualRecordService::backup_data(&state.pool, user.id).await?;
             let storage = StorageBackupService::export(&state.pool, user.id).await?;
             let json_bytes = ExportService::export_collection_json(
                 &user.username,
                 &releases,
                 &listen_history,
+                &manual,
                 storage.as_ref(),
             )?;
             Ok((
@@ -224,10 +226,12 @@ pub async fn export_collection_handler(
             ))
         }
         "pdf" => {
+            let local_covers = ManualRecordService::covers(&state.pool, user.id).await?;
             let pdf_bytes = ExportService::export_collection_pdf(
                 &user.username,
                 &releases,
                 Some(&state.image_proxy),
+                &local_covers,
             )
             .await?;
             Ok((
@@ -249,7 +253,8 @@ pub async fn export_collection_handler(
 }
 
 /// JSON backups of large collections exceed Axum's default body limit of 2 MB.
-const RESTORE_BODY_LIMIT: usize = 25 * 1024 * 1024;
+/// Backups include the covers of manual records (format version 4).
+const RESTORE_BODY_LIMIT: usize = 64 * 1024 * 1024;
 
 /// Merges a JSON backup (from `/export?format=json`) into the user's collection.
 pub async fn restore_collection_handler(

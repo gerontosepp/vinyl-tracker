@@ -85,4 +85,4 @@ Neue ADRs werden nach folgendem Schema unter `docs/adr/XXXX-titel.md` angelegt:
 * ...
 ```
 | [ADR-0022](0022-label-erkennung-in-der-app-ueber-openrouter.md) | 2026-10-23 | Label-Erkennung in der App über OpenRouter | `Accepted` |
-| [ADR-0023](0023-manuelle-platten-mit-negativen-lokalen-ids.md) | 2026-10-24 | Manuelle Platten mit negativen lokalen IDs | `Proposed` |
+| [ADR-0023](0023-manuelle-platten-mit-negativen-lokalen-ids.md) | 2026-10-24 | Manuelle Platten mit negativen lokalen IDs | `Accepted` |

@@ -1,4 +1,5 @@
 use crate::discogs::{DiscogsArtist, DiscogsFormat, DiscogsLabel, DiscogsPagination, DiscogsTrack};
+use crate::record::RecordSource;
 use crate::storage::{StoragePlacementDto, StorageSlotDto};
 use serde::{Deserialize, Serialize};
 
@@ -59,6 +60,8 @@ pub struct CollectionRelease {
     /// Computed storage slot; `None` when no shelf is configured for the medium.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub storage: Option<StorageSlotDto>,
+    #[serde(default)]
+    pub source: RecordSource,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

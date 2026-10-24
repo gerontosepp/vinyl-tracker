@@ -193,4 +193,15 @@ describe('CollectionTableComponent', () => {
     const cells: HTMLElement[] = Array.from(fixture.nativeElement.querySelectorAll('[data-testid="storage-cell"]'));
     expect(cells.map((c) => c.textContent?.trim())).toEqual(['Kallax-1 · 3', '—', 'Ohne Platz']);
   });
+
+  it('marks manual records and links only Discogs releases to Discogs', () => {
+    fixture.componentRef.setInput('releases', [mockRelease, { ...mockRelease, id: -3, instance_id: -3, source: 'manual' }]);
+    fixture.detectChanges();
+
+    const rows = fixture.nativeElement.querySelectorAll('tbody tr');
+    expect(rows[0].querySelector('app-manual-badge')).toBeNull();
+    expect(rows[0].querySelector('a[href^="https://www.discogs.com/release/12345"]')).not.toBeNull();
+    expect(rows[1].querySelector('app-manual-badge')).not.toBeNull();
+    expect(rows[1].querySelector('a[href*="discogs.com"]')).toBeNull();
+  });
 });

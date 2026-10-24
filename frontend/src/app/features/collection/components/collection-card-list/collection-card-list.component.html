@@ -80,6 +80,9 @@
 
         <span class="shrink-0 flex flex-col items-end gap-1">
           <app-format-badge [format]="getFormatType(release)" [compact]="true" />
+          @if (release.source === 'manual') {
+            <app-manual-badge />
+          }
           <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400" [title]="(release.listen_count || 0) + ' plays'">
             {{ release.listen_count || 0 }}×
           </span>

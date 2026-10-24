@@ -90,6 +90,8 @@ pub fn create_app(state: AppState) -> Router {
         .nest("/api/collection", collection::router())
         // Record details and listen endpoints (nested under /api/records)
         .nest("/api/records", records::router())
+        // Covers of manual records, public by unguessable UUID (used in <img> tags)
+        .route("/api/covers/{uid}", get(records::get_cover))
         // Barcode and QR code scanning endpoints (nested under /api/scan)
         .nest("/api/scan", scan::router())
         // Discogs search endpoint (nested under /api/discogs)

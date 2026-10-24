@@ -32,6 +32,14 @@ describe('SidebarComponent', () => {
     expect(component).toBeTruthy();
   });
 
+  it('links to the help page and closes the scanner', () => {
+    const help: HTMLAnchorElement = fixture.nativeElement.querySelector('[data-testid="nav-help"]');
+    expect(help.getAttribute('href')).toBe('/help');
+    expect(help.textContent?.trim()).toBeTruthy();
+    help.click();
+    expect(mockScannerService.closeScanner).toHaveBeenCalled();
+  });
+
   it('should not render a separate settings button (settings are reached via Profile)', () => {
     const el: HTMLElement = fixture.nativeElement;
     expect(el.querySelector('[routerLink="/settings"], [ng-reflect-router-link="/settings"]')).toBeNull();

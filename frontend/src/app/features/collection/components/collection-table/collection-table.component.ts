@@ -9,11 +9,13 @@ import { CollectionRelease, QrCodeItem } from '../../../../core/types';
 import { getFormatType, FormatType } from '../../utils/format-type.util';
 import { getConditionShortCode } from '../../utils/condition.util';
 import { LucideCheckSquare, LucideSquare, LucideExternalLink } from '@lucide/angular';
+import { TooltipDirective } from '../../../../shared/directives/tooltip.directive';
 
 @Component({
   selector: 'app-collection-table',
   standalone: true,
   imports: [
+    TooltipDirective,
     CommonModule,
     TranslatePipe,
     LocalizedDatePipe,

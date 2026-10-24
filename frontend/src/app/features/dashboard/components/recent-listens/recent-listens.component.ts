@@ -4,11 +4,12 @@ import { ListenEvent, TrackedRecord } from '../../../../core/types';
 import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
 import { LocalizedDatePipe } from '../../../../core/pipes/localized-date.pipe';
 import { LucideTrash2 } from '@lucide/angular';
+import { TooltipDirective } from '../../../../shared/directives/tooltip.directive';
 
 @Component({
   selector: 'app-recent-listens',
   standalone: true,
-  imports: [LocalizedDatePipe, TranslatePipe, LucideTrash2],
+  imports: [LocalizedDatePipe, TranslatePipe, LucideTrash2, TooltipDirective],
   changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <div
@@ -85,7 +86,8 @@ import { LucideTrash2 } from '@lucide/angular';
                     type="button"
                     (click)="delete.emit(event.id)"
                     class="relative z-20 w-11 h-11 -my-2 -mr-1 flex items-center justify-center md:w-auto md:h-auto md:p-1.5 md:-mr-1.5 md:-mt-1 md:my-0 text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 flex-shrink-0 md:opacity-0 md:group-hover:opacity-100 cursor-pointer"
-                    title="Delete Scan"
+                    [appTooltip]="'dashboard.deleteListen' | translate"
+                    data-testid="delete-listen"
                     [attr.aria-label]="'Delete Scan: ' + event.record.title"
                   >
                     <svg lucideTrash2 [size]="16"></svg>

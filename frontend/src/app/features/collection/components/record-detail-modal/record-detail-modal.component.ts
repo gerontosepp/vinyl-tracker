@@ -20,6 +20,7 @@ import { LocalizedDatePipe } from '../../../../core/pipes/localized-date.pipe';
 import { StoragePlacementComponent } from '../../../../shared/components/storage-placement/storage-placement.component';
 import { getErrorMessage } from '../../../../core/utils/error';
 import { getConditionShortCode, MEDIA_CONDITION_OPTIONS, SLEEVE_CONDITION_OPTIONS } from '../../utils/condition.util';
+import { TooltipDirective } from '../../../../shared/directives/tooltip.directive';
 
 export const ROON_LAST_ZONE_KEY = 'vinyl_last_roon_zone_id';
 
@@ -27,6 +28,7 @@ export const ROON_LAST_ZONE_KEY = 'vinyl_last_roon_zone_id';
   selector: 'app-record-detail-modal',
   standalone: true,
   imports: [
+    TooltipDirective,
     CommonModule,
     FormsModule,
     TranslatePipe,

@@ -33,7 +33,7 @@ describe('FormatBadgeComponent', () => {
     const icons = fixture.nativeElement.querySelectorAll('svg[lucideDiscAlbum]');
     expect(icons.length).toBe(2);
 
-    const container = fixture.nativeElement.querySelector('div[title]');
+    const container = fixture.nativeElement.querySelector('div.bg-cyan-50');
     expect(container).toBeTruthy();
     expect(container.classList.contains('bg-cyan-50')).toBe(true);
   });

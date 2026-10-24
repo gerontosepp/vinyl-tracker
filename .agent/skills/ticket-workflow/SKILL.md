@@ -98,6 +98,7 @@ Update project documentation immediately alongside code changes (see [`documenta
 - **`README.md`**: Update if features, configuration, endpoints, or UI behavior changed.
 - **`docs/Release-Info.md`**: Add summary bullet points under `## Unreleased` (and run `node scripts/sync-release-info.js`).
 - **`docs/arc42.md`**: Update if architecture, domain models, or database schemas changed.
+- **`docs/Help.md` + `docs/Help.en.md`** (in-app help page): Update the matching section in **both** languages whenever a user-visible feature, button or workflow changes (same `{#anchor}`s in both files; `node scripts/sync-help.js` regenerates `frontend/public/assets/help.*.json`, the Claude hook does it automatically). New icon-only buttons get a tooltip via `[appTooltip]`.
 
 ---
 

@@ -27,11 +27,13 @@ import { RecordDetailModalComponent } from '../collection/components/record-deta
 import { RecordRef, toCollectionRelease } from '../collection/components/record-detail-modal/record-ref';
 import { getErrorMessage } from '../../core/utils/error';
 import { Subscription, firstValueFrom, forkJoin, of, catchError } from 'rxjs';
+import { TooltipDirective } from '../../shared/directives/tooltip.directive';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
   imports: [
+    TooltipDirective,
     CommonModule,
     FormsModule,
     LayoutComponent,
@@ -113,7 +115,7 @@ import { Subscription, firstValueFrom, forkJoin, of, catchError } from 'rxjs';
                   [ngModel]="startDate()"
                   (ngModelChange)="onStartDateChange($event)"
                   class="bg-transparent border-slate-200 dark:border-slate-700 rounded-lg text-xs py-1.5 px-2 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-slate-900 dark:text-slate-100 outline-none font-medium"
-                  title="Start Date"
+                  [appTooltip]="'dashboard.startDate' | translate"
                 />
                 <span class="text-slate-400 dark:text-slate-500 font-medium">-</span>
                 <input
@@ -121,7 +123,7 @@ import { Subscription, firstValueFrom, forkJoin, of, catchError } from 'rxjs';
                   [ngModel]="endDate()"
                   (ngModelChange)="onEndDateChange($event)"
                   class="bg-transparent border-slate-200 dark:border-slate-700 rounded-lg text-xs py-1.5 px-2 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-slate-900 dark:text-slate-100 outline-none font-medium"
-                  title="End Date"
+                  [appTooltip]="'dashboard.endDate' | translate"
                 />
               </div>
             </app-top-records>

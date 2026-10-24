@@ -28,11 +28,13 @@ import { getErrorMessage } from '../../core/utils/error';
 import { PrintDialogComponent } from '../../shared/components/print-dialog/print-dialog.component';
 import { getFormatType, FormatType } from './utils/format-type.util';
 import { Subscription } from 'rxjs';
+import { HelpLinkComponent } from '../../shared/components/help-link/help-link.component';
 
 @Component({
   selector: 'app-collection',
   standalone: true,
   imports: [
+    HelpLinkComponent,
     LayoutComponent,
     CollectionToolbarComponent,
     CollectionTableComponent,

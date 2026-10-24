@@ -176,7 +176,7 @@ describe('CollectionToolbarComponent', () => {
     fixture.componentRef.setInput('selectedCount', 3);
     fixture.detectChanges();
 
-    const clearBtn = fixture.nativeElement.querySelector('button[title="Auswahl aufheben"], button[title="Clear Selection"]');
+    const clearBtn = fixture.nativeElement.querySelector('[data-testid="clear-selection"]');
     expect(clearBtn).toBeTruthy();
     clearBtn.click();
     expect(component.clearSelection.emit).toHaveBeenCalled();
@@ -201,7 +201,7 @@ describe('CollectionToolbarComponent', () => {
     expect(printBtn).toBeTruthy();
     expect(printBtn.textContent).not.toMatch(/\(\d+\)/);
     expect(
-      fixture.nativeElement.querySelector('button[title="Auswahl aufheben"], button[title="Clear Selection"]')
+      fixture.nativeElement.querySelector('[data-testid="clear-selection"]')
     ).toBeNull();
   });
 

@@ -9,6 +9,7 @@
 
 ## Unreleased
 
+- **Hilfe in der App (`#247`)**: Neue Seite **Hilfe** (Seitenleiste, am Handy ?-Symbol oben) erklärt alle Funktionen – mit Inhaltsverzeichnis und Suche. Ein **?** auf Scan, Sammlung, Regalen, Label-Inbox, Sortiermodus und Einstellungen springt direkt zum passenden Abschnitt. Symbole und Buttons erklären sich per Tooltip (Mauszeiger, Tastatur-Fokus oder langes Drücken am Handy).
 - **MCP-Server für Windows (`#245`)**: Jedes Release enthält zusätzlich `vinyl-mcp-server-windows-x86_64.zip` mit `vinyl-mcp-server.exe` für Claude Desktop/Code unter Windows; Einrichtung in `mcp/README.md`.
 
 ---

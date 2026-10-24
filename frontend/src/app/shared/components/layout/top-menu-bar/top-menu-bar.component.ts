@@ -5,12 +5,13 @@ import { LanguageService } from '../../../../core/services/language.service';
 import { ScannerService } from '../../../../core/services/scanner.service';
 import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
 import { APP_VERSION } from '../../../../core/constants/release-info.data';
-import { LucideLogOut, LucideSettings, LucideGlobe } from '@lucide/angular';
+import { LucideLogOut, LucideSettings, LucideGlobe, LucideCircleQuestionMark } from '@lucide/angular';
+import { TooltipDirective } from '../../../directives/tooltip.directive';
 
 @Component({
   selector: 'app-top-menu-bar',
   standalone: true,
-  imports: [RouterLink, LucideLogOut, LucideSettings, LucideGlobe, TranslatePipe],
+  imports: [RouterLink, LucideLogOut, LucideSettings, LucideGlobe, LucideCircleQuestionMark, TranslatePipe, TooltipDirective],
   changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     @if (authService.user(); as user) {
@@ -22,7 +23,7 @@ import { LucideLogOut, LucideSettings, LucideGlobe } from '@lucide/angular';
           routerLink="/"
           (click)="scannerService.closeScanner()"
           class="flex items-center gap-2 md:gap-3 cursor-pointer group"
-          title="Home"
+          [appTooltip]="'nav.home' | translate"
         >
           <img
             src="/favicon.svg"
@@ -47,7 +48,7 @@ import { LucideLogOut, LucideSettings, LucideGlobe } from '@lucide/angular';
           <button
             (click)="toggleLanguage()"
             class="flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-            [title]="languageService.language() === 'de' ? 'Switch to English' : 'Auf Deutsch wechseln'"
+            [appTooltip]="'nav.switchLanguage' | translate"
           >
             <svg lucideGlobe [size]="14"></svg>
             <span class="uppercase tracking-wider">{{ languageService.language() }}</span>
@@ -70,16 +71,25 @@ import { LucideLogOut, LucideSettings, LucideGlobe } from '@lucide/angular';
 
           <div class="flex items-center gap-2 ml-1 pl-3 border-l border-slate-200 dark:border-slate-700">
             <a
+              routerLink="/help"
+              (click)="scannerService.closeScanner()"
+              class="md:hidden text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+              [appTooltip]="'nav.help' | translate"
+              data-testid="nav-help-mobile"
+            >
+              <svg lucideCircleQuestionMark [size]="20"></svg>
+            </a>
+            <a
               routerLink="/settings"
               class="md:hidden text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
-              [title]="'nav.settings' | translate"
+              [appTooltip]="'nav.settings' | translate"
             >
               <svg lucideSettings [size]="20"></svg>
             </a>
             <button
               (click)="logout()"
               class="text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors cursor-pointer"
-              [title]="'nav.logout' | translate"
+              [appTooltip]="'nav.logout' | translate"
             >
               <svg lucideLogOut [size]="20"></svg>
             </button>

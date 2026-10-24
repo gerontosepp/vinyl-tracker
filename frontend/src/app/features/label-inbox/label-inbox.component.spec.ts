@@ -10,6 +10,7 @@ import { ToastService } from '../../core/services/toast.service';
 import { LanguageService } from '../../core/services/language.service';
 import { LayoutComponent } from '../../shared/components/layout/layout.component';
 import { LabelCandidate, LabelPhoto } from '../../core/types';
+import { provideRouter } from '@angular/router';
 
 const photo = (id: number): LabelPhoto => ({
   id,
@@ -63,7 +64,8 @@ describe('LabelInboxComponent', () => {
     toast = { showToast: vi.fn() } as unknown as MockedObject<ToastService>;
     TestBed.configureTestingModule({
       imports: [LabelInboxComponent],
-      providers: [provideHttpClient(), provideHttpClientTesting(), { provide: ToastService, useValue: toast }],
+      providers: [
+        provideRouter([]),provideHttpClient(), provideHttpClientTesting(), { provide: ToastService, useValue: toast }],
     });
     // The layout (navigation, menus) is not part of this test
     TestBed.overrideComponent(LabelInboxComponent, {

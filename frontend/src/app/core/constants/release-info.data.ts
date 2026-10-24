@@ -14,6 +14,13 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "isUnreleased": true,
     "items": [
       {
+        "title": "Platten ohne Discogs-Eintrag (`#242`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Platten und CDs, die es bei Discogs nicht gibt, lassen sich jetzt **manuell anlegen** – in der Sammlung, in der Label-Inbox bei einem Foto ohne Treffer (mit den vom Label gelesenen Angaben und dem Foto als Cover) oder im Scanner, wenn ein Barcode nicht gefunden wird. Mit Cover, eigenem Wert, Zustand und Regalplatz; gekennzeichnet als **Manuell**, filterbar nach Quelle und in der Detailansicht bearbeitbar. Der Discogs-Abgleich lässt sie unverändert, Barcode und QR-Etikett („Manuell #n“) erfassen das Hören. Das JSON-Backup (`format_version: 4`) enthält sie samt Cover.",
+        "details": []
+      },
+      {
         "title": "Hilfe in der App (`#247`)",
         "type": "feat",
         "typeLabel": "Feature",

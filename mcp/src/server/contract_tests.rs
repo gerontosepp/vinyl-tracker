@@ -82,6 +82,7 @@ fn placement(discogs_id: i64) -> StoragePlacementDto {
 
 fn collection_release(storage: Option<StorageSlotDto>) -> CollectionRelease {
     CollectionRelease {
+        source: Default::default(),
         id: 42,
         instance_id: 4200,
         listen_count: 3,
@@ -153,6 +154,7 @@ fn label_photo(id: i64, status: LabelPhotoStatus, discogs_id: Option<i64>) -> La
         suggestion: None,
         identify_error: None,
         identify_model: None,
+        label_reading: None,
     }
 }
 

@@ -2,7 +2,7 @@ use crate::{
     error::AppError,
     models::label_photo::{
         LabelIdentifyState, LabelPhotoDeleteDto, LabelPhotoDto, LabelPhotoStatus,
-        LabelPhotoUploadDto, LabelPhotosDto, LabelSuggestion,
+        LabelPhotoUploadDto, LabelPhotosDto, LabelReading, LabelSuggestion,
     },
 };
 use bytes::Bytes;
@@ -18,7 +18,16 @@ const JPEG_QUALITY: u8 = 85;
 const STORED_MIME_TYPE: &str = "image/jpeg";
 /// Columns of [`to_dto`].
 const DTO_COLUMNS: &str = "id, status, discogs_id, created_at, processed_at, identify_state, \
-                           suggestion, identify_error, identify_model";
+                           suggestion, identify_error, identify_model, label_reading";
+
+/// Result of a finished identification run: a suggestion, or none with the model's hint
+/// (no Discogs release matched). The label reading is kept in both cases.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct IdentifyOutcome {
+    pub suggestion: Option<LabelSuggestion>,
+    pub reading: Option<LabelReading>,
+    pub no_match_hint: Option<String>,
+}
 
 pub struct LabelPhotoService;
 
@@ -26,6 +35,11 @@ impl LabelPhotoService {
     /// Decodes an uploaded JPEG/PNG, applies its EXIF orientation, downscales it to
     /// [`MAX_EDGE_PX`] and re-encodes it as JPEG. Re-encoding drops all metadata (EXIF/GPS).
     pub fn normalize_image(bytes: &[u8]) -> Result<Vec<u8>, AppError> {
+        Self::normalize_image_to(bytes, MAX_EDGE_PX)
+    }
+
+    /// Like [`Self::normalize_image`] with a custom longest edge (e.g. record covers).
+    pub fn normalize_image_to(bytes: &[u8], max_edge: u32) -> Result<Vec<u8>, AppError> {
         let invalid = |e: image::ImageError| AppError::BadRequest(format!("Invalid image: {e}"));
 
         let mut decoder = ImageReader::new(Cursor::new(bytes))
@@ -37,18 +51,14 @@ impl LabelPhotoService {
         let mut img = DynamicImage::from_decoder(decoder).map_err(invalid)?;
         img.apply_orientation(orientation);
 
-        if img.width().max(img.height()) > MAX_EDGE_PX {
-            img = img.resize(
-                MAX_EDGE_PX,
-                MAX_EDGE_PX,
-                image::imageops::FilterType::Lanczos3,
-            );
+        if img.width().max(img.height()) > max_edge {
+            img = img.resize(max_edge, max_edge, image::imageops::FilterType::Lanczos3);
         }
 
         let mut out = Vec::new();
         JpegEncoder::new_with_quality(&mut out, JPEG_QUALITY)
             .encode_image(&img.to_rgb8())
-            .map_err(|e| AppError::Internal(format!("Failed to encode label photo: {e}")))?;
+            .map_err(|e| AppError::Internal(format!("Failed to encode image: {e}")))?;
         Ok(out)
     }
 
@@ -247,15 +257,25 @@ impl LabelPhotoService {
         pool: &PgPool,
         id: i64,
         model: &str,
-        outcome: Result<&LabelSuggestion, &str>,
+        outcome: Result<&IdentifyOutcome, &str>,
     ) -> Result<(), AppError> {
-        let (state, suggestion, error) = match outcome {
-            Ok(suggestion) => (LabelIdentifyState::Done, Some(Json(suggestion)), None),
-            Err(message) => (LabelIdentifyState::Error, None, Some(message)),
+        let (state, suggestion, reading, error) = match outcome {
+            Ok(o) => (
+                LabelIdentifyState::Done,
+                o.suggestion.as_ref().map(Json),
+                o.reading.as_ref().map(Json),
+                o.no_match_hint.as_deref(),
+            ),
+            Err(message) => (LabelIdentifyState::Error, None, None, Some(message)),
         };
+        // A finished run replaces suggestion and reading (also with "no match"); an error keeps
+        // those of an earlier run
         sqlx::query(
             "UPDATE label_photo
-             SET identify_state = $2, suggestion = COALESCE($3, suggestion), identify_error = $4,
+             SET identify_state = $2,
+                 suggestion = CASE WHEN $2 = 'done' THEN $3 ELSE suggestion END,
+                 label_reading = CASE WHEN $2 = 'done' THEN $6 ELSE label_reading END,
+                 identify_error = $4,
                  identify_model = $5, identified_at = NOW() AT TIME ZONE 'UTC'
              WHERE id = $1 AND identify_state = 'running'",
         )
@@ -264,6 +284,7 @@ impl LabelPhotoService {
         .bind(suggestion)
         .bind(error)
         .bind(model)
+        .bind(reading)
         .execute(pool)
         .await
         .map_err(AppError::Database)?;
@@ -342,6 +363,9 @@ fn to_dto(row: &PgRow) -> Result<LabelPhotoDto, AppError> {
             .map(|Json(suggestion)| suggestion),
         identify_error: row.get("identify_error"),
         identify_model: row.get("identify_model"),
+        label_reading: row
+            .get::<Option<Json<LabelReading>>, _>("label_reading")
+            .map(|Json(reading)| reading),
     })
 }
 

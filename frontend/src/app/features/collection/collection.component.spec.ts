@@ -139,6 +139,33 @@ describe('CollectionComponent', () => {
       );
     });
 
+    it('filters list and print scope by source and resets it with all filters', () => {
+      mockAuthService.user = signal({ id: 1 });
+      component.onSourceChange('manual');
+      expect(mockApiService.getCollection).toHaveBeenLastCalledWith(
+        1, component.perPage(), 0, 'artist', 'asc', '', 'all', [], '', undefined, false, { source: 'manual' }
+      );
+      expect(component.printFilter().source).toBe('manual');
+
+      component.clearAllFilters();
+      expect(component.source()).toBe('');
+      expect(component.printFilter().source).toBeUndefined();
+    });
+
+    it('reloads the list and updates the open record after a manual record was saved', () => {
+      mockAuthService.user = signal({ id: 1 });
+      component.selectedRecord.set({ id: -3, basic_information: { id: -3, title: 'Alt', artists: [] } } as any);
+      component.recordDetail.set({ discogs_id: -3 } as any);
+      mockApiService.getCollection.mockClear();
+
+      component.onManualSaved({ discogs_id: -3, title: 'Neu', artist: 'Die Sterne', thumb_url: '/api/covers/u?v=2' } as any);
+
+      expect(component.recordDetail()?.title).toBe('Neu');
+      expect(component.selectedRecord()?.basic_information.title).toBe('Neu');
+      expect(component.selectedRecord()?.basic_information.thumb).toBe('/api/covers/u?v=2');
+      expect(mockApiService.getCollection).toHaveBeenCalled();
+    });
+
     it('opens the list filtered to a compartment clicked in the shelf view', () => {
       mockApiService.getStorageLayout.mockReturnValue(of(layout));
       const loadData = vi.spyOn(component, 'loadData').mockImplementation(() => {});

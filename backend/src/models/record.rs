@@ -1,3 +1,4 @@
 pub use vinyl_api_types::record::{
-    RecordDetailDto, UpdateConditionRequestDto, UpdateSortKeyRequestDto,
+    ManualRecordCreatedDto, ManualRecordRequest, RecordDetailDto, RecordSource,
+    UpdateConditionRequestDto, UpdateSortKeyRequestDto,
 };

@@ -220,4 +220,19 @@ describe('BarcodeScannerComponent', () => {
     expect(component.executeBarcodeScan).toHaveBeenCalledWith('075678645624');
     expect(component.isScanning()).toBe(false);
   });
+
+  it('offers a manual record with the scanned barcode when nothing was found', async () => {
+    apiServiceMock.scanBarcode.mockReturnValue(of({ success: false, message: 'Release not found in collection or invalid barcode.' }));
+    await component.executeBarcodeScan('4006381333931');
+    fixture.detectChanges();
+
+    (fixture.nativeElement.querySelector('[data-testid="scanner-add-manual"]') as HTMLButtonElement).click();
+    expect(component.manualPrefill()).toEqual({ barcode: '4006381333931' });
+
+    // A title search is no barcode
+    component.manualPrefill.set(null);
+    await component.executeBarcodeScan('Die Sterne Posen');
+    component.openManualForm();
+    expect(component.manualPrefill()).toEqual({ barcode: null });
+  });
 });

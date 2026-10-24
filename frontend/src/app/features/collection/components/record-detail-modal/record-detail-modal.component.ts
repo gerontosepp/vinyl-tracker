@@ -14,6 +14,7 @@ import {
   LucidePlay,
   LucideTrash2,
   LucideChevronDown,
+  LucidePencil,
 } from '@lucide/angular';
 import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
 import { LocalizedDatePipe } from '../../../../core/pipes/localized-date.pipe';
@@ -41,6 +42,7 @@ export const ROON_LAST_ZONE_KEY = 'vinyl_last_roon_zone_id';
     LucidePlay,
     LucideTrash2,
     LucideChevronDown,
+    LucidePencil,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './record-detail-modal.component.html',
@@ -64,6 +66,8 @@ export class RecordDetailModalComponent implements OnInit {
   readonly conditionUpdated = output<RecordDetailDto>();
   readonly sortKeyUpdated = output<RecordDetailDto>();
   readonly recordRemoved = output<number>();
+  /** Edit a manual record (#242) in the manual record form. */
+  readonly editManual = output<RecordDetailDto>();
 
   readonly isLoggingListen = signal<boolean>(false);
   readonly justListened = signal<boolean>(false);
@@ -84,6 +88,9 @@ export class RecordDetailModalComponent implements OnInit {
   });
   readonly hasMultipleZones = computed(() => this.roonZones().length > 1);
 
+  /** Manual records have no Discogs page and are edited in the manual record form. */
+  readonly isManual = computed(() => (this.detail()?.source ?? this.record()?.source) === 'manual');
+
   readonly currentMediaCondition = computed(() => this.detail()?.media_condition || this.record()?.media_condition || '');
   readonly currentSleeveCondition = computed(() => this.detail()?.sleeve_condition || this.record()?.sleeve_condition || '');
   readonly storedSortKey = computed(() => this.detail()?.sort_key ?? '');
@@ -91,6 +98,11 @@ export class RecordDetailModalComponent implements OnInit {
   readonly sortKeyValue = linkedSignal(() => this.storedSortKey());
   readonly sortKeyChanged = computed(() => this.sortKeyValue().trim() !== this.storedSortKey());
   private justListenedTimeout?: ReturnType<typeof setTimeout>;
+
+  onEditManual(): void {
+    const detail = this.detail();
+    if (detail) this.editManual.emit(detail);
+  }
 
   ngOnInit(): void {
     if (this.authService.user()?.roonHost) {

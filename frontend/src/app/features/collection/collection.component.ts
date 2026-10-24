@@ -21,6 +21,7 @@ import {
   RecordDetailDto,
   GenreBreakdownItem,
   PrintFilter,
+  RecordSource,
   StorageShelfOption,
 } from '../../core/types';
 import { parseStorageFilter, shelfOptions } from '../../core/utils/storage-filter';
@@ -29,6 +30,7 @@ import { PrintDialogComponent } from '../../shared/components/print-dialog/print
 import { getFormatType, FormatType } from './utils/format-type.util';
 import { Subscription } from 'rxjs';
 import { HelpLinkComponent } from '../../shared/components/help-link/help-link.component';
+import { ManualRecordFormComponent } from '../../shared/components/manual-record-form/manual-record-form.component';
 
 @Component({
   selector: 'app-collection',
@@ -44,6 +46,7 @@ import { HelpLinkComponent } from '../../shared/components/help-link/help-link.c
     ShelfViewComponent,
     NgTemplateOutlet,
     TranslatePipe,
+    ManualRecordFormComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './collection.component.html',
@@ -97,6 +100,9 @@ export class CollectionComponent implements OnInit, OnDestroy {
   readonly storageShelves = signal<StorageShelfOption[]>([]);
   /** Encoded storage filter, see `parseStorageFilter`. */
   readonly storageFilter = signal<string>('');
+  readonly source = signal<RecordSource | ''>('');
+  /** Open manual record form: a new record, or the one to edit. */
+  readonly manualForm = signal<{ record: RecordDetailDto | null } | null>(null);
 
   readonly selectedItems = signal<Map<number, QrCodeItem>>(new Map());
 
@@ -126,6 +132,8 @@ export class CollectionComponent implements OnInit, OnDestroy {
     if (this.notPlayedSince()) filter.not_played_since = this.notPlayedSince();
     if (this.unplayedOnly()) filter.unplayed_only = true;
     if (this.showPlayedOnly()) filter.min_plays = 1;
+    const source = this.source();
+    if (source) filter.source = source;
     return { ...filter, ...parseStorageFilter(this.storageFilter()) };
   });
 
@@ -227,7 +235,7 @@ export class CollectionComponent implements OnInit, OnDestroy {
         this.debouncedYears(),
         this.notPlayedSince() || undefined,
         this.unplayedOnly(),
-        parseStorageFilter(this.storageFilter())
+        { ...parseStorageFilter(this.storageFilter()), source: this.source() || undefined }
       )
       .subscribe({
         next: (data) => {
@@ -362,7 +370,34 @@ export class CollectionComponent implements OnInit, OnDestroy {
     this.notPlayedSince.set('');
     this.unplayedOnly.set(false);
     this.storageFilter.set('');
+    this.source.set('');
     this.page.set(1);
+    this.loadData();
+  }
+
+  onSourceChange(value: RecordSource | ''): void {
+    this.source.set(value);
+    this.page.set(1);
+    this.loadData();
+  }
+
+  /** A manual record was created or edited: refresh list and open detail. */
+  onManualSaved(saved: RecordDetailDto): void {
+    if (this.recordDetail()?.discogs_id === saved.discogs_id) {
+      this.recordDetail.set(saved);
+      this.selectedRecord.update(
+        (rec) =>
+          rec && {
+            ...rec,
+            basic_information: {
+              ...rec.basic_information,
+              title: saved.title ?? rec.basic_information.title,
+              artists: saved.artist ? [{ name: saved.artist }] : rec.basic_information.artists,
+              thumb: saved.thumb_url ?? rec.basic_information.thumb,
+            },
+          }
+      );
+    }
     this.loadData();
   }
 

@@ -170,7 +170,7 @@ fn draw_row(
     );
 
     let year = record.year.map(|y| y.to_string()).unwrap_or_default();
-    let id = record.discogs_id.to_string();
+    let id = labels.record_id(record.discogs_id);
     let cells = [
         (
             1,

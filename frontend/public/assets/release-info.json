@@ -5,6 +5,14 @@
     "tag": "In Entwicklung",
     "isCurrent": false,
     "isUnreleased": true,
+    "items": []
+  },
+  {
+    "version": "v1.3.0",
+    "rawHeader": "v1.3.0 (2026-10-24)",
+    "date": "2026-10-24",
+    "isCurrent": true,
+    "isUnreleased": false,
     "items": [
       {
         "title": "Fix: Fotos in der Label-Inbox wieder sichtbar (`#238`)",
@@ -26,7 +34,7 @@
     "version": "v1.2.1",
     "rawHeader": "v1.2.1 (2026-10-23)",
     "date": "2026-10-23",
-    "isCurrent": true,
+    "isCurrent": false,
     "isUnreleased": false,
     "items": [
       {

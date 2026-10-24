@@ -13,11 +13,14 @@ use crate::{
     error::AppError,
     models::{
         discogs::{DiscogsRelease, DiscogsSearchFilter},
-        label_photo::{LABEL_READING_STEPS, LabelCandidate, LabelMatchConfidence, LabelSuggestion},
+        label_photo::{
+            LABEL_READING_STEPS, LabelCandidate, LabelMatchConfidence, LabelReading,
+            LabelSuggestion,
+        },
         user::AppUser,
     },
     services::{
-        label_photo_service::LabelPhotoService,
+        label_photo_service::{IdentifyOutcome, LabelPhotoService},
         openrouter_settings_service::OpenRouterSettingsService,
     },
     state::AppState,
@@ -48,9 +51,10 @@ pub struct IdentifyContext<'a> {
 /// Validated `submit_identification` arguments before enrichment.
 #[derive(Debug, PartialEq)]
 pub struct Submission {
-    pub best: Option<CandidateArgs>,
+    pub best: CandidateArgs,
     pub alternatives: Vec<CandidateArgs>,
     pub hint: Option<String>,
+    pub reading: Option<LabelReading>,
 }
 
 /// Why a `submit_identification` call was not accepted.
@@ -58,8 +62,11 @@ pub struct Submission {
 pub enum SubmissionError {
     /// Malformed or unverified answer; the model gets the reason and may correct it.
     Retry(String),
-    /// The model found no matching release (reason or hint for the user).
-    NoMatch(String),
+    /// The model found no matching release: hint for the user and what it read from the label.
+    NoMatch {
+        hint: String,
+        reading: Option<Box<LabelReading>>,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -75,6 +82,7 @@ struct SubmitArgs {
     #[serde(default)]
     alternatives: Vec<CandidateArgs>,
     hint: Option<String>,
+    label_text: Option<LabelReading>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -141,12 +149,12 @@ impl LabelIdentificationService {
             return Ok(());
         }
         match Self::identify_photo(state, user_id, photo_id, discogs_token).await {
-            Ok((model, suggestion)) => {
+            Ok((model, outcome)) => {
                 LabelPhotoService::finish_identification(
                     &state.pool,
                     photo_id,
                     &model,
-                    Ok(&suggestion),
+                    Ok(&outcome),
                 )
                 .await
             }
@@ -163,13 +171,13 @@ impl LabelIdentificationService {
         }
     }
 
-    /// Returns the model used plus the suggestion, or the model plus the error.
+    /// Returns the model used plus the outcome, or the model plus the error.
     async fn identify_photo(
         state: &AppState,
         user_id: i64,
         photo_id: i64,
         discogs_token: Option<String>,
-    ) -> Result<(String, LabelSuggestion), (String, AppError)> {
+    ) -> Result<(String, IdentifyOutcome), (String, AppError)> {
         let credentials =
             OpenRouterSettingsService::credentials(&state.pool, &state.crypto, user_id)
                 .await
@@ -196,19 +204,20 @@ impl LabelIdentificationService {
             model: &credentials.model,
             discogs_token: &discogs_token,
         };
-        let suggestion = Self::identify(&ctx, &state.pool, user_id, &jpeg)
+        let outcome = Self::identify(&ctx, &state.pool, user_id, &jpeg)
             .await
             .map_err(with_model)?;
-        Ok((model, suggestion))
+        Ok((model, outcome))
     }
 
-    /// Lets the model identify the photo and returns the enriched suggestion.
+    /// Lets the model identify the photo and returns the enriched suggestion, or no suggestion
+    /// with the model's hint when no release matched.
     pub async fn identify(
         ctx: &IdentifyContext<'_>,
         pool: &PgPool,
         user_id: i64,
         jpeg: &[u8],
-    ) -> Result<LabelSuggestion, AppError> {
+    ) -> Result<IdentifyOutcome, AppError> {
         let image = base64::engine::general_purpose::STANDARD.encode(jpeg);
         let tools = tool_definitions();
         let mut messages = vec![
@@ -235,9 +244,20 @@ impl LabelIdentificationService {
                 let args = call.function.arguments.as_str();
                 let result = match call.function.name.as_str() {
                     "submit_identification" => match parse_submission(args, &seen_ids) {
-                        Ok(submission) => return enrich(ctx, pool, user_id, submission).await,
-                        Err(SubmissionError::NoMatch(reason)) => {
-                            return Err(AppError::Internal(reason));
+                        Ok(submission) => {
+                            let reading = submission.reading.clone();
+                            return Ok(IdentifyOutcome {
+                                suggestion: Some(enrich(ctx, pool, user_id, submission).await?),
+                                reading,
+                                no_match_hint: None,
+                            });
+                        }
+                        Err(SubmissionError::NoMatch { hint, reading }) => {
+                            return Ok(IdentifyOutcome {
+                                suggestion: None,
+                                reading: reading.map(|r| *r),
+                                no_match_hint: Some(hint),
+                            });
                         }
                         Err(SubmissionError::Retry(reason)) => {
                             let feedback = format!(
@@ -267,7 +287,8 @@ fn system_prompt() -> String {
         "You identify vinyl records and CDs for a record collection app from a photo of the record label \
          (sometimes the back cover or the run-out groove). Use the tools; never guess Discogs release IDs.\n\
          {LABEL_READING_STEPS}\n\
-         4. Finish by calling `submit_identification` exactly once with the best match, its confidence and a short \
+         4. Finish by calling `submit_identification` exactly once with `label_text` (what you read: artist, title, \
+         label, catalog number, year, country, format), the best match, its confidence and a short \
          reason in German, plus up to {MAX_ALTERNATIVES} close alternatives (other pressings of the same release). \
          Confidence: high = catalog number, label and details match one pressing; medium = right release but the exact \
          pressing is uncertain; low = plausible but unconfirmed. If another photo would settle it, set `hint` (German, \
@@ -330,8 +351,22 @@ pub fn tool_definitions() -> Value {
                     "properties": {
                         "best": candidate,
                         "alternatives": { "type": "array", "items": candidate },
-                        "hint": text("German hint, e.g. which further photo would help")
-                    }
+                        "hint": text("German hint, e.g. which further photo would help"),
+                        "label_text": {
+                            "type": "object",
+                            "description": "What is printed on the photo, also without a match",
+                            "properties": {
+                                "artist": text("Artist"),
+                                "title": text("Album title"),
+                                "label": text("Record label"),
+                                "catno": text("Catalog number"),
+                                "year": text("Year (4 digits)"),
+                                "country": text("Country"),
+                                "format": text("LP, Double LP, CD or Double CD")
+                            }
+                        }
+                    },
+                    "required": ["label_text"]
                 }
             }
         }
@@ -351,10 +386,15 @@ pub fn parse_submission(
         .hint
         .map(|h| h.trim().to_string())
         .filter(|h| !h.is_empty());
+    let reading = args
+        .label_text
+        .map(clean_reading)
+        .filter(|r| *r != LabelReading::default());
     let Some(best) = args.best else {
-        return Err(SubmissionError::NoMatch(
-            hint.unwrap_or_else(|| "No matching release found".to_string()),
-        ));
+        return Err(SubmissionError::NoMatch {
+            hint: hint.unwrap_or_else(|| "No matching release found".to_string()),
+            reading: reading.map(Box::new),
+        });
     };
     if !seen_ids.contains(&best.discogs_id) {
         return Err(SubmissionError::Retry(format!(
@@ -370,10 +410,29 @@ pub fn parse_submission(
         .take(MAX_ALTERNATIVES)
         .collect();
     Ok(Submission {
-        best: Some(best),
+        best,
         alternatives,
         hint,
+        reading,
     })
+}
+
+/// Trims the fields and drops empty ones; the model sometimes sends "" or "unknown".
+fn clean_reading(reading: LabelReading) -> LabelReading {
+    let clean = |value: Option<String>| {
+        value
+            .map(|v| v.trim().chars().take(255).collect::<String>())
+            .filter(|v| !v.is_empty() && !v.eq_ignore_ascii_case("unknown"))
+    };
+    LabelReading {
+        artist: clean(reading.artist),
+        title: clean(reading.title),
+        label: clean(reading.label),
+        catno: clean(reading.catno),
+        year: clean(reading.year),
+        country: clean(reading.country),
+        format: clean(reading.format),
+    }
 }
 
 async fn search(
@@ -470,9 +529,7 @@ async fn enrich(
     user_id: i64,
     submission: Submission,
 ) -> Result<LabelSuggestion, AppError> {
-    let Some(best) = submission.best else {
-        return Err(AppError::Internal("No matching release found".to_string()));
-    };
+    let best = submission.best;
     let ids: Vec<i64> = std::iter::once(best.discogs_id)
         .chain(submission.alternatives.iter().map(|a| a.discogs_id))
         .collect();
@@ -571,7 +628,8 @@ mod tests {
         let args =
             r#"{"best":{"discogs_id":1622788,"confidence":"high","reason":"Katalognummer passt"}}"#;
         let submission = parse_submission(args, &seen(&[1622788])).unwrap();
-        assert_eq!(submission.best.unwrap().discogs_id, 1622788);
+        assert_eq!(submission.best.discogs_id, 1622788);
+        assert_eq!(submission.reading, None);
     }
 
     #[test]
@@ -600,12 +658,30 @@ mod tests {
     }
 
     #[test]
-    fn submission_without_best_match_reports_the_hint() {
-        let args = r#"{"hint":"Bitte die Auslaufrille fotografieren"}"#;
+    fn submission_without_best_match_reports_the_hint_and_reading() {
+        let args = r#"{"hint":"Bitte die Auslaufrille fotografieren",
+            "label_text":{"artist":" Die Sterne ","title":"","catno":"unknown","year":"1996"}}"#;
         let error = parse_submission(args, &seen(&[])).unwrap_err();
         assert_eq!(
             error,
-            SubmissionError::NoMatch("Bitte die Auslaufrille fotografieren".to_string())
+            SubmissionError::NoMatch {
+                hint: "Bitte die Auslaufrille fotografieren".to_string(),
+                reading: Some(Box::new(LabelReading {
+                    artist: Some("Die Sterne".to_string()),
+                    year: Some("1996".to_string()),
+                    ..Default::default()
+                })),
+            }
+        );
+    }
+
+    #[test]
+    fn submission_drops_an_empty_reading() {
+        let args = r#"{"label_text":{"artist":" ","format":""}}"#;
+        let error = parse_submission(args, &seen(&[])).unwrap_err();
+        assert!(
+            matches!(error, SubmissionError::NoMatch { reading: None, .. }),
+            "{error:?}"
         );
     }
 

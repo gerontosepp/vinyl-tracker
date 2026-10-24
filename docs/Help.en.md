@@ -55,6 +55,7 @@ If you added an API key under **Settings → Label recognition (OpenRouter)**, t
 - **Only complete** marks the photo as done without adding anything – e.g. if the record is already in your collection.
 - **Recognize again** restarts the recognition, for example after an error.
 - A hint sometimes suggests another photo (other side, run-out groove) to pin down the exact pressing.
+- **Add manually** – if the record is not on Discogs or the suggestion is uncertain, add it yourself; what was read from the label is already filled in (see **Records without a Discogs entry**).
 
 The model can only search Discogs and never changes anything itself. Every recognized photo usually costs a few cents via OpenRouter and is sent to OpenRouter and the model provider.
 
@@ -85,6 +86,17 @@ Clicking a cover, title or artist opens the details: tracklist, formats, labels,
 - **Sorting** – a custom sort string used instead of the artist in the collection and on the shelf (e.g. *Les Paul* under **L**). Leave it empty for automatic sorting.
 - **Remove from collection** – also removes the record from your Discogs folder (with confirmation).
 
+
+## Records without a Discogs entry {#manuell}
+
+Some records and CDs are not on Discogs. You can still keep them in your collection:
+
+- **Collection → Add record manually**, **Add manually** for a photo without match in the **label inbox**, or in the **scanner** when a barcode is not found (the barcode is then already filled in).
+- **Artist**, **title** and **format** (LP, Double LP, CD, Double CD) are required. Optional: year, label, catalog number, country, barcode, genres, condition, notes and an **own value** that counts towards the collection value.
+- The **cover** is a photo of your own or – from the label inbox – the label photo.
+- After saving, you see which shelf compartment the record belongs in.
+
+Manual records carry the **Manual** badge and can be selected with the **Source** filter in the collection. In the record details you can **edit** them and change the cover; there is no Discogs link. The Discogs sync leaves them unchanged. Log listens as usual – also by barcode or with a printed QR label (which shows "Manual #n" instead of the Discogs ID). The JSON backup includes them with their covers.
 ## Shelves {#regale}
 
 Under **Collection → Shelves** you model your real shelves. The tracker spreads the collection (artist A–Z, then year and title) evenly across the compartments and tells you where each record belongs.
@@ -158,4 +170,4 @@ Vinyl Tracker can be installed as an app (PWA): choose *Add to Home Screen* or *
 
 **The recognition suggests the wrong pressing.** Choose **another pressing** from the suggestion, or take another photo (other side, run-out groove) and **Recognize again**.
 
-**I can't find a record on Discogs.** New releases can be submitted on discogs.com; afterwards the record can be scanned or recognized from a label photo as usual.
+**I can't find a record on Discogs.** Add it **manually** (see **Records without a Discogs entry**). Alternatively, submit the release on discogs.com; afterwards the record can be scanned or recognized from a label photo as usual.

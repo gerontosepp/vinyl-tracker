@@ -1,6 +1,33 @@
 use crate::discogs::{DiscogsFormat, DiscogsIdentifier, DiscogsLabel, DiscogsTrack};
-use crate::storage::{StorageNeighborsDto, StorageSlotDto};
+use crate::storage::{StorageNeighborsDto, StoragePlacementDto, StorageSlotDto};
 use serde::{Deserialize, Serialize};
+
+/// Where a record comes from: a Discogs release, or a manual record without a Discogs entry
+/// (#242). Manual records have negative IDs (`discogs_id = instance_id = -n`).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum RecordSource {
+    #[default]
+    Discogs,
+    Manual,
+}
+
+impl RecordSource {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            RecordSource::Discogs => "discogs",
+            RecordSource::Manual => "manual",
+        }
+    }
+
+    pub fn parse(value: &str) -> Option<Self> {
+        match value {
+            "discogs" => Some(RecordSource::Discogs),
+            "manual" => Some(RecordSource::Manual),
+            _ => None,
+        }
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RecordDetailDto {
@@ -54,6 +81,11 @@ pub struct RecordDetailDto {
     pub storage: Option<StorageSlotDto>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub storage_neighbors: Option<StorageNeighborsDto>,
+    #[serde(default)]
+    pub source: RecordSource,
+    /// Barcode of a manual record (Discogs releases list theirs in `identifiers`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub barcode: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -69,4 +101,46 @@ pub struct UpdateConditionRequestDto {
 pub struct UpdateSortKeyRequestDto {
     #[serde(default, alias = "sortKey")]
     pub sort_key: Option<String>,
+}
+
+/// Creates or updates a manual record (#242). Artist, title and format are required; `value`
+/// is the user's own estimate and counts towards the collection value.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ManualRecordRequest {
+    pub artist: String,
+    pub title: String,
+    pub format: String,
+    #[serde(default)]
+    pub year: Option<String>,
+    #[serde(default)]
+    pub label: Option<String>,
+    #[serde(default)]
+    pub catno: Option<String>,
+    #[serde(default)]
+    pub country: Option<String>,
+    #[serde(default)]
+    pub barcode: Option<String>,
+    #[serde(default)]
+    pub genres: Vec<String>,
+    #[serde(default)]
+    pub media_condition: Option<String>,
+    #[serde(default)]
+    pub sleeve_condition: Option<String>,
+    #[serde(default)]
+    pub notes: Option<String>,
+    #[serde(default)]
+    pub value: Option<f64>,
+    /// Label photo the record was read from: it becomes the cover and is completed.
+    #[serde(default)]
+    pub label_photo_id: Option<i64>,
+}
+
+/// A newly created manual record and its shelf placement (when shelves exist for its medium).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ManualRecordCreatedDto {
+    pub record: RecordDetailDto,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub placement: Option<StoragePlacementDto>,
 }

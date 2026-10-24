@@ -251,6 +251,8 @@ pub struct Labels {
     pub year: &'static str,
     pub format: &'static str,
     pub id: &'static str,
+    /// Prefix of manual records (negative IDs), e.g. "Manuell #3"
+    pub manual: &'static str,
     pub unknown_artist: &'static str,
     pub records: &'static str,
     pub page: &'static str,
@@ -259,6 +261,24 @@ pub struct Labels {
 }
 
 impl Labels {
+    /// Printed ID of a record: the Discogs release ID, or "Manuell #n" for manual records.
+    pub fn record_id(&self, discogs_id: i64) -> String {
+        if discogs_id < 0 {
+            format!("{} #{}", self.manual, -discogs_id)
+        } else {
+            discogs_id.to_string()
+        }
+    }
+
+    /// ID line under a label: "ID: 123", or "Manuell #n" for manual records.
+    pub fn id_line(&self, discogs_id: i64) -> String {
+        if discogs_id < 0 {
+            self.record_id(discogs_id)
+        } else {
+            format!("{}: {discogs_id}", self.id)
+        }
+    }
+
     pub fn for_language(language: PrintLanguage) -> &'static Labels {
         match language {
             PrintLanguage::De => &Labels {
@@ -273,6 +293,7 @@ impl Labels {
                 year: "Jahr",
                 format: "Format",
                 id: "ID",
+                manual: "Manuell",
                 unknown_artist: "Unbekannter Künstler",
                 records: "Platten",
                 page: "Seite",
@@ -291,6 +312,7 @@ impl Labels {
                 year: "Year",
                 format: "Format",
                 id: "ID",
+                manual: "Manual",
                 unknown_artist: "Unknown Artist",
                 records: "records",
                 page: "Page",
@@ -308,6 +330,19 @@ impl Labels {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn manual_records_print_their_local_number() {
+        let de = Labels::for_language(PrintLanguage::De);
+        assert_eq!(de.record_id(249504), "249504");
+        assert_eq!(de.id_line(249504), "ID: 249504");
+        assert_eq!(de.record_id(-3), "Manuell #3");
+        assert_eq!(de.id_line(-3), "Manuell #3");
+        assert_eq!(
+            Labels::for_language(PrintLanguage::En).id_line(-3),
+            "Manual #3"
+        );
+    }
 
     #[test]
     fn test_truncate_keeps_short_text_and_shortens_long_text() {

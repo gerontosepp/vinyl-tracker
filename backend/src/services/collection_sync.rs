@@ -4,6 +4,7 @@ use crate::{
     models::{
         collection::{PriceRefreshResultDto, SyncResultDto},
         discogs::{DiscogsFolderReleaseItem, determine_format, disc_count},
+        record::RecordSource,
         user::AppUser,
     },
     services::{crypto_service::CryptoService, storage::StorageService},
@@ -92,18 +93,20 @@ impl CollectionSyncService {
             page += 1;
         }
 
-        // 3. Remove items in collection_item that no longer exist remotely
+        // 3. Remove items in collection_item that no longer exist remotely; manual records
+        //    (negative instance IDs) are not on Discogs and stay
         let remote_ids_vec: Vec<i64> = remote_instance_ids.into_iter().collect();
         let removed_count = if remote_ids_vec.is_empty() {
-            let del_res = sqlx::query("DELETE FROM collection_item WHERE user_id = $1")
-                .bind(user.id)
-                .execute(pool)
-                .await
-                .map_err(AppError::Database)?;
+            let del_res =
+                sqlx::query("DELETE FROM collection_item WHERE user_id = $1 AND instance_id > 0")
+                    .bind(user.id)
+                    .execute(pool)
+                    .await
+                    .map_err(AppError::Database)?;
             del_res.rows_affected() as i32
         } else {
             let del_res = sqlx::query(
-                "DELETE FROM collection_item WHERE user_id = $1 AND instance_id != ALL($2)",
+                "DELETE FROM collection_item WHERE user_id = $1 AND instance_id > 0 AND instance_id != ALL($2)",
             )
             .bind(user.id)
             .bind(&remote_ids_vec)
@@ -253,7 +256,7 @@ impl CollectionSyncService {
         // 1. Locate the collection item for the user
         let item_row = if let Some(inst_id) = instance_id_opt {
             sqlx::query(
-                "SELECT ci.id, ci.instance_id, rc.discogs_id
+                "SELECT ci.id, ci.instance_id, rc.discogs_id, rc.source
                  FROM collection_item ci
                  JOIN record_cache rc ON rc.id = ci.record_id
                  WHERE ci.user_id = $1 AND ci.instance_id = $2
@@ -266,7 +269,7 @@ impl CollectionSyncService {
             .map_err(AppError::Database)?
         } else {
             sqlx::query(
-                "SELECT ci.id, ci.instance_id, rc.discogs_id
+                "SELECT ci.id, ci.instance_id, rc.discogs_id, rc.source
                  FROM collection_item ci
                  JOIN record_cache rc ON rc.id = ci.record_id
                  WHERE ci.user_id = $1 AND (rc.discogs_id = $2 OR rc.id = $2)
@@ -288,13 +291,16 @@ impl CollectionSyncService {
         let item_id: i64 = row.get("id");
         let instance_id: i64 = row.get("instance_id");
         let discogs_id: i64 = row.get("discogs_id");
+        let manual = row.get::<&str, _>("source") == RecordSource::Manual.as_str();
 
-        // 2. Delete instance from remote Discogs collection if credentials exist
+        // 2. Delete instance from remote Discogs collection if credentials exist (manual
+        //    records exist only locally; record and cover stay for the listen history)
         let discogs_auth = user
             .discogs_username
             .as_deref()
             .zip(user.discogs_token.as_deref())
-            .and_then(|(u, enc)| crypto.decrypt(enc).map(|token| (u, token)));
+            .and_then(|(u, enc)| crypto.decrypt(enc).map(|token| (u, token)))
+            .filter(|_| !manual);
 
         if let Some((discogs_user, token)) = discogs_auth
             && let Err(e) = discogs_client
@@ -343,7 +349,7 @@ impl CollectionSyncService {
                     rc.median_price::float8 as median_price
              FROM record_cache rc
              JOIN collection_item ci ON ci.record_id = rc.id
-             WHERE ci.user_id = $1",
+             WHERE ci.user_id = $1 AND rc.source = 'discogs'",
         )
         .bind(user.id)
         .fetch_all(pool)

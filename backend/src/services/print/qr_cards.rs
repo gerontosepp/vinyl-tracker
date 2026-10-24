@@ -104,7 +104,7 @@ impl PrintRenderer for QrCards {
                 );
 
                 // 4. ID
-                let id = format!("{}: {}", labels.id, record.discogs_id);
+                let id = labels.id_line(record.discogs_id);
                 layout::text(
                     &mut ops,
                     BuiltinFont::HelveticaOblique,

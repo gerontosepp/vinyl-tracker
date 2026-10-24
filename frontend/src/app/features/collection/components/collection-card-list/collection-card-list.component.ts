@@ -2,6 +2,7 @@ import { Component, input, output, inject, ChangeDetectionStrategy } from '@angu
 import { CommonModule } from '@angular/common';
 import { ApiService } from '../../../../core/services/api.service';
 import { FormatBadgeComponent } from '../format-badge/format-badge.component';
+import { ManualBadgeComponent } from '../manual-badge/manual-badge.component';
 import { StorageSlotPipe } from '../../../../core/pipes/storage-slot.pipe';
 import { CollectionRelease, QrCodeItem } from '../../../../core/types';
 import { getFormatType, FormatType } from '../../utils/format-type.util';
@@ -15,6 +16,7 @@ import { TooltipDirective } from '../../../../shared/directives/tooltip.directiv
   imports: [
     CommonModule,
     FormatBadgeComponent,
+    ManualBadgeComponent,
     StorageSlotPipe,
     TranslatePipe,
     TooltipDirective,

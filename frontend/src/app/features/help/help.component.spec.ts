@@ -101,7 +101,7 @@ describe('HelpComponent', () => {
 
 describe('help content (docs/Help.md → assets)', () => {
   // Anchors used by the context help (<app-help-link anchor="…">)
-  const contextAnchors = ['scannen', 'label-foto', 'sammlung', 'regale', 'sortiermodus', 'einstellungen'];
+  const contextAnchors = ['scannen', 'label-foto', 'sammlung', 'manuell', 'regale', 'sortiermodus', 'einstellungen'];
 
   it('offers every context help anchor in both languages', () => {
     for (const help of [helpDe, helpEn]) {

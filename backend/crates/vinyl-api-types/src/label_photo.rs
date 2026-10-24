@@ -118,6 +118,29 @@ pub struct LabelSuggestion {
     pub hint: Option<String>,
 }
 
+/// What the automatic identification read from the label, kept also without a Discogs match;
+/// it pre-fills the form for a manual record (#242).
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LabelReading {
+    #[serde(default)]
+    pub artist: Option<String>,
+    #[serde(default)]
+    pub title: Option<String>,
+    #[serde(default)]
+    pub label: Option<String>,
+    #[serde(default)]
+    pub catno: Option<String>,
+    #[serde(default)]
+    pub year: Option<String>,
+    #[serde(default)]
+    pub country: Option<String>,
+    #[serde(default)]
+    pub format: Option<String>,
+}
+
+/// `identifyState = done` without `suggestion` means no Discogs release matched; `identifyError`
+/// then holds the model's hint instead of an error.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LabelPhotoDto {
@@ -134,6 +157,8 @@ pub struct LabelPhotoDto {
     pub identify_error: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identify_model: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub label_reading: Option<LabelReading>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -5,6 +5,7 @@ import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
 import { LocalizedDatePipe } from '../../../../core/pipes/localized-date.pipe';
 import { StorageSlotPipe } from '../../../../core/pipes/storage-slot.pipe';
 import { FormatBadgeComponent } from '../format-badge/format-badge.component';
+import { ManualBadgeComponent } from '../manual-badge/manual-badge.component';
 import { CollectionRelease, QrCodeItem } from '../../../../core/types';
 import { getFormatType, FormatType } from '../../utils/format-type.util';
 import { getConditionShortCode } from '../../utils/condition.util';
@@ -21,6 +22,7 @@ import { TooltipDirective } from '../../../../shared/directives/tooltip.directiv
     LocalizedDatePipe,
     StorageSlotPipe,
     FormatBadgeComponent,
+    ManualBadgeComponent,
     LucideCheckSquare,
     LucideSquare,
     LucideExternalLink,

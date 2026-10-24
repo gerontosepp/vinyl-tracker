@@ -3,7 +3,7 @@
 import { ReleaseEntry } from '../models/release-info.model';
 
 // Application version from frontend/package.json – single source for all version badges.
-export const APP_VERSION = '1.2.1';
+export const APP_VERSION = '1.3.0';
 
 export const RELEASE_INFO_DATA: ReleaseEntry[] = [
   {
@@ -12,6 +12,14 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "tag": "In Entwicklung",
     "isCurrent": false,
     "isUnreleased": true,
+    "items": []
+  },
+  {
+    "version": "v1.3.0",
+    "rawHeader": "v1.3.0 (2026-10-24)",
+    "date": "2026-10-24",
+    "isCurrent": true,
+    "isUnreleased": false,
     "items": [
       {
         "title": "Fix: Fotos in der Label-Inbox wieder sichtbar (`#238`)",
@@ -33,7 +41,7 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "version": "v1.2.1",
     "rawHeader": "v1.2.1 (2026-10-23)",
     "date": "2026-10-23",
-    "isCurrent": true,
+    "isCurrent": false,
     "isUnreleased": false,
     "items": [
       {

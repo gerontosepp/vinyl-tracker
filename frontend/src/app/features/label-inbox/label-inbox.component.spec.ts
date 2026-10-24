@@ -4,7 +4,7 @@ import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { registerLocaleData } from '@angular/common';
 import localeDe from '@angular/common/locales/de';
 import { provideHttpClient } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpTestingController, TestRequest, provideHttpClientTesting } from '@angular/common/http/testing';
 import { IDENTIFY_POLL_MS, LabelInboxComponent } from './label-inbox.component';
 import { ToastService } from '../../core/services/toast.service';
 import { LanguageService } from '../../core/services/language.service';
@@ -51,6 +51,14 @@ describe('LabelInboxComponent', () => {
 
   beforeAll(() => registerLocaleData(localeDe));
 
+  // jsdom has no object URLs; the cards show the loaded photo blob through them
+  let objectUrls: number;
+  beforeEach(() => {
+    objectUrls = 0;
+    URL.createObjectURL = vi.fn(() => `blob:photo-${++objectUrls}`);
+    URL.revokeObjectURL = vi.fn();
+  });
+
   beforeEach(async () => {
     toast = { showToast: vi.fn() } as unknown as MockedObject<ToastService>;
     TestBed.configureTestingModule({
@@ -95,7 +103,27 @@ describe('LabelInboxComponent', () => {
     expect(req.request.params.get('status')).toBe('pending');
     expect(req.request.params.get('limit')).toBe('100');
     req.flush({ photos, pendingCount: photos.length });
+    await answerImages();
+  }
+
+  /** Waits until the rendered cards requested their photos and answers them. */
+  async function answerImages(): Promise<void> {
+    await nextImageRequests((req) => req.flush(new Blob(['jpeg'], { type: 'image/jpeg' })));
     await fixture!.whenStable();
+  }
+
+  /**
+   * The cards render after the inbox resource resolved and only then request their photos; the
+   * pending photo requests keep the app unstable, so `whenStable` cannot be used to wait for them.
+   */
+  async function nextImageRequests(answer: (req: TestRequest) => void): Promise<void> {
+    for (let attempt = 0; attempt < 20; attempt++) {
+      await new Promise((resolve) => setTimeout(resolve));
+      TestBed.tick();
+      const requests = http.match((r) => r.url.endsWith('/image'));
+      requests.forEach(answer);
+      if (requests.length) return;
+    }
   }
 
   const el = (): HTMLElement => fixture!.nativeElement;
@@ -107,10 +135,74 @@ describe('LabelInboxComponent', () => {
 
     expect(all('label-inbox-photo').length).toBe(2);
     expect(one('label-inbox-count-text')?.textContent).toContain('2 offene Fotos');
+    // Loaded with the Bearer token via HttpClient, shown as object URL
     const img = el().querySelector('img') as HTMLImageElement;
-    expect(img.getAttribute('src')).toBe('/api/label-photos/1/image');
+    expect(img.getAttribute('src')).toBe('blob:photo-1');
     expect(img.alt).toContain('Label-Foto vom');
     expect(all('label-inbox-delete')[0].getAttribute('aria-label')).toMatch(/^Label-Foto vom .+ löschen$/);
+  });
+
+  it('shows a hint instead of a black area when the photo cannot be loaded', async () => {
+    create();
+    TestBed.tick();
+    answerSettings(false);
+    http.expectOne((r) => r.url === '/api/label-photos' && r.method === 'GET').flush({ photos: [photo(1)], pendingCount: 1 });
+    await nextImageRequests((image) => {
+      expect(image.request.responseType).toBe('blob');
+      image.flush(new Blob([]), { status: 401, statusText: 'Unauthorized' });
+    });
+    await fixture!.whenStable();
+
+    expect(el().querySelector('img')).toBeNull();
+    expect(one('label-photo-image-placeholder')?.textContent).toContain('Foto konnte nicht geladen werden.');
+
+    one('label-photo-image-retry')!.click();
+    await answerImages();
+    expect(el().querySelector('img')?.getAttribute('src')).toBe('blob:photo-1');
+  });
+
+  it('enlarges the photo in the app and closes it with Escape', async () => {
+    await loadInbox([photo(1)]);
+    one('label-photo-thumbnail')!.click();
+    await fixture!.whenStable();
+    expect(one('label-photo-fullsize')?.querySelector('img')?.getAttribute('src')).toBe('blob:photo-1');
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    await fixture!.whenStable();
+    expect(one('label-photo-fullsize')).toBeNull();
+  });
+
+  it('loads a photo only once its card scrolls into view', async () => {
+    let reveal: (() => void) | undefined;
+    const observe = vi.fn();
+    const disconnect = vi.fn();
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        constructor(callback: IntersectionObserverCallback) {
+          reveal = () => callback([{ isIntersecting: true } as IntersectionObserverEntry], this as never);
+        }
+        observe = observe;
+        disconnect = disconnect;
+      }
+    );
+    try {
+      create();
+      TestBed.tick();
+      answerSettings(false);
+      http.expectOne((r) => r.url === '/api/label-photos' && r.method === 'GET').flush({ photos: [photo(1)], pendingCount: 1 });
+      await new Promise((resolve) => setTimeout(resolve));
+      TestBed.tick();
+      expect(observe).toHaveBeenCalled();
+      expect(http.match((r) => r.url.endsWith('/image')).length).toBe(0);
+
+      reveal!();
+      await answerImages();
+      expect(el().querySelector('img')?.getAttribute('src')).toBe('blob:photo-1');
+      expect(disconnect).toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it('shows an empty state', async () => {
@@ -244,12 +336,18 @@ describe('LabelInboxComponent', () => {
 
       one('label-photo-add')!.click();
       http.expectOne({ url: '/api/collection/releases/1622788', method: 'POST' }).flush({ added: 1, removed: 0 });
+      // The PATCH follows once the add response was processed
+      await new Promise((resolve) => setTimeout(resolve));
       await fixture!.whenStable();
       http.expectOne({ url: '/api/label-photos/1', method: 'PATCH' }).flush(null, { status: 500, statusText: 'Error' });
       await fixture!.whenStable();
       await fixture!.whenStable();
       expect(all('label-inbox-photo').length).toBe(1);
       expect(toast.showToast).toHaveBeenLastCalledWith(expect.any(String), 'error');
+      // The button is enabled again once the failed action has been rendered
+      await new Promise((resolve) => setTimeout(resolve));
+      await fixture!.whenStable();
+      expect((one('label-photo-add') as HTMLButtonElement).disabled).toBe(false);
 
       one('label-photo-add')!.click();
       http.expectNone({ url: '/api/collection/releases/1622788', method: 'POST' });

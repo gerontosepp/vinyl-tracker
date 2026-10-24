@@ -134,7 +134,6 @@ export const IDENTIFY_POLL_MS = 5000;
               <li>
                 <app-label-photo-card
                   [photo]="photo"
-                  [imageUrl]="imageUrl(photo)"
                   [busy]="busy()"
                   [canIdentify]="canIdentify()"
                   (delete)="deletePhoto(photo)"
@@ -182,10 +181,6 @@ export class LabelInboxComponent {
     inject(AppResumeService)
       .resumed$.pipe(takeUntilDestroyed())
       .subscribe(() => this.inbox.reload());
-  }
-
-  imageUrl(photo: LabelPhoto): string {
-    return this.apiService.labelPhotoImageUrl(photo.id);
   }
 
   deletePhoto(photo: LabelPhoto): Promise<void> {

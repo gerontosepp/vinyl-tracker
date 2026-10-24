@@ -1,4 +1,19 @@
-import { ChangeDetectionStrategy, Component, computed, input, linkedSignal, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  ElementRef,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  input,
+  linkedSignal,
+  output,
+  signal,
+} from '@angular/core';
+import { httpResource } from '@angular/common/http';
+import { ApiService } from '../../core/services/api.service';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { LocalizedDatePipe } from '../../core/pipes/localized-date.pipe';
 import { LabelCandidate, LabelMatchConfidence, LabelPhoto } from '../../core/types';
@@ -18,25 +33,50 @@ const CONFIDENCE_CLASSES: Record<LabelMatchConfidence, string> = {
   standalone: true,
   imports: [TranslatePipe, LocalizedDatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '(document:keydown.escape)': 'expanded.set(false)' },
   template: `
     @let taken = (photo().createdAt | localizedDate: 'short') ?? '';
     <article
       class="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex flex-col sm:flex-row"
       data-testid="label-inbox-photo"
     >
-      <a
-        [href]="imageUrl()"
-        target="_blank"
-        rel="noopener"
-        class="block sm:w-48 shrink-0 aspect-square bg-slate-100 dark:bg-slate-900"
-      >
-        <img
-          [src]="imageUrl()"
-          [alt]="'labelInbox.photoAlt' | translate: { date: taken }"
-          loading="lazy"
-          class="w-full h-full object-cover"
-        />
-      </a>
+      @if (imageSrc(); as src) {
+        <button
+          type="button"
+          (click)="expanded.set(true)"
+          [attr.aria-label]="'labelInbox.showPhoto' | translate: { date: taken }"
+          class="block sm:w-48 shrink-0 aspect-square bg-slate-100 dark:bg-slate-900 cursor-zoom-in"
+          data-testid="label-photo-thumbnail"
+        >
+          <img [src]="src" [alt]="'labelInbox.photoAlt' | translate: { date: taken }" class="w-full h-full object-cover" />
+        </button>
+        @if (expanded()) {
+          <div
+            class="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 cursor-zoom-out"
+            role="dialog"
+            aria-modal="true"
+            [attr.aria-label]="'labelInbox.photoAlt' | translate: { date: taken }"
+            (click)="expanded.set(false)"
+            data-testid="label-photo-fullsize"
+          >
+            <img [src]="src" alt="" class="max-w-full max-h-full object-contain" />
+          </div>
+        }
+      } @else {
+        <div
+          class="sm:w-48 shrink-0 aspect-square bg-slate-100 dark:bg-slate-900 flex flex-col items-center justify-center gap-2 p-3 text-center text-xs text-slate-500 dark:text-slate-400"
+          data-testid="label-photo-image-placeholder"
+        >
+          @if (image.error()) {
+            <span>{{ 'labelInbox.imageError' | translate }}</span>
+            <button type="button" (click)="image.reload()" [class]="secondaryButton" data-testid="label-photo-image-retry">
+              {{ 'labelInbox.imageRetry' | translate }}
+            </button>
+          } @else {
+            <span class="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" aria-hidden="true"></span>
+          }
+        </div>
+      }
 
       <div class="flex-1 min-w-0 p-3 flex flex-col gap-3">
         <div class="flex items-center justify-between gap-2">
@@ -158,8 +198,11 @@ const CONFIDENCE_CLASSES: Record<LabelMatchConfidence, string> = {
   `,
 })
 export class LabelPhotoCardComponent {
+  private readonly apiService = inject(ApiService);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly destroyRef = inject(DestroyRef);
+
   readonly photo = input.required<LabelPhoto>();
-  readonly imageUrl = input.required<string>();
   readonly busy = input(false);
   /** Whether an OpenRouter key is configured, so (re)identifying is possible. */
   readonly canIdentify = input(false);
@@ -181,6 +224,53 @@ export class LabelPhotoCardComponent {
   /** Chosen pressing; follows the best match only when a different suggestion arrives. */
   readonly selectedId = linkedSignal(() => this.bestId());
   readonly selected = computed(() => this.candidates().find((c) => c.discogsId === this.selectedId()) ?? null);
+
+  /** Polling delivers new photo objects; only a different ID may load the photo again. */
+  private readonly photoId = computed(() => this.photo().id);
+  /** Set once the card scrolls into view; photos further down are only loaded when needed. */
+  private readonly visible = signal(false);
+  /**
+   * The photo is loaded through HttpClient so the request carries the Bearer token like every
+   * API call; an `<img src>` would only send the auth cookie, which expires before the token.
+   */
+  readonly image = httpResource.blob(() =>
+    this.visible() ? this.apiService.labelPhotoImageUrl(this.photoId()) : undefined
+  );
+  /** Object URL of the loaded photo; created and revoked together in the effect below. */
+  readonly imageSrc = signal<string | null>(null);
+  readonly expanded = signal(false);
+
+  constructor() {
+    effect((onCleanup) => {
+      if (!this.image.hasValue()) {
+        this.imageSrc.set(null);
+        return;
+      }
+      const src = URL.createObjectURL(this.image.value());
+      this.imageSrc.set(src);
+      // Each object URL holds the image in memory until it is revoked
+      onCleanup(() => URL.revokeObjectURL(src));
+    });
+
+    // Without IntersectionObserver (old browsers, tests) every photo is loaded right away
+    if (typeof IntersectionObserver === 'undefined') {
+      this.visible.set(true);
+      return;
+    }
+    afterNextRender(() => {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          if (entries.some((entry) => entry.isIntersecting)) {
+            this.visible.set(true);
+            observer.disconnect();
+          }
+        },
+        { rootMargin: '200px' }
+      );
+      observer.observe(this.host.nativeElement);
+      this.destroyRef.onDestroy(() => observer.disconnect());
+    });
+  }
 
   details(candidate: LabelCandidate): string {
     return [candidate.label, candidate.catno, candidate.country, candidate.year].filter(Boolean).join(' · ');

@@ -14,6 +14,7 @@ import {
   StorageType,
   StorageUnit,
 } from '../../../../core/types';
+import { TooltipDirective } from '../../../../shared/directives/tooltip.directive';
 
 export interface StoragePreset {
   key: string;
@@ -56,7 +57,7 @@ const INPUT_CLASS =
 @Component({
   selector: 'app-shelf-view',
   standalone: true,
-  imports: [FormsModule, TranslatePipe],
+  imports: [FormsModule, TranslatePipe, TooltipDirective],
   changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <div class="space-y-6">
@@ -104,7 +105,7 @@ const INPUT_CLASS =
                     <button
                       type="button"
                       (click)="filterSelected.emit(unit.id + ':' + c.number)"
-                      [title]="'storage.openCompartment' | translate"
+                      [appTooltip]="'storage.openCompartment' | translate"
                       class="text-left rounded-lg border border-slate-200 dark:border-slate-600 p-2 bg-slate-50 dark:bg-slate-900/40 hover:border-indigo-400 dark:hover:border-indigo-500 text-[11px] space-y-1 cursor-pointer"
                       data-testid="compartment"
                     >

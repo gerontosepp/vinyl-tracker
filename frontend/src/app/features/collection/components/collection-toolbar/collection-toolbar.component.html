@@ -28,7 +28,7 @@
         type="button"
         (click)="clearSelection.emit()"
         class="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-600 shadow-sm hover:shadow"
-        [title]="'collection.clearSelection' | translate"
+        data-testid="clear-selection"
       >
         <svg lucideX [size]="16" class="text-slate-500 dark:text-slate-400"></svg>
         <span>{{ 'collection.clearSelection' | translate }}</span>
@@ -296,7 +296,7 @@
       <div
         [class]="collapsibleClass()"
         class="relative group min-w-[130px] max-w-[160px] shrink-0"
-        title="Einzeljahre oder Bereiche (z.B. 1970, 1971 oder 1970-1972)"
+        [appTooltip]="'collection.yearsTooltip' | translate"
       >
         <svg
           lucideCalendar
@@ -315,7 +315,7 @@
             type="button"
             (click)="clearYears()"
             class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-1 cursor-pointer"
-            title="Jahr löschen"
+            [appTooltip]="'collection.clearYears' | translate"
           >
             <svg lucideX [size]="14"></svg>
           </button>
@@ -472,7 +472,7 @@
                       type="button"
                       (click)="onNotPlayedSinceSelect('')"
                       class="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
-                      title="Datum zurücksetzen"
+                      [appTooltip]="'collection.resetDate' | translate"
                     >
                       <svg lucideX [size]="14"></svg>
                     </button>
@@ -505,7 +505,7 @@
         <button
           (click)="sortOrderToggle.emit()"
           class="p-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 shadow-sm transition-colors cursor-pointer shrink-0"
-          [title]="sortOrder() === 'asc' ? 'Aufsteigend' : 'Absteigend'"
+          [appTooltip]="(sortOrder() === 'asc' ? 'collection.sortAscending' : 'collection.sortDescending') | translate"
         >
           @if (sortOrder() === 'asc') {
             <svg lucideArrowUp [size]="16"></svg>
@@ -523,7 +523,7 @@
           class="hidden 2xl:inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400 truncate max-w-[14rem]"
           role="status"
           aria-live="polite"
-          [title]="'Discogs-Status: ' + loadStatus()"
+          [appTooltip]="'collection.discogsStatus' | translate: { status: loadStatus() }"
         >
           <span
             [class]="

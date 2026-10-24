@@ -8,6 +8,7 @@ import { ScannerService } from '../../../core/services/scanner.service';
 import { of, throwError } from 'rxjs';
 import { signal } from '@angular/core';
 import { User, ScanResult, SyncResult } from '../../../core/types';
+import { provideRouter } from '@angular/router';
 
 describe('BarcodeScannerComponent', () => {
   afterEach(() => {
@@ -48,6 +49,7 @@ describe('BarcodeScannerComponent', () => {
     await TestBed.configureTestingModule({
       imports: [BarcodeScannerComponent],
       providers: [
+        provideRouter([]),
         { provide: ApiService, useValue: apiServiceMock },
         { provide: ToastService, useValue: toastServiceMock },
         { provide: AuthService, useValue: authServiceMock },

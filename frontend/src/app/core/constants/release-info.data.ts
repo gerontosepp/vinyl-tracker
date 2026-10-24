@@ -14,6 +14,13 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "isUnreleased": true,
     "items": [
       {
+        "title": "Hilfe in der App (`#247`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Neue Seite **Hilfe** (Seitenleiste, am Handy ?-Symbol oben) erklärt alle Funktionen – mit Inhaltsverzeichnis und Suche. Ein **?** auf Scan, Sammlung, Regalen, Label-Inbox, Sortiermodus und Einstellungen springt direkt zum passenden Abschnitt. Symbole und Buttons erklären sich per Tooltip (Mauszeiger, Tastatur-Fokus oder langes Drücken am Handy).",
+        "details": []
+      },
+      {
         "title": "MCP-Server für Windows (`#245`)",
         "type": "feat",
         "typeLabel": "Feature",

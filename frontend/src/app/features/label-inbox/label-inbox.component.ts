@@ -11,6 +11,7 @@ import { getErrorMessage } from '../../core/utils/error';
 import { LabelCandidate, LabelPhoto, StoragePlacement } from '../../core/types';
 import { StoragePlacementComponent } from '../../shared/components/storage-placement/storage-placement.component';
 import { LabelPhotoCardComponent } from './label-photo-card.component';
+import { HelpLinkComponent } from '../../shared/components/help-link/help-link.component';
 
 /** Maximum number of photos the backend returns per list request. */
 const MAX_PHOTOS = 100;
@@ -24,14 +25,17 @@ export const IDENTIFY_POLL_MS = 5000;
 @Component({
   selector: 'app-label-inbox',
   standalone: true,
-  imports: [LayoutComponent, TranslatePipe, StoragePlacementComponent, LabelPhotoCardComponent],
+  imports: [LayoutComponent, TranslatePipe, StoragePlacementComponent, LabelPhotoCardComponent, HelpLinkComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-layout [fullWidth]="false">
       <div class="space-y-5">
         <div class="flex flex-wrap items-start justify-between gap-3">
           <div class="min-w-0">
-            <h1 class="text-2xl font-bold tracking-tight">{{ 'labelInbox.title' | translate }}</h1>
+            <h1 class="text-2xl font-bold tracking-tight flex items-center gap-1">
+              {{ 'labelInbox.title' | translate }}
+              <app-help-link anchor="label-foto" />
+            </h1>
             <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ 'labelInbox.intro' | translate }}</p>
           </div>
           @if (photos().length > 0 && !confirmDeleteAll()) {

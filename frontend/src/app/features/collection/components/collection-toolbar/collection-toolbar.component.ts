@@ -21,6 +21,7 @@ import {
   LucideArchive,
   LucideSlidersHorizontal,
 } from '@lucide/angular';
+import { TooltipDirective } from '../../../../shared/directives/tooltip.directive';
 
 const FILTERS_OPEN_KEY = 'collection.filtersOpen';
 
@@ -36,6 +37,7 @@ function readFiltersOpen(): boolean {
   selector: 'app-collection-toolbar',
   standalone: true,
   imports: [
+    TooltipDirective,
     FormsModule,
     TranslatePipe,
     LucidePrinter,

@@ -5,6 +5,7 @@ trigger: always_on
 1. **Keep Docs Sync**: 
    - If you change features, configuration, or setup steps, you MUST update `README.md` immediately. Do not wait for a separate documentation task.
    - For new features, bugfixes, or notable library updates, add an entry under `## Unreleased` in `docs/Release-Info.md` (and keep `frontend/src/app/core/constants/release-info.data.ts` in sync via `node scripts/sync-release-info.js`).
+   - When a user-visible feature, button or workflow changes, update the in-app help in `docs/Help.md` **and** `docs/Help.en.md` (same `{#anchor}`s) and regenerate it with `node scripts/sync-help.js`.
 2. **Architecture Decision Records (ADRs)**:
    - For any fundamental architectural choice, technology or library selection, security concept, cross-cutting pattern, or non-trivial protocol/data-flow decision, create an ADR in `docs/adr/XXXX-<kebab-case-titel>.md` (sequential 4-digit numbering e.g. `0014`, following the template in `docs/adr/README.md`).
    - Always update the ADR index table in `docs/adr/README.md` and link the new ADR in `docs/arc42.md` Section 9 ("Architekturentscheidungen").

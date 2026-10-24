@@ -51,6 +51,16 @@ describe('TopMenuBarComponent', () => {
     expect(logo.getAttribute('src')).toBe('/favicon.svg');
   });
 
+  it('links to the help on phones and closes the scanner', () => {
+    const help: HTMLAnchorElement = fixture.nativeElement.querySelector('[data-testid="nav-help-mobile"]');
+    expect(help.getAttribute('href')).toBe('/help');
+    expect(help.classList.contains('md:hidden')).toBe(true);
+    // Icon-only link: the tooltip text names it for screen readers
+    expect(help.getAttribute('aria-label')).toBe('nav.help');
+    help.click();
+    expect(TestBed.inject(ScannerService).closeScanner).toHaveBeenCalled();
+  });
+
   it('renders nothing without a user', () => {
     mockAuthService.user.set(null);
     fixture.detectChanges();

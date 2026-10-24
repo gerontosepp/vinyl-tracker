@@ -8,6 +8,7 @@ import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { getErrorMessage } from '../../core/utils/error';
 import { StorageMedia, StorageSequenceItem } from '../../core/types';
 import { compartmentProgress, isNewCompartment, startIndex } from './sort-sequence';
+import { HelpLinkComponent } from '../../shared/components/help-link/help-link.component';
 
 interface SortShelf {
   id: number;
@@ -24,7 +25,7 @@ interface SortShelf {
 @Component({
   selector: 'app-sort-mode',
   standalone: true,
-  imports: [FormsModule, TranslatePipe],
+  imports: [FormsModule, TranslatePipe, HelpLinkComponent],
   changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <div
@@ -34,7 +35,10 @@ interface SortShelf {
         @case ('setup') {
           <div class="flex-1 flex flex-col max-w-md w-full mx-auto gap-5" data-testid="sort-setup">
             <div>
-              <h1 class="text-2xl font-bold tracking-tight">{{ 'sort.title' | translate }}</h1>
+              <h1 class="text-2xl font-bold tracking-tight flex items-center gap-1">
+                {{ 'sort.title' | translate }}
+                <app-help-link anchor="sortiermodus" />
+              </h1>
               <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ 'sort.intro' | translate }}</p>
             </div>
 

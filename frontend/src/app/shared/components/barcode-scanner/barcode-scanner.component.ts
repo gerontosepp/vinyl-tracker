@@ -11,15 +11,19 @@ import { ScanResult, DiscogsMatch, SyncResult, StoragePlacement } from '../../..
 import { StoragePlacementComponent } from '../storage-placement/storage-placement.component';
 import { LabelPhotoCaptureComponent } from '../label-photo-capture/label-photo-capture.component';
 import { firstValueFrom } from 'rxjs';
+import { HelpLinkComponent } from '../help-link/help-link.component';
 
 @Component({
   selector: 'app-barcode-scanner',
   standalone: true,
-  imports: [FormsModule, TranslatePipe, StoragePlacementComponent, LabelPhotoCaptureComponent],
+  imports: [FormsModule, TranslatePipe, StoragePlacementComponent, LabelPhotoCaptureComponent, HelpLinkComponent],
   changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <div class="flex flex-col items-center p-4 h-full">
-      <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">Scan Vinyl Barcode</h2>
+      <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100 flex items-center gap-1">
+        {{ 'scanner.title' | translate }}
+        <app-help-link anchor="scannen" />
+      </h2>
 
       @if (isScanning()) {
         @if (scannerService.scannerMode() === 'hardware') {

@@ -240,6 +240,11 @@ The system is deployed as a multi-container Docker application orchestrated by D
 - **Versioning**: Before merging into `main`, version bumps across the frontend, backend, and documentation are automated via the `./scripts/release.sh` script on the `develop` branch.
 - **Continuous Deployment (CD)**: Merging `develop` into `main` triggers the CI pipeline on `main`, which (after all tests) builds multi-arch frontend and backend Docker images, tags them `latest` and `v<version>` (from `frontend/package.json`) and pushes them to GHCR. In parallel, `release.yml` creates the GitHub Release `v<version>` with generated notes and attaches native MCP server binaries (Linux, macOS).
 
+### 8.5 In-App Help & Tooltips
+- **Help page** (`/help`): content is maintained as Markdown in `docs/Help.md` (de) and `docs/Help.en.md` (en), one section per `## Title {#anchor}`. `scripts/sync-help.js` converts both into `frontend/public/assets/help.<lang>.json` (escaped, rendered HTML plus plain text for the search) and fails if the anchors of the two languages differ. The Claude hook regenerates the files after every edit.
+- **Context help**: `HelpLinkComponent` (`<app-help-link anchor="…">`) links pages to `/help#anchor`; a spec checks that every context anchor exists in both languages.
+- **Tooltips**: `TooltipDirective` (`[appTooltip]`) shows a consistent tooltip on hover, keyboard focus and long press, links it via `aria-describedby` and names icon-only elements via `aria-label`. Native `title` remains only for truncated text.
+
 ## 9. Architecture Decisions
 
 Architectural decisions in Vinyl Tracker are maintained as formal **Architecture Decision Records (ADRs)** located in [`docs/adr/`](adr/README.md).

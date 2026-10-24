@@ -53,7 +53,7 @@
                 (click)="onLogListen()"
                 [disabled]="isLoggingListen() || loading()"
                 class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 active:scale-95 transition-all shadow-sm hover:shadow disabled:opacity-50 cursor-pointer"
-                title="Platte als gehört erfassen"
+                [appTooltip]="'record.logListenTooltip' | translate"
               >
                 @if (isLoggingListen()) {
                   <div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -74,7 +74,7 @@
                   (click)="onPlayOnRoon()"
                   [disabled]="isPlayingOnRoon() || loading()"
                   [class]="'inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/30 hover:bg-purple-100 dark:hover:bg-purple-900/50 border border-purple-200 dark:border-purple-800 active:scale-95 transition-all shadow-xs hover:shadow-sm disabled:opacity-50 cursor-pointer ' + (hasMultipleZones() ? 'rounded-l-xl border-r-0' : 'rounded-xl')"
-                  [title]="selectedZone() ? ('record.playOnRoon' | translate) + ' (' + selectedZone()?.name + ')' : ('record.playOnRoon' | translate)"
+                  [appTooltip]="selectedZone() ? ('record.playOnRoon' | translate) + ' (' + selectedZone()?.name + ')' : ('record.playOnRoon' | translate)"
                 >
                   @if (isPlayingOnRoon()) {
                     <div class="w-3.5 h-3.5 border-2 border-purple-600 dark:border-purple-400 border-t-transparent rounded-full animate-spin"></div>
@@ -97,7 +97,7 @@
                     (click)="toggleZoneDropdown()"
                     [disabled]="isPlayingOnRoon() || loading()"
                     class="inline-flex items-center justify-center px-2 py-1.5 rounded-r-xl text-xs font-semibold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/30 hover:bg-purple-100 dark:hover:bg-purple-900/50 border border-purple-200 dark:border-purple-800 active:scale-95 transition-all shadow-xs hover:shadow-sm disabled:opacity-50 cursor-pointer"
-                    [title]="'record.selectZone' | translate"
+                    [appTooltip]="'record.selectZone' | translate"
                   >
                     <svg
                       lucideChevronDown
@@ -150,7 +150,7 @@
         <button
           (click)="close.emit()"
           class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer shrink-0"
-          title="Schließen"
+          [appTooltip]="'common.close' | translate"
         >
           <svg lucideX [size]="20"></svg>
         </button>
@@ -677,7 +677,7 @@
             (click)="promptDelete()"
             [disabled]="isRemoving() || loading()"
             class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-transparent hover:border-rose-200 dark:hover:border-rose-900/50 transition-colors cursor-pointer disabled:opacity-50"
-            [title]="'collection.removeFromCollection' | translate"
+            [appTooltip]="'collection.removeFromCollection' | translate"
           >
             <svg lucideTrash2 [size]="14"></svg>
             <span>{{ 'collection.removeFromCollection' | translate }}</span>

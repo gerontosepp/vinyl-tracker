@@ -12,7 +12,15 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "tag": "In Entwicklung",
     "isCurrent": false,
     "isUnreleased": true,
-    "items": []
+    "items": [
+      {
+        "title": "MCP-Server für Windows (`#245`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Jedes Release enthält zusätzlich `vinyl-mcp-server-windows-x86_64.zip` mit `vinyl-mcp-server.exe` für Claude Desktop/Code unter Windows; Einrichtung in `mcp/README.md`.",
+        "details": []
+      }
+    ]
   },
   {
     "version": "v1.3.0",

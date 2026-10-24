@@ -9,6 +9,8 @@
 
 ## Unreleased
 
+- **MCP-Server für Windows (`#245`)**: Jedes Release enthält zusätzlich `vinyl-mcp-server-windows-x86_64.zip` mit `vinyl-mcp-server.exe` für Claude Desktop/Code unter Windows; Einrichtung in `mcp/README.md`.
+
 ---
 
 ## v1.3.0 (2026-10-24)

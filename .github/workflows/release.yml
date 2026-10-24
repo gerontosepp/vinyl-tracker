@@ -80,9 +80,14 @@ jobs:
           - os: macos-latest
             target: macos-aarch64
             binary: vinyl-mcp-server
+          - os: windows-latest
+            target: windows-x86_64
+            binary: vinyl-mcp-server.exe
     defaults:
       run:
         working-directory: ./mcp
+        # Git Bash on Windows, so the steps share one script syntax
+        shell: bash
 
     steps:
       - name: Checkout repository
@@ -117,6 +122,12 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ARCHIVE_NAME="vinyl-mcp-server-${{ matrix.target }}.tar.gz"
-          tar -czf "../$ARCHIVE_NAME" -C target/release "${{ matrix.binary }}"
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            # ZIP is what Windows users can open without extra tools
+            ARCHIVE_NAME="vinyl-mcp-server-${{ matrix.target }}.zip"
+            (cd target/release && 7z a "../../../$ARCHIVE_NAME" "${{ matrix.binary }}")
+          else
+            ARCHIVE_NAME="vinyl-mcp-server-${{ matrix.target }}.tar.gz"
+            tar -czf "../$ARCHIVE_NAME" -C target/release "${{ matrix.binary }}"
+          fi
           gh release upload "${{ steps.resolve_tag.outputs.TAG_NAME }}" "../$ARCHIVE_NAME" --clobber

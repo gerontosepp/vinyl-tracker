@@ -78,8 +78,9 @@ Der Server implementiert **Option 1 (REST-Client)**: Er kommuniziert direkt übe
 Ab jedem Release stehen vorkompilierte Archive direkt unter **GitHub Releases** bereit:
 * **Linux (x86_64):** `vinyl-mcp-server-linux-x86_64.tar.gz` (ideal für Proxmox, Ubuntu, Debian)
 * **macOS (Apple Silicon):** `vinyl-mcp-server-macos-aarch64.tar.gz` (für M1/M2/M3/M4 Macs)
+* **Windows (x86_64):** `vinyl-mcp-server-windows-x86_64.zip` (enthält `vinyl-mcp-server.exe`)
 
-Einfach entpacken und den Pfad in deiner `mcp_config.json` eintragen.
+Einfach entpacken und den Pfad in deiner `mcp_config.json` eintragen. Auf macOS beim Aktualisieren die alte Datei erst löschen und dann die neue kopieren (`rm` + `cp`), sonst beendet macOS den Prozess beim Start.
 
 ### Option B: Aus dem Quellcode bauen
 #### Voraussetzungen
@@ -143,7 +144,7 @@ Füge den Server in deine globale oder Workspace-spezifische MCP-Konfiguration e
 ```
 
 ### 2. Claude Desktop
-Bearbeite die Datei `~/Library/Application Support/Claude/claude_desktop_config.json`:
+Bearbeite die Datei `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) bzw. `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
 
 ```json
 {
@@ -159,6 +160,8 @@ Bearbeite die Datei `~/Library/Application Support/Claude/claude_desktop_config.
   }
 }
 ```
+
+Unter Windows zeigt `command` auf die `.exe`; Backslashes im JSON doppelt schreiben, z. B. `"command": "C:\\Tools\\vinyl-mcp-server.exe"`.
 
 ### 3. Cursor / VS Code (Cline / Roo-Code)
 In den MCP-Einstellungen der jeweiligen Erweiterung hinzufügen:

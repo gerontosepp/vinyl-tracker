@@ -282,7 +282,7 @@ The project includes GitHub Actions workflows:
   - Enforces linting and tests across all components.
   - Runs on push and pull requests for `main` and `develop` (plus manual `workflow_dispatch`). Pushes to `main` additionally build and publish multi-arch Docker images (`linux/amd64`, `linux/arm64`) to GHCR.
   - **Self-Hosted Runners**: Jobs run on self-hosted Linux ARM64 runners (`[self-hosted, linux]`, Docker containers with mounted Docker socket for the PostgreSQL test container and Playwright), see [DEPLOYMENT.md](docs/DEPLOYMENT.md).
-  - **Hybrid Multi-Platform Releases**: Release builds additionally use GitHub-hosted runners (`ubuntu-latest`, `macos-latest`) to produce native Linux and macOS MCP server binaries.
+  - **Hybrid Multi-Platform Releases**: Release builds additionally use GitHub-hosted runners (`ubuntu-latest`, `macos-latest`, `windows-latest`) to produce native Linux, macOS and Windows MCP server binaries.
 - **Auto Release** (`.github/workflows/release.yml`):
   - Automatically creates a GitHub Release (with tag `v<version>` from `frontend/package.json` and auto-generated release notes) when a Pull Request to `main` is successfully merged.
   - The Docker images for that release are published by the CI pipeline run of the merge push to `main`.

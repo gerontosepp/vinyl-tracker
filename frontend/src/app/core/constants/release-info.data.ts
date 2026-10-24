@@ -3,7 +3,7 @@
 import { ReleaseEntry } from '../models/release-info.model';
 
 // Application version from frontend/package.json – single source for all version badges.
-export const APP_VERSION = '1.2.1';
+export const APP_VERSION = '1.3.0';
 
 export const RELEASE_INFO_DATA: ReleaseEntry[] = [
   {
@@ -15,10 +15,33 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "items": []
   },
   {
+    "version": "v1.3.0",
+    "rawHeader": "v1.3.0 (2026-10-24)",
+    "date": "2026-10-24",
+    "isCurrent": true,
+    "isUnreleased": false,
+    "items": [
+      {
+        "title": "Fix: Fotos in der Label-Inbox wieder sichtbar (`#238`)",
+        "type": "fix",
+        "typeLabel": "Fix",
+        "summary": "Einen Tag nach der Anmeldung zeigte die Label-Inbox statt der Fotos nur noch schwarze Flächen – das Bild wurde ohne Anmeldedaten geladen, sobald das Anmelde-Cookie abgelaufen war. Die Fotos werden jetzt wie alle anderen Daten mit dem Login-Token geladen.",
+        "details": []
+      },
+      {
+        "title": "Plattenerkennung direkt in der App (`#235`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Mit einem eigenen [OpenRouter](https://openrouter.ai)-API-Key (Einstellungen → **Label-Erkennung**) erkennt die App fotografierte Labels selbst. Nach dem Foto schlägt die Label-Inbox die passende Pressung mit Cover, Katalognummer, Sicherheit, Begründung und Alternativen vor; **Hinzufügen** übernimmt sie in die Sammlung und zeigt den Regalplatz, **Nur abschließen** markiert das Foto. Das Modell ist wählbar (Standard Claude Sonnet, günstiger Claude Haiku) und kann nur suchen, nie selbst etwas ändern. Ohne Key bleibt der Weg über den MCP-Prompt.",
+        "details": []
+      }
+    ]
+  },
+  {
     "version": "v1.2.1",
     "rawHeader": "v1.2.1 (2026-10-23)",
     "date": "2026-10-23",
-    "isCurrent": true,
+    "isCurrent": false,
     "isUnreleased": false,
     "items": [
       {

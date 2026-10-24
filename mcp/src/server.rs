@@ -14,17 +14,16 @@ use std::sync::Arc;
 
 /// Steps shared by the label identification prompts: read the label, search Discogs in a
 /// structured way, verify candidates and only act after the user confirmed.
-const LABEL_IDENTIFICATION_STEPS: &str = "\
-1. Read everything printed on the label photo: artist, title, record label, catalog number, side (A/B), \
-country, year or (c)/(p) notes, rights society (e.g. GEMA, BIEM), label code (LC) and the label design or colour. \
-If the photo shows the run-out groove, also read the matrix / runout etching.\n\
-2. Call `search_discogs` with `catno` and `label`. Without results, try catalog number variants (with and without spaces \
-or hyphens), then `artist` + `release_title`, and finally a free-text `query`.\n\
-3. Check the most promising candidates with `get_record_details` and compare country, year, label variant, catalog number \
-and identifiers (matrix / runout, rights society, label code) with the photo.\n\
+/// Shared reading steps (`vinyl_api_types::label_photo::LABEL_READING_STEPS`) plus the
+/// confirmation dialog of the MCP prompts.
+fn label_identification_steps() -> String {
+    format!(
+        "{LABEL_READING_STEPS}\n\
 4. Present the best match with its Discogs release ID, your reasoning and a confidence level, and list close alternatives. \
 If the pressing cannot be determined reliably, ask for another photo (other side, run-out groove, back cover).\n\
-5. Never add or log anything before the user has confirmed the match.";
+5. Never add or log anything before the user has confirmed the match."
+    )
+}
 
 #[derive(Clone)]
 pub struct VinylMcpServer {
@@ -566,9 +565,10 @@ impl VinylMcpServer {
                 "After confirmation, ask whether to add the record to the collection (`add_to_collection`) or to log a listen (`scan_barcode` with `discogs-id:<release ID>`)."
             }
         };
+        let steps = label_identification_steps();
         let instructions = format!(
             "You are a vinyl record identification expert for Vinyl Tracker. Identify the exact Discogs release \
-             of the record whose label photo the user attaches.\n{LABEL_IDENTIFICATION_STEPS}\n6. {action}"
+             of the record whose label photo the user attaches.\n{steps}\n6. {action}"
         );
 
         vec![PromptMessage::new_text(Role::User, instructions)]
@@ -584,10 +584,11 @@ impl VinylMcpServer {
         Parameters(args): Parameters<ProcessLabelInboxPromptArgs>,
     ) -> Vec<PromptMessage> {
         let limit = args.limit.unwrap_or(5);
+        let steps = label_identification_steps();
         let instructions = format!(
             "You are a vinyl record identification expert for Vinyl Tracker. Work through the user's label photo inbox.\n\
              Fetch up to {limit} open photos with `get_label_inbox` and apply these steps to every photo:\n\
-             {LABEL_IDENTIFICATION_STEPS}\n\
+             {steps}\n\
              6. Then show one confirmation list with all photos: photo ID, proposed release (artist, title, label, catalog number, \
              country, year, Discogs release ID) and confidence.\n\
              7. For every match the user confirms, call `add_to_collection` and then `resolve_label_photo` with status \

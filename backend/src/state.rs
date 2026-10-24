@@ -1,5 +1,5 @@
 use crate::{
-    clients::discogs::DiscogsClient,
+    clients::{discogs::DiscogsClient, openrouter::OpenRouterClient},
     config::Config,
     services::{crypto_service::CryptoService, image_proxy::ImageProxyService, roon::RoonService},
 };
@@ -9,6 +9,11 @@ use governor::{
 };
 use sqlx::PgPool;
 use std::{net::IpAddr, num::NonZeroU32, sync::Arc};
+use tokio::sync::Semaphore;
+
+/// Label identifications running at the same time; each one holds a vision model request and
+/// several Discogs calls, which share the 60 requests per minute.
+const MAX_PARALLEL_IDENTIFICATIONS: usize = 2;
 
 pub type AuthRateLimiter =
     RateLimiter<IpAddr, DefaultKeyedStateStore<IpAddr>, DefaultClock, NoOpMiddleware>;
@@ -22,6 +27,8 @@ pub struct AppState {
     pub image_proxy: Arc<ImageProxyService>,
     pub roon: Arc<RoonService>,
     pub auth_rate_limiter: Arc<AuthRateLimiter>,
+    pub openrouter: Arc<OpenRouterClient>,
+    pub identify_slots: Arc<Semaphore>,
 }
 
 impl AppState {
@@ -49,6 +56,7 @@ impl AppState {
         );
 
         let roon = RoonService::new();
+        let openrouter = OpenRouterClient::new(config.openrouter_api_base_url.clone());
 
         let limit = NonZeroU32::new(config.auth_rate_limit_for_period)
             .unwrap_or_else(|| NonZeroU32::new(10).unwrap());
@@ -62,6 +70,8 @@ impl AppState {
             image_proxy: Arc::new(image_proxy),
             roon: Arc::new(roon),
             auth_rate_limiter,
+            openrouter: Arc::new(openrouter),
+            identify_slots: Arc::new(Semaphore::new(MAX_PARALLEL_IDENTIFICATIONS)),
         }
     }
 }

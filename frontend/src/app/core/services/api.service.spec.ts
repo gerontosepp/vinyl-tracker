@@ -87,4 +87,23 @@ describe('ApiService label photos', () => {
     expect(everything.request.params.keys()).toEqual([]);
     everything.flush({ deleted: 1, pendingCount: 0 });
   });
+
+  it('queues, resolves and configures the automatic label identification', () => {
+    service.identifyLabelPhoto(4).subscribe();
+    const identify = http.expectOne('/api/label-photos/4/identify');
+    expect(identify.request.method).toBe('POST');
+    identify.flush({});
+
+    service.resolveLabelPhoto(4, 'identified', 1622788).subscribe();
+    const resolve = http.expectOne('/api/label-photos/4');
+    expect(resolve.request.method).toBe('PATCH');
+    expect(resolve.request.body).toEqual({ status: 'identified', discogsId: 1622788 });
+    resolve.flush({});
+
+    service.updateOpenRouterSettings({ apiKey: '' }).subscribe();
+    const settings = http.expectOne('/api/users/me/openrouter');
+    expect(settings.request.method).toBe('PUT');
+    expect(settings.request.body).toEqual({ apiKey: '' });
+    settings.flush({});
+  });
 });

@@ -96,7 +96,7 @@ impl PrintRenderer for AveryLabels {
                 layout::gray(0.45),
                 text_x,
                 y + PADDING_MM + 1.5,
-                &format!("{}: {}", labels.id, record.discogs_id),
+                &labels.id_line(record.discogs_id),
             );
         }
 

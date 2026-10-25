@@ -6,13 +6,30 @@ use crate::{
             ParsedCollectionFilter,
         },
         discogs::{DiscogsArtist, DiscogsPagination},
+        record::RecordSource,
     },
     services::storage::StorageService,
 };
-use sqlx::{PgPool, Row};
+use sqlx::{PgPool, Row, postgres::PgRow};
 use std::collections::HashMap;
 
 pub struct CollectionQueryService;
+
+/// Columns and joins of a collection release, mapped by [`map_release`]; `$1` is the user ID.
+const RELEASE_SELECT_SQL: &str = "SELECT ci.id as item_id, ci.instance_id, ci.added_at, ci.media_condition, ci.sleeve_condition, ci.sort_key,
+                    rc.id as record_id, rc.discogs_id, rc.title, rc.artist, rc.release_year, rc.thumb_url, rc.format, rc.source,
+                    rc.lowest_price::float8 as lowest_price,
+                    rc.median_price::float8 as median_price,
+                    COALESCE(le.listen_count, 0) as play_count,
+                    le.last_played_at
+             FROM collection_item ci
+             JOIN record_cache rc ON rc.id = ci.record_id
+             LEFT JOIN (
+                 SELECT record_id, user_id, COUNT(*) as listen_count, MAX(timestamp) as last_played_at
+                 FROM listen_event
+                 WHERE user_id = $1
+                 GROUP BY record_id, user_id
+             ) le ON le.record_id = ci.record_id";
 
 /// Automatic artist sort key: artist without a leading article, lowercase.
 /// Ignored articles: The, A, An, Der, Die, Das, Le, La, Les ("Die Sterne" sorts under S).
@@ -200,20 +217,7 @@ impl CollectionQueryService {
         let limit_str = limit_clause.unwrap_or("");
 
         let select_sql = format!(
-            "SELECT ci.id as item_id, ci.instance_id, ci.added_at, ci.media_condition, ci.sleeve_condition, ci.sort_key,
-                    rc.id as record_id, rc.discogs_id, rc.title, rc.artist, rc.release_year, rc.thumb_url, rc.format,
-                    rc.lowest_price::float8 as lowest_price,
-                    rc.median_price::float8 as median_price,
-                    COALESCE(le.listen_count, 0) as play_count,
-                    le.last_played_at
-             FROM collection_item ci
-             JOIN record_cache rc ON rc.id = ci.record_id
-             LEFT JOIN (
-                 SELECT record_id, user_id, COUNT(*) as listen_count, MAX(timestamp) as last_played_at
-                 FROM listen_event
-                 WHERE user_id = $1
-                 GROUP BY record_id, user_id
-             ) le ON le.record_id = ci.record_id
+            "{RELEASE_SELECT_SQL}
              WHERE {where_clause}
              ORDER BY {order_by}
              {limit_str}"
@@ -244,82 +248,15 @@ impl CollectionQueryService {
             }
         }
 
-        let mut releases = Vec::with_capacity(rows.len());
-        for row in rows {
-            let record_id: i64 = row.get("record_id");
-            let discogs_id: i64 = row.get("discogs_id");
-            let instance_id: i64 = row.get("instance_id");
-            let added_at: chrono::NaiveDateTime = row.get("added_at");
-            let media_cond: Option<String> = row.get("media_condition");
-            let sleeve_cond: Option<String> = row.get("sleeve_condition");
-            let title: String = row.get("title");
-            let artist_name: Option<String> = row.get("artist");
-            let release_year: Option<String> = row.get("release_year");
-            let thumb_url: Option<String> = row.get("thumb_url");
-            let format_str: Option<String> = row.get("format");
-            let lowest_price: Option<f64> = row.get("lowest_price");
-            let median_price: Option<f64> = row.get("median_price");
-            let play_count: i64 = row.get("play_count");
-            let last_played_at: Option<chrono::NaiveDateTime> = row.get("last_played_at");
-
-            let year_i32 = release_year.as_deref().and_then(|y| y.parse::<i32>().ok());
-            let genres = genres_map.remove(&record_id).unwrap_or_default();
-
-            let artist = artist_name.unwrap_or_default();
-            let artists = if artist.is_empty() {
-                Vec::new()
-            } else {
-                vec![DiscogsArtist {
-                    name: artist,
-                    id: None,
-                }]
-            };
-
-            let mut notes = Vec::new();
-            if let Some(mc) = &media_cond {
-                notes.push(CollectionNote {
-                    field_id: Some(1),
-                    value: Some(mc.clone()),
-                });
-            }
-            if let Some(sc) = &sleeve_cond {
-                notes.push(CollectionNote {
-                    field_id: Some(2),
-                    value: Some(sc.clone()),
-                });
-            }
-
-            releases.push(CollectionRelease {
-                id: discogs_id,
-                instance_id,
-                listen_count: play_count,
-                date_added: added_at.format("%Y-%m-%dT%H:%M:%SZ").to_string(),
-                rating: None,
-                media_condition: media_cond,
-                sleeve_condition: sleeve_cond,
-                sort_key: row.get("sort_key"),
-                last_played_at: last_played_at
-                    .map(|lp| lp.format("%Y-%m-%dT%H:%M:%SZ").to_string()),
-                notes: Some(notes),
-                storage: None,
-                basic_information: BasicInformation {
-                    id: discogs_id,
-                    title,
-                    artists,
-                    year: year_i32,
-                    thumb_url,
-                    cover_image: None,
-                    tracklist: None,
-                    formats: None,
-                    labels: None,
-                    genres,
-                    styles: Vec::new(),
-                    format: format_str.unwrap_or_else(|| "LP".to_string()),
-                    lowest_price,
-                    median_price,
-                },
-            });
-        }
+        let releases = rows
+            .iter()
+            .map(|row| {
+                let genres = genres_map
+                    .remove(&row.get::<i64, _>("record_id"))
+                    .unwrap_or_default();
+                map_release(row, genres)
+            })
+            .collect();
 
         Ok(releases)
     }
@@ -344,25 +281,13 @@ impl CollectionQueryService {
             min_plays: None,
             storage: None,
             instance_ids: None,
+            source: None,
         };
 
         let where_clause = Self::build_where_clause(&filter);
 
         let sql = format!(
-            "SELECT ci.id as item_id, ci.instance_id, ci.added_at, ci.media_condition, ci.sleeve_condition, ci.sort_key,
-                    rc.id as record_id, rc.discogs_id, rc.title, rc.artist, rc.release_year, rc.thumb_url, rc.format,
-                    rc.lowest_price::float8 as lowest_price,
-                    rc.median_price::float8 as median_price,
-                    COALESCE(le.listen_count, 0) as play_count,
-                    le.last_played_at
-             FROM collection_item ci
-             JOIN record_cache rc ON rc.id = ci.record_id
-             LEFT JOIN (
-                 SELECT record_id, user_id, COUNT(*) as listen_count, MAX(timestamp) as last_played_at
-                 FROM listen_event
-                 WHERE user_id = $1
-                 GROUP BY record_id, user_id
-             ) le ON le.record_id = ci.record_id
+            "{RELEASE_SELECT_SQL}
              WHERE {where_clause}
              ORDER BY RANDOM()
              LIMIT 1"
@@ -380,83 +305,14 @@ impl CollectionQueryService {
             None => return Ok(None),
         };
 
-        let record_id: i64 = row.get("record_id");
-        let discogs_id: i64 = row.get("discogs_id");
-        let instance_id: i64 = row.get("instance_id");
-        let added_at: chrono::NaiveDateTime = row.get("added_at");
-        let media_cond: Option<String> = row.get("media_condition");
-        let sleeve_cond: Option<String> = row.get("sleeve_condition");
-        let title: String = row.get("title");
-        let artist_name: Option<String> = row.get("artist");
-        let release_year: Option<String> = row.get("release_year");
-        let thumb_url: Option<String> = row.get("thumb_url");
-        let format_str: Option<String> = row.get("format");
-        let lowest_price: Option<f64> = row.get("lowest_price");
-        let median_price: Option<f64> = row.get("median_price");
-        let play_count: i64 = row.get("play_count");
-        let last_played_at: Option<chrono::NaiveDateTime> = row.get("last_played_at");
-
-        let year_i32 = release_year.as_deref().and_then(|y| y.parse::<i32>().ok());
         let genre_rows = sqlx::query("SELECT genre FROM record_genres WHERE record_id = $1")
-            .bind(record_id)
+            .bind(row.get::<i64, _>("record_id"))
             .fetch_all(pool)
             .await
             .map_err(AppError::Database)?;
         let genres: Vec<String> = genre_rows.iter().map(|r| r.get("genre")).collect();
 
-        let artist = artist_name.unwrap_or_default();
-        let artists = if artist.is_empty() {
-            Vec::new()
-        } else {
-            vec![DiscogsArtist {
-                name: artist,
-                id: None,
-            }]
-        };
-
-        let mut notes = Vec::new();
-        if let Some(mc) = &media_cond {
-            notes.push(CollectionNote {
-                field_id: Some(1),
-                value: Some(mc.clone()),
-            });
-        }
-        if let Some(sc) = &sleeve_cond {
-            notes.push(CollectionNote {
-                field_id: Some(2),
-                value: Some(sc.clone()),
-            });
-        }
-
-        Ok(Some(CollectionRelease {
-            id: discogs_id,
-            instance_id,
-            listen_count: play_count,
-            date_added: added_at.format("%Y-%m-%dT%H:%M:%SZ").to_string(),
-            rating: None,
-            media_condition: media_cond,
-            sleeve_condition: sleeve_cond,
-            last_played_at: last_played_at.map(|lp| lp.format("%Y-%m-%dT%H:%M:%SZ").to_string()),
-            notes: Some(notes),
-            sort_key: row.get("sort_key"),
-            storage: None,
-            basic_information: BasicInformation {
-                id: discogs_id,
-                title,
-                artists,
-                year: year_i32,
-                thumb_url,
-                cover_image: None,
-                tracklist: None,
-                formats: None,
-                labels: None,
-                genres,
-                styles: Vec::new(),
-                format: format_str.unwrap_or_else(|| "LP".to_string()),
-                lowest_price,
-                median_price,
-            },
-        }))
+        Ok(Some(map_release(&row, genres)))
     }
 
     pub async fn get_unplayed_collection(
@@ -479,6 +335,7 @@ impl CollectionQueryService {
             min_plays: None,
             storage: None,
             instance_ids: None,
+            source: None,
         };
         Self::get_collection(pool, user_id, filter).await
     }
@@ -530,6 +387,11 @@ impl CollectionQueryService {
 
         if filter.instance_ids.is_some() {
             clauses.push(format!("ci.instance_id = ANY(${param_idx})"));
+        }
+
+        // Fixed value from an enum, no bind parameter needed
+        if let Some(source) = filter.source {
+            clauses.push(format!("rc.source = '{}'", source.as_str()));
         }
 
         clauses.join(" AND ")
@@ -599,5 +461,69 @@ impl CollectionQueryService {
         }
 
         query
+    }
+}
+
+fn format_ts(ts: chrono::NaiveDateTime) -> String {
+    ts.format("%Y-%m-%dT%H:%M:%SZ").to_string()
+}
+
+/// Maps a row of [`RELEASE_SELECT_SQL`] to the Discogs-like collection release.
+fn map_release(row: &PgRow, genres: Vec<String>) -> CollectionRelease {
+    let discogs_id: i64 = row.get("discogs_id");
+    let media_condition: Option<String> = row.get("media_condition");
+    let sleeve_condition: Option<String> = row.get("sleeve_condition");
+    let release_year: Option<String> = row.get("release_year");
+    let source: String = row.get("source");
+
+    let artists = row
+        .get::<Option<String>, _>("artist")
+        .filter(|a| !a.is_empty())
+        .map(|name| vec![DiscogsArtist { name, id: None }])
+        .unwrap_or_default();
+
+    let notes = [(1, &media_condition), (2, &sleeve_condition)]
+        .into_iter()
+        .filter_map(|(field_id, value)| {
+            value.as_ref().map(|v| CollectionNote {
+                field_id: Some(field_id),
+                value: Some(v.clone()),
+            })
+        })
+        .collect();
+
+    CollectionRelease {
+        id: discogs_id,
+        instance_id: row.get("instance_id"),
+        listen_count: row.get("play_count"),
+        date_added: format_ts(row.get("added_at")),
+        rating: None,
+        media_condition,
+        sleeve_condition,
+        sort_key: row.get("sort_key"),
+        last_played_at: row
+            .get::<Option<chrono::NaiveDateTime>, _>("last_played_at")
+            .map(format_ts),
+        notes: Some(notes),
+        storage: None,
+        source: RecordSource::parse(&source).unwrap_or_default(),
+        basic_information: BasicInformation {
+            id: discogs_id,
+            title: row.get("title"),
+            artists,
+            year: release_year.as_deref().and_then(|y| y.parse::<i32>().ok()),
+            thumb_url: row.get("thumb_url"),
+            cover_image: None,
+            tracklist: None,
+            formats: None,
+            labels: None,
+            genres,
+            styles: Vec::new(),
+            format: row
+                .get::<Option<String>, _>("format")
+                .unwrap_or_else(|| "LP".to_string()),
+            lowest_price: row.get("lowest_price"),
+            median_price: row.get("median_price"),
+        },
     }
 }

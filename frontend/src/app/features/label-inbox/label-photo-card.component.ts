@@ -114,6 +114,25 @@ const CONFIDENCE_CLASSES: Record<LabelMatchConfidence, string> = {
             }
           }
           @case ('done') {
+            @if (!photo().suggestion) {
+              <div class="space-y-2" data-testid="label-photo-no-match">
+                <p class="text-sm font-semibold text-slate-700 dark:text-slate-200">{{ 'labelInbox.noMatch' | translate }}</p>
+                @if (photo().identifyError; as hint) {
+                  <p class="text-xs text-amber-700 dark:text-amber-300">💡 {{ hint }}</p>
+                }
+                <div class="flex flex-wrap gap-2">
+                  <button type="button" (click)="manual.emit()" [disabled]="busy()" data-testid="label-photo-manual"
+                    class="px-3 py-1.5 rounded-lg text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50">
+                    {{ 'manual.add' | translate }}
+                  </button>
+                  @if (canIdentify()) {
+                    <button type="button" (click)="identify.emit()" [disabled]="busy()" [class]="secondaryButton" data-testid="label-photo-identify">
+                      {{ 'labelInbox.retryIdentify' | translate }}
+                    </button>
+                  }
+                </div>
+              </div>
+            }
             @if (selected(); as candidate) {
               <div class="space-y-3" data-testid="label-photo-suggestion">
                 <fieldset class="space-y-2">
@@ -176,6 +195,11 @@ const CONFIDENCE_CLASSES: Record<LabelMatchConfidence, string> = {
                       {{ 'labelInbox.retryIdentify' | translate }}
                     </button>
                   }
+                  @if (candidate.confidence !== 'high') {
+                    <button type="button" (click)="manual.emit()" [disabled]="busy()" [class]="secondaryButton" data-testid="label-photo-manual">
+                      {{ 'manual.add' | translate }}
+                    </button>
+                  }
                 </div>
                 @if (photo().identifyModel; as model) {
                   <p class="text-[11px] text-slate-400 dark:text-slate-500">{{ 'labelInbox.model' | translate: { model } }}</p>
@@ -184,13 +208,16 @@ const CONFIDENCE_CLASSES: Record<LabelMatchConfidence, string> = {
             }
           }
           @default {
-            @if (canIdentify()) {
-              <div>
+            <div class="flex flex-wrap gap-2">
+              @if (canIdentify()) {
                 <button type="button" (click)="identify.emit()" [disabled]="busy()" [class]="secondaryButton" data-testid="label-photo-identify">
                   {{ 'labelInbox.identify' | translate }}
                 </button>
-              </div>
-            }
+              }
+              <button type="button" (click)="manual.emit()" [disabled]="busy()" [class]="secondaryButton" data-testid="label-photo-manual">
+                {{ 'manual.add' | translate }}
+              </button>
+            </div>
           }
         }
       </div>
@@ -211,6 +238,8 @@ export class LabelPhotoCardComponent {
   readonly identify = output<void>();
   readonly add = output<LabelCandidate>();
   readonly complete = output<LabelCandidate>();
+  /** Create a manual record from this photo (no or no reliable Discogs match). */
+  readonly manual = output<void>();
 
   readonly secondaryButton =
     'px-3 py-1.5 rounded-lg text-sm font-semibold border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50';

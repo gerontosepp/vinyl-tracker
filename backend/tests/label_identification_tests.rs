@@ -29,7 +29,7 @@ const RELEASE_ID: i64 = 1622788;
 const API_KEY: &str = "sk-or-test-key";
 
 /// Mock of OpenRouter and Discogs. The model searches by catalog number first and then
-/// submits `submitted_id` (an invented ID simulates a hallucination).
+/// submits `submitted_id` (an invented ID simulates a hallucination, 0 finds no match).
 async fn mock_apis(submitted_id: i64) -> String {
     let chat = move |headers: HeaderMap, Json(body): Json<Value>| async move {
         assert_eq!(
@@ -53,12 +53,21 @@ async fn mock_apis(submitted_id: i64) -> String {
                 "search_discogs",
                 json!({ "catno": "30561", "label": "Schneeball" }),
             )
+        } else if submitted_id == 0 {
+            (
+                "submit_identification",
+                json!({
+                    "hint": "Kein Discogs-Eintrag gefunden",
+                    "label_text": { "artist": "Embryo", "title": "Embryo's Rache", "catno": "30561", "format": "" }
+                }),
+            )
         } else {
             (
                 "submit_identification",
                 json!({
                     "best": { "discogs_id": submitted_id, "confidence": "high", "reason": "Katalognummer und Label passen" },
-                    "hint": "Matrix in der Auslaufrille prüfen"
+                    "hint": "Matrix in der Auslaufrille prüfen",
+                    "label_text": { "artist": "Embryo", "label": "Schneeball", "catno": "30561" }
                 }),
             )
         };
@@ -267,6 +276,30 @@ async fn test_upload_identifies_the_photo_in_the_background() {
         suggestion.hint.as_deref(),
         Some("Matrix in der Auslaufrille prüfen")
     );
+    let reading = photo.label_reading.unwrap();
+    assert_eq!(reading.label.as_deref(), Some("Schneeball"));
+}
+
+#[tokio::test]
+async fn test_no_match_keeps_the_label_reading_for_a_manual_record() {
+    let (app, state) = setup(0).await;
+    let (_, token) = register(&app, &state).await;
+    configure_openrouter(&app, &token).await;
+
+    let uploaded = upload(&app, &token).await;
+    let photo = finished_photo(&app, &token, uploaded.id).await;
+    // "No match" is a finished identification, not an error
+    assert_eq!(photo.identify_state, Some(LabelIdentifyState::Done));
+    assert!(photo.suggestion.is_none());
+    assert_eq!(
+        photo.identify_error.as_deref(),
+        Some("Kein Discogs-Eintrag gefunden")
+    );
+    let reading = photo.label_reading.unwrap();
+    assert_eq!(reading.artist.as_deref(), Some("Embryo"));
+    assert_eq!(reading.title.as_deref(), Some("Embryo's Rache"));
+    assert_eq!(reading.catno.as_deref(), Some("30561"));
+    assert_eq!(reading.format, None, "empty fields are dropped");
 }
 
 #[tokio::test]

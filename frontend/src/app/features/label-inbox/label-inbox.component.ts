@@ -12,6 +12,10 @@ import { LabelCandidate, LabelPhoto, StoragePlacement } from '../../core/types';
 import { StoragePlacementComponent } from '../../shared/components/storage-placement/storage-placement.component';
 import { LabelPhotoCardComponent } from './label-photo-card.component';
 import { HelpLinkComponent } from '../../shared/components/help-link/help-link.component';
+import {
+  ManualRecordFormComponent,
+  ManualRecordPrefill,
+} from '../../shared/components/manual-record-form/manual-record-form.component';
 
 /** Maximum number of photos the backend returns per list request. */
 const MAX_PHOTOS = 100;
@@ -25,7 +29,14 @@ export const IDENTIFY_POLL_MS = 5000;
 @Component({
   selector: 'app-label-inbox',
   standalone: true,
-  imports: [LayoutComponent, TranslatePipe, StoragePlacementComponent, LabelPhotoCardComponent, HelpLinkComponent],
+  imports: [
+    LayoutComponent,
+    TranslatePipe,
+    StoragePlacementComponent,
+    LabelPhotoCardComponent,
+    HelpLinkComponent,
+    ManualRecordFormComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-layout [fullWidth]="false">
@@ -144,12 +155,16 @@ export const IDENTIFY_POLL_MS = 5000;
                   (identify)="identify(photo)"
                   (add)="add(photo, $event)"
                   (complete)="complete(photo, $event)"
+                  (manual)="manualPrefill.set(prefill(photo))"
                 />
               </li>
             }
           </ul>
         }
       </div>
+      @if (manualPrefill(); as prefill) {
+        <app-manual-record-form [prefill]="prefill" (saved)="manualSaved(prefill)" (closed)="manualPrefill.set(null)" />
+      }
     </app-layout>
   `,
 })
@@ -166,6 +181,8 @@ export class LabelInboxComponent {
   readonly confirmDeleteAll = signal(false);
   /** Photos whose release was added but which could not be completed yet (photo ID → release). */
   private readonly addedPhotos = new Map<number, number>();
+  /** Open manual record form, pre-filled from a photo. */
+  readonly manualPrefill = signal<ManualRecordPrefill | null>(null);
   /** Placement of the record added last, shown until dismissed. */
   readonly lastAdded = signal<{ title: string; placement: StoragePlacement } | null>(null);
 
@@ -229,6 +246,29 @@ export class LabelInboxComponent {
       this.removeLocally(photo.id);
       this.toastService.showToast(this.languageService.translate('labelInbox.completed'), 'success');
     });
+  }
+
+  /**
+   * Form values from what the identification read on the label, or from its (uncertain) best
+   * match when it read nothing.
+   */
+  prefill(photo: LabelPhoto): ManualRecordPrefill {
+    const source = photo.labelReading ?? photo.suggestion?.best ?? {};
+    return {
+      artist: source.artist,
+      title: source.title,
+      label: source.label,
+      catno: source.catno,
+      year: source.year,
+      country: source.country,
+      format: photo.labelReading?.format,
+      labelPhotoId: photo.id,
+    };
+  }
+
+  /** The photo was completed together with the new record. */
+  manualSaved(prefill: ManualRecordPrefill): void {
+    if (prefill.labelPhotoId != null) this.removeLocally(prefill.labelPhotoId);
   }
 
   private removeLocally(photoId: number): void {

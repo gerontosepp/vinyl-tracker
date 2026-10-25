@@ -6,7 +6,9 @@ use crate::{
             DiscogsFormat, DiscogsIdentifier, DiscogsLabel, DiscogsRelease, DiscogsTrack,
             determine_format,
         },
-        record::{RecordDetailDto, UpdateConditionRequestDto, UpdateSortKeyRequestDto},
+        record::{
+            RecordDetailDto, RecordSource, UpdateConditionRequestDto, UpdateSortKeyRequestDto,
+        },
         user::AppUser,
     },
     services::{
@@ -19,6 +21,9 @@ use crate::{
 use chrono::Utc;
 use sqlx::{PgPool, Row};
 use std::sync::Arc;
+
+/// Discogs releases are shared; a manual record is only visible to its owner (`$2` = user ID).
+pub const OWN_RECORD_SQL: &str = "(rc.source = 'discogs' OR rc.owner_id = $2)";
 
 /// Maximum length of a custom sort string (`collection_item.sort_key`).
 pub const MAX_SORT_KEY_LEN: usize = 200;
@@ -40,15 +45,17 @@ impl RecordService {
 
         // 1. Look up existing local record (incl. the automatic sort key of its stored artist)
         let record_row = sqlx::query(&format!(
-            "SELECT id, discogs_id, title, artist, release_year, thumb_url, format,
+            "SELECT id, discogs_id, title, artist, release_year, thumb_url, format, source,
+                    label, catno, country, barcode, notes,
                     lowest_price::float8 as lowest_price,
                     median_price::float8 as median_price,
                     {DEFAULT_ARTIST_KEY_SQL} AS default_sort_key
              FROM record_cache rc
-             WHERE id = $1 OR discogs_id = $1
+             WHERE (id = $1 OR discogs_id = $1) AND {OWN_RECORD_SQL}
              LIMIT 1"
         ))
         .bind(id_param)
+        .bind(user.id)
         .fetch_optional(pool)
         .await
         .map_err(AppError::Database)?;
@@ -58,6 +65,13 @@ impl RecordService {
             .as_ref()
             .map(|r| r.get("discogs_id"))
             .unwrap_or(id_param);
+
+        // Manual records (negative IDs) have no Discogs release and never call Discogs
+        let source = record_row
+            .as_ref()
+            .and_then(|r| RecordSource::parse(r.get("source")))
+            .unwrap_or_default();
+        let dec_token = dec_token.filter(|_| source == RecordSource::Discogs && discogs_id > 0);
 
         // 2. Fetch Discogs release details if token is available
         let discogs_release: Option<Arc<DiscogsRelease>> = if let Some(ref token) = dec_token {
@@ -261,16 +275,35 @@ impl RecordService {
             .as_ref()
             .and_then(|r| r.formats.clone())
             .unwrap_or_default();
+        let local_text =
+            |column: &str| -> Option<String> { record_row.as_ref().and_then(|r| r.get(column)) };
         let labels: Vec<DiscogsLabel> = discogs_release
             .as_ref()
             .and_then(|r| r.labels.clone())
+            .or_else(|| {
+                let (name, catno) = (local_text("label"), local_text("catno"));
+                (name.is_some() || catno.is_some()).then(|| {
+                    vec![DiscogsLabel {
+                        id: None,
+                        name: name.unwrap_or_default(),
+                        catno,
+                    }]
+                })
+            })
             .unwrap_or_default();
         let identifiers: Vec<DiscogsIdentifier> = discogs_release
             .as_ref()
             .and_then(|r| r.identifiers.clone())
             .unwrap_or_default();
-        let notes: Option<String> = discogs_release.as_ref().and_then(|r| r.notes.clone());
-        let country: Option<String> = discogs_release.as_ref().and_then(|r| r.country.clone());
+        let notes: Option<String> = discogs_release
+            .as_ref()
+            .and_then(|r| r.notes.clone())
+            .or_else(|| local_text("notes"));
+        let country: Option<String> = discogs_release
+            .as_ref()
+            .and_then(|r| r.country.clone())
+            .or_else(|| local_text("country"));
+        let barcode = local_text("barcode");
         let released: Option<String> = discogs_release.as_ref().and_then(|r| r.released.clone());
 
         // Only cached records can be in the collection and thus on a shelf
@@ -318,6 +351,8 @@ impl RecordService {
             released,
             storage,
             storage_neighbors,
+            source,
+            barcode,
         })
     }
 
@@ -334,16 +369,24 @@ impl RecordService {
             .and_then(|enc| crypto.decrypt(enc));
 
         // 1. Find or create record in record_cache
-        let record_row = sqlx::query(
-            "SELECT id, discogs_id FROM record_cache WHERE id = $1 OR discogs_id = $1 LIMIT 1",
-        )
+        let record_row = sqlx::query(&format!(
+            "SELECT id, discogs_id FROM record_cache rc
+             WHERE (id = $1 OR discogs_id = $1) AND {OWN_RECORD_SQL} LIMIT 1"
+        ))
         .bind(id_param)
+        .bind(user.id)
         .fetch_optional(pool)
         .await
         .map_err(AppError::Database)?;
 
         let record_id = match record_row {
             Some(row) => row.get::<i64, _>("id"),
+            // Negative IDs are manual records, which exist only locally
+            None if id_param < 0 => {
+                return Err(AppError::NotFound(format!(
+                    "Record not found with ID: {id_param}"
+                )));
+            }
             None => {
                 // Must fetch from Discogs
                 let token = dec_token.as_deref().ok_or_else(|| {
@@ -425,13 +468,14 @@ impl RecordService {
             .and_then(|enc| crypto.decrypt(enc));
 
         // 1. Locate record
-        let record_row = sqlx::query(
-            "SELECT id, discogs_id, median_price::float8 as median_price
-             FROM record_cache
-             WHERE id = $1 OR discogs_id = $1
-             LIMIT 1",
-        )
+        let record_row = sqlx::query(&format!(
+            "SELECT id, discogs_id, source, median_price::float8 as median_price
+             FROM record_cache rc
+             WHERE (id = $1 OR discogs_id = $1) AND {OWN_RECORD_SQL}
+             LIMIT 1"
+        ))
         .bind(id_param)
+        .bind(user.id)
         .fetch_optional(pool)
         .await
         .map_err(AppError::Database)?;
@@ -441,6 +485,9 @@ impl RecordService {
 
         let record_id: i64 = record_row.get("id");
         let discogs_id: i64 = record_row.get("discogs_id");
+        // A manual record keeps its own value and has no Discogs copy to update
+        let manual = record_row.get::<&str, _>("source") == RecordSource::Manual.as_str();
+        let dec_token = dec_token.filter(|_| !manual);
 
         // 2. Locate collection_item
         let ci_row = sqlx::query(

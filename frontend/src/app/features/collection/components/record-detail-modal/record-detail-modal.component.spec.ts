@@ -449,4 +449,34 @@ describe('RecordDetailModalComponent', () => {
       expect(closed).not.toHaveBeenCalled();
     });
   });
+
+  describe('manual records', () => {
+    const q = (testId: string): HTMLElement | null => fixture.nativeElement.querySelector(`[data-testid="${testId}"]`);
+
+    function show(source: 'manual' | 'discogs'): void {
+      TestBed.inject(LanguageService).setLanguage('de');
+      fixture.componentRef.setInput('record', { id: -3, source, basic_information: { id: -3, title: 'Posen', artists: [] } } as any);
+      fixture.componentRef.setInput('detail', { ...mockDetail, discogs_id: -3, source });
+      fixture.detectChanges();
+    }
+
+    it('marks a manual record, shows its local number and offers editing instead of Discogs', () => {
+      show('manual');
+      expect(q('detail-manual-badge')?.textContent).toContain('Manuell');
+      expect(fixture.nativeElement.textContent).toContain('#3');
+      expect(q('detail-discogs-link')).toBeNull();
+
+      const edited: RecordDetailDto[] = [];
+      component.editManual.subscribe((d) => edited.push(d));
+      (q('detail-edit-manual') as HTMLButtonElement).click();
+      expect(edited[0].discogs_id).toBe(-3);
+    });
+
+    it('links Discogs releases to Discogs and offers no editing', () => {
+      show('discogs');
+      expect(q('detail-manual-badge')).toBeNull();
+      expect(q('detail-edit-manual')).toBeNull();
+      expect(q('detail-discogs-link')).not.toBeNull();
+    });
+  });
 });

@@ -257,7 +257,7 @@ fn draw_row(ops: &mut Vec<Op>, labels: &Labels, record: &PrintRecord, bottom: f3
     ));
 
     let year = record.year.map(|y| y.to_string()).unwrap_or_default();
-    let id = record.discogs_id.to_string();
+    let id = labels.record_id(record.discogs_id);
     let cells = [
         (
             1,

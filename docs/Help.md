@@ -55,6 +55,7 @@ Hast du unter **Einstellungen → Label-Erkennung (OpenRouter)** einen API-Key h
 - **Nur abschließen** markiert das Foto als erledigt, ohne etwas hinzuzufügen – z. B. wenn die Platte schon in der Sammlung ist.
 - **Erneut erkennen** startet die Erkennung noch einmal, etwa nach einem Fehler.
 - Ein Hinweis schlägt manchmal ein weiteres Foto vor (andere Seite, Auslaufrille) – so lässt sich die genaue Pressung bestimmen.
+- **Manuell anlegen** – gibt es die Platte nicht bei Discogs oder ist der Vorschlag unsicher, legst du sie selbst an; das vom Label Gelesene ist schon eingetragen (siehe **Platten ohne Discogs-Eintrag**).
 
 Das Modell kann nur bei Discogs suchen und nie selbst etwas ändern. Jedes erkannte Foto kostet über OpenRouter meist wenige Cent und wird an OpenRouter und den Modellanbieter übertragen.
 
@@ -84,6 +85,17 @@ Ein Klick auf Cover, Titel oder Künstler öffnet die Details: Tracklist, Format
 - **Zustand** von Platte und Hülle nach Goldmine-Standard setzen (wird zu Discogs synchronisiert und aktualisiert den Schätzwert).
 - **Sortierung** – einen eigenen Sortier-String festlegen, der statt des Künstlers für Sammlung und Regal gilt (z. B. *Les Paul* unter **L**). Leer lassen für die automatische Sortierung.
 - **Aus Sammlung entfernen** – löscht die Platte auch aus deinem Discogs-Ordner (mit Rückfrage).
+
+## Platten ohne Discogs-Eintrag {#manuell}
+
+Manche Platten und CDs gibt es bei Discogs nicht. Du kannst sie trotzdem in der Sammlung führen:
+
+- **Sammlung → Platte manuell anlegen**, in der **Label-Inbox** bei einem Foto ohne Treffer **Manuell anlegen**, oder im **Scanner**, wenn ein Barcode nicht gefunden wird (der Barcode ist dann schon eingetragen).
+- Pflicht sind **Künstler**, **Titel** und **Format** (LP, Doppel-LP, CD, Doppel-CD). Optional: Jahr, Label, Katalognummer, Land, Barcode, Genres, Zustand, Notizen und ein **eigener Wert**, der in den Sammlungswert eingeht.
+- Als **Cover** dient ein eigenes Foto oder – aus der Label-Inbox – das Label-Foto.
+- Nach dem Speichern siehst du, in welches Regalfach die Platte gehört.
+
+Manuelle Platten tragen das Kennzeichen **Manuell** und lassen sich in der Sammlung über den Filter **Quelle** auswählen. In der Detailansicht kannst du sie **bearbeiten** und das Cover ändern; einen Discogs-Link gibt es nicht. Der Discogs-Abgleich lässt sie unverändert. Hören erfasst du wie gewohnt – auch per Barcode oder per gedrucktem QR-Etikett (dort steht „Manuell #n“ statt der Discogs-ID). Das JSON-Backup enthält sie samt Cover.
 
 ## Regale {#regale}
 
@@ -158,4 +170,4 @@ Vinyl Tracker lässt sich als App installieren (PWA): im Browser *Zum Home-Bilds
 
 **Die Erkennung schlägt die falsche Pressung vor.** Eine **andere Pressung** aus dem Vorschlag wählen, oder ein weiteres Foto (andere Seite, Auslaufrille) aufnehmen und **Erneut erkennen**.
 
-**Ich finde eine Platte nicht bei Discogs.** Neue Releases können auf discogs.com eingetragen werden; danach lässt sich die Platte ganz normal scannen oder per Label-Foto erkennen.
+**Ich finde eine Platte nicht bei Discogs.** Lege sie **manuell** an (siehe **Platten ohne Discogs-Eintrag**). Alternativ lässt sich das Release auf discogs.com eintragen; danach kann die Platte ganz normal gescannt oder per Label-Foto erkannt werden.

@@ -47,7 +47,7 @@ impl VinylMcpServer {
     /// Retrieve the user's vinyl collection with optional pagination, sorting, search, and min_plays filter.
     #[tool(
         name = "get_user_collection",
-        description = "Retrieve the user's vinyl collection from Vinyl Tracker. Supports pagination (page, per_page), sorting ('artist', 'listens', 'addedAt'), sort order ('asc', 'desc'), minimum plays filter, search terms, category filter ('all', 'vinyl', 'cd'), genres filter (e.g. ['Jazz', 'Rock']), years filter (e.g. '1970-1972, 1975') and storage filter (storage_unit = shelf ID or 'unplaced', optional compartment). Each release carries its computed shelf position in `storage` when shelves are configured."
+        description = "Retrieve the user's vinyl collection from Vinyl Tracker. Supports pagination (page, per_page), sorting ('artist', 'listens', 'addedAt'), sort order ('asc', 'desc'), minimum plays filter, search terms, category filter ('all', 'vinyl', 'cd'), genres filter (e.g. ['Jazz', 'Rock']), years filter (e.g. '1970-1972, 1975') and storage filter (storage_unit = shelf ID or 'unplaced', optional compartment). Each release carries its computed shelf position in `storage` when shelves are configured. Releases with `source` = 'manual' and a negative ID are manual records without a Discogs entry."
     )]
     async fn get_user_collection(
         &self,
@@ -283,7 +283,7 @@ impl VinylMcpServer {
     /// Retrieve comprehensive album details including tracklist, formats, labels, and listen history.
     #[tool(
         name = "get_record_details",
-        description = "Fetches comprehensive details for a record by its database ID or Discogs release ID, including tracklist, release formats, labels, identifiers (matrix / runout, label code, rights society), release notes, and personal listen history. Also works for Discogs releases that are not in the collection, e.g. to verify search candidates."
+        description = "Fetches comprehensive details for a record by its database ID or Discogs release ID, including tracklist, release formats, labels, identifiers (matrix / runout, label code, rights society), release notes, and personal listen history. Also works for Discogs releases that are not in the collection, e.g. to verify search candidates. Negative IDs are manual records without a Discogs entry (`source` = 'manual')."
     )]
     async fn get_record_details(
         &self,

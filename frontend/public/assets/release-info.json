@@ -5,6 +5,14 @@
     "tag": "In Entwicklung",
     "isCurrent": false,
     "isUnreleased": true,
+    "items": []
+  },
+  {
+    "version": "v1.4.0",
+    "rawHeader": "v1.4.0 (2026-10-25)",
+    "date": "2026-10-25",
+    "isCurrent": true,
+    "isUnreleased": false,
     "items": [
       {
         "title": "Manuelle Platten bei Discogs übernehmen (`#243`)",
@@ -40,7 +48,7 @@
     "version": "v1.3.0",
     "rawHeader": "v1.3.0 (2026-10-24)",
     "date": "2026-10-24",
-    "isCurrent": true,
+    "isCurrent": false,
     "isUnreleased": false,
     "items": [
       {

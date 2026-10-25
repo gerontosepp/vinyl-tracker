@@ -34,8 +34,8 @@
 
 ## 6. MCP
 
-- [ ] 6.1 Client-Methoden und Tools `create_manual_record`, `check_manual_record`, `take_over_manual_record` in `mcp/src/server.rs` (mit Bestätigungshinweis in der Beschreibung); Prompts zur Label-Erkennung bieten `create_manual_record` an; Vertragstests in `mcp/src/server/contract_tests.rs` grün
-- [ ] 6.2 `mcp/README.md` um die neuen Tools ergänzen
+- [x] 6.1 Client-Methoden und Tools `create_manual_record`, `check_manual_record`, `take_over_manual_record` in `mcp/src/server.rs` (mit Bestätigungshinweis in der Beschreibung); Prompts zur Label-Erkennung bieten `create_manual_record` an; Vertragstests in `mcp/src/server/contract_tests.rs` grün
+- [x] 6.2 `mcp/README.md` um die neuen Tools ergänzen
 
 ## 7. Abschluss
 

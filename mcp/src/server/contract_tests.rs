@@ -17,6 +17,7 @@ use vinyl_api_types::{
     analytics::CollectionValueData,
     collection::BasicInformation,
     discogs::{DiscogsArtist, DiscogsPagination, DiscogsSearchResult},
+    record::{CandidateMatch, RecordSource},
     scan::{DiscogsMatchDto, TrackedRecordDto},
     storage::{
         MediaLayoutDto, StorageCompartmentDto, StorageMedia, StorageMoveDto, StorageNeighborsDto,
@@ -143,6 +144,25 @@ fn storage_layout() -> StorageLayoutDto {
     }
 }
 
+fn record_detail(discogs_id: i64, title: &str, source: RecordSource) -> RecordDetailDto {
+    serde_json::from_value(serde_json::json!({
+        "id": 1,
+        "discogs_id": discogs_id,
+        "title": title,
+        "artist": "Die Sterne",
+        "genres": [],
+        "in_collection": true,
+        "listen_count": 2,
+        "listen_history": [],
+        "tracklist": [],
+        "format": "LP",
+        "formats": [],
+        "labels": [],
+        "source": source,
+    }))
+    .unwrap()
+}
+
 fn label_photo(id: i64, status: LabelPhotoStatus, discogs_id: Option<i64>) -> LabelPhotoDto {
     LabelPhotoDto {
         id,
@@ -229,6 +249,67 @@ async fn mock_backend() -> VinylMcpServer {
         .route(
             "/api/collection/sync",
             post(|| async { Json(sync_result()) }),
+        )
+        .route(
+            "/api/records/manual",
+            post(|Json(req): Json<ManualRecordRequest>| async move {
+                if req.title.trim().is_empty() {
+                    return (StatusCode::BAD_REQUEST, "title is required").into_response();
+                }
+                let record = record_detail(-7, &req.title, RecordSource::Manual);
+                (
+                    StatusCode::CREATED,
+                    Json(ManualRecordCreatedDto {
+                        record,
+                        placement: Some(placement(-7)),
+                    }),
+                )
+                    .into_response()
+            }),
+        )
+        .route(
+            "/api/records/{id}/discogs-candidates",
+            get(|Path(id): Path<i64>| async move {
+                let candidates = if id == -7 {
+                    vec![DiscogsCandidateDto {
+                        discogs_id: 1001,
+                        artist: Some("Die Sterne".to_string()),
+                        title: "Posen".to_string(),
+                        year: Some("1996".to_string()),
+                        country: Some("Germany".to_string()),
+                        label: Some("L'age D'or".to_string()),
+                        catno: Some("LADO 17053".to_string()),
+                        format: Some("Vinyl, LP".to_string()),
+                        thumb_url: None,
+                        matched_by: CandidateMatch::Barcode,
+                        in_collection: vec![555],
+                    }]
+                } else {
+                    vec![]
+                };
+                Json(candidates)
+            }),
+        )
+        .route(
+            "/api/records/{id}/takeover",
+            post(
+                |Path(_id): Path<i64>, Json(req): Json<TakeoverRequest>| async move {
+                    if req.mode == TakeoverMode::Merge && req.target_instance_id.is_none() {
+                        return (
+                            StatusCode::BAD_REQUEST,
+                            "choose one of the instances 555, 556",
+                        )
+                            .into_response();
+                    }
+                    Json(TakeoverResultDto {
+                        record: record_detail(req.release_id, "Posen", RecordSource::Discogs),
+                        instance_id: req.target_instance_id.unwrap_or(900),
+                        mode: req.mode,
+                        placement: None,
+                    })
+                    .into_response()
+                },
+            ),
         )
         .route(
             "/api/collection/releases/{id}",
@@ -650,6 +731,7 @@ async fn test_label_prompts_require_confirmation() {
     assert!(identify.contains("`search_discogs` with `catno` and `label`"));
     assert!(identify.contains("Never add or log anything before the user has confirmed"));
     assert!(identify.contains("add the record with `add_to_collection`"));
+    assert!(identify.contains("`create_manual_record`"));
 
     let inbox = text(
         server
@@ -658,4 +740,98 @@ async fn test_label_prompts_require_confirmation() {
     );
     assert!(inbox.contains("Fetch up to 3 open photos with `get_label_inbox`"));
     assert!(inbox.contains("`resolve_label_photo`"));
+}
+
+#[tokio::test]
+async fn test_create_manual_record_reports_the_negative_id() {
+    let server = mock_backend().await;
+    let output = server
+        .create_manual_record(Parameters(CreateManualRecordArgs {
+            artist: "Die Sterne".to_string(),
+            title: "Posen".to_string(),
+            format: "LP".to_string(),
+            barcode: Some("4006381333931".to_string()),
+            ..CreateManualRecordArgs::default()
+        }))
+        .await
+        .expect("create must succeed");
+    let created: serde_json::Value = serde_json::from_str(&output).unwrap();
+    assert_eq!(created["record"]["discogs_id"], -7);
+    assert_eq!(created["record"]["source"], "manual");
+    assert_eq!(created["placement"]["slot"]["compartment"], 2);
+
+    let err = server
+        .create_manual_record(Parameters(CreateManualRecordArgs {
+            artist: "Die Sterne".to_string(),
+            format: "LP".to_string(),
+            ..CreateManualRecordArgs::default()
+        }))
+        .await
+        .unwrap_err();
+    assert!(
+        err.contains("400") && err.contains("title is required"),
+        "{err}"
+    );
+}
+
+#[tokio::test]
+async fn test_check_manual_record_lists_candidates() {
+    let server = mock_backend().await;
+    let output = server
+        .check_manual_record(Parameters(CheckManualRecordArgs { id: -7 }))
+        .await
+        .expect("check must succeed");
+    let candidates: serde_json::Value = serde_json::from_str(&output).unwrap();
+    assert_eq!(candidates[0]["discogsId"], 1001);
+    assert_eq!(candidates[0]["matchedBy"], "barcode");
+    assert_eq!(candidates[0]["inCollection"], serde_json::json!([555]));
+
+    let none = server
+        .check_manual_record(Parameters(CheckManualRecordArgs { id: -8 }))
+        .await
+        .expect("check must succeed");
+    assert_eq!(none, "No Discogs release found for manual record -8.");
+}
+
+#[tokio::test]
+async fn test_take_over_manual_record_passes_mode_and_target() {
+    let server = mock_backend().await;
+    let args = |mode: Option<&str>, target: Option<i64>| {
+        Parameters(TakeOverManualRecordArgs {
+            id: -7,
+            release_id: 1001,
+            mode: mode.map(str::to_string),
+            target_instance_id: target,
+        })
+    };
+
+    let output = server
+        .take_over_manual_record(args(None, None))
+        .await
+        .expect("takeover must succeed");
+    let result: serde_json::Value = serde_json::from_str(&output).unwrap();
+    assert_eq!(result["mode"], "new_copy");
+    assert_eq!(result["instanceId"], 900);
+    assert_eq!(result["record"]["discogs_id"], 1001);
+    assert_eq!(result["record"]["listen_count"], 2);
+
+    let merged = server
+        .take_over_manual_record(args(Some("merge"), Some(556)))
+        .await
+        .expect("merge must succeed");
+    let merged: serde_json::Value = serde_json::from_str(&merged).unwrap();
+    assert_eq!(merged["mode"], "merge");
+    assert_eq!(merged["instanceId"], 556);
+
+    let err = server
+        .take_over_manual_record(args(Some("merge"), None))
+        .await
+        .unwrap_err();
+    assert!(err.contains("555, 556"), "{err}");
+
+    let err = server
+        .take_over_manual_record(args(Some("replace"), None))
+        .await
+        .unwrap_err();
+    assert!(err.contains("Invalid mode 'replace'"), "{err}");
 }

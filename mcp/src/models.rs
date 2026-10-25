@@ -176,6 +176,57 @@ pub struct ResolveLabelPhotoArgs {
     pub discogs_id: Option<i64>,
 }
 
+/// Arguments for creating a manual record without a Discogs entry.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, Default)]
+pub struct CreateManualRecordArgs {
+    /// Artist (required)
+    pub artist: String,
+    /// Title (required)
+    pub title: String,
+    /// Format (required): "LP", "Double LP", "CD" or "Double CD"
+    pub format: String,
+    /// Release year with four digits, e.g. "1996"
+    pub year: Option<String>,
+    /// Record label
+    pub label: Option<String>,
+    /// Catalog number
+    pub catno: Option<String>,
+    /// Country of release
+    pub country: Option<String>,
+    /// Barcode (UPC/EAN), so that scanning finds the record
+    pub barcode: Option<String>,
+    /// Genres, e.g. ["Rock", "Pop"]
+    pub genres: Option<Vec<String>>,
+    /// Media condition (Goldmine grade, e.g. "Very Good Plus (VG+)")
+    pub media_condition: Option<String>,
+    /// Sleeve condition (Goldmine grade)
+    pub sleeve_condition: Option<String>,
+    /// Free-text notes
+    pub notes: Option<String>,
+    /// The user's own value estimate in EUR; counts towards the collection value
+    pub value: Option<f64>,
+}
+
+/// Arguments for checking a manual record on Discogs.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub struct CheckManualRecordArgs {
+    /// Negative ID of the manual record
+    pub id: i64,
+}
+
+/// Arguments for taking over a manual record to Discogs.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub struct TakeOverManualRecordArgs {
+    /// Negative ID of the manual record
+    pub id: i64,
+    /// Discogs release ID the user confirmed (from `check_manual_record`)
+    pub release_id: i64,
+    /// "new_copy" (default) adds the release to the Discogs collection; "merge" merges into a copy the user already owns
+    pub mode: Option<String>,
+    /// For "merge": instance ID of the owned copy; required when the release is owned more than once
+    pub target_instance_id: Option<i64>,
+}
+
 /// Arguments for exporting the user's vinyl collection.
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct ExportCollectionArgs {
@@ -248,7 +299,10 @@ pub use vinyl_api_types::{
         LABEL_READING_STEPS, LabelPhotoDto, LabelPhotoStatus, LabelPhotosDto,
         UpdateLabelPhotoRequest,
     },
-    record::{RecordDetailDto, UpdateConditionRequestDto},
+    record::{
+        DiscogsCandidateDto, ManualRecordCreatedDto, ManualRecordRequest, RecordDetailDto,
+        TakeoverMode, TakeoverRequest, TakeoverResultDto, UpdateConditionRequestDto,
+    },
     roon::{RoonPlayRequestDto, RoonPlayResponseDto, RoonStatusDto, RoonZoneDto},
     scan::{ResetResultDto, ScanRequest, ScanResultDto},
     storage::{StorageLayoutDto, StoragePlacementDto},

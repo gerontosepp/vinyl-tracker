@@ -865,6 +865,66 @@ impl VinylApiClient {
             .map_err(|e| format!("Failed to parse label photo JSON: {}", e))
     }
 
+    pub async fn create_manual_record(
+        &self,
+        request: &ManualRecordRequest,
+    ) -> Result<ManualRecordCreatedDto, String> {
+        self.ensure_authenticated().await?;
+        let url = format!("{}/api/records/manual", self.base_url);
+        let res = self
+            .http_client
+            .post(&url)
+            .headers(self.build_auth_headers().await)
+            .json(request)
+            .send()
+            .await
+            .map_err(|e| format!("Request to create manual record failed: {}", e))?;
+        Self::check_status(res)
+            .await?
+            .json::<ManualRecordCreatedDto>()
+            .await
+            .map_err(|e| format!("Failed to parse manual record JSON: {}", e))
+    }
+
+    pub async fn check_manual_record(&self, id: i64) -> Result<Vec<DiscogsCandidateDto>, String> {
+        self.ensure_authenticated().await?;
+        let url = format!("{}/api/records/{}/discogs-candidates", self.base_url, id);
+        let res = self
+            .http_client
+            .get(&url)
+            .headers(self.build_auth_headers().await)
+            .send()
+            .await
+            .map_err(|e| format!("Request to check manual record failed: {}", e))?;
+        Self::check_status(res)
+            .await?
+            .json::<Vec<DiscogsCandidateDto>>()
+            .await
+            .map_err(|e| format!("Failed to parse Discogs candidates JSON: {}", e))
+    }
+
+    pub async fn take_over_manual_record(
+        &self,
+        id: i64,
+        request: &TakeoverRequest,
+    ) -> Result<TakeoverResultDto, String> {
+        self.ensure_authenticated().await?;
+        let url = format!("{}/api/records/{}/takeover", self.base_url, id);
+        let res = self
+            .http_client
+            .post(&url)
+            .headers(self.build_auth_headers().await)
+            .json(request)
+            .send()
+            .await
+            .map_err(|e| format!("Request to take over manual record failed: {}", e))?;
+        Self::check_status(res)
+            .await?
+            .json::<TakeoverResultDto>()
+            .await
+            .map_err(|e| format!("Failed to parse takeover result JSON: {}", e))
+    }
+
     async fn check_status(res: reqwest::Response) -> Result<reqwest::Response, String> {
         if res.status().is_success() {
             Ok(res)

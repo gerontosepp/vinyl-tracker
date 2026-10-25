@@ -3,7 +3,7 @@
 import { ReleaseEntry } from '../models/release-info.model';
 
 // Application version from frontend/package.json – single source for all version badges.
-export const APP_VERSION = '1.4.0';
+export const APP_VERSION = '1.4.1';
 
 export const RELEASE_INFO_DATA: ReleaseEntry[] = [
   {
@@ -12,6 +12,14 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "tag": "In Entwicklung",
     "isCurrent": false,
     "isUnreleased": true,
+    "items": []
+  },
+  {
+    "version": "v1.4.1",
+    "rawHeader": "v1.4.1 (2026-10-25)",
+    "date": "2026-10-25",
+    "isCurrent": true,
+    "isUnreleased": false,
     "items": [
       {
         "title": "Kleinere Label-Fotos für Claude (`#251`)",
@@ -33,7 +41,7 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "version": "v1.4.0",
     "rawHeader": "v1.4.0 (2026-10-25)",
     "date": "2026-10-25",
-    "isCurrent": true,
+    "isCurrent": false,
     "isUnreleased": false,
     "items": [
       {

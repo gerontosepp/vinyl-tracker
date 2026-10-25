@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { mockUnhandledApi } from './mock-api';
 
 const openSettingsViaProfile = async (page: import('@playwright/test').Page) => {
   const profileNavItem = page.locator('aside').getByText('Profile', { exact: true });
@@ -9,6 +10,9 @@ const openSettingsViaProfile = async (page: import('@playwright/test').Page) => 
 
 test.describe('Navigation', () => {
   test.beforeEach(async ({ page }) => {
+    // Login is mocked, so no call may reach the real backend (#253)
+    await mockUnhandledApi(page);
+
     // Mock authentication
     await page.route('**/api/users/login', async (route) => {
       await route.fulfill({

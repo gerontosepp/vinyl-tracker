@@ -27,6 +27,25 @@ Das Backend MUST hochgeladene Bilder (JPEG/PNG, max. 15 MB) dekodieren, auf höc
 - **WHEN** der Body kein dekodierbares Bild ist
 - **THEN** antwortet das Backend mit 400 als ProblemDetail
 
+### Requirement: Label-Foto verkleinert abrufen
+Der Bild-Endpunkt eines Label-Fotos (`GET /api/label-photos/{id}/image`) MUST den optionalen Query-Parameter `max_edge` (64–4096) unterstützen. Ist die lange Kante des Fotos größer, MUST das Backend es unter Beibehaltung des Seitenverhältnisses auf `max_edge` verkleinern und als JPEG liefern; kleinere Fotos MUST unverändert zurückkommen (nie hochskalieren). Ohne `max_edge` MUST das gespeicherte Original geliefert werden. Werte außerhalb des Bereichs MUST mit 400 abgelehnt werden.
+
+#### Scenario: Verkleinertes Foto
+- **WHEN** ein gespeichertes Foto mit 1568×1176 px mit `max_edge=1024` abgerufen wird
+- **THEN** liefert das Backend ein JPEG mit 1024×768 px
+
+#### Scenario: Kleines Foto
+- **WHEN** ein gespeichertes Foto mit 800×600 px mit `max_edge=1024` abgerufen wird
+- **THEN** liefert das Backend die gespeicherten Bytes unverändert
+
+#### Scenario: Ohne Parameter
+- **WHEN** das Bild ohne `max_edge` abgerufen wird
+- **THEN** liefert das Backend das gespeicherte Original
+
+#### Scenario: Ungültiger Wert
+- **WHEN** `max_edge=5000` übergeben wird
+- **THEN** antwortet das Backend mit 400 als ProblemDetail
+
 ### Requirement: Label-Inbox verwalten
 Das Backend MUST Endpunkte zum Auflisten (Metadaten, filterbar nach Status), Abrufen des Bildes, Setzen von Status (`identified` | `failed` | `pending`) und optionaler Discogs-ID sowie zum Löschen bereitstellen. Nutzer MUST nur ihre eigenen Fotos sehen und ändern können.
 

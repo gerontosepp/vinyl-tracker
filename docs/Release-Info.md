@@ -9,6 +9,7 @@
 
 ## Unreleased
 
+- **Kleinere Label-Fotos für Claude (`#251`)**: `get_label_inbox` liefert die Label-Fotos auf höchstens 1024 px Kantenlänge verkleinert, das spart Tokens im Chat. Dafür akzeptiert `GET /api/label-photos/{id}/image` den optionalen Parameter `max_edge` (64–4096); ohne ihn kommt weiterhin das Original.
 - **Detailansicht am Handy (`#258`)**: Das untere Menü überdeckt „Auf Discogs öffnen“ und die weiteren Angaben am Ende der Detailansicht nicht mehr. Das vergrößerte Label-Foto in der Label-Inbox liegt ebenfalls über dem Menü.
 ---
 

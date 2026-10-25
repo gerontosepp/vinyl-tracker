@@ -230,9 +230,15 @@ async fn mock_backend() -> VinylMcpServer {
         )
         .route(
             "/api/label-photos/{id}/image",
-            get(|Path(id): Path<i64>| async move {
-                ([("content-type", "image/jpeg")], format!("jpeg-{id}"))
-            }),
+            get(
+                |Path(id): Path<i64>, Query(q): Query<HashMap<String, String>>| async move {
+                    let max_edge = q.get("max_edge").cloned().unwrap_or_default();
+                    (
+                        [("content-type", "image/jpeg")],
+                        format!("jpeg-{id}-edge-{max_edge}"),
+                    )
+                },
+            ),
         )
         .route(
             "/api/label-photos/{id}",
@@ -673,7 +679,8 @@ async fn test_get_label_inbox_returns_images() {
         content[2]["data"].as_str().unwrap(),
     )
     .unwrap();
-    assert_eq!(decoded, b"jpeg-5");
+    // the mock echoes the requested max_edge: the tool must ask for the downscaled variant
+    assert_eq!(decoded, b"jpeg-5-edge-1024");
     assert_eq!(content[3]["text"], "Label photo 6:");
 }
 

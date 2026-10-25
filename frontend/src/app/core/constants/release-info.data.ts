@@ -14,6 +14,13 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "isUnreleased": true,
     "items": [
       {
+        "title": "Kleinere Label-Fotos für Claude (`#251`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "`get_label_inbox` liefert die Label-Fotos auf höchstens 1024 px Kantenlänge verkleinert, das spart Tokens im Chat. Dafür akzeptiert `GET /api/label-photos/{id}/image` den optionalen Parameter `max_edge` (64–4096); ohne ihn kommt weiterhin das Original.",
+        "details": []
+      },
+      {
         "title": "Detailansicht am Handy (`#258`)",
         "type": "feat",
         "typeLabel": "Feature",

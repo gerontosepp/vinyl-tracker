@@ -136,6 +136,42 @@ impl LabelPhotoService {
         Ok((row.get("image"), row.get("mime_type")))
     }
 
+    /// Like [`Self::image`], but photos whose longest edge exceeds `max_edge` are downscaled
+    /// (aspect ratio kept, re-encoded as JPEG). Smaller photos are returned unchanged.
+    pub async fn image_scaled(
+        pool: &PgPool,
+        user_id: i64,
+        id: i64,
+        max_edge: u32,
+    ) -> Result<(Vec<u8>, String), AppError> {
+        let (bytes, mime_type) = Self::image(pool, user_id, id).await?;
+        tokio::task::spawn_blocking(move || Self::downscale(bytes, mime_type, max_edge))
+            .await
+            .map_err(|e| AppError::Internal(format!("Image task failed: {e}")))?
+    }
+
+    /// Downscales to `max_edge` unless the image already fits (never upscales).
+    fn downscale(
+        bytes: Vec<u8>,
+        mime_type: String,
+        max_edge: u32,
+    ) -> Result<(Vec<u8>, String), AppError> {
+        let (width, height) = ImageReader::new(Cursor::new(&bytes))
+            .with_guessed_format()
+            .map_err(|e| AppError::Internal(format!("Invalid stored image: {e}")))?
+            .into_dimensions()
+            .map_err(|e| AppError::Internal(format!("Invalid stored image: {e}")))?;
+        if width.max(height) <= max_edge {
+            return Ok((bytes, mime_type));
+        }
+        // a stored photo that cannot be decoded is a server-side fault, not a bad request
+        let scaled = Self::normalize_image_to(&bytes, max_edge).map_err(|e| match e {
+            AppError::BadRequest(msg) => AppError::Internal(format!("Stored image: {msg}")),
+            other => other,
+        })?;
+        Ok((scaled, STORED_MIME_TYPE.to_string()))
+    }
+
     pub async fn update(
         pool: &PgPool,
         user_id: i64,
@@ -409,6 +445,36 @@ mod tests {
 
         let out = LabelPhotoService::normalize_image(&with_exif).unwrap();
         assert!(!out.windows(4).any(|w| w == b"Exif"));
+    }
+
+    #[test]
+    fn test_downscale_shrinks_large_photo_keeping_aspect_ratio() {
+        let (out, mime) = LabelPhotoService::downscale(
+            encode(1568, 1176, ImageFormat::Jpeg),
+            "image/jpeg".to_string(),
+            1024,
+        )
+        .unwrap();
+        let img = image::load_from_memory(&out).unwrap();
+        assert_eq!((img.width(), img.height()), (1024, 768));
+        assert_eq!(mime, "image/jpeg");
+    }
+
+    #[test]
+    fn test_downscale_never_upscales_and_keeps_bytes() {
+        let original = encode(800, 600, ImageFormat::Jpeg);
+        let (out, _) =
+            LabelPhotoService::downscale(original.clone(), "image/jpeg".to_string(), 1024).unwrap();
+        assert_eq!(out, original);
+    }
+
+    #[test]
+    fn test_downscale_corrupt_stored_image_is_internal_error() {
+        // PNG signature + IHDR (dimensions readable), but no pixel data
+        let mut corrupt = encode(2000, 1500, ImageFormat::Png);
+        corrupt.truncate(33);
+        let err = LabelPhotoService::downscale(corrupt, "image/jpeg".to_string(), 1024);
+        assert!(matches!(err, Err(AppError::Internal(_))), "{err:?}");
     }
 
     #[test]

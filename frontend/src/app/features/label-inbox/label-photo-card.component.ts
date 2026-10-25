@@ -52,7 +52,7 @@ const CONFIDENCE_CLASSES: Record<LabelMatchConfidence, string> = {
         </button>
         @if (expanded()) {
           <div
-            class="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 cursor-zoom-out"
+            class="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4 cursor-zoom-out"
             role="dialog"
             aria-modal="true"
             [attr.aria-label]="'labelInbox.photoAlt' | translate: { date: taken }"

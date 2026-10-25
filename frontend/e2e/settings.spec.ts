@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { mockUnhandledApi } from './mock-api';
 
 const loginViaUi = async (page: import('@playwright/test').Page) => {
   await page.goto('/login');
@@ -17,6 +18,9 @@ const openSettingsViaProfile = async (page: import('@playwright/test').Page) => 
 
 test.describe('Settings Sync', () => {
   test.beforeEach(async ({ page }) => {
+    // Login is mocked, so no call may reach the real backend (#253)
+    await mockUnhandledApi(page);
+
     await page.route('**/api/users/login', async (route) => {
       await route.fulfill({
         status: 200,

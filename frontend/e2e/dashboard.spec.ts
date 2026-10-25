@@ -1,7 +1,11 @@
 import { test, expect } from '@playwright/test';
+import { mockUnhandledApi } from './mock-api';
 
 test.describe('Dashboard', () => {
   test.beforeEach(async ({ page }) => {
+    // Login is mocked, so no call may reach the real backend (#253)
+    await mockUnhandledApi(page);
+
     page.on('console', msg => console.log('BROWSER LOG:', msg.text(), msg.type()));
     page.on('requestfailed', request => console.log('REQUEST FAILED:', request.url(), request.failure()?.errorText));
     // Mock login and data

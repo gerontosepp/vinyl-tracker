@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { mockUnhandledApi } from './mock-api';
 
 test.describe('Authentication', () => {
   test('should show login form', async ({ page }) => {
@@ -27,6 +28,9 @@ test.describe('Authentication', () => {
   });
 
   test('should redirect to dashboard on successful login', async ({ page }) => {
+    // Login is mocked, so no call may reach the real backend (#253)
+    await mockUnhandledApi(page);
+
     // Mock successful login
     await page.route('**/api/users/login', async (route) => {
       await route.fulfill({
@@ -58,6 +62,9 @@ test.describe('Authentication', () => {
   });
 
   test('should be able to logout', async ({ page }) => {
+    // Login is mocked, so no call may reach the real backend (#253)
+    await mockUnhandledApi(page);
+
     // Mock successful login state first
     await page.route('**/api/users/login', async (route) => {
       await route.fulfill({

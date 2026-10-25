@@ -184,7 +184,7 @@ The backend (`backend/src/`) follows a strict layered architecture (see `.agent/
 ### 6.10 Scenario: Identifying a Record without Barcode from a Label Photo
 1.  **User** taps *Take label photo* on the scan page; the **Frontend** downscales the photo to 1568 px and re-encodes it as JPEG (canvas).
 2.  **Frontend** sends it to `POST /api/label-photos`; the **Backend** normalizes it again (orientation, size, no EXIF) and stores it as `pending`.
-3.  Later, the **User** runs the prompt `process_label_inbox` in Claude Desktop/Code; **Claude** calls `get_label_inbox`, the **MCP Server** fetches the photos from the Backend and returns them as image content.
+3.  Later, the **User** runs the prompt `process_label_inbox` in Claude Desktop/Code; **Claude** calls `get_label_inbox`, the **MCP Server** fetches the photos from the Backend (`GET /api/label-photos/{id}/image?max_edge=1024`, downscaled, aspect ratio kept, never upscaled; without `max_edge` the stored original is returned) and returns them as image content.
 4.  **Claude** reads the labels and calls `search_discogs` (`catno` + `label`) and `get_record_details` (identifiers such as matrix/runout) to determine the pressing.
 5.  After the **User** confirmed the matches, **Claude** calls `add_to_collection` and `resolve_label_photo` (`identified` + Discogs release ID).
 

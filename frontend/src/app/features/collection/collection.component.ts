@@ -19,6 +19,7 @@ import {
   CollectionRelease,
   QrCodeItem,
   RecordDetailDto,
+  TakeoverResult,
   GenreBreakdownItem,
   PrintFilter,
   RecordSource,
@@ -398,6 +399,29 @@ export class CollectionComponent implements OnInit, OnDestroy {
           }
       );
     }
+    this.loadData();
+  }
+
+  /** A manual record became a Discogs record: show it under its new IDs and refresh the list. */
+  onTakenOver(result: TakeoverResult): void {
+    const detail = result.record;
+    this.recordDetail.set(detail);
+    this.selectedRecord.update(
+      (rec) =>
+        rec && {
+          ...rec,
+          id: detail.discogs_id,
+          instance_id: result.instanceId,
+          source: 'discogs',
+          basic_information: {
+            ...rec.basic_information,
+            id: detail.discogs_id,
+            title: detail.title ?? rec.basic_information.title,
+            artists: detail.artist ? [{ name: detail.artist }] : rec.basic_information.artists,
+            thumb: detail.thumb_url ?? rec.basic_information.thumb,
+          },
+        }
+    );
     this.loadData();
   }
 

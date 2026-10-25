@@ -97,6 +97,14 @@ Manche Platten und CDs gibt es bei Discogs nicht. Du kannst sie trotzdem in der 
 
 Manuelle Platten tragen das Kennzeichen **Manuell** und lassen sich in der Sammlung über den Filter **Quelle** auswählen. In der Detailansicht kannst du sie **bearbeiten** und das Cover ändern; einen Discogs-Link gibt es nicht. Der Discogs-Abgleich lässt sie unverändert. Hören erfasst du wie gewohnt – auch per Barcode oder per gedrucktem QR-Etikett (dort steht „Manuell #n“ statt der Discogs-ID). Das JSON-Backup enthält sie samt Cover.
 
+### Später bei Discogs übernehmen
+
+Gibt es die Platte inzwischen bei Discogs, wählst du in der Detailansicht **Bei Discogs prüfen**. Vinyl Tracker sucht nach Barcode, Katalognummer + Label und Künstler + Titel und zeigt die möglichen Releases. Erst wenn du einen Release wählst und **Übernehmen** bestätigst, wird die Platte zur Discogs-Platte: Der Release kommt in deine Discogs-Sammlung, Hör-Historie, Regalplatz, Zustände und Sortier-String bleiben erhalten. Cover und Wert kommen danach von Discogs. Die Übernahme lässt sich nicht rückgängig machen.
+
+- Ist der Release schon in deiner Sammlung, wählst du zwischen **Zweites Exemplar** (Standard) und **Zusammenführen**: Beim Zusammenführen wandert die Hör-Historie zum vorhandenen Exemplar, die manuelle Platte wird gelöscht – ihre Notizen und Zustände gehen dabei verloren.
+- Gedruckte QR-Etiketten („Manuell #n“) funktionieren weiter und führen zum übernommenen Exemplar.
+- Gibt es die Platte noch nicht bei Discogs, öffnet **Bei Discogs eintragen** das Discogs-Formular; mit **Daten kopieren** hast du die Angaben der Platte in der Zwischenablage.
+
 ## Regale {#regale}
 
 Unter **Sammlung → Regale** bildest du deine echten Regale nach. Der Tracker verteilt die Sammlung (Künstler A–Z, dann Jahr und Titel) gleichmäßig auf die Fächer und sagt dir, wo jede Platte hingehört.
@@ -170,4 +178,4 @@ Vinyl Tracker lässt sich als App installieren (PWA): im Browser *Zum Home-Bilds
 
 **Die Erkennung schlägt die falsche Pressung vor.** Eine **andere Pressung** aus dem Vorschlag wählen, oder ein weiteres Foto (andere Seite, Auslaufrille) aufnehmen und **Erneut erkennen**.
 
-**Ich finde eine Platte nicht bei Discogs.** Lege sie **manuell** an (siehe **Platten ohne Discogs-Eintrag**). Alternativ lässt sich das Release auf discogs.com eintragen; danach kann die Platte ganz normal gescannt oder per Label-Foto erkannt werden.
+**Ich finde eine Platte nicht bei Discogs.** Lege sie **manuell** an (siehe **Platten ohne Discogs-Eintrag**). Alternativ lässt sich das Release auf discogs.com eintragen (**Bei Discogs eintragen** in der Detailansicht); danach übernimmst du die manuelle Platte mit **Bei Discogs prüfen**.

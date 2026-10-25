@@ -126,6 +126,23 @@ describe('ApiService label photos', () => {
       upload.flush({});
     });
 
+    it('checks a manual record on Discogs and takes it over', () => {
+      service.getDiscogsCandidates(-3).subscribe((candidates) => {
+        expect(candidates[0].discogsId).toBe(1001);
+      });
+      http
+        .expectOne({ method: 'GET', url: '/api/records/-3/discogs-candidates' })
+        .flush([{ discogsId: 1001, title: 'Posen', matchedBy: 'barcode', inCollection: [] }]);
+
+      const request = { releaseId: 1001, mode: 'merge' as const, targetInstanceId: 55 };
+      service.takeOverManualRecord(-3, request).subscribe((result) => {
+        expect(result.instanceId).toBe(55);
+      });
+      const takeover = http.expectOne({ method: 'POST', url: '/api/records/-3/takeover' });
+      expect(takeover.request.body).toEqual(request);
+      takeover.flush({ record: {}, instanceId: 55, mode: 'merge' });
+    });
+
     it('filters the collection by source', () => {
       service.getCollection(1, 50, 0, 'artist', 'asc', '', 'all', [], '', undefined, false, { source: 'manual' }).subscribe();
       const req = http.expectOne((r) => r.url === '/api/collection');

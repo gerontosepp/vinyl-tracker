@@ -26,11 +26,11 @@
 
 ## 5. Frontend
 
-- [ ] 5.1 API-Service-Methoden und Typen für Kandidaten und Übernahme; Unit-Tests mit `HttpTestingController`
-- [ ] 5.2 `record-detail-modal`: Button „Bei Discogs prüfen“ (nur bei manuellen Platten), Kandidatenliste in der Darstellung der Label-Inbox mit Hinweis „bereits in der Sammlung“ sowie Meldungen für „Kein Treffer“ und „Kein Discogs-Token“; Komponententests grün
-- [ ] 5.3 Bestätigungsdialog: Standard „Zweites Exemplar“; „Zusammenführen“ nur, wenn der Release in der Sammlung ist, mit Zielauswahl bei mehreren Exemplaren und Hinweis auf verlorene Felder; nach Erfolg Detail und Sammlung neu laden und die Platzierung anzeigen; Komponententests für beide Modi und den Fehlerfall
-- [ ] 5.4 „Bei Discogs eintragen“: Link auf `https://www.discogs.com/release/add` (neuer Tab) und „Daten kopieren“ (Clipboard); Komponententest prüft den kopierten Text
-- [ ] 5.5 Übersetzungen (de/en) und In-App-Hilfe zu manuellen Platten ergänzen; `npm run lint` und `npm test` ohne neue Fehler
+- [x] 5.1 API-Service-Methoden und Typen für Kandidaten und Übernahme; Unit-Tests mit `HttpTestingController`
+- [x] 5.2 `record-detail-modal`: Button „Bei Discogs prüfen“ (nur bei manuellen Platten), Kandidatenliste in der Darstellung der Label-Inbox mit Hinweis „bereits in der Sammlung“ sowie Meldungen für „Kein Treffer“ und „Kein Discogs-Token“; Komponententests grün
+- [x] 5.3 Bestätigungsdialog: Standard „Zweites Exemplar“; „Zusammenführen“ nur, wenn der Release in der Sammlung ist, mit Zielauswahl bei mehreren Exemplaren und Hinweis auf verlorene Felder; nach Erfolg Detail und Sammlung neu laden und die Platzierung anzeigen; Komponententests für beide Modi und den Fehlerfall
+- [x] 5.4 „Bei Discogs eintragen“: Link auf `https://www.discogs.com/release/add` (neuer Tab) und „Daten kopieren“ (Clipboard); Komponententest prüft den kopierten Text
+- [x] 5.5 Übersetzungen (de/en) und In-App-Hilfe zu manuellen Platten ergänzen; `npm run lint` und `npm test` ohne neue Fehler
 
 ## 6. MCP
 

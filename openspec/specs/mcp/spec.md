@@ -124,7 +124,7 @@ Das MCP-Tool `search_discogs` und `GET /api/discogs/search` MUST neben dem Freit
 - **THEN** antwortet das Backend mit 400
 
 ### Requirement: Label-Inbox über MCP
-Der MCP-Server MUST das Tool `get_label_inbox` (optional `limit`, Standard 5) bereitstellen, das offene Label-Fotos als Bild-Inhalt (`image/jpeg`) zusammen mit ihren IDs liefert. Die Fotos MUST auf höchstens 1024 px lange Kante verkleinert sein (Abruf mit `max_edge=1024`), um Bild-Tokens zu sparen. Außerdem MUST der Server `resolve_label_photo` (`id`, `status`, optional `discogs_id`) zum Abschließen.
+Der MCP-Server MUST das Tool `get_label_inbox` (optional `limit`, Standard 5) bereitstellen, das offene Label-Fotos als Bild-Inhalt (`image/jpeg`) zusammen mit ihren IDs liefert. Die Fotos MUST auf höchstens 1024 px lange Kante verkleinert sein (Abruf mit `max_edge=1024`), um Bild-Tokens zu sparen. Außerdem MUST der Server `resolve_label_photo` (`id`, `status`, optional `discogs_id`) zum Abschließen bereitstellen.
 
 #### Scenario: Inbox abrufen
 - **WHEN** der Client `get_label_inbox` aufruft und zwei Fotos offen sind

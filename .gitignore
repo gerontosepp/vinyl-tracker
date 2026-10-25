@@ -32,3 +32,6 @@ build_log.txt
 # Certificates
 certs/
 frontend/certs/
+
+# graphify knowledge graph output
+graphify-out/

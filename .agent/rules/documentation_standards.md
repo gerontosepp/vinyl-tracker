@@ -15,6 +15,7 @@ trigger: always_on
      - Changes are drafted in `openspec/changes/<change-name>/` (`proposal.md`, delta `specs/`, `tasks.md`).
      - Domain source-of-truth specifications are maintained in `openspec/specs/<domain>/spec.md`.
      - After successful implementation, testing, and user verification, archive the change via `./scripts/opsx.sh archive <change-name>` to merge the deltas into the living domain specifications.
+   - Small changes without an OpenSpec change MUST still keep `openspec/specs/` correct: if behavior described there changes (API parameters, MCP tool output, limits, error codes), update the affected requirement/scenario in the same PR.
 4. **Architecture & Concept Updates**: Update `docs/arc42.md` whenever significant architectural changes, new system components, modified domain models, or database schema alterations are introduced.
 5. **Self-Documenting Code**: 
    - Write clear, descriptive semantic variable and method names.

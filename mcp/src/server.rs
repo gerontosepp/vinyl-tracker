@@ -12,6 +12,10 @@ use rmcp::{
 };
 use std::sync::Arc;
 
+/// Longest edge of the label photos `get_label_inbox` returns: enough to read the label print,
+/// but far fewer image tokens than the stored 1568 px.
+const LABEL_PHOTO_MAX_EDGE_PX: u32 = 1024;
+
 /// Steps shared by the label identification prompts: read the label, search Discogs in a
 /// structured way, verify candidates and only act after the user confirmed.
 /// Shared reading steps (`vinyl_api_types::label_photo::LABEL_READING_STEPS`) plus the
@@ -437,7 +441,10 @@ impl VinylMcpServer {
                 .map_err(|e| format!("Failed to serialize label photos: {}", e))?
         ))];
         for photo in &inbox.photos {
-            let (bytes, mime_type) = self.client.get_label_photo_image(photo.id).await?;
+            let (bytes, mime_type) = self
+                .client
+                .get_label_photo_image(photo.id, LABEL_PHOTO_MAX_EDGE_PX)
+                .await?;
             content.push(ContentBlock::text(format!("Label photo {}:", photo.id)));
             content.push(ContentBlock::image(
                 base64::engine::general_purpose::STANDARD.encode(bytes),

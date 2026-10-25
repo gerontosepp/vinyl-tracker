@@ -11,6 +11,12 @@
 
 ---
 
+## v1.4.1 (2026-10-25)
+
+- **Kleinere Label-Fotos für Claude (`#251`)**: `get_label_inbox` liefert die Label-Fotos auf höchstens 1024 px Kantenlänge verkleinert, das spart Tokens im Chat. Dafür akzeptiert `GET /api/label-photos/{id}/image` den optionalen Parameter `max_edge` (64–4096); ohne ihn kommt weiterhin das Original.
+- **Detailansicht am Handy (`#258`)**: Das untere Menü überdeckt „Auf Discogs öffnen“ und die weiteren Angaben am Ende der Detailansicht nicht mehr. Das vergrößerte Label-Foto in der Label-Inbox liegt ebenfalls über dem Menü.
+---
+
 ## v1.4.0 (2026-10-25)
 
 - **Manuelle Platten bei Discogs übernehmen (`#243`)**: Gibt es eine manuell angelegte Platte inzwischen bei Discogs, findet **Bei Discogs prüfen** in der Detailansicht den Release (Barcode, Katalognummer + Label, Künstler + Titel). Nach deiner Bestätigung wird sie zur Discogs-Platte – Hör-Historie, Regalplatz, Zustände und Sortier-String bleiben, Cover und Wert kommen von Discogs. Ist der Release schon in der Sammlung, wählst du zwischen zweitem Exemplar und Zusammenführen. Gedruckte QR-Etiketten („Manuell #n“) funktionieren weiter. **Bei Discogs eintragen** öffnet das Discogs-Formular und kopiert die Angaben. Neue MCP-Tools: `create_manual_record`, `check_manual_record`, `take_over_manual_record`. Das JSON-Backup (`format_version: 5`) enthält die alten IDs übernommener Platten; Backups der Versionen 3 und 4 bleiben lesbar.

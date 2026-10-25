@@ -64,6 +64,7 @@ Apply the mandatory project rules defined in `.agent/rules/`:
   - Structured error details via `ProblemDetail` (RFC 7807) and user-friendly toasts.
 - **Database Changes**:
   - Follow the [`database-migrations`](../database-migrations/SKILL.md) skill for `sqlx::migrate` migrations.
+- **Stack skills (load them with the Skill tool before writing code)**: `rust-best-practices` for Rust (backend, MCP), `angular-developer` for Angular. They are applied again in the code review (section 7).
 
 ---
 
@@ -98,6 +99,7 @@ Update project documentation immediately alongside code changes (see [`documenta
 - **`README.md`**: Update if features, configuration, endpoints, or UI behavior changed.
 - **`docs/Release-Info.md`**: Add summary bullet points under `## Unreleased` (and run `node scripts/sync-release-info.js`).
 - **`docs/arc42.md`**: Update if architecture, domain models, or database schemas changed.
+- **`openspec/specs/<domain>/spec.md`**: Also for small changes without an OpenSpec change: whenever an existing requirement or scenario no longer matches the behavior (API parameters, MCP tool output, limits, error codes) or a new observable behavior appears, search `openspec/specs/` (`grep -rniE "<tool|endpoint|keyword>" openspec/specs`) and update the affected requirement directly on the same branch. Larger changes go through a delta spec and the archive PR (section 9).
 - **`docs/Help.md` + `docs/Help.en.md`** (in-app help page): Update the matching section in **both** languages whenever a user-visible feature, button or workflow changes (same `{#anchor}`s in both files; `node scripts/sync-help.js` regenerates `frontend/public/assets/help.*.json`, the Claude hook does it automatically). New icon-only buttons get a tooltip via `[appTooltip]`.
 
 ---
@@ -126,12 +128,12 @@ At the end of every feature or fix, bring the local Docker stack to the new stat
 
 Before committing, review the change with fresh eyes – tests and linters do not catch design problems (e.g. CPU-heavy work on an async worker, an extra database round trip).
 
-1. **When**: for every change to `backend/`, `frontend/src/`, `mcp/` or `backend/migrations/`. Skip it for docs-only changes, OpenSpec archive PRs and release version bumps.
+1. **When**: for every change to `backend/`, `frontend/src/`, `mcp/` or `backend/migrations/`. Skip it for docs-only changes, OpenSpec archive PRs and release version bumps. **The review is mandatory and runs before the PR is opened** – a "self-review" by Claude does not replace the `code-review` skill. If it was not run, the PR is not ready.
 2. **Review the branch diff** against `develop` with the `code-review` skill:
    - effort `medium` by default,
    - effort `high` for migrations, new endpoints, auth/security changes or changes to the MCP tool contract.
 3. **Stack-specific checks**: apply the `angular-developer` skill to Angular code and the `rust-best-practices` skill to Rust code (backend and MCP).
-4. **Handle the findings**: fix confirmed issues on the same branch and re-run the tests (section 4). Findings that are deliberately not addressed go into the PR body with a reason.
+4. **Handle the findings**: fix confirmed issues on the same branch and re-run the tests (section 4). Findings that are deliberately not addressed go into the PR body with a reason. The PR body's **Review** section names the effort level used.
 5. **Large features**: suggest `/code-review ultra` (multi-agent review in the cloud) to the user – it is billed and only the user can start it.
 
 ---
@@ -153,9 +155,12 @@ Before committing, review the change with fresh eyes – tests and linters do no
    The PR body lists the changes, the local test results and a **Review** section (effort level, fixed findings, deliberately open points – see section 7).
 3. **Wait for CI** (backend, frontend, MCP jobs on the self-hosted runners, ~10 min):
    ```bash
-   gh pr checks <PR> --watch
+   gh run list --branch <branch> --limit 3   # the run appears a few seconds after the push
+   gh run watch <RUN_ID> --exit-status       # or: gh pr checks <PR> --watch
    ```
    Report the result to the user. Fix failures on the same branch (see the [`pipeline-healer`](../pipeline-healer/SKILL.md) skill).
+   - Right after a push `gh pr checks` may report "no checks reported" – that only means the run is not registered yet, not that CI does not start. Check `gh run list`.
+   - A new push **cancels** the running CI of the same PR (`cancel-in-progress`). Bundle follow-up commits (review fixes, docs, specs) into a single push instead of pushing each one, and push only after the quality gate (section 4) and the review (section 7) are done.
 
 ---
 

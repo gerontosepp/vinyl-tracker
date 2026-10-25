@@ -3,7 +3,7 @@
 import { ReleaseEntry } from '../models/release-info.model';
 
 // Application version from frontend/package.json – single source for all version badges.
-export const APP_VERSION = '1.4.0';
+export const APP_VERSION = '1.4.1';
 
 export const RELEASE_INFO_DATA: ReleaseEntry[] = [
   {
@@ -15,10 +15,33 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "items": []
   },
   {
+    "version": "v1.4.1",
+    "rawHeader": "v1.4.1 (2026-10-25)",
+    "date": "2026-10-25",
+    "isCurrent": true,
+    "isUnreleased": false,
+    "items": [
+      {
+        "title": "Kleinere Label-Fotos für Claude (`#251`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "`get_label_inbox` liefert die Label-Fotos auf höchstens 1024 px Kantenlänge verkleinert, das spart Tokens im Chat. Dafür akzeptiert `GET /api/label-photos/{id}/image` den optionalen Parameter `max_edge` (64–4096); ohne ihn kommt weiterhin das Original.",
+        "details": []
+      },
+      {
+        "title": "Detailansicht am Handy (`#258`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Das untere Menü überdeckt „Auf Discogs öffnen“ und die weiteren Angaben am Ende der Detailansicht nicht mehr. Das vergrößerte Label-Foto in der Label-Inbox liegt ebenfalls über dem Menü.",
+        "details": []
+      }
+    ]
+  },
+  {
     "version": "v1.4.0",
     "rawHeader": "v1.4.0 (2026-10-25)",
     "date": "2026-10-25",
-    "isCurrent": true,
+    "isCurrent": false,
     "isUnreleased": false,
     "items": [
       {

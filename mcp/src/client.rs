@@ -815,10 +815,12 @@ impl VinylApiClient {
             .map_err(|e| format!("Failed to parse label photos JSON: {}", e))
     }
 
-    /// Returns the image bytes of a label photo and their MIME type.
+    /// Returns the image bytes of a label photo (longest edge at most `max_edge`) and their
+    /// MIME type.
     pub async fn get_label_photo_image(
         &self,
         id: i64,
+        max_edge: u32,
     ) -> Result<(impl AsRef<[u8]> + use<>, String), String> {
         self.ensure_authenticated().await?;
         let url = format!("{}/api/label-photos/{}/image", self.base_url, id);
@@ -826,6 +828,7 @@ impl VinylApiClient {
             .http_client
             .get(&url)
             .headers(self.build_auth_headers().await)
+            .query(&[("max_edge", max_edge)])
             .send()
             .await
             .map_err(|e| format!("Request to label photo image failed: {}", e))?;

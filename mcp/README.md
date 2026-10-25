@@ -46,7 +46,7 @@ Der Server implementiert **Option 1 (REST-Client)**: Er kommuniziert direkt übe
 | `export_collection` | Exportiert die komplette Nutzersammlung als strukturierte Daten | `format` (`json` oder `csv`) |
 | `get_record_placement` | Lagerplatz einer Platte: Regal, Fach (Zeile/Spalte) und Nachbarn | `discogs_id` (int) |
 | `get_storage_layout` | Regal-Übersicht je Medium mit Füllstand und Künstlerbereich pro Fach | *keine* |
-| `get_label_inbox` | Offene Label-Fotos aus der App als Bilder (älteste zuerst) samt IDs | `limit` (int, optional, Standard: 5, max. 10) |
+| `get_label_inbox` | Offene Label-Fotos aus der App als Bilder (älteste zuerst, auf max. 1024 px Kantenlänge verkleinert) samt IDs | `limit` (int, optional, Standard: 5, max. 10) |
 | `resolve_label_photo` | Schließt ein Label-Foto ab (`identified` mit Discogs-Release-ID, `failed` oder zurück auf `pending`) | `id` (int), `status` (str), `discogs_id` (int, optional) |
 | `create_manual_record` | Legt eine Platte ohne Discogs-Eintrag manuell an (negative ID) und liefert den Regalplatz; ohne Cover | `artist`, `title`, `format` (`LP`, `Double LP`, `CD`, `Double CD`), optional `year`, `label`, `catno`, `country`, `barcode`, `genres`, `media_condition`, `sleeve_condition`, `notes`, `value` |
 | `check_manual_record` | Sucht den Discogs-Release einer manuellen Platte (Barcode, Katalognummer + Label, Künstler + Titel); markiert bereits vorhandene Exemplare, ändert nichts | `id` (int, negativ) |

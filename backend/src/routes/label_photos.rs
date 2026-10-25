@@ -127,12 +127,37 @@ async fn delete_photos(
     ))
 }
 
+#[derive(Deserialize)]
+struct ImageQuery {
+    max_edge: Option<u32>,
+}
+
+/// Bounds for `max_edge`, the optional longest edge of a downscaled image.
+const MAX_EDGE_RANGE: std::ops::RangeInclusive<u32> = 64..=4096;
+
+fn validate_max_edge(max_edge: Option<u32>) -> Result<Option<u32>, AppError> {
+    match max_edge {
+        Some(edge) if !MAX_EDGE_RANGE.contains(&edge) => Err(AppError::BadRequest(format!(
+            "max_edge must be between {} and {}",
+            MAX_EDGE_RANGE.start(),
+            MAX_EDGE_RANGE.end()
+        ))),
+        other => Ok(other),
+    }
+}
+
 async fn photo_image(
     State(state): State<AppState>,
     CurrentUser(user): CurrentUser,
     Path(id): Path<i64>,
+    Query(query): Query<ImageQuery>,
 ) -> Result<impl IntoResponse, AppError> {
-    let (bytes, mime_type) = LabelPhotoService::image(&state.pool, user.id, id).await?;
+    let (bytes, mime_type) = match validate_max_edge(query.max_edge)? {
+        Some(max_edge) => {
+            LabelPhotoService::image_scaled(&state.pool, user.id, id, max_edge).await?
+        }
+        None => LabelPhotoService::image(&state.pool, user.id, id).await?,
+    };
     Ok((
         [
             (header::CONTENT_TYPE, mime_type),
@@ -160,4 +185,29 @@ async fn delete_photo(
 ) -> Result<StatusCode, AppError> {
     LabelPhotoService::delete(&state.pool, user.id, id).await?;
     Ok(StatusCode::NO_CONTENT)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_validate_max_edge_accepts_absent_and_in_range() {
+        assert_eq!(validate_max_edge(None).unwrap(), None);
+        assert_eq!(validate_max_edge(Some(1024)).unwrap(), Some(1024));
+        assert_eq!(validate_max_edge(Some(64)).unwrap(), Some(64));
+        assert_eq!(validate_max_edge(Some(4096)).unwrap(), Some(4096));
+    }
+
+    #[test]
+    fn test_validate_max_edge_rejects_out_of_range() {
+        assert!(matches!(
+            validate_max_edge(Some(0)),
+            Err(AppError::BadRequest(_))
+        ));
+        assert!(matches!(
+            validate_max_edge(Some(5000)),
+            Err(AppError::BadRequest(_))
+        ));
+    }
 }

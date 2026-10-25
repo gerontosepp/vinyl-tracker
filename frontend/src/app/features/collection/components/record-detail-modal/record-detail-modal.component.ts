@@ -5,7 +5,7 @@ import { ApiService } from '../../../../core/services/api.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { LanguageService } from '../../../../core/services/language.service';
 import { AuthService } from '../../../../core/services/auth.service';
-import { CollectionRelease, RecordDetailDto, RoonZone } from '../../../../core/types';
+import { CollectionRelease, RecordDetailDto, RoonZone, TakeoverResult } from '../../../../core/types';
 import {
   LucideExternalLink,
   LucideX,
@@ -22,6 +22,7 @@ import { StoragePlacementComponent } from '../../../../shared/components/storage
 import { getErrorMessage } from '../../../../core/utils/error';
 import { getConditionShortCode, MEDIA_CONDITION_OPTIONS, SLEEVE_CONDITION_OPTIONS } from '../../utils/condition.util';
 import { TooltipDirective } from '../../../../shared/directives/tooltip.directive';
+import { DiscogsTakeoverComponent } from '../discogs-takeover/discogs-takeover.component';
 
 export const ROON_LAST_ZONE_KEY = 'vinyl_last_roon_zone_id';
 
@@ -35,6 +36,7 @@ export const ROON_LAST_ZONE_KEY = 'vinyl_last_roon_zone_id';
     TranslatePipe,
     LocalizedDatePipe,
     StoragePlacementComponent,
+    DiscogsTakeoverComponent,
     LucideExternalLink,
     LucideX,
     LucideHeadphones,
@@ -68,6 +70,8 @@ export class RecordDetailModalComponent implements OnInit {
   readonly recordRemoved = output<number>();
   /** Edit a manual record (#242) in the manual record form. */
   readonly editManual = output<RecordDetailDto>();
+  /** A manual record became a Discogs record (#243). */
+  readonly takenOver = output<TakeoverResult>();
 
   readonly isLoggingListen = signal<boolean>(false);
   readonly justListened = signal<boolean>(false);
@@ -76,6 +80,13 @@ export class RecordDetailModalComponent implements OnInit {
   readonly isSavingSortKey = signal<boolean>(false);
   readonly isRemoving = signal<boolean>(false);
   readonly showDeleteConfirm = signal<boolean>(false);
+
+  /** Last takeover in this modal, shown with its shelf placement while its record is open. */
+  readonly takeoverResult = signal<TakeoverResult | null>(null);
+  readonly shownTakeover = computed(() => {
+    const result = this.takeoverResult();
+    return result && result.record.discogs_id === this.detail()?.discogs_id ? result : null;
+  });
 
   readonly roonZones = signal<RoonZone[]>([]);
   readonly selectedZoneId = signal<string | null>(null);
@@ -98,6 +109,11 @@ export class RecordDetailModalComponent implements OnInit {
   readonly sortKeyValue = linkedSignal(() => this.storedSortKey());
   readonly sortKeyChanged = computed(() => this.sortKeyValue().trim() !== this.storedSortKey());
   private justListenedTimeout?: ReturnType<typeof setTimeout>;
+
+  onTakenOver(result: TakeoverResult): void {
+    this.takeoverResult.set(result);
+    this.takenOver.emit(result);
+  }
 
   onEditManual(): void {
     const detail = this.detail();

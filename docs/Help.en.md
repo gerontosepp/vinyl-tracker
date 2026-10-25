@@ -97,6 +97,14 @@ Some records and CDs are not on Discogs. You can still keep them in your collect
 - After saving, you see which shelf compartment the record belongs in.
 
 Manual records carry the **Manual** badge and can be selected with the **Source** filter in the collection. In the record details you can **edit** them and change the cover; there is no Discogs link. The Discogs sync leaves them unchanged. Log listens as usual – also by barcode or with a printed QR label (which shows "Manual #n" instead of the Discogs ID). The JSON backup includes them with their covers.
+
+### Taking over to Discogs later
+
+If the record is on Discogs by now, choose **Check on Discogs** in the record details. Vinyl Tracker searches by barcode, catalog number + label and artist + title and shows the possible releases. Only when you pick a release and confirm **Take over** does the record become a Discogs record: the release is added to your Discogs collection, and listen history, shelf slot, conditions and sort string are kept. Cover and value then come from Discogs. The takeover cannot be undone.
+
+- If the release is already in your collection, choose between **Second copy** (default) and **Merge**: merging moves the listen history to the existing copy and deletes the manual record – its notes and conditions are lost.
+- Printed QR labels ("Manual #n") keep working and lead to the taken-over copy.
+- If the record is not on Discogs yet, **Add to Discogs** opens the Discogs form; **Copy data** puts the record's details on the clipboard.
 ## Shelves {#regale}
 
 Under **Collection → Shelves** you model your real shelves. The tracker spreads the collection (artist A–Z, then year and title) evenly across the compartments and tells you where each record belongs.
@@ -170,4 +178,4 @@ Vinyl Tracker can be installed as an app (PWA): choose *Add to Home Screen* or *
 
 **The recognition suggests the wrong pressing.** Choose **another pressing** from the suggestion, or take another photo (other side, run-out groove) and **Recognize again**.
 
-**I can't find a record on Discogs.** Add it **manually** (see **Records without a Discogs entry**). Alternatively, submit the release on discogs.com; afterwards the record can be scanned or recognized from a label photo as usual.
+**I can't find a record on Discogs.** Add it **manually** (see **Records without a Discogs entry**). Alternatively, submit the release on discogs.com (**Add to Discogs** in the record details); afterwards take over the manual record with **Check on Discogs**.

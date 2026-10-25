@@ -437,21 +437,25 @@ impl StorageService {
     }
 
     /// Medium and first copy (lowest instance ID) of a record in the user's collection.
+    /// The copy `instance_id` of a record, or its first copy.
     async fn first_copy(
         pool: &PgPool,
         user_id: i64,
         discogs_id: i64,
+        instance_id: Option<i64>,
     ) -> Result<Option<(i64, StorageMedia)>, AppError> {
         let row = sqlx::query(
             "SELECT ci.instance_id, UPPER(COALESCE(rc.format, '')) LIKE '%CD%' AS is_cd
              FROM collection_item ci
              JOIN record_cache rc ON rc.id = ci.record_id
              WHERE ci.user_id = $1 AND rc.discogs_id = $2
+               AND ($3::BIGINT IS NULL OR ci.instance_id = $3)
              ORDER BY ci.instance_id
              LIMIT 1",
         )
         .bind(user_id)
         .bind(discogs_id)
+        .bind(instance_id)
         .fetch_optional(pool)
         .await?;
         Ok(row.map(|row| {
@@ -471,7 +475,17 @@ impl StorageService {
         user_id: i64,
         discogs_id: i64,
     ) -> Result<Option<StoragePlacementDto>, AppError> {
-        let (instance_id, media) = Self::first_copy(pool, user_id, discogs_id)
+        Self::placement_for_copy(pool, user_id, discogs_id, None).await
+    }
+
+    /// Slot and neighbors of the copy `instance_id` of a record (its first copy for `None`).
+    pub async fn placement_for_copy(
+        pool: &PgPool,
+        user_id: i64,
+        discogs_id: i64,
+        instance_id: Option<i64>,
+    ) -> Result<Option<StoragePlacementDto>, AppError> {
+        let (instance_id, media) = Self::first_copy(pool, user_id, discogs_id, instance_id)
             .await?
             .ok_or_else(|| {
                 AppError::NotFound(format!("Record {discogs_id} is not in your collection"))
@@ -497,7 +511,9 @@ impl StorageService {
         discogs_id: i64,
         instance_id: i64,
     ) -> Result<Option<StoragePlacementDto>, AppError> {
-        let Some((_, media)) = Self::first_copy(pool, user_id, discogs_id).await? else {
+        let Some((_, media)) =
+            Self::first_copy(pool, user_id, discogs_id, Some(instance_id)).await?
+        else {
             return Ok(None);
         };
         let shelves = Self::shelves(pool, user_id, media).await?;

@@ -170,6 +170,7 @@
     (sortKeyUpdated)="onSortKeyUpdated($event)"
     (recordRemoved)="onRecordRemoved($event)"
     (editManual)="manualForm.set({ record: $event })"
+    (takenOver)="onTakenOver($event)"
   />
 
   @if (manualForm(); as form) {

@@ -12,8 +12,11 @@ import {
   CollectionValueResponse,
   GenreBreakdownItem,
   SyncResult,
+  DiscogsCandidate,
   ManualRecordCreated,
   ManualRecordRequest,
+  TakeoverRequest,
+  TakeoverResult,
   RecordDetailDto,
   RecordSource,
   RoonStatus,
@@ -144,8 +147,10 @@ export class ApiService {
     return this.http.get<CollectionValueResponse>(`${this.baseUrl}/analytics/collection/value`);
   }
 
-  getRecordDetails(id: number): Observable<RecordDetailDto> {
-    return this.http.get<RecordDetailDto>(`${this.baseUrl}/records/${id}`);
+  /** `instanceId` selects the copy when the release is in the collection more than once. */
+  getRecordDetails(id: number, instanceId?: number): Observable<RecordDetailDto> {
+    const params = instanceId != null ? new HttpParams().set('instance_id', instanceId) : undefined;
+    return this.http.get<RecordDetailDto>(`${this.baseUrl}/records/${id}`, { params });
   }
 
   updateRecordCondition(
@@ -173,6 +178,16 @@ export class ApiService {
     return this.http.put<RecordDetailDto>(`${this.baseUrl}/records/${id}/cover`, image, {
       headers: { 'Content-Type': image.type || 'image/jpeg' },
     });
+  }
+
+  /** Searches Discogs for the release of a manual record; changes nothing. */
+  getDiscogsCandidates(id: number): Observable<DiscogsCandidate[]> {
+    return this.http.get<DiscogsCandidate[]>(`${this.baseUrl}/records/${id}/discogs-candidates`);
+  }
+
+  /** Turns a manual record into a Discogs record after the user confirmed a candidate. */
+  takeOverManualRecord(id: number, request: TakeoverRequest): Observable<TakeoverResult> {
+    return this.http.post<TakeoverResult>(`${this.baseUrl}/records/${id}/takeover`, request);
   }
 
   logRecordListen(id: number): Observable<RecordDetailDto> {

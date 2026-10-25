@@ -5,7 +5,8 @@ use crate::{
     services::{
         collection_query::CollectionQueryService, collection_restore::CollectionRestoreService,
         collection_sync::CollectionSyncService, export_service::ExportService,
-        manual_record_service::ManualRecordService, storage::backup::StorageBackupService,
+        manual_record_service::ManualRecordService, manual_takeover_service::ManualTakeoverService,
+        storage::backup::StorageBackupService,
     },
     state::AppState,
 };
@@ -202,12 +203,15 @@ pub async fn export_collection_handler(
                 CollectionQueryService::get_listen_history(&state.pool, user.id, &discogs_ids)
                     .await?;
             let manual = ManualRecordService::backup_data(&state.pool, user.id).await?;
+            let manual_aliases =
+                ManualTakeoverService::backup_aliases(&state.pool, user.id).await?;
             let storage = StorageBackupService::export(&state.pool, user.id).await?;
             let json_bytes = ExportService::export_collection_json(
                 &user.username,
                 &releases,
                 &listen_history,
                 &manual,
+                &manual_aliases,
                 storage.as_ref(),
             )?;
             Ok((

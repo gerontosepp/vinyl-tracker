@@ -1,4 +1,5 @@
 pub use vinyl_api_types::record::{
-    ManualRecordCreatedDto, ManualRecordRequest, RecordDetailDto, RecordSource,
+    CandidateMatch, DiscogsCandidateDto, ManualRecordCreatedDto, ManualRecordRequest,
+    RecordDetailDto, RecordSource, TakeoverMode, TakeoverRequest, TakeoverResultDto,
     UpdateConditionRequestDto, UpdateSortKeyRequestDto,
 };

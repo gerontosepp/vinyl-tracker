@@ -125,6 +125,16 @@ pub struct CollectionBackupRequest {
     pub releases: Vec<BackupRelease>,
     /// Storage configuration (format version 3); missing in older backups
     pub storage: Option<StorageBackup>,
+    /// Old IDs of manual records taken over to Discogs (format version 5)
+    #[serde(default)]
+    pub manual_aliases: Vec<ManualAliasBackup>,
+}
+
+/// Old negative ID of a manual record taken over to Discogs and the copy it became (#243).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ManualAliasBackup {
+    pub old_id: i64,
+    pub instance_id: i64,
 }
 
 #[derive(Debug, Clone, Deserialize)]

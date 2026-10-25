@@ -594,7 +594,7 @@ async fn test_backup_restores_manual_records_without_duplicates() {
         )
         .await;
     assert_eq!(status, StatusCode::OK);
-    assert_eq!(backup["format_version"], 4);
+    assert_eq!(backup["format_version"], 5);
     let release = &backup["releases"][0];
     assert_eq!(release["id"], id);
     assert_eq!(release["source"], "manual");

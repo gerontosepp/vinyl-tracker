@@ -278,6 +278,20 @@
             </div>
           }
 
+          <!-- Taking over a manual record to Discogs (#243) -->
+          @if (shownTakeover(); as done) {
+            <div class="space-y-2 p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60" data-testid="detail-takeover-done">
+              <p class="text-sm font-semibold text-emerald-800 dark:text-emerald-200">
+                {{ (done.mode === 'merge' ? 'takeover.merged' : 'takeover.success') | translate }}
+              </p>
+              @if (done.placement; as placement) {
+                <app-storage-placement [slot]="placement.slot" [neighbors]="placement.neighbors" [moves]="placement.moves" />
+              }
+            </div>
+          } @else if (isManual() && detail(); as det) {
+            <app-discogs-takeover [detail]="det" (takenOver)="onTakenOver($event)" />
+          }
+
           <!-- Condition / Grading Section -->
           @if (detail()?.in_collection !== false || detail()?.media_condition || detail()?.sleeve_condition || record()?.media_condition || record()?.sleeve_condition) {
             <div class="space-y-2">

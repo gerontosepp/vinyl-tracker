@@ -220,6 +220,41 @@ export interface ManualRecordCreated {
   placement?: StoragePlacement;
 }
 
+/** Which search of "Check on Discogs" found a candidate (#243). */
+export type CandidateMatch = 'barcode' | 'catno' | 'artist_title';
+
+/** A Discogs release that may be the release of a manual record. */
+export interface DiscogsCandidate {
+  discogsId: number;
+  artist?: string | null;
+  title: string;
+  year?: string | null;
+  country?: string | null;
+  label?: string | null;
+  catno?: string | null;
+  format?: string | null;
+  thumbUrl?: string | null;
+  matchedBy: CandidateMatch;
+  /** Instance IDs of Discogs copies of this release the user already owns. */
+  inCollection: number[];
+}
+
+/** New Discogs copy (default) or merge into an owned copy. */
+export type TakeoverMode = 'new_copy' | 'merge';
+
+export interface TakeoverRequest {
+  releaseId: number;
+  mode: TakeoverMode;
+  targetInstanceId?: number | null;
+}
+
+export interface TakeoverResult {
+  record: RecordDetailDto;
+  instanceId: number;
+  mode: TakeoverMode;
+  placement?: StoragePlacement;
+}
+
 export interface CollectionRelease {
   id: number;
   instance_id: number;

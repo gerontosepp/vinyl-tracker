@@ -31,12 +31,26 @@ pub const MAX_SORT_KEY_LEN: usize = 200;
 pub struct RecordService;
 
 impl RecordService {
+    /// Details of a record and its first copy in the user's collection.
     pub async fn get_record_details(
         pool: &PgPool,
         discogs_client: &DiscogsClient,
         crypto: &CryptoService,
         user: &AppUser,
         id_param: i64,
+    ) -> Result<RecordDetailDto, AppError> {
+        Self::get_copy_details(pool, discogs_client, crypto, user, id_param, None).await
+    }
+
+    /// Details of a record with the copy-specific data (conditions, sort string, shelf slot) of
+    /// the copy `instance_id`; `None` takes the first copy.
+    pub async fn get_copy_details(
+        pool: &PgPool,
+        discogs_client: &DiscogsClient,
+        crypto: &CryptoService,
+        user: &AppUser,
+        id_param: i64,
+        instance_id: Option<i64>,
     ) -> Result<RecordDetailDto, AppError> {
         let dec_token = user
             .discogs_token
@@ -92,10 +106,13 @@ impl RecordService {
                 "SELECT id, instance_id, added_at, media_condition, sleeve_condition, sort_key
                  FROM collection_item
                  WHERE user_id = $1 AND record_id = $2
+                   AND ($3::BIGINT IS NULL OR instance_id = $3)
+                 ORDER BY instance_id
                  LIMIT 1",
             )
             .bind(user.id)
             .bind(rec_id)
+            .bind(instance_id)
             .fetch_optional(pool)
             .await
             .map_err(AppError::Database)?
@@ -105,10 +122,13 @@ impl RecordService {
                  FROM collection_item ci
                  JOIN record_cache rc ON rc.id = ci.record_id
                  WHERE ci.user_id = $1 AND rc.discogs_id = $2
+                   AND ($3::BIGINT IS NULL OR ci.instance_id = $3)
+                 ORDER BY ci.instance_id
                  LIMIT 1",
             )
             .bind(user.id)
             .bind(discogs_id)
+            .bind(instance_id)
             .fetch_optional(pool)
             .await
             .map_err(AppError::Database)?
@@ -311,7 +331,7 @@ impl RecordService {
             record_row.as_ref().and_then(|r| r.get("default_sort_key"));
 
         let placement = if in_collection {
-            StorageService::placement_for_record(pool, user.id, discogs_id).await?
+            StorageService::placement_for_copy(pool, user.id, discogs_id, instance_id).await?
         } else {
             None
         };
@@ -572,50 +592,16 @@ impl RecordService {
             instance_id,
             user.discogs_username.as_deref(),
         ) {
-            let mut media_field_id = 1i64;
-            let mut sleeve_field_id = 2i64;
-
-            if let Ok(fields_res) = discogs_client
-                .get_collection_fields(discogs_user, token)
-                .await
-            {
-                for f in fields_res.fields.unwrap_or_default() {
-                    if let Some(name) = f.name {
-                        let name_lower = name.trim().to_lowercase();
-                        if name_lower.contains("media") && name_lower.contains("condition") {
-                            media_field_id = f.id;
-                        } else if name_lower.contains("sleeve") && name_lower.contains("condition")
-                        {
-                            sleeve_field_id = f.id;
-                        }
-                    }
-                }
-            }
-
-            if let (true, Some(val)) = (media_changed, &updated_media) {
-                let _ = discogs_client
-                    .update_instance_field(
-                        discogs_user,
-                        discogs_id,
-                        inst_id,
-                        media_field_id,
-                        val,
-                        token,
-                    )
-                    .await;
-            }
-            if let (true, Some(val)) = (sleeve_changed, &updated_sleeve) {
-                let _ = discogs_client
-                    .update_instance_field(
-                        discogs_user,
-                        discogs_id,
-                        inst_id,
-                        sleeve_field_id,
-                        val,
-                        token,
-                    )
-                    .await;
-            }
+            push_conditions(
+                discogs_client,
+                discogs_user,
+                token,
+                discogs_id,
+                inst_id,
+                updated_media.as_deref().filter(|_| media_changed),
+                updated_sleeve.as_deref().filter(|_| sleeve_changed),
+            )
+            .await;
         }
 
         // Return updated record details
@@ -662,5 +648,47 @@ impl RecordService {
         })?;
 
         Self::get_record_details(pool, discogs_client, crypto, user, record_id).await
+    }
+}
+
+/// Writes the media and sleeve condition of a copy to its Discogs custom fields. Best effort:
+/// failures are ignored, the local conditions stay authoritative.
+pub async fn push_conditions(
+    discogs_client: &DiscogsClient,
+    discogs_user: &str,
+    token: &str,
+    discogs_id: i64,
+    instance_id: i64,
+    media: Option<&str>,
+    sleeve: Option<&str>,
+) {
+    if media.is_none() && sleeve.is_none() {
+        return;
+    }
+    let mut media_field_id = 1i64;
+    let mut sleeve_field_id = 2i64;
+
+    if let Ok(fields_res) = discogs_client
+        .get_collection_fields(discogs_user, token)
+        .await
+    {
+        for f in fields_res.fields.unwrap_or_default() {
+            if let Some(name) = f.name {
+                let name_lower = name.trim().to_lowercase();
+                if name_lower.contains("media") && name_lower.contains("condition") {
+                    media_field_id = f.id;
+                } else if name_lower.contains("sleeve") && name_lower.contains("condition") {
+                    sleeve_field_id = f.id;
+                }
+            }
+        }
+    }
+
+    for (field_id, value) in [(media_field_id, media), (sleeve_field_id, sleeve)] {
+        if let Some(val) = value {
+            let _ = discogs_client
+                .update_instance_field(discogs_user, discogs_id, instance_id, field_id, val, token)
+                .await;
+        }
     }
 }

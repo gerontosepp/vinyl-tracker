@@ -905,7 +905,7 @@ async fn test_backup_contains_and_restores_the_storage_configuration() {
     create_unit(&app, &source, "CD-1", cd).await;
 
     let backup = export_backup(&app, &source).await;
-    assert_eq!(backup["format_version"], 4);
+    assert_eq!(backup["format_version"], 5);
     assert_eq!(backup["storage"]["types"].as_array().unwrap().len(), 2);
     let units: Vec<&str> = backup["storage"]["units"]
         .as_array()
@@ -928,7 +928,7 @@ async fn test_backup_contains_and_restores_the_storage_configuration() {
     )
     .await;
     assert_eq!(status, StatusCode::OK, "{result}");
-    assert_eq!(result["format_version"], 4);
+    assert_eq!(result["format_version"], 5);
     assert_eq!(stored_boundaries(&state, target_id).await, expected);
     assert_eq!(
         compartment_usage(&app, &target).await,

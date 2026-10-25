@@ -222,7 +222,7 @@ pub struct TakeOverManualRecordArgs {
     /// Discogs release ID the user confirmed (from `check_manual_record`)
     pub release_id: i64,
     /// "new_copy" (default) adds the release to the Discogs collection; "merge" merges into a copy the user already owns
-    pub mode: Option<String>,
+    pub mode: Option<TakeoverMode>,
     /// For "merge": instance ID of the owned copy; required when the release is owned more than once
     pub target_instance_id: Option<i64>,
 }

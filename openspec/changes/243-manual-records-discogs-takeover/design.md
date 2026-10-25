@@ -63,8 +63,13 @@ Der Alias zeigt auf `instance_id` (nicht auf `record_cache.id`). So trifft der S
 ### 5. Übernahme-Endpunkt
 `POST /api/records/{id}/takeover` mit `{ release_id, mode: "new_copy" | "merge", target_instance_id? }`. Antwort ist die aktualisierte Platte samt Platzierung (wie `add_to_collection`). Bei `merge` ohne `target_instance_id` und genau einem vorhandenen Exemplar wird dieses genommen; bei mehreren antwortet der Endpunkt mit 400, und die Fehlermeldung nennt die Exemplar-IDs. Der Dialog im Frontend lässt bei mehreren Exemplaren das Ziel wählen.
 
+Nach dem Speichern meldet der Endpunkt keinen Fehlschlag mehr: Der Regalplatz ist Best-Effort, und scheitert das Laden der Details, sagt die Fehlermeldung, dass die Übernahme gelungen ist. Eine erneute Übernahme derselben Platte antwortet mit 409 („bereits übernommen“), ein gleichzeitiger Sync, der das neue Exemplar schon angelegt hat, ebenfalls mit 409.
+
+### 5a. Details eines bestimmten Exemplars
+Bei mehreren Exemplaren eines Releases lieferte die Detailansicht ein beliebiges Exemplar (`LIMIT 1` ohne Ordnung). `RecordService::get_copy_details` nimmt jetzt ein optionales Exemplar (`GET /api/records/{id}?instance_id=`), ohne Angabe das erste nach Exemplar-ID; Regalplatz und Nachbarn kommen vom selben Exemplar. Die Übernahme und die Sammlung nutzen das. Gefunden im End-to-End-Test gegen Discogs.
+
 ### 6. Backup `format_version: 5`
-Das Backup erhält auf oberster Ebene `manual_aliases: [{ old_id, instance_id }]`. Die Wiederherstellung trägt die Aliase per Upsert ein; die Versionen 3 und 4 bleiben lesbar (ohne Aliase).
+Das Backup erhält auf oberster Ebene `manual_aliases: [{ old_id, instance_id }]`. Die Wiederherstellung trägt die Aliase per Upsert ein; die Versionen 3 und 4 bleiben lesbar (ohne Aliase). Vorher wird `manual_record_seq` unter die kleinste negative ID des Backups gesetzt, damit neu angelegte manuelle Platten nie die alte ID eines Alias oder einer anderen Platte bekommen.
 
 ### 7. „Bei Discogs eintragen“
 Der Link führt auf `https://www.discogs.com/release/add`. Der kopierbare Text wird im Frontend aus den Detaildaten erzeugt; dafür ist kein Backend-Endpunkt nötig.

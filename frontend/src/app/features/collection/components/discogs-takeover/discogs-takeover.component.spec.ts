@@ -155,6 +155,20 @@ describe('DiscogsTakeoverComponent', () => {
     expect(q('takeover-candidates')).not.toBeNull();
   });
 
+  it('forgets the results of the previous record when another one is shown', () => {
+    click('takeover-check');
+    click('takeover-select-1001');
+    expect(q('takeover-confirm')).not.toBeNull();
+
+    fixture.componentRef.setInput('detail', { ...detail, discogs_id: -4 });
+    fixture.detectChanges();
+
+    expect(q('takeover-confirm')).toBeNull();
+    expect(q('takeover-candidates')).toBeNull();
+    click('takeover-check');
+    expect(api.getDiscogsCandidates).toHaveBeenLastCalledWith(-4);
+  });
+
   it('links the Discogs form and copies the record data', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });

@@ -176,6 +176,7 @@ pub struct DiscogsCandidateDto {
 /// How a manual record becomes a Discogs record: as a new Discogs copy, or merged into a
 /// Discogs copy the user already owns (listens move over, the manual record is deleted).
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
 pub enum TakeoverMode {
     #[default]

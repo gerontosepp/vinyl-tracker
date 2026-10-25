@@ -31,12 +31,26 @@ pub const MAX_SORT_KEY_LEN: usize = 200;
 pub struct RecordService;
 
 impl RecordService {
+    /// Details of a record and its first copy in the user's collection.
     pub async fn get_record_details(
         pool: &PgPool,
         discogs_client: &DiscogsClient,
         crypto: &CryptoService,
         user: &AppUser,
         id_param: i64,
+    ) -> Result<RecordDetailDto, AppError> {
+        Self::get_copy_details(pool, discogs_client, crypto, user, id_param, None).await
+    }
+
+    /// Details of a record with the copy-specific data (conditions, sort string, shelf slot) of
+    /// the copy `instance_id`; `None` takes the first copy.
+    pub async fn get_copy_details(
+        pool: &PgPool,
+        discogs_client: &DiscogsClient,
+        crypto: &CryptoService,
+        user: &AppUser,
+        id_param: i64,
+        instance_id: Option<i64>,
     ) -> Result<RecordDetailDto, AppError> {
         let dec_token = user
             .discogs_token
@@ -92,10 +106,13 @@ impl RecordService {
                 "SELECT id, instance_id, added_at, media_condition, sleeve_condition, sort_key
                  FROM collection_item
                  WHERE user_id = $1 AND record_id = $2
+                   AND ($3::BIGINT IS NULL OR instance_id = $3)
+                 ORDER BY instance_id
                  LIMIT 1",
             )
             .bind(user.id)
             .bind(rec_id)
+            .bind(instance_id)
             .fetch_optional(pool)
             .await
             .map_err(AppError::Database)?
@@ -105,10 +122,13 @@ impl RecordService {
                  FROM collection_item ci
                  JOIN record_cache rc ON rc.id = ci.record_id
                  WHERE ci.user_id = $1 AND rc.discogs_id = $2
+                   AND ($3::BIGINT IS NULL OR ci.instance_id = $3)
+                 ORDER BY ci.instance_id
                  LIMIT 1",
             )
             .bind(user.id)
             .bind(discogs_id)
+            .bind(instance_id)
             .fetch_optional(pool)
             .await
             .map_err(AppError::Database)?
@@ -311,7 +331,7 @@ impl RecordService {
             record_row.as_ref().and_then(|r| r.get("default_sort_key"));
 
         let placement = if in_collection {
-            StorageService::placement_for_record(pool, user.id, discogs_id).await?
+            StorageService::placement_for_copy(pool, user.id, discogs_id, instance_id).await?
         } else {
             None
         };

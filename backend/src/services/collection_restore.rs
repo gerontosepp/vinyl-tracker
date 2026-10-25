@@ -247,6 +247,8 @@ impl CollectionRestoreService {
 
         let mut tx = pool.begin().await.map_err(AppError::Database)?;
 
+        Self::skip_backup_ids(&mut tx, backup, releases).await?;
+
         for alias in &backup.manual_aliases {
             sqlx::query(
                 "INSERT INTO manual_record_alias (user_id, old_id, instance_id) VALUES ($1, $2, $3)
@@ -464,6 +466,36 @@ impl CollectionRestoreService {
             store_cover(tx, record_id, &jpeg, "image/jpeg").await?;
         }
         Ok((record_id, local_id))
+    }
+
+    /// Moves `manual_record_seq` below every negative ID in the backup, so manual records created
+    /// by this restore never get the old ID of another record: an alias or a printed QR label
+    /// would otherwise point to the wrong record.
+    async fn skip_backup_ids(
+        tx: &mut Transaction<'_, Postgres>,
+        backup: &CollectionBackupRequest,
+        releases: &[ValidatedRelease],
+    ) -> Result<(), AppError> {
+        let lowest = releases
+            .iter()
+            .filter(|r| r.manual.is_some())
+            .map(|r| r.instance_id)
+            .chain(backup.manual_aliases.iter().map(|a| a.old_id))
+            .min();
+        if let Some(lowest) = lowest.filter(|id| *id < 0) {
+            // A decreasing sequence continues below `last_value` once it was called
+            sqlx::query(
+                "SELECT setval('manual_record_seq',
+                               LEAST($1, CASE WHEN is_called THEN last_value ELSE last_value + 1 END),
+                               true)
+                 FROM manual_record_seq",
+            )
+            .bind(lowest)
+            .execute(&mut **tx)
+            .await
+            .map_err(AppError::Database)?;
+        }
+        Ok(())
     }
 
     /// The Discogs copy a manual record of an older backup became (#243): its UUID is gone and

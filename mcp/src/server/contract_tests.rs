@@ -796,11 +796,11 @@ async fn test_check_manual_record_lists_candidates() {
 #[tokio::test]
 async fn test_take_over_manual_record_passes_mode_and_target() {
     let server = mock_backend().await;
-    let args = |mode: Option<&str>, target: Option<i64>| {
+    let args = |mode: Option<TakeoverMode>, target: Option<i64>| {
         Parameters(TakeOverManualRecordArgs {
             id: -7,
             release_id: 1001,
-            mode: mode.map(str::to_string),
+            mode,
             target_instance_id: target,
         })
     };
@@ -816,7 +816,7 @@ async fn test_take_over_manual_record_passes_mode_and_target() {
     assert_eq!(result["record"]["listen_count"], 2);
 
     let merged = server
-        .take_over_manual_record(args(Some("merge"), Some(556)))
+        .take_over_manual_record(args(Some(TakeoverMode::Merge), Some(556)))
         .await
         .expect("merge must succeed");
     let merged: serde_json::Value = serde_json::from_str(&merged).unwrap();
@@ -824,14 +824,21 @@ async fn test_take_over_manual_record_passes_mode_and_target() {
     assert_eq!(merged["instanceId"], 556);
 
     let err = server
-        .take_over_manual_record(args(Some("merge"), None))
+        .take_over_manual_record(args(Some(TakeoverMode::Merge), None))
         .await
         .unwrap_err();
     assert!(err.contains("555, 556"), "{err}");
 
-    let err = server
-        .take_over_manual_record(args(Some("replace"), None))
-        .await
-        .unwrap_err();
-    assert!(err.contains("Invalid mode 'replace'"), "{err}");
+    // The tool schema lists the modes, so clients cannot send others
+    let schema =
+        serde_json::to_string(&VinylMcpServer::take_over_manual_record_tool_attr().input_schema)
+            .unwrap();
+    assert!(
+        schema.contains("new_copy") && schema.contains("merge"),
+        "{schema}"
+    );
+    let invalid = serde_json::from_value::<TakeOverManualRecordArgs>(serde_json::json!({
+        "id": -7, "release_id": 1001, "mode": "replace"
+    }));
+    assert!(invalid.is_err());
 }

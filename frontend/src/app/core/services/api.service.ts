@@ -147,8 +147,10 @@ export class ApiService {
     return this.http.get<CollectionValueResponse>(`${this.baseUrl}/analytics/collection/value`);
   }
 
-  getRecordDetails(id: number): Observable<RecordDetailDto> {
-    return this.http.get<RecordDetailDto>(`${this.baseUrl}/records/${id}`);
+  /** `instanceId` selects the copy when the release is in the collection more than once. */
+  getRecordDetails(id: number, instanceId?: number): Observable<RecordDetailDto> {
+    const params = instanceId != null ? new HttpParams().set('instance_id', instanceId) : undefined;
+    return this.http.get<RecordDetailDto>(`${this.baseUrl}/records/${id}`, { params });
   }
 
   updateRecordCondition(

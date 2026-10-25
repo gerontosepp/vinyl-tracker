@@ -14,11 +14,12 @@ use crate::{
 use axum::{
     Json, Router,
     body::Bytes,
-    extract::{DefaultBodyLimit, Path, State},
+    extract::{DefaultBodyLimit, Path, Query, State},
     http::{StatusCode, header},
     response::IntoResponse,
     routing::{get, patch, post, put},
 };
+use serde::Deserialize;
 
 /// Upload limit for a raw cover photo (the frontend sends an already downscaled JPEG).
 const COVER_BODY_LIMIT: usize = 15 * 1024 * 1024;
@@ -39,17 +40,25 @@ pub fn router() -> Router<AppState> {
         .route("/{id}/sort-key", patch(update_sort_key))
 }
 
+/// `instance_id` selects the copy when a release is in the collection more than once.
+#[derive(Debug, Deserialize)]
+struct DetailQuery {
+    instance_id: Option<i64>,
+}
+
 async fn get_record_details(
     State(state): State<AppState>,
     CurrentUser(user): CurrentUser,
     Path(id): Path<i64>,
+    Query(query): Query<DetailQuery>,
 ) -> Result<Json<RecordDetailDto>, AppError> {
-    let details = RecordService::get_record_details(
+    let details = RecordService::get_copy_details(
         &state.pool,
         &state.discogs_client,
         &state.crypto,
         &user,
         id,
+        query.instance_id,
     )
     .await?;
 

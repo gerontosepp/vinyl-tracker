@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
 import { LucideCopy, LucideExternalLink, LucideSearch } from '@lucide/angular';
 import { ApiService } from '../../../../core/services/api.service';
 import { LanguageService } from '../../../../core/services/language.service';
@@ -167,6 +167,19 @@ export class DiscogsTakeoverComponent {
   readonly running = signal(false);
 
   private readonly recordId = computed(() => this.detail().discogs_id);
+
+  constructor() {
+    // Another record: results and selection of the previous one must not stay
+    effect(() => {
+      this.recordId();
+      untracked(() => {
+        this.candidates.set(null);
+        this.selected.set(null);
+        this.mode.set('new_copy');
+        this.targetId.set(null);
+      });
+    });
+  }
 
   check(): void {
     if (this.checking()) return;

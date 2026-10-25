@@ -61,10 +61,8 @@ impl ManualTakeoverService {
 
         let mut results: Vec<(CandidateMatch, Vec<DiscogsSearchResult>)> = Vec::new();
         let mut last_error = None;
-        let mut searched = 0;
 
         if let Some(barcode) = &record.barcode {
-            searched += 1;
             let mut found = None;
             for variant in barcode_variants(barcode) {
                 match discogs_client.search_by_barcode(&variant, &token).await {
@@ -103,7 +101,6 @@ impl ManualTakeoverService {
             },
         ));
         for (matched_by, filter) in filters {
-            searched += 1;
             match discogs_client
                 .search(&filter, Some("release"), 1, MAX_CANDIDATES as u32, &token)
                 .await
@@ -115,7 +112,6 @@ impl ManualTakeoverService {
 
         // Only when every search failed is it an error; otherwise show what was found
         if results.is_empty()
-            && searched > 0
             && let Some(e) = last_error
         {
             return Err(e);
@@ -151,21 +147,23 @@ impl ManualTakeoverService {
         let discogs_user = user.discogs_username.as_deref().ok_or_else(|| {
             AppError::BadRequest("User does not have a linked Discogs username".to_string())
         })?;
-        let copies = owned_copies(pool, user.id, &[req.release_id])
-            .await?
-            .remove(&req.release_id)
-            .unwrap_or_default();
-
         let instance_id = match req.mode {
             TakeoverMode::Merge => {
-                let target = merge_target(&copies, req.target_instance_id)?;
-                let record_id: i64 =
-                    sqlx::query_scalar("SELECT id FROM record_cache WHERE discogs_id = $1")
-                        .bind(req.release_id)
-                        .fetch_one(pool)
-                        .await
-                        .map_err(AppError::Database)?;
-                move_to(pool, user.id, &record, record_id, target, false).await?;
+                let copies: Vec<(i64, i64)> = sqlx::query_as(
+                    "SELECT rc.id, ci.instance_id
+                     FROM collection_item ci
+                     JOIN record_cache rc ON rc.id = ci.record_id
+                     WHERE ci.user_id = $1 AND rc.discogs_id = $2
+                     ORDER BY ci.instance_id",
+                )
+                .bind(user.id)
+                .bind(req.release_id)
+                .fetch_all(pool)
+                .await
+                .map_err(AppError::Database)?;
+                let instances: Vec<i64> = copies.iter().map(|(_, instance)| *instance).collect();
+                let target = merge_target(&instances, req.target_instance_id)?;
+                move_to(pool, user.id, &record, copies[0].0, target, false).await?;
                 target
             }
             TakeoverMode::NewCopy => {
@@ -221,48 +219,35 @@ impl ManualTakeoverService {
             req.mode
         );
 
+        // The takeover is done; nothing below may report it as failed
         let placement = match req.mode {
             TakeoverMode::NewCopy => {
-                StorageService::place_new_copy(pool, user.id, req.release_id, instance_id).await?
+                StorageService::place_new_copy(pool, user.id, req.release_id, instance_id).await
             }
-            TakeoverMode::Merge => {
-                StorageService::commit_all(pool, user.id).await?;
-                None
-            }
-        };
-        // Loads the Discogs price when the release has none yet
-        let mut detail =
-            RecordService::get_record_details(pool, discogs_client, crypto, user, req.release_id)
-                .await?;
-        // With several copies of the release the details show any of them; show this one
-        if detail.instance_id != Some(instance_id) {
-            let copy = sqlx::query(
-                "SELECT added_at, media_condition, sleeve_condition, sort_key
-                 FROM collection_item WHERE user_id = $1 AND instance_id = $2",
-            )
-            .bind(user.id)
-            .bind(instance_id)
-            .fetch_one(pool)
-            .await
-            .map_err(AppError::Database)?;
-            detail.instance_id = Some(instance_id);
-            detail.added_at = Some(copy.get::<chrono::NaiveDateTime, _>("added_at").to_string());
-            detail.media_condition = copy.get("media_condition");
-            detail.sleeve_condition = copy.get("sleeve_condition");
-            detail.sort_key = copy.get("sort_key");
-            match &placement {
-                Some(p) => {
-                    detail.storage = Some(p.slot.clone());
-                    detail.storage_neighbors = Some(p.neighbors.clone());
-                }
-                None => {
-                    detail.storage = StorageService::slots(pool, user.id)
-                        .await?
-                        .remove(&instance_id);
-                    detail.storage_neighbors = None;
-                }
-            }
+            TakeoverMode::Merge => StorageService::commit_all(pool, user.id)
+                .await
+                .map(|_| None),
         }
+        .unwrap_or_else(|e| {
+            tracing::warn!("Shelf placement after takeover of manual record {id} failed: {e}");
+            None
+        });
+        // Loads the Discogs price when the release has none yet
+        let detail = RecordService::get_copy_details(
+            pool,
+            discogs_client,
+            crypto,
+            user,
+            req.release_id,
+            Some(instance_id),
+        )
+        .await
+        .map_err(|e| {
+            AppError::Internal(format!(
+                "The record was taken over as Discogs release {} (instance {instance_id}), but loading it failed; reload the collection: {e}",
+                req.release_id
+            ))
+        })?;
         Ok(TakeoverResultDto {
             record: detail,
             instance_id,
@@ -345,14 +330,23 @@ async fn move_to(
         .bind(instance_id)
         .execute(&mut *tx)
         .await
+        .map_err(|e| {
+            // A sync running at the same time already added the new Discogs copy locally
+            match e.as_database_error().and_then(|d| d.constraint()) {
+                Some("uk_collection_item_user_instance") => AppError::Conflict(
+                    "A collection sync is running; try the takeover again afterwards".to_string(),
+                ),
+                _ => AppError::Database(e),
+            }
+        })
     } else {
         sqlx::query("DELETE FROM collection_item WHERE user_id = $1 AND instance_id = $2")
             .bind(user_id)
             .bind(old_instance)
             .execute(&mut *tx)
             .await
-    }
-    .map_err(AppError::Database)?;
+            .map_err(AppError::Database)
+    }?;
     // A concurrent takeover or delete got there first
     if copy.rows_affected() != 1 {
         return Err(AppError::Conflict(
@@ -410,8 +404,23 @@ async fn manual_record(pool: &PgPool, user_id: i64, id: i64) -> Result<ManualRec
     .bind(id)
     .fetch_optional(pool)
     .await
-    .map_err(AppError::Database)?
-    .ok_or_else(|| AppError::NotFound(format!("Manual record not found with ID: {id}")))?;
+    .map_err(AppError::Database)?;
+    let Some(row) = row else {
+        let taken_over: Option<i64> = sqlx::query_scalar(
+            "SELECT instance_id FROM manual_record_alias WHERE user_id = $1 AND old_id = $2",
+        )
+        .bind(user_id)
+        .bind(id)
+        .fetch_optional(pool)
+        .await
+        .map_err(AppError::Database)?;
+        return Err(match taken_over {
+            Some(instance_id) => AppError::Conflict(format!(
+                "Manual record {id} was already taken over to Discogs (instance {instance_id})"
+            )),
+            None => AppError::NotFound(format!("Manual record not found with ID: {id}")),
+        });
+    };
     Ok(ManualRecord {
         record_id: row.get("id"),
         instance_id: row.get("instance_id"),

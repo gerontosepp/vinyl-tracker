@@ -538,22 +538,13 @@ impl VinylMcpServer {
         &self,
         Parameters(args): Parameters<TakeOverManualRecordArgs>,
     ) -> Result<String, String> {
-        let mode = match args.mode.as_deref().map(str::trim) {
-            None | Some("") | Some("new_copy") => TakeoverMode::NewCopy,
-            Some("merge") => TakeoverMode::Merge,
-            Some(other) => {
-                return Err(format!(
-                    "Invalid mode '{other}'. Use 'new_copy' or 'merge'."
-                ));
-            }
-        };
         let result = self
             .client
             .take_over_manual_record(
                 args.id,
                 &TakeoverRequest {
                     release_id: args.release_id,
-                    mode,
+                    mode: args.mode.unwrap_or_default(),
                     target_instance_id: args.target_instance_id,
                 },
             )

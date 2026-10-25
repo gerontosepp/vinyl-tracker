@@ -386,6 +386,16 @@ impl TestApp {
         serde_json::from_value(result).unwrap()
     }
 
+    async fn detail_query(&self, user: &User, path: &str) -> (StatusCode, Value) {
+        self.json(
+            Method::GET,
+            &format!("/api/records/{path}"),
+            user,
+            Value::Null,
+        )
+        .await
+    }
+
     async fn detail(&self, user: &User, id: i64) -> (StatusCode, Value) {
         self.json(
             Method::GET,
@@ -675,9 +685,16 @@ async fn test_takeover_as_new_copy_keeps_listens_conditions_and_sort_key() {
     let (_, detail) = t.detail(&user, 1001).await;
     assert_eq!(detail["listen_count"], 3);
 
-    // Taking over twice is not possible
-    let (status, _) = t.take_over(&user, id, json!({ "releaseId": 1001 })).await;
-    assert_eq!(status, StatusCode::NOT_FOUND);
+    // Taking over twice is not possible and says so
+    let (status, body) = t.take_over(&user, id, json!({ "releaseId": 1001 })).await;
+    assert_eq!(status, StatusCode::CONFLICT, "{body}");
+    assert!(
+        body["detail"]
+            .as_str()
+            .unwrap()
+            .contains("already taken over"),
+        "{body}"
+    );
 }
 
 #[tokio::test]
@@ -1044,6 +1061,19 @@ async fn test_result_shows_the_taken_over_copy_when_the_release_is_owned_twice()
     assert_eq!(result.record.media_condition.as_deref(), Some("Good (G)"));
     assert_eq!(result.record.sort_key.as_deref(), Some("Zweites Exemplar"));
 
+    // The detail view selects the copy; without one it shows the first copy
+    let (status, copy) = t
+        .detail_query(&user, &format!("1001?instance_id={}", result.instance_id))
+        .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(copy["media_condition"], "Good (G)");
+    assert_eq!(copy["instance_id"], result.instance_id);
+    let (_, first_copy) = t.detail(&user, 1001).await;
+    assert_eq!(
+        first_copy["instance_id"],
+        first.instance_id.min(result.instance_id)
+    );
+
     // Merging into the first copy shows that copy, not the second one
     let third = t.create(&user, record_body()).await;
     let merged = t
@@ -1059,4 +1089,51 @@ async fn test_result_shows_the_taken_over_copy_when_the_release_is_owned_twice()
         Some("Very Good Plus (VG+)")
     );
     assert_eq!(merged.record.sort_key, None);
+}
+
+#[tokio::test]
+async fn test_restore_never_reuses_an_old_id_of_the_backup() {
+    let t = TestApp::new().await;
+    let owner = t.register().await;
+    let taken = t
+        .take_over_ok(
+            &owner,
+            t.create(&owner, record_body()).await,
+            json!({ "releaseId": 1001 }),
+        )
+        .await;
+    t.create(&owner, record_body()).await;
+    let mut backup = export(&t, &owner).await;
+
+    // An alias whose old ID the sequence has not reached yet, as after a restore into a new
+    // instance: the restored manual record must not get it
+    let next: i64 = sqlx::query_scalar("SELECT last_value FROM manual_record_seq")
+        .fetch_one(&t.state.pool)
+        .await
+        .unwrap();
+    let future_id = next - 50;
+    backup["manual_aliases"] = json!([{ "old_id": future_id, "instance_id": taken.instance_id }]);
+
+    let other = t.register().await;
+    let (status, restored) = t
+        .json(Method::POST, "/api/collection/restore", &other, backup)
+        .await;
+    assert_eq!(status, StatusCode::OK, "{restored}");
+
+    let manual: Vec<i64> = sqlx::query_scalar(
+        "SELECT rc.discogs_id FROM collection_item ci JOIN record_cache rc ON rc.id = ci.record_id
+         WHERE ci.user_id = $1 AND rc.source = 'manual'",
+    )
+    .bind(other.id)
+    .fetch_all(&t.state.pool)
+    .await
+    .unwrap();
+    assert_eq!(manual.len(), 1);
+    assert!(
+        manual[0] < future_id,
+        "{} must be below {future_id}",
+        manual[0]
+    );
+    let scan = t.scan(&other, &format!("discogs-id:{future_id}")).await;
+    assert_eq!(scan["record"]["discogsId"], 1001, "{scan}");
 }

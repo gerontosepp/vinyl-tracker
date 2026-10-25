@@ -126,6 +126,13 @@ describe('ApiService label photos', () => {
       upload.flush({});
     });
 
+    it('loads the details of a specific copy', () => {
+      service.getRecordDetails(1001, 555).subscribe();
+      http.expectOne({ method: 'GET', url: '/api/records/1001?instance_id=555' }).flush({});
+      service.getRecordDetails(1001).subscribe();
+      http.expectOne({ method: 'GET', url: '/api/records/1001' }).flush({});
+    });
+
     it('checks a manual record on Discogs and takes it over', () => {
       service.getDiscogsCandidates(-3).subscribe((candidates) => {
         expect(candidates[0].discogsId).toBe(1001);

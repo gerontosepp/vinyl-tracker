@@ -482,7 +482,7 @@ export class CollectionComponent implements OnInit, OnDestroy {
     this.recordDetail.set(null);
     this.loadingDetail.set(true);
 
-    this.apiService.getRecordDetails(release.id).subscribe({
+    this.apiService.getRecordDetails(release.id, release.instance_id).subscribe({
       next: (detail) => {
         this.recordDetail.set(detail);
         this.loadingDetail.set(false);

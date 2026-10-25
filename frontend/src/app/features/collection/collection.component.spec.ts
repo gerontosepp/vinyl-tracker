@@ -166,6 +166,15 @@ describe('CollectionComponent', () => {
       expect(mockApiService.getCollection).toHaveBeenCalled();
     });
 
+    it('loads the details of the opened copy', () => {
+      mockApiService.getRecordDetails = vi.fn().mockReturnValue(of({ discogs_id: 1001, instance_id: 556 }));
+      component.openDetail({ id: 1001, instance_id: 556, basic_information: { id: 1001, title: 'Posen', artists: [] } } as any);
+
+      expect(mockApiService.getRecordDetails).toHaveBeenCalledWith(1001, 556);
+      expect(component.recordDetail()?.instance_id).toBe(556);
+      expect(component.loadingDetail()).toBe(false);
+    });
+
     it('shows a taken-over record under its Discogs IDs and reloads the list', () => {
       mockAuthService.user = signal({ id: 1 });
       component.selectedRecord.set({

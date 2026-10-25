@@ -9,6 +9,7 @@
 
 ## Unreleased
 
+- **Detailansicht am Handy (`#258`)**: Das untere Menü überdeckt „Auf Discogs öffnen“ und die weiteren Angaben am Ende der Detailansicht nicht mehr. Das vergrößerte Label-Foto in der Label-Inbox liegt ebenfalls über dem Menü.
 ---
 
 ## v1.4.0 (2026-10-25)

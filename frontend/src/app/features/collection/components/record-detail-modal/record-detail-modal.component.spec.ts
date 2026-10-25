@@ -90,6 +90,15 @@ describe('RecordDetailModalComponent', () => {
     expect(component).toBeTruthy();
   });
 
+  it('stacks the overlay above the mobile bottom navigation (z-50)', () => {
+    fixture.componentRef.setInput('record', { id: 42, basic_information: { id: 123456, title: 'Abbey Road', artists: [] } } as any);
+    fixture.componentRef.setInput('detail', mockDetail);
+    fixture.detectChanges();
+    const overlay = fixture.nativeElement.querySelector('div.fixed.inset-0') as HTMLElement;
+    expect(overlay).toBeTruthy();
+    expect(overlay.classList.contains('z-[60]')).toBe(true);
+  });
+
   it('should emit close event when close is triggered', () => {
     vi.spyOn(component.close, 'emit').mockReturnValue(undefined);
     component.close.emit();

@@ -1,7 +1,7 @@
 use crate::{
     error::AppError,
     models::{
-        collection::{CollectionRelease, ManualBackup},
+        collection::{CollectionRelease, ManualAliasBackup, ManualBackup},
         storage::StorageBackup,
     },
     services::image_proxy::ImageProxyService,
@@ -16,8 +16,9 @@ use serde::Serialize;
 use std::collections::HashMap;
 
 /// Version of the JSON backup format; 2 added `listen_history` per release, 3 the storage
-/// configuration (`storage`), 4 manual records (`manual` per release).
-pub const BACKUP_FORMAT_VERSION: u32 = 4;
+/// configuration (`storage`), 4 manual records (`manual` per release), 5 the old IDs of manual
+/// records taken over to Discogs (`manual_aliases`).
+pub const BACKUP_FORMAT_VERSION: u32 = 5;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct CollectionBackupDto<'a> {
@@ -29,6 +30,8 @@ pub struct CollectionBackupDto<'a> {
     pub releases: Vec<BackupReleaseDto<'a>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub storage: Option<&'a StorageBackup>,
+    #[serde(skip_serializing_if = "<[_]>::is_empty")]
+    pub manual_aliases: &'a [ManualAliasBackup],
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -122,6 +125,7 @@ impl ExportService {
         releases: &[CollectionRelease],
         listen_history: &HashMap<i64, Vec<String>>,
         manual: &HashMap<i64, ManualBackup>,
+        manual_aliases: &[ManualAliasBackup],
         storage: Option<&StorageBackup>,
     ) -> Result<Vec<u8>, AppError> {
         let total_value: f64 = releases
@@ -152,6 +156,7 @@ impl ExportService {
                 })
                 .collect(),
             storage,
+            manual_aliases,
         };
 
         serde_json::to_vec_pretty(&backup)
@@ -1052,14 +1057,24 @@ mod tests {
             },
         )]);
 
-        let json_bytes =
-            ExportService::export_collection_json("testuser", &releases, &history, &manual, None)
-                .expect("JSON generation");
+        let json_bytes = ExportService::export_collection_json(
+            "testuser",
+            &releases,
+            &history,
+            &manual,
+            &[],
+            None,
+        )
+        .expect("JSON generation");
         let json_val: serde_json::Value =
             serde_json::from_slice(&json_bytes).expect("Valid JSON output");
 
-        assert_eq!(json_val["format_version"], 4);
+        assert_eq!(json_val["format_version"], 5);
         assert!(json_val.get("storage").is_none(), "no storage configured");
+        assert!(
+            json_val.get("manual_aliases").is_none(),
+            "no manual record taken over"
+        );
         assert_eq!(json_val["username"], "testuser");
         assert_eq!(json_val["total_records"], 2);
         assert_eq!(json_val["total_estimated_value"], 60.50);

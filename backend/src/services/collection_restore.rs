@@ -88,6 +88,16 @@ impl CollectionRestoreService {
                 AppError::BadRequest(format!("Invalid backup storage: {reason}"))
             })?;
         }
+        if let Some(alias) = backup
+            .manual_aliases
+            .iter()
+            .find(|a| a.old_id >= 0 || a.instance_id <= 0)
+        {
+            return Err(AppError::BadRequest(format!(
+                "Invalid manual alias {} -> {}: the old ID must be negative, the instance ID positive",
+                alias.old_id, alias.instance_id
+            )));
+        }
 
         let now = Utc::now().naive_utc();
         let validated = backup
@@ -237,17 +247,48 @@ impl CollectionRestoreService {
 
         let mut tx = pool.begin().await.map_err(AppError::Database)?;
 
+        for alias in &backup.manual_aliases {
+            sqlx::query(
+                "INSERT INTO manual_record_alias (user_id, old_id, instance_id) VALUES ($1, $2, $3)
+                 ON CONFLICT (user_id, old_id) DO UPDATE SET instance_id = EXCLUDED.instance_id",
+            )
+            .bind(user_id)
+            .bind(alias.old_id)
+            .bind(alias.instance_id)
+            .execute(&mut *tx)
+            .await
+            .map_err(AppError::Database)?;
+        }
+
         for release in releases {
-            let (record_id, instance_id) = match &release.manual {
-                Some(manual) => Self::upsert_manual_record(&mut tx, user_id, manual).await?,
-                None => (
+            let taken_over = match &release.manual {
+                Some(manual) => {
+                    Self::taken_over_copy(&mut tx, user_id, manual, release.instance_id).await?
+                }
+                None => None,
+            };
+            let (record_id, instance_id) = match (&release.manual, taken_over) {
+                (_, Some(copy)) => copy,
+                (Some(manual), None) => {
+                    Self::upsert_manual_record(&mut tx, user_id, manual).await?
+                }
+                (None, None) => (
                     Self::upsert_record(&mut tx, release).await?,
                     release.instance_id,
                 ),
             };
 
-            if Self::upsert_collection_item(&mut tx, user_id, record_id, instance_id, release)
-                .await?
+            // A taken-over copy keeps its current data; only listens are merged
+            if taken_over.is_some() {
+                result.records_updated += 1;
+            } else if Self::upsert_collection_item(
+                &mut tx,
+                user_id,
+                record_id,
+                instance_id,
+                release,
+            )
+            .await?
             {
                 result.records_added += 1;
             } else {
@@ -423,6 +464,38 @@ impl CollectionRestoreService {
             store_cover(tx, record_id, &jpeg, "image/jpeg").await?;
         }
         Ok((record_id, local_id))
+    }
+
+    /// The Discogs copy a manual record of an older backup became (#243): its UUID is gone and
+    /// its old ID is an alias of an existing copy. Returns the record and instance ID.
+    async fn taken_over_copy(
+        tx: &mut Transaction<'_, Postgres>,
+        user_id: i64,
+        manual: &ValidatedManual,
+        old_id: i64,
+    ) -> Result<Option<(i64, i64)>, AppError> {
+        let own: bool = sqlx::query_scalar(
+            "SELECT EXISTS (SELECT 1 FROM record_cache WHERE manual_uid = $1 AND owner_id = $2)",
+        )
+        .bind(manual.uid)
+        .bind(user_id)
+        .fetch_one(&mut **tx)
+        .await
+        .map_err(AppError::Database)?;
+        if own {
+            return Ok(None);
+        }
+        sqlx::query_as(
+            "SELECT ci.record_id, ci.instance_id
+             FROM manual_record_alias a
+             JOIN collection_item ci ON ci.user_id = a.user_id AND ci.instance_id = a.instance_id
+             WHERE a.user_id = $1 AND a.old_id = $2",
+        )
+        .bind(user_id)
+        .bind(old_id)
+        .fetch_optional(&mut **tx)
+        .await
+        .map_err(AppError::Database)
     }
 
     /// Returns `true` if the item was newly added. Conditions and the sort string from the
@@ -621,12 +694,12 @@ mod tests {
         ));
         assert!(detail.contains("releases"), "{detail}");
 
-        let body = json!({ "format_version": 5, "releases": [] });
+        let body = json!({ "format_version": 6, "releases": [] });
         let detail = bad_request_detail(CollectionRestoreService::parse_backup(
             &serde_json::to_vec(&body).unwrap(),
         ));
         assert!(
-            detail.contains("Unsupported backup format version 5"),
+            detail.contains("Unsupported backup format version 6"),
             "{detail}"
         );
     }

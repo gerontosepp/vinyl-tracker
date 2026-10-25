@@ -144,3 +144,63 @@ pub struct ManualRecordCreatedDto {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub placement: Option<StoragePlacementDto>,
 }
+
+/// Which search of "Check on Discogs" found a candidate for a manual record (#243).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CandidateMatch {
+    Barcode,
+    Catno,
+    ArtistTitle,
+}
+
+/// A Discogs release that may be the release of a manual record. `in_collection` lists the
+/// instance IDs of Discogs copies of it the user already owns.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DiscogsCandidateDto {
+    pub discogs_id: i64,
+    pub artist: Option<String>,
+    pub title: String,
+    pub year: Option<String>,
+    pub country: Option<String>,
+    pub label: Option<String>,
+    pub catno: Option<String>,
+    pub format: Option<String>,
+    pub thumb_url: Option<String>,
+    pub matched_by: CandidateMatch,
+    #[serde(default)]
+    pub in_collection: Vec<i64>,
+}
+
+/// How a manual record becomes a Discogs record: as a new Discogs copy, or merged into a
+/// Discogs copy the user already owns (listens move over, the manual record is deleted).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum TakeoverMode {
+    #[default]
+    NewCopy,
+    Merge,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TakeoverRequest {
+    pub release_id: i64,
+    #[serde(default)]
+    pub mode: TakeoverMode,
+    /// Copy to merge into; may be omitted when the user owns exactly one copy of the release.
+    #[serde(default)]
+    pub target_instance_id: Option<i64>,
+}
+
+/// The record after the takeover, the copy it now is and its shelf placement.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TakeoverResultDto {
+    pub record: RecordDetailDto,
+    pub instance_id: i64,
+    pub mode: TakeoverMode,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub placement: Option<StoragePlacementDto>,
+}

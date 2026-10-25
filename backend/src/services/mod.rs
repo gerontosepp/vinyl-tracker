@@ -8,6 +8,7 @@ pub mod image_proxy;
 pub mod label_identification_service;
 pub mod label_photo_service;
 pub mod manual_record_service;
+pub mod manual_takeover_service;
 pub mod marketplace;
 pub mod openrouter_settings_service;
 pub mod print;

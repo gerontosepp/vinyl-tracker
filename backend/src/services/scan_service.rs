@@ -91,6 +91,26 @@ impl ScanService {
                 if let Some(row) = local_rec {
                     return Self::log_local(pool, user.id, &row).await;
                 }
+
+                // A manual record taken over to Discogs keeps resolving via its old ID (#243)
+                if release_id < 0 {
+                    let alias_rec = sqlx::query(
+                        "SELECT rc.id, rc.discogs_id, rc.title, rc.artist, rc.thumb_url
+                         FROM manual_record_alias a
+                         JOIN collection_item ci
+                           ON ci.user_id = a.user_id AND ci.instance_id = a.instance_id
+                         JOIN record_cache rc ON rc.id = ci.record_id
+                         WHERE a.user_id = $1 AND a.old_id = $2",
+                    )
+                    .bind(user.id)
+                    .bind(release_id)
+                    .fetch_optional(pool)
+                    .await
+                    .map_err(AppError::Database)?;
+                    if let Some(row) = alias_rec {
+                        return Self::log_local(pool, user.id, &row).await;
+                    }
+                }
             }
         } else {
             // Manual records of the user carry their own barcode and are found without Discogs

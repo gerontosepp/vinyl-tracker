@@ -75,6 +75,10 @@ Die negative ID einer übernommenen oder zusammengeführten Platte MUST für den
 - **WHEN** der Nutzer das Etikett einer zusammengeführten manuellen Platte scannt
 - **THEN** wird das vorhandene Exemplar gefunden, in das sie zusammengeführt wurde
 
+#### Scenario: Älteres Backup nach der Übernahme einspielen
+- **WHEN** ein Backup von vor der Übernahme eingespielt wird, das die Platte noch als manuelle Platte enthält
+- **THEN** wird keine manuelle Platte neu angelegt; ihre Hör-Ereignisse kommen zum übernommenen Exemplar, dessen Daten unverändert bleiben
+
 ### Requirement: Manuelle Platte bei Discogs eintragen
 Die Detailansicht einer manuellen Platte MUST einen Link zum Discogs-Formular „Add Release“ anbieten sowie die Daten der Platte (Künstler, Titel, Format, Jahr, Label, Katalognummer, Land, Barcode, Notizen) als kopierbaren Text.
 

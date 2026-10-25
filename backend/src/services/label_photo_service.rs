@@ -164,7 +164,11 @@ impl LabelPhotoService {
         if width.max(height) <= max_edge {
             return Ok((bytes, mime_type));
         }
-        let scaled = Self::normalize_image_to(&bytes, max_edge)?;
+        // a stored photo that cannot be decoded is a server-side fault, not a bad request
+        let scaled = Self::normalize_image_to(&bytes, max_edge).map_err(|e| match e {
+            AppError::BadRequest(msg) => AppError::Internal(format!("Stored image: {msg}")),
+            other => other,
+        })?;
         Ok((scaled, STORED_MIME_TYPE.to_string()))
     }
 
@@ -462,6 +466,15 @@ mod tests {
         let (out, _) =
             LabelPhotoService::downscale(original.clone(), "image/jpeg".to_string(), 1024).unwrap();
         assert_eq!(out, original);
+    }
+
+    #[test]
+    fn test_downscale_corrupt_stored_image_is_internal_error() {
+        // PNG signature + IHDR (dimensions readable), but no pixel data
+        let mut corrupt = encode(2000, 1500, ImageFormat::Png);
+        corrupt.truncate(33);
+        let err = LabelPhotoService::downscale(corrupt, "image/jpeg".to_string(), 1024);
+        assert!(matches!(err, Err(AppError::Internal(_))), "{err:?}");
     }
 
     #[test]

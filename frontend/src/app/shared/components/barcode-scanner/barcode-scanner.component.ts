@@ -11,15 +11,27 @@ import { ScanResult, DiscogsMatch, SyncResult, StoragePlacement } from '../../..
 import { StoragePlacementComponent } from '../storage-placement/storage-placement.component';
 import { LabelPhotoCaptureComponent } from '../label-photo-capture/label-photo-capture.component';
 import { firstValueFrom } from 'rxjs';
+import { HelpLinkComponent } from '../help-link/help-link.component';
+import { ManualRecordFormComponent, ManualRecordPrefill } from '../manual-record-form/manual-record-form.component';
 
 @Component({
   selector: 'app-barcode-scanner',
   standalone: true,
-  imports: [FormsModule, TranslatePipe, StoragePlacementComponent, LabelPhotoCaptureComponent],
+  imports: [
+    FormsModule,
+    TranslatePipe,
+    StoragePlacementComponent,
+    LabelPhotoCaptureComponent,
+    HelpLinkComponent,
+    ManualRecordFormComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <div class="flex flex-col items-center p-4 h-full">
-      <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">Scan Vinyl Barcode</h2>
+      <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100 flex items-center gap-1">
+        {{ 'scanner.title' | translate }}
+        <app-help-link anchor="scannen" />
+      </h2>
 
       @if (isScanning()) {
         @if (scannerService.scannerMode() === 'hardware') {
@@ -240,6 +252,15 @@ import { firstValueFrom } from 'rxjs';
             }
 
             <button
+              type="button"
+              (click)="openManualForm()"
+              data-testid="scanner-add-manual"
+              class="mt-3 w-full px-4 py-2 border border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg text-sm font-medium transition-colors cursor-pointer"
+            >
+              {{ 'scanner.addManual' | translate }}
+            </button>
+
+            <button
               (click)="handleReset()"
               class="mt-3 w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg text-sm font-medium transition-colors cursor-pointer"
             >
@@ -285,6 +306,15 @@ import { firstValueFrom } from 'rxjs';
             </div>
 
             <button
+              type="button"
+              (click)="openManualForm()"
+              data-testid="scanner-add-manual"
+              class="mt-3 w-full px-4 py-2 border border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg text-sm font-medium transition-colors cursor-pointer"
+            >
+              {{ 'scanner.addManual' | translate }}
+            </button>
+
+            <button
               (click)="handleReset()"
               class="mt-4 w-full px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-lg cursor-pointer text-sm font-medium transition-colors"
             >
@@ -292,6 +322,10 @@ import { firstValueFrom } from 'rxjs';
             </button>
           </div>
         }
+      }
+
+      @if (manualPrefill(); as prefill) {
+        <app-manual-record-form [prefill]="prefill" (closed)="manualPrefill.set(null)" />
       }
     </div>
   `,
@@ -312,6 +346,10 @@ export class BarcodeScannerComponent implements AfterViewInit, OnDestroy {
   readonly addErrorMessage = signal<string | null>(null);
   readonly manualQuery = signal<string>('');
   readonly isSearchingManual = signal<boolean>(false);
+  /** Open manual record form (#242) for a record that is not on Discogs. */
+  readonly manualPrefill = signal<ManualRecordPrefill | null>(null);
+  /** Last scanned or entered code. */
+  private readonly lastCode = signal<string>('');
 
   private scanner: Html5QrcodeScanner | null = null;
   private timerId: any = null;
@@ -390,6 +428,7 @@ export class BarcodeScannerComponent implements AfterViewInit, OnDestroy {
 
     const normalizedCode = this.scannerService.normalizeScannedCode(barcode);
     this.manualQuery.set(normalizedCode);
+    this.lastCode.set(normalizedCode);
     this.isSearchingManual.set(true);
 
     try {
@@ -423,6 +462,12 @@ export class BarcodeScannerComponent implements AfterViewInit, OnDestroy {
     if (apiResult.discogsMatches && apiResult.discogsMatches.length > 0) {
       this.selectedMatchId.set(apiResult.discogsMatches[0].id);
     }
+  }
+
+  /** Pre-fills the barcode when the last code was one (and not a title search). */
+  openManualForm(): void {
+    const code = this.lastCode().replace(/\s/g, '');
+    this.manualPrefill.set({ barcode: /^\d{8,14}$/.test(code) ? code : null });
   }
 
   searchManual(): void {

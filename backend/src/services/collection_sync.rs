@@ -3,13 +3,14 @@ use crate::{
     error::AppError,
     models::{
         collection::{PriceRefreshResultDto, SyncResultDto},
-        discogs::{DiscogsFolderReleaseItem, determine_format, disc_count},
+        discogs::{DiscogsFolderReleaseItem, DiscogsRelease, determine_format, disc_count},
+        record::RecordSource,
         user::AppUser,
     },
     services::{crypto_service::CryptoService, storage::StorageService},
 };
 use chrono::{DateTime, Utc};
-use sqlx::{PgPool, Row};
+use sqlx::{PgPool, Postgres, Row, Transaction};
 use std::collections::HashSet;
 
 pub struct CollectionSyncService;
@@ -92,18 +93,20 @@ impl CollectionSyncService {
             page += 1;
         }
 
-        // 3. Remove items in collection_item that no longer exist remotely
+        // 3. Remove items in collection_item that no longer exist remotely; manual records
+        //    (negative instance IDs) are not on Discogs and stay
         let remote_ids_vec: Vec<i64> = remote_instance_ids.into_iter().collect();
         let removed_count = if remote_ids_vec.is_empty() {
-            let del_res = sqlx::query("DELETE FROM collection_item WHERE user_id = $1")
-                .bind(user.id)
-                .execute(pool)
-                .await
-                .map_err(AppError::Database)?;
+            let del_res =
+                sqlx::query("DELETE FROM collection_item WHERE user_id = $1 AND instance_id > 0")
+                    .bind(user.id)
+                    .execute(pool)
+                    .await
+                    .map_err(AppError::Database)?;
             del_res.rows_affected() as i32
         } else {
             let del_res = sqlx::query(
-                "DELETE FROM collection_item WHERE user_id = $1 AND instance_id != ALL($2)",
+                "DELETE FROM collection_item WHERE user_id = $1 AND instance_id > 0 AND instance_id != ALL($2)",
             )
             .bind(user.id)
             .bind(&remote_ids_vec)
@@ -160,58 +163,8 @@ impl CollectionSyncService {
         let release = discogs_client.get_release(release_id, &token).await?;
 
         // 3. Upsert record_cache
-        let format = determine_format(release.formats.as_deref());
-        let discs = disc_count(release.formats.as_deref());
-        let artist = release
-            .artists
-            .as_ref()
-            .and_then(|a| a.first())
-            .map(|a| a.name.clone())
-            .unwrap_or_default();
-        let year_str = release.year.map(|y| y.to_string());
-
-        let record_row = sqlx::query(
-            "INSERT INTO record_cache (discogs_id, title, artist, release_year, thumb_url, format, disc_count)
-             VALUES ($1, $2, $3, $4, $5, $6, $7)
-             ON CONFLICT (discogs_id)
-             DO UPDATE SET title = EXCLUDED.title,
-                           artist = EXCLUDED.artist,
-                           release_year = EXCLUDED.release_year,
-                           thumb_url = COALESCE(EXCLUDED.thumb_url, record_cache.thumb_url),
-                           format = EXCLUDED.format,
-                           disc_count = COALESCE(EXCLUDED.disc_count, record_cache.disc_count)
-             RETURNING id",
-        )
-        .bind(release_id)
-        .bind(&release.title)
-        .bind(&artist)
-        .bind(&year_str)
-        .bind(&release.thumb)
-        .bind(&format)
-        .bind(discs)
-        .fetch_one(pool)
-        .await
-        .map_err(AppError::Database)?;
-
-        let record_id: i64 = record_row.get("id");
-
-        // Upsert genres
-        if let Some(genres) = &release.genres {
-            sqlx::query("DELETE FROM record_genres WHERE record_id = $1")
-                .bind(record_id)
-                .execute(pool)
-                .await
-                .map_err(AppError::Database)?;
-
-            for g in genres {
-                sqlx::query("INSERT INTO record_genres (record_id, genre) VALUES ($1, $2)")
-                    .bind(record_id)
-                    .bind(g)
-                    .execute(pool)
-                    .await
-                    .map_err(AppError::Database)?;
-            }
-        }
+        let mut tx = pool.begin().await.map_err(AppError::Database)?;
+        let record_id = upsert_release(&mut tx, &release).await?;
 
         // 4. Upsert collection_item
         let now = Utc::now().naive_utc();
@@ -225,9 +178,10 @@ impl CollectionSyncService {
         .bind(record_id)
         .bind(add_res.instance_id)
         .bind(now)
-        .execute(pool)
+        .execute(&mut *tx)
         .await
         .map_err(AppError::Database)?;
+        tx.commit().await.map_err(AppError::Database)?;
 
         let placement =
             StorageService::place_new_copy(pool, user.id, release_id, add_res.instance_id).await?;
@@ -253,7 +207,7 @@ impl CollectionSyncService {
         // 1. Locate the collection item for the user
         let item_row = if let Some(inst_id) = instance_id_opt {
             sqlx::query(
-                "SELECT ci.id, ci.instance_id, rc.discogs_id
+                "SELECT ci.id, ci.instance_id, rc.discogs_id, rc.source
                  FROM collection_item ci
                  JOIN record_cache rc ON rc.id = ci.record_id
                  WHERE ci.user_id = $1 AND ci.instance_id = $2
@@ -266,7 +220,7 @@ impl CollectionSyncService {
             .map_err(AppError::Database)?
         } else {
             sqlx::query(
-                "SELECT ci.id, ci.instance_id, rc.discogs_id
+                "SELECT ci.id, ci.instance_id, rc.discogs_id, rc.source
                  FROM collection_item ci
                  JOIN record_cache rc ON rc.id = ci.record_id
                  WHERE ci.user_id = $1 AND (rc.discogs_id = $2 OR rc.id = $2)
@@ -288,13 +242,16 @@ impl CollectionSyncService {
         let item_id: i64 = row.get("id");
         let instance_id: i64 = row.get("instance_id");
         let discogs_id: i64 = row.get("discogs_id");
+        let manual = row.get::<&str, _>("source") == RecordSource::Manual.as_str();
 
-        // 2. Delete instance from remote Discogs collection if credentials exist
+        // 2. Delete instance from remote Discogs collection if credentials exist (manual
+        //    records exist only locally; record and cover stay for the listen history)
         let discogs_auth = user
             .discogs_username
             .as_deref()
             .zip(user.discogs_token.as_deref())
-            .and_then(|(u, enc)| crypto.decrypt(enc).map(|token| (u, token)));
+            .and_then(|(u, enc)| crypto.decrypt(enc).map(|token| (u, token)))
+            .filter(|_| !manual);
 
         if let Some((discogs_user, token)) = discogs_auth
             && let Err(e) = discogs_client
@@ -343,7 +300,7 @@ impl CollectionSyncService {
                     rc.median_price::float8 as median_price
              FROM record_cache rc
              JOIN collection_item ci ON ci.record_id = rc.id
-             WHERE ci.user_id = $1",
+             WHERE ci.user_id = $1 AND rc.source = 'discogs'",
         )
         .bind(user.id)
         .fetch_all(pool)
@@ -524,4 +481,66 @@ impl CollectionSyncService {
 
         Ok(is_new)
     }
+}
+
+/// Upserts a Discogs release into the shared `record_cache` with its genres and returns the
+/// record ID. Runs in the caller's transaction (adding to the collection, taking over a manual
+/// record).
+pub async fn upsert_release(
+    tx: &mut Transaction<'_, Postgres>,
+    release: &DiscogsRelease,
+) -> Result<i64, AppError> {
+    let format = determine_format(release.formats.as_deref());
+    let discs = disc_count(release.formats.as_deref());
+    let artist = release
+        .artists
+        .as_ref()
+        .and_then(|a| a.first())
+        .map(|a| a.name.clone())
+        .unwrap_or_default();
+    let year_str = release.year.map(|y| y.to_string());
+
+    let record_row = sqlx::query(
+        "INSERT INTO record_cache (discogs_id, title, artist, release_year, thumb_url, format, disc_count)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         ON CONFLICT (discogs_id)
+         DO UPDATE SET title = EXCLUDED.title,
+                       artist = EXCLUDED.artist,
+                       release_year = EXCLUDED.release_year,
+                       thumb_url = COALESCE(EXCLUDED.thumb_url, record_cache.thumb_url),
+                       format = EXCLUDED.format,
+                       disc_count = COALESCE(EXCLUDED.disc_count, record_cache.disc_count)
+         RETURNING id",
+    )
+    .bind(release.id)
+    .bind(&release.title)
+    .bind(&artist)
+    .bind(&year_str)
+    .bind(&release.thumb)
+    .bind(&format)
+    .bind(discs)
+    .fetch_one(&mut **tx)
+    .await
+    .map_err(AppError::Database)?;
+
+    let record_id: i64 = record_row.get("id");
+
+    if let Some(genres) = &release.genres {
+        sqlx::query("DELETE FROM record_genres WHERE record_id = $1")
+            .bind(record_id)
+            .execute(&mut **tx)
+            .await
+            .map_err(AppError::Database)?;
+
+        for g in genres {
+            sqlx::query("INSERT INTO record_genres (record_id, genre) VALUES ($1, $2)")
+                .bind(record_id)
+                .bind(g)
+                .execute(&mut **tx)
+                .await
+                .map_err(AppError::Database)?;
+        }
+    }
+
+    Ok(record_id)
 }

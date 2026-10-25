@@ -11,6 +11,15 @@
 
 ---
 
+## v1.4.0 (2026-10-25)
+
+- **Manuelle Platten bei Discogs übernehmen (`#243`)**: Gibt es eine manuell angelegte Platte inzwischen bei Discogs, findet **Bei Discogs prüfen** in der Detailansicht den Release (Barcode, Katalognummer + Label, Künstler + Titel). Nach deiner Bestätigung wird sie zur Discogs-Platte – Hör-Historie, Regalplatz, Zustände und Sortier-String bleiben, Cover und Wert kommen von Discogs. Ist der Release schon in der Sammlung, wählst du zwischen zweitem Exemplar und Zusammenführen. Gedruckte QR-Etiketten („Manuell #n“) funktionieren weiter. **Bei Discogs eintragen** öffnet das Discogs-Formular und kopiert die Angaben. Neue MCP-Tools: `create_manual_record`, `check_manual_record`, `take_over_manual_record`. Das JSON-Backup (`format_version: 5`) enthält die alten IDs übernommener Platten; Backups der Versionen 3 und 4 bleiben lesbar.
+- **Platten ohne Discogs-Eintrag (`#242`)**: Platten und CDs, die es bei Discogs nicht gibt, lassen sich jetzt **manuell anlegen** – in der Sammlung, in der Label-Inbox bei einem Foto ohne Treffer (mit den vom Label gelesenen Angaben und dem Foto als Cover) oder im Scanner, wenn ein Barcode nicht gefunden wird. Mit Cover, eigenem Wert, Zustand und Regalplatz; gekennzeichnet als **Manuell**, filterbar nach Quelle und in der Detailansicht bearbeitbar. Der Discogs-Abgleich lässt sie unverändert, Barcode und QR-Etikett („Manuell #n“) erfassen das Hören. Das JSON-Backup (`format_version: 4`) enthält sie samt Cover.
+- **Hilfe in der App (`#247`)**: Neue Seite **Hilfe** (Seitenleiste, am Handy ?-Symbol oben) erklärt alle Funktionen – mit Inhaltsverzeichnis und Suche. Ein **?** auf Scan, Sammlung, Regalen, Label-Inbox, Sortiermodus und Einstellungen springt direkt zum passenden Abschnitt. Symbole und Buttons erklären sich per Tooltip (Mauszeiger, Tastatur-Fokus oder langes Drücken am Handy).
+- **MCP-Server für Windows (`#245`)**: Jedes Release enthält zusätzlich `vinyl-mcp-server-windows-x86_64.zip` mit `vinyl-mcp-server.exe` für Claude Desktop/Code unter Windows; Einrichtung in `mcp/README.md`.
+
+---
+
 ## v1.3.0 (2026-10-24)
 
 - **Fix: Fotos in der Label-Inbox wieder sichtbar (`#238`)**: Einen Tag nach der Anmeldung zeigte die Label-Inbox statt der Fotos nur noch schwarze Flächen – das Bild wurde ohne Anmeldedaten geladen, sobald das Anmelde-Cookie abgelaufen war. Die Fotos werden jetzt wie alle anderen Daten mit dem Login-Token geladen.

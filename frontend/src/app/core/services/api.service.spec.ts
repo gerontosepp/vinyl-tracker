@@ -106,4 +106,59 @@ describe('ApiService label photos', () => {
     expect(settings.request.body).toEqual({ apiKey: '' });
     settings.flush({});
   });
+
+  describe('manual records', () => {
+    it('creates, updates and uploads the cover of a manual record', () => {
+      const request = { artist: 'Die Sterne', title: 'Posen', format: 'LP' };
+      service.createManualRecord(request).subscribe();
+      const create = http.expectOne({ method: 'POST', url: '/api/records/manual' });
+      expect(create.request.body).toEqual(request);
+      create.flush({ record: {} });
+
+      service.updateManualRecord(-3, request).subscribe();
+      http.expectOne({ method: 'PUT', url: '/api/records/-3/manual' }).flush({});
+
+      const cover = new Blob(['png'], { type: 'image/png' });
+      service.uploadRecordCover(-3, cover).subscribe();
+      const upload = http.expectOne({ method: 'PUT', url: '/api/records/-3/cover' });
+      expect(upload.request.body).toBe(cover);
+      expect(upload.request.headers.get('Content-Type')).toBe('image/png');
+      upload.flush({});
+    });
+
+    it('loads the details of a specific copy', () => {
+      service.getRecordDetails(1001, 555).subscribe();
+      http.expectOne({ method: 'GET', url: '/api/records/1001?instance_id=555' }).flush({});
+      service.getRecordDetails(1001).subscribe();
+      http.expectOne({ method: 'GET', url: '/api/records/1001' }).flush({});
+    });
+
+    it('checks a manual record on Discogs and takes it over', () => {
+      service.getDiscogsCandidates(-3).subscribe((candidates) => {
+        expect(candidates[0].discogsId).toBe(1001);
+      });
+      http
+        .expectOne({ method: 'GET', url: '/api/records/-3/discogs-candidates' })
+        .flush([{ discogsId: 1001, title: 'Posen', matchedBy: 'barcode', inCollection: [] }]);
+
+      const request = { releaseId: 1001, mode: 'merge' as const, targetInstanceId: 55 };
+      service.takeOverManualRecord(-3, request).subscribe((result) => {
+        expect(result.instanceId).toBe(55);
+      });
+      const takeover = http.expectOne({ method: 'POST', url: '/api/records/-3/takeover' });
+      expect(takeover.request.body).toEqual(request);
+      takeover.flush({ record: {}, instanceId: 55, mode: 'merge' });
+    });
+
+    it('filters the collection by source', () => {
+      service.getCollection(1, 50, 0, 'artist', 'asc', '', 'all', [], '', undefined, false, { source: 'manual' }).subscribe();
+      const req = http.expectOne((r) => r.url === '/api/collection');
+      expect(req.request.params.get('source')).toBe('manual');
+      req.flush({ releases: [], pagination: {} });
+    });
+
+    it('passes covers of manual records through instead of proxying them', () => {
+      expect(service.getProxiedImageUrl('/api/covers/u?v=1')).toBe('/api/covers/u?v=1');
+    });
+  });
 });

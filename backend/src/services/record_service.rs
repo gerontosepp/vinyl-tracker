@@ -6,7 +6,9 @@ use crate::{
             DiscogsFormat, DiscogsIdentifier, DiscogsLabel, DiscogsRelease, DiscogsTrack,
             determine_format,
         },
-        record::{RecordDetailDto, UpdateConditionRequestDto, UpdateSortKeyRequestDto},
+        record::{
+            RecordDetailDto, RecordSource, UpdateConditionRequestDto, UpdateSortKeyRequestDto,
+        },
         user::AppUser,
     },
     services::{
@@ -20,18 +22,35 @@ use chrono::Utc;
 use sqlx::{PgPool, Row};
 use std::sync::Arc;
 
+/// Discogs releases are shared; a manual record is only visible to its owner (`$2` = user ID).
+pub const OWN_RECORD_SQL: &str = "(rc.source = 'discogs' OR rc.owner_id = $2)";
+
 /// Maximum length of a custom sort string (`collection_item.sort_key`).
 pub const MAX_SORT_KEY_LEN: usize = 200;
 
 pub struct RecordService;
 
 impl RecordService {
+    /// Details of a record and its first copy in the user's collection.
     pub async fn get_record_details(
         pool: &PgPool,
         discogs_client: &DiscogsClient,
         crypto: &CryptoService,
         user: &AppUser,
         id_param: i64,
+    ) -> Result<RecordDetailDto, AppError> {
+        Self::get_copy_details(pool, discogs_client, crypto, user, id_param, None).await
+    }
+
+    /// Details of a record with the copy-specific data (conditions, sort string, shelf slot) of
+    /// the copy `instance_id`; `None` takes the first copy.
+    pub async fn get_copy_details(
+        pool: &PgPool,
+        discogs_client: &DiscogsClient,
+        crypto: &CryptoService,
+        user: &AppUser,
+        id_param: i64,
+        instance_id: Option<i64>,
     ) -> Result<RecordDetailDto, AppError> {
         let dec_token = user
             .discogs_token
@@ -40,15 +59,17 @@ impl RecordService {
 
         // 1. Look up existing local record (incl. the automatic sort key of its stored artist)
         let record_row = sqlx::query(&format!(
-            "SELECT id, discogs_id, title, artist, release_year, thumb_url, format,
+            "SELECT id, discogs_id, title, artist, release_year, thumb_url, format, source,
+                    label, catno, country, barcode, notes,
                     lowest_price::float8 as lowest_price,
                     median_price::float8 as median_price,
                     {DEFAULT_ARTIST_KEY_SQL} AS default_sort_key
              FROM record_cache rc
-             WHERE id = $1 OR discogs_id = $1
+             WHERE (id = $1 OR discogs_id = $1) AND {OWN_RECORD_SQL}
              LIMIT 1"
         ))
         .bind(id_param)
+        .bind(user.id)
         .fetch_optional(pool)
         .await
         .map_err(AppError::Database)?;
@@ -58,6 +79,13 @@ impl RecordService {
             .as_ref()
             .map(|r| r.get("discogs_id"))
             .unwrap_or(id_param);
+
+        // Manual records (negative IDs) have no Discogs release and never call Discogs
+        let source = record_row
+            .as_ref()
+            .and_then(|r| RecordSource::parse(r.get("source")))
+            .unwrap_or_default();
+        let dec_token = dec_token.filter(|_| source == RecordSource::Discogs && discogs_id > 0);
 
         // 2. Fetch Discogs release details if token is available
         let discogs_release: Option<Arc<DiscogsRelease>> = if let Some(ref token) = dec_token {
@@ -78,10 +106,13 @@ impl RecordService {
                 "SELECT id, instance_id, added_at, media_condition, sleeve_condition, sort_key
                  FROM collection_item
                  WHERE user_id = $1 AND record_id = $2
+                   AND ($3::BIGINT IS NULL OR instance_id = $3)
+                 ORDER BY instance_id
                  LIMIT 1",
             )
             .bind(user.id)
             .bind(rec_id)
+            .bind(instance_id)
             .fetch_optional(pool)
             .await
             .map_err(AppError::Database)?
@@ -91,10 +122,13 @@ impl RecordService {
                  FROM collection_item ci
                  JOIN record_cache rc ON rc.id = ci.record_id
                  WHERE ci.user_id = $1 AND rc.discogs_id = $2
+                   AND ($3::BIGINT IS NULL OR ci.instance_id = $3)
+                 ORDER BY ci.instance_id
                  LIMIT 1",
             )
             .bind(user.id)
             .bind(discogs_id)
+            .bind(instance_id)
             .fetch_optional(pool)
             .await
             .map_err(AppError::Database)?
@@ -261,16 +295,35 @@ impl RecordService {
             .as_ref()
             .and_then(|r| r.formats.clone())
             .unwrap_or_default();
+        let local_text =
+            |column: &str| -> Option<String> { record_row.as_ref().and_then(|r| r.get(column)) };
         let labels: Vec<DiscogsLabel> = discogs_release
             .as_ref()
             .and_then(|r| r.labels.clone())
+            .or_else(|| {
+                let (name, catno) = (local_text("label"), local_text("catno"));
+                (name.is_some() || catno.is_some()).then(|| {
+                    vec![DiscogsLabel {
+                        id: None,
+                        name: name.unwrap_or_default(),
+                        catno,
+                    }]
+                })
+            })
             .unwrap_or_default();
         let identifiers: Vec<DiscogsIdentifier> = discogs_release
             .as_ref()
             .and_then(|r| r.identifiers.clone())
             .unwrap_or_default();
-        let notes: Option<String> = discogs_release.as_ref().and_then(|r| r.notes.clone());
-        let country: Option<String> = discogs_release.as_ref().and_then(|r| r.country.clone());
+        let notes: Option<String> = discogs_release
+            .as_ref()
+            .and_then(|r| r.notes.clone())
+            .or_else(|| local_text("notes"));
+        let country: Option<String> = discogs_release
+            .as_ref()
+            .and_then(|r| r.country.clone())
+            .or_else(|| local_text("country"));
+        let barcode = local_text("barcode");
         let released: Option<String> = discogs_release.as_ref().and_then(|r| r.released.clone());
 
         // Only cached records can be in the collection and thus on a shelf
@@ -278,7 +331,7 @@ impl RecordService {
             record_row.as_ref().and_then(|r| r.get("default_sort_key"));
 
         let placement = if in_collection {
-            StorageService::placement_for_record(pool, user.id, discogs_id).await?
+            StorageService::placement_for_copy(pool, user.id, discogs_id, instance_id).await?
         } else {
             None
         };
@@ -318,6 +371,8 @@ impl RecordService {
             released,
             storage,
             storage_neighbors,
+            source,
+            barcode,
         })
     }
 
@@ -334,16 +389,24 @@ impl RecordService {
             .and_then(|enc| crypto.decrypt(enc));
 
         // 1. Find or create record in record_cache
-        let record_row = sqlx::query(
-            "SELECT id, discogs_id FROM record_cache WHERE id = $1 OR discogs_id = $1 LIMIT 1",
-        )
+        let record_row = sqlx::query(&format!(
+            "SELECT id, discogs_id FROM record_cache rc
+             WHERE (id = $1 OR discogs_id = $1) AND {OWN_RECORD_SQL} LIMIT 1"
+        ))
         .bind(id_param)
+        .bind(user.id)
         .fetch_optional(pool)
         .await
         .map_err(AppError::Database)?;
 
         let record_id = match record_row {
             Some(row) => row.get::<i64, _>("id"),
+            // Negative IDs are manual records, which exist only locally
+            None if id_param < 0 => {
+                return Err(AppError::NotFound(format!(
+                    "Record not found with ID: {id_param}"
+                )));
+            }
             None => {
                 // Must fetch from Discogs
                 let token = dec_token.as_deref().ok_or_else(|| {
@@ -425,13 +488,14 @@ impl RecordService {
             .and_then(|enc| crypto.decrypt(enc));
 
         // 1. Locate record
-        let record_row = sqlx::query(
-            "SELECT id, discogs_id, median_price::float8 as median_price
-             FROM record_cache
-             WHERE id = $1 OR discogs_id = $1
-             LIMIT 1",
-        )
+        let record_row = sqlx::query(&format!(
+            "SELECT id, discogs_id, source, median_price::float8 as median_price
+             FROM record_cache rc
+             WHERE (id = $1 OR discogs_id = $1) AND {OWN_RECORD_SQL}
+             LIMIT 1"
+        ))
         .bind(id_param)
+        .bind(user.id)
         .fetch_optional(pool)
         .await
         .map_err(AppError::Database)?;
@@ -441,6 +505,9 @@ impl RecordService {
 
         let record_id: i64 = record_row.get("id");
         let discogs_id: i64 = record_row.get("discogs_id");
+        // A manual record keeps its own value and has no Discogs copy to update
+        let manual = record_row.get::<&str, _>("source") == RecordSource::Manual.as_str();
+        let dec_token = dec_token.filter(|_| !manual);
 
         // 2. Locate collection_item
         let ci_row = sqlx::query(
@@ -525,50 +592,16 @@ impl RecordService {
             instance_id,
             user.discogs_username.as_deref(),
         ) {
-            let mut media_field_id = 1i64;
-            let mut sleeve_field_id = 2i64;
-
-            if let Ok(fields_res) = discogs_client
-                .get_collection_fields(discogs_user, token)
-                .await
-            {
-                for f in fields_res.fields.unwrap_or_default() {
-                    if let Some(name) = f.name {
-                        let name_lower = name.trim().to_lowercase();
-                        if name_lower.contains("media") && name_lower.contains("condition") {
-                            media_field_id = f.id;
-                        } else if name_lower.contains("sleeve") && name_lower.contains("condition")
-                        {
-                            sleeve_field_id = f.id;
-                        }
-                    }
-                }
-            }
-
-            if let (true, Some(val)) = (media_changed, &updated_media) {
-                let _ = discogs_client
-                    .update_instance_field(
-                        discogs_user,
-                        discogs_id,
-                        inst_id,
-                        media_field_id,
-                        val,
-                        token,
-                    )
-                    .await;
-            }
-            if let (true, Some(val)) = (sleeve_changed, &updated_sleeve) {
-                let _ = discogs_client
-                    .update_instance_field(
-                        discogs_user,
-                        discogs_id,
-                        inst_id,
-                        sleeve_field_id,
-                        val,
-                        token,
-                    )
-                    .await;
-            }
+            push_conditions(
+                discogs_client,
+                discogs_user,
+                token,
+                discogs_id,
+                inst_id,
+                updated_media.as_deref().filter(|_| media_changed),
+                updated_sleeve.as_deref().filter(|_| sleeve_changed),
+            )
+            .await;
         }
 
         // Return updated record details
@@ -615,5 +648,47 @@ impl RecordService {
         })?;
 
         Self::get_record_details(pool, discogs_client, crypto, user, record_id).await
+    }
+}
+
+/// Writes the media and sleeve condition of a copy to its Discogs custom fields. Best effort:
+/// failures are ignored, the local conditions stay authoritative.
+pub async fn push_conditions(
+    discogs_client: &DiscogsClient,
+    discogs_user: &str,
+    token: &str,
+    discogs_id: i64,
+    instance_id: i64,
+    media: Option<&str>,
+    sleeve: Option<&str>,
+) {
+    if media.is_none() && sleeve.is_none() {
+        return;
+    }
+    let mut media_field_id = 1i64;
+    let mut sleeve_field_id = 2i64;
+
+    if let Ok(fields_res) = discogs_client
+        .get_collection_fields(discogs_user, token)
+        .await
+    {
+        for f in fields_res.fields.unwrap_or_default() {
+            if let Some(name) = f.name {
+                let name_lower = name.trim().to_lowercase();
+                if name_lower.contains("media") && name_lower.contains("condition") {
+                    media_field_id = f.id;
+                } else if name_lower.contains("sleeve") && name_lower.contains("condition") {
+                    sleeve_field_id = f.id;
+                }
+            }
+        }
+    }
+
+    for (field_id, value) in [(media_field_id, media), (sleeve_field_id, sleeve)] {
+        if let Some(val) = value {
+            let _ = discogs_client
+                .update_instance_field(discogs_user, discogs_id, instance_id, field_id, val, token)
+                .await;
+        }
     }
 }

@@ -91,7 +91,7 @@ describe('RecentListensComponent', () => {
     const deleteSpy = vi.fn().mockName('deleteSpy');
     component.delete.subscribe(deleteSpy);
 
-    const deleteBtn = fixture.nativeElement.querySelector('button[title="Delete Scan"]');
+    const deleteBtn = fixture.nativeElement.querySelector('[data-testid="delete-listen"]');
     expect(deleteBtn).toBeTruthy();
     deleteBtn.click();
 
@@ -124,7 +124,7 @@ describe('RecentListensComponent', () => {
     fixture.componentRef.setInput('listens', sampleListens);
     fixture.detectChanges();
 
-    const deleteBtn: HTMLElement = fixture.nativeElement.querySelector('button[title="Delete Scan"]');
+    const deleteBtn: HTMLElement = fixture.nativeElement.querySelector('[data-testid="delete-listen"]');
     // Only hidden until hover from md; a plain opacity-0 would hide it on phones
     expect(deleteBtn.classList).not.toContain('opacity-0');
     expect(deleteBtn.classList).toContain('md:opacity-0');
@@ -146,7 +146,7 @@ describe('RecentListensComponent', () => {
     expect(opened).toHaveBeenCalledWith(sampleListens[0].record);
 
     // The delete button sits above the open button
-    const deleteBtn: HTMLElement = fixture.nativeElement.querySelector('button[title="Delete Scan"]');
+    const deleteBtn: HTMLElement = fixture.nativeElement.querySelector('[data-testid="delete-listen"]');
     expect(deleteBtn.classList).toContain('z-20');
     deleteBtn.click();
     expect(deleted).toHaveBeenCalledWith(42);

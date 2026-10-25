@@ -176,7 +176,7 @@ describe('CollectionToolbarComponent', () => {
     fixture.componentRef.setInput('selectedCount', 3);
     fixture.detectChanges();
 
-    const clearBtn = fixture.nativeElement.querySelector('button[title="Auswahl aufheben"], button[title="Clear Selection"]');
+    const clearBtn = fixture.nativeElement.querySelector('[data-testid="clear-selection"]');
     expect(clearBtn).toBeTruthy();
     clearBtn.click();
     expect(component.clearSelection.emit).toHaveBeenCalled();
@@ -201,7 +201,7 @@ describe('CollectionToolbarComponent', () => {
     expect(printBtn).toBeTruthy();
     expect(printBtn.textContent).not.toMatch(/\(\d+\)/);
     expect(
-      fixture.nativeElement.querySelector('button[title="Auswahl aufheben"], button[title="Clear Selection"]')
+      fixture.nativeElement.querySelector('[data-testid="clear-selection"]')
     ).toBeNull();
   });
 
@@ -294,6 +294,33 @@ describe('CollectionToolbarComponent', () => {
       toggle().click();
       fixture.detectChanges();
       expect(pager()).toBeNull();
+    });
+  });
+
+  describe('manual records', () => {
+    const q = (testId: string): HTMLElement | null => fixture.nativeElement.querySelector(`[data-testid="${testId}"]`);
+
+    it('emits the source filter and shows it as removable badge', () => {
+      const emitted: string[] = [];
+      component.sourceChange.subscribe((v) => emitted.push(v));
+      const select = q('source-filter') as HTMLSelectElement;
+      expect(Array.from(select.options).map((o) => o.value)).toEqual(['', 'discogs', 'manual']);
+      select.value = 'manual';
+      select.dispatchEvent(new Event('change'));
+      expect(emitted).toEqual(['manual']);
+
+      fixture.componentRef.setInput('source', 'manual');
+      fixture.detectChanges();
+      expect(component.activeFilterCount()).toBe(1);
+      q('source-filter-badge')!.querySelector('button')!.click();
+      expect(emitted).toEqual(['manual', '']);
+    });
+
+    it('requests the manual record form', () => {
+      const requested = vi.fn();
+      component.addManual.subscribe(requested);
+      (q('add-manual-record') as HTMLButtonElement).click();
+      expect(requested).toHaveBeenCalled();
     });
   });
 });

@@ -12,7 +12,13 @@ import {
   CollectionValueResponse,
   GenreBreakdownItem,
   SyncResult,
+  DiscogsCandidate,
+  ManualRecordCreated,
+  ManualRecordRequest,
+  TakeoverRequest,
+  TakeoverResult,
   RecordDetailDto,
+  RecordSource,
   RoonStatus,
   RoonZone,
   RoonSettings,
@@ -141,8 +147,10 @@ export class ApiService {
     return this.http.get<CollectionValueResponse>(`${this.baseUrl}/analytics/collection/value`);
   }
 
-  getRecordDetails(id: number): Observable<RecordDetailDto> {
-    return this.http.get<RecordDetailDto>(`${this.baseUrl}/records/${id}`);
+  /** `instanceId` selects the copy when the release is in the collection more than once. */
+  getRecordDetails(id: number, instanceId?: number): Observable<RecordDetailDto> {
+    const params = instanceId != null ? new HttpParams().set('instance_id', instanceId) : undefined;
+    return this.http.get<RecordDetailDto>(`${this.baseUrl}/records/${id}`, { params });
   }
 
   updateRecordCondition(
@@ -155,6 +163,31 @@ export class ApiService {
   /** Sets the custom sort string of a record; `null` resets it to the automatic artist key. */
   updateRecordSortKey(id: number, sortKey: string | null): Observable<RecordDetailDto> {
     return this.http.patch<RecordDetailDto>(`${this.baseUrl}/records/${id}/sort-key`, { sort_key: sortKey });
+  }
+
+  createManualRecord(request: ManualRecordRequest): Observable<ManualRecordCreated> {
+    return this.http.post<ManualRecordCreated>(`${this.baseUrl}/records/manual`, request);
+  }
+
+  updateManualRecord(id: number, request: ManualRecordRequest): Observable<RecordDetailDto> {
+    return this.http.put<RecordDetailDto>(`${this.baseUrl}/records/${id}/manual`, request);
+  }
+
+  /** Uploads the cover of a manual record (JPEG, downscaled by the caller). */
+  uploadRecordCover(id: number, image: Blob): Observable<RecordDetailDto> {
+    return this.http.put<RecordDetailDto>(`${this.baseUrl}/records/${id}/cover`, image, {
+      headers: { 'Content-Type': image.type || 'image/jpeg' },
+    });
+  }
+
+  /** Searches Discogs for the release of a manual record; changes nothing. */
+  getDiscogsCandidates(id: number): Observable<DiscogsCandidate[]> {
+    return this.http.get<DiscogsCandidate[]>(`${this.baseUrl}/records/${id}/discogs-candidates`);
+  }
+
+  /** Turns a manual record into a Discogs record after the user confirmed a candidate. */
+  takeOverManualRecord(id: number, request: TakeoverRequest): Observable<TakeoverResult> {
+    return this.http.post<TakeoverResult>(`${this.baseUrl}/records/${id}/takeover`, request);
   }
 
   logRecordListen(id: number): Observable<RecordDetailDto> {
@@ -205,7 +238,7 @@ export class ApiService {
     years?: string,
     notPlayedSince?: string,
     unplayedOnly?: boolean,
-    storage: { storage_unit?: string; compartment?: number } = {}
+    filters: { storage_unit?: string; compartment?: number; source?: RecordSource } = {}
   ): Observable<CollectionResponse> {
     let params = new HttpParams()
       .set('page', page.toString())
@@ -235,11 +268,14 @@ export class ApiService {
     if (unplayedOnly) {
       params = params.set('unplayed_only', 'true');
     }
-    if (storage.storage_unit) {
-      params = params.set('storage_unit', storage.storage_unit);
+    if (filters.storage_unit) {
+      params = params.set('storage_unit', filters.storage_unit);
     }
-    if (storage.compartment) {
-      params = params.set('compartment', storage.compartment.toString());
+    if (filters.compartment) {
+      params = params.set('compartment', filters.compartment.toString());
+    }
+    if (filters.source) {
+      params = params.set('source', filters.source);
     }
     return this.http.get<CollectionResponse>(`${this.baseUrl}/collection`, { params });
   }

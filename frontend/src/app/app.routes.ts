@@ -35,6 +35,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/label-inbox/label-inbox.component').then(m => m.LabelInboxComponent),
   },
   {
+    path: 'help',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/help/help.component').then(m => m.HelpComponent),
+  },
+  {
     path: 'profile',
     canActivate: [authGuard],
     loadComponent: () => import('./features/settings/settings.component').then(m => m.SettingsComponent),

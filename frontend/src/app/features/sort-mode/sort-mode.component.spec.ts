@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { SortModeComponent } from './sort-mode.component';
 import { ApiService } from '../../core/services/api.service';
@@ -63,17 +63,17 @@ describe('SortModeComponent', () => {
     };
     toast = { showToast: vi.fn() };
     wakeLock = { acquire: vi.fn().mockResolvedValue(undefined), release: vi.fn().mockResolvedValue(undefined) };
-    navigate = vi.fn().mockResolvedValue(true);
 
     await TestBed.configureTestingModule({
       imports: [SortModeComponent],
       providers: [
+        provideRouter([]),
         { provide: ApiService, useValue: api },
         { provide: ToastService, useValue: toast },
         { provide: WakeLockService, useValue: wakeLock },
-        { provide: Router, useValue: { navigate } },
       ],
     }).compileComponents();
+    navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockImplementation(() => Promise.resolve(true)) as unknown as ReturnType<typeof vi.fn>;
     TestBed.inject(LanguageService).setLanguage('de');
 
     fixture = TestBed.createComponent(SortModeComponent);

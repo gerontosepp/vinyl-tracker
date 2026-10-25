@@ -10,6 +10,7 @@ import { ToastService } from '../../core/services/toast.service';
 import { LanguageService } from '../../core/services/language.service';
 import { LayoutComponent } from '../../shared/components/layout/layout.component';
 import { LabelCandidate, LabelPhoto } from '../../core/types';
+import { provideRouter } from '@angular/router';
 
 const photo = (id: number): LabelPhoto => ({
   id,
@@ -63,7 +64,8 @@ describe('LabelInboxComponent', () => {
     toast = { showToast: vi.fn() } as unknown as MockedObject<ToastService>;
     TestBed.configureTestingModule({
       imports: [LabelInboxComponent],
-      providers: [provideHttpClient(), provideHttpClientTesting(), { provide: ToastService, useValue: toast }],
+      providers: [
+        provideRouter([]),provideHttpClient(), provideHttpClientTesting(), { provide: ToastService, useValue: toast }],
     });
     // The layout (navigation, menus) is not part of this test
     TestBed.overrideComponent(LabelInboxComponent, {
@@ -409,6 +411,68 @@ describe('LabelInboxComponent', () => {
     it('offers no identification without an OpenRouter key', async () => {
       await loadInbox([{ ...photo(1), identifyState: 'error', identifyError: 'x' }], false);
       expect(one('label-photo-identify')).toBeNull();
+    });
+  });
+  describe('manual records', () => {
+    const noMatch = (id: number): LabelPhoto => ({
+      ...photo(id),
+      identifyState: 'done',
+      identifyError: 'Kein Discogs-Eintrag mit dieser Katalognummer',
+      labelReading: { artist: 'Embryo', title: "Embryo's Rache", catno: '30561', year: '1996', format: 'LP' },
+    });
+
+    async function fillAndSave(): Promise<void> {
+      await fixture!.whenStable();
+      const save = one('manual-record-save') as HTMLButtonElement;
+      expect(save.disabled).toBe(false);
+      save.click();
+      await fixture!.whenStable();
+    }
+
+    it('offers a record without Discogs match, pre-filled from the label, and completes the photo', async () => {
+      await loadInbox([noMatch(1), photo(2)], true);
+      expect(one('label-photo-no-match')?.textContent).toContain('Kein Discogs-Eintrag gefunden.');
+      expect(one('label-photo-no-match')?.textContent).toContain('Kein Discogs-Eintrag mit dieser Katalognummer');
+
+      one('label-photo-no-match')!.querySelector<HTMLButtonElement>('[data-testid="label-photo-manual"]')!.click();
+      await fixture!.whenStable();
+      expect((one('manual-artist') as HTMLInputElement).value).toBe('Embryo');
+      expect((one('manual-year') as HTMLInputElement).value).toBe('1996');
+
+      await fillAndSave();
+      const create = http.expectOne({ method: 'POST', url: '/api/records/manual' });
+      expect(create.request.body).toMatchObject({ title: "Embryo's Rache", catno: '30561', labelPhotoId: 1 });
+      create.flush({ record: { discogs_id: -1, title: "Embryo's Rache", genres: [], in_collection: true, listen_count: 0, tracklist: [], formats: [], labels: [] } });
+      await fixture!.whenStable();
+
+      expect(all('label-inbox-photo').length).toBe(1);
+      expect(one('label-inbox-count-text')?.textContent).toContain('1 offene');
+    });
+
+    it('falls back to the uncertain match when nothing was read from the label', async () => {
+      const uncertain: LabelPhoto = {
+        ...suggested(1),
+        suggestion: { best: candidate(1622788, { confidence: 'low' }), alternatives: [] },
+      };
+      await loadInbox([uncertain], true);
+
+      one('label-photo-manual')!.click();
+      await fixture!.whenStable();
+      expect((one('manual-artist') as HTMLInputElement).value).toBe('Embryo (3)');
+      expect((one('manual-catno') as HTMLInputElement).value).toBe('30561');
+    });
+
+    it('offers no manual record next to a reliable match', async () => {
+      await loadInbox([suggested(1)], true);
+      expect(one('label-photo-manual')).toBeNull();
+    });
+
+    it('offers a manual record for photos that were not identified automatically', async () => {
+      await loadInbox([photo(1)], false);
+      one('label-photo-manual')!.click();
+      await fixture!.whenStable();
+      expect(one('manual-record-form')).not.toBeNull();
+      expect(one('manual-label-photo-hint')).not.toBeNull();
     });
   });
 });

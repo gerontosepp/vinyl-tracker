@@ -156,6 +156,9 @@ export interface RecordLabel {
   entity_type_name?: string;
 }
 
+/** Where a record comes from; manual records (#242) have negative IDs. */
+export type RecordSource = 'discogs' | 'manual';
+
 export interface RecordDetailDto {
   id?: number;
   discogs_id: number;
@@ -188,6 +191,68 @@ export interface RecordDetailDto {
   released?: string;
   storage?: StorageSlot;
   storage_neighbors?: StorageNeighbors;
+  source?: RecordSource;
+  /** Barcode of a manual record. */
+  barcode?: string;
+}
+
+/** Form data of a manual record; `value` is the user's own estimate. */
+export interface ManualRecordRequest {
+  artist: string;
+  title: string;
+  format: string;
+  year?: string | null;
+  label?: string | null;
+  catno?: string | null;
+  country?: string | null;
+  barcode?: string | null;
+  genres?: string[];
+  mediaCondition?: string | null;
+  sleeveCondition?: string | null;
+  notes?: string | null;
+  value?: number | null;
+  /** Label photo that becomes the cover and is completed. */
+  labelPhotoId?: number | null;
+}
+
+export interface ManualRecordCreated {
+  record: RecordDetailDto;
+  placement?: StoragePlacement;
+}
+
+/** Which search of "Check on Discogs" found a candidate (#243). */
+export type CandidateMatch = 'barcode' | 'catno' | 'artist_title';
+
+/** A Discogs release that may be the release of a manual record. */
+export interface DiscogsCandidate {
+  discogsId: number;
+  artist?: string | null;
+  title: string;
+  year?: string | null;
+  country?: string | null;
+  label?: string | null;
+  catno?: string | null;
+  format?: string | null;
+  thumbUrl?: string | null;
+  matchedBy: CandidateMatch;
+  /** Instance IDs of Discogs copies of this release the user already owns. */
+  inCollection: number[];
+}
+
+/** New Discogs copy (default) or merge into an owned copy. */
+export type TakeoverMode = 'new_copy' | 'merge';
+
+export interface TakeoverRequest {
+  releaseId: number;
+  mode: TakeoverMode;
+  targetInstanceId?: number | null;
+}
+
+export interface TakeoverResult {
+  record: RecordDetailDto;
+  instanceId: number;
+  mode: TakeoverMode;
+  placement?: StoragePlacement;
 }
 
 export interface CollectionRelease {
@@ -204,6 +269,7 @@ export interface CollectionRelease {
   sort_key?: string;
   /** Computed shelf slot; absent when no shelf is configured for the medium. */
   storage?: StorageSlot;
+  source?: RecordSource;
 }
 
 export interface CollectionPagination {
@@ -245,6 +311,7 @@ export interface PrintFilter {
   /** Shelf ID or `unplaced` */
   storage_unit?: string;
   compartment?: number;
+  source?: RecordSource;
   sort?: string;
   sort_order?: string;
 }
@@ -444,7 +511,22 @@ export interface LabelSuggestion {
   hint?: string | null;
 }
 
-/** A label photo waiting to be identified (automatically via OpenRouter or by Claude via MCP). */
+/** What the automatic identification read from the label; pre-fills a manual record. */
+export interface LabelReading {
+  artist?: string | null;
+  title?: string | null;
+  label?: string | null;
+  catno?: string | null;
+  year?: string | null;
+  country?: string | null;
+  format?: string | null;
+}
+
+/**
+ * A label photo waiting to be identified (automatically via OpenRouter or by Claude via MCP).
+ * `identifyState` 'done' without `suggestion` means no Discogs match; `identifyError` then holds
+ * the hint.
+ */
 export interface LabelPhoto {
   id: number;
   status: LabelPhotoStatus;
@@ -455,6 +537,7 @@ export interface LabelPhoto {
   suggestion?: LabelSuggestion;
   identifyError?: string;
   identifyModel?: string;
+  labelReading?: LabelReading;
 }
 
 /** OpenRouter settings for the automatic label identification; the key is never returned. */

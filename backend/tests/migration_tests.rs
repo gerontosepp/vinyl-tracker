@@ -103,6 +103,7 @@ async fn test_fresh_database_applies_all_migrations_idempotently() {
     let history = db.sqlx_history().await;
     assert_eq!(executed(&history), all_versions());
     assert!(db.column_exists("record_cache", "median_price").await);
+    assert!(db.column_exists("manual_record_alias", "instance_id").await);
 
     run_migrations(&db.pool)
         .await

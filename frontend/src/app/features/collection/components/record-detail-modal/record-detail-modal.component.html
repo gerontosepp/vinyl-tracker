@@ -35,6 +35,14 @@
             >
               {{ record()?.basic_information?.title }}
             </h2>
+            @if (isManual()) {
+              <span
+                class="inline-block mt-0.5 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+                [appTooltip]="'manual.badgeTooltip' | translate"
+                data-testid="detail-manual-badge"
+                >{{ 'manual.badge' | translate }}</span
+              >
+            }
             <p
               class="text-sm font-medium text-slate-600 dark:text-slate-400 truncate"
             >
@@ -53,7 +61,7 @@
                 (click)="onLogListen()"
                 [disabled]="isLoggingListen() || loading()"
                 class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 active:scale-95 transition-all shadow-sm hover:shadow disabled:opacity-50 cursor-pointer"
-                title="Platte als gehört erfassen"
+                [appTooltip]="'record.logListenTooltip' | translate"
               >
                 @if (isLoggingListen()) {
                   <div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -74,7 +82,7 @@
                   (click)="onPlayOnRoon()"
                   [disabled]="isPlayingOnRoon() || loading()"
                   [class]="'inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/30 hover:bg-purple-100 dark:hover:bg-purple-900/50 border border-purple-200 dark:border-purple-800 active:scale-95 transition-all shadow-xs hover:shadow-sm disabled:opacity-50 cursor-pointer ' + (hasMultipleZones() ? 'rounded-l-xl border-r-0' : 'rounded-xl')"
-                  [title]="selectedZone() ? ('record.playOnRoon' | translate) + ' (' + selectedZone()?.name + ')' : ('record.playOnRoon' | translate)"
+                  [appTooltip]="selectedZone() ? ('record.playOnRoon' | translate) + ' (' + selectedZone()?.name + ')' : ('record.playOnRoon' | translate)"
                 >
                   @if (isPlayingOnRoon()) {
                     <div class="w-3.5 h-3.5 border-2 border-purple-600 dark:border-purple-400 border-t-transparent rounded-full animate-spin"></div>
@@ -97,7 +105,7 @@
                     (click)="toggleZoneDropdown()"
                     [disabled]="isPlayingOnRoon() || loading()"
                     class="inline-flex items-center justify-center px-2 py-1.5 rounded-r-xl text-xs font-semibold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/30 hover:bg-purple-100 dark:hover:bg-purple-900/50 border border-purple-200 dark:border-purple-800 active:scale-95 transition-all shadow-xs hover:shadow-sm disabled:opacity-50 cursor-pointer"
-                    [title]="'record.selectZone' | translate"
+                    [appTooltip]="'record.selectZone' | translate"
                   >
                     <svg
                       lucideChevronDown
@@ -150,7 +158,7 @@
         <button
           (click)="close.emit()"
           class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer shrink-0"
-          title="Schließen"
+          [appTooltip]="'common.close' | translate"
         >
           <svg lucideX [size]="20"></svg>
         </button>
@@ -225,12 +233,12 @@
               <div
                 class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500"
               >
-                Discogs ID
+                {{ isManual() ? ('manual.badge' | translate) : 'Discogs ID' }}
               </div>
               <div
                 class="text-lg font-bold text-slate-800 dark:text-slate-200 mt-0.5"
               >
-                #{{ detail()?.discogs_id }}
+                #{{ isManual() ? -(detail()?.discogs_id ?? 0) : detail()?.discogs_id }}
               </div>
               <div class="text-[11px] text-slate-400">
                 DB ID: {{ detail()?.id }}
@@ -268,6 +276,20 @@
               </h3>
               <app-storage-placement [slot]="slot" [neighbors]="detail()?.storage_neighbors" [title]="false" />
             </div>
+          }
+
+          <!-- Taking over a manual record to Discogs (#243) -->
+          @if (shownTakeover(); as done) {
+            <div class="space-y-2 p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60" data-testid="detail-takeover-done">
+              <p class="text-sm font-semibold text-emerald-800 dark:text-emerald-200">
+                {{ (done.mode === 'merge' ? 'takeover.merged' : 'takeover.success') | translate }}
+              </p>
+              @if (done.placement; as placement) {
+                <app-storage-placement [slot]="placement.slot" [neighbors]="placement.neighbors" [moves]="placement.moves" />
+              }
+            </div>
+          } @else if (isManual() && detail(); as det) {
+            <app-discogs-takeover [detail]="det" (takenOver)="onTakenOver($event)" />
           }
 
           <!-- Condition / Grading Section -->
@@ -659,17 +681,31 @@
         class="p-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between gap-2"
       >
         <div class="flex items-center gap-2 flex-wrap">
-          <a
-            [href]="
-              'https://www.discogs.com/release/' + $safeNavigationMigration(record()?.id)
-            "
-            target="_blank"
-            rel="noopener noreferrer"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors"
-          >
-            <svg lucideExternalLink [size]="14"></svg>
-            Auf Discogs öffnen
-          </a>
+          @if (isManual()) {
+            <button
+              type="button"
+              (click)="onEditManual()"
+              [disabled]="loading() || !detail()"
+              data-testid="detail-edit-manual"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors cursor-pointer disabled:opacity-50"
+            >
+              <svg lucidePencil [size]="14"></svg>
+              {{ 'manual.edit' | translate }}
+            </button>
+          } @else {
+            <a
+              [href]="
+                'https://www.discogs.com/release/' + $safeNavigationMigration(record()?.id)
+              "
+              target="_blank"
+              rel="noopener noreferrer"
+              data-testid="detail-discogs-link"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors"
+            >
+              <svg lucideExternalLink [size]="14"></svg>
+              Auf Discogs öffnen
+            </a>
+          }
 
           <button
             type="button"
@@ -677,7 +713,7 @@
             (click)="promptDelete()"
             [disabled]="isRemoving() || loading()"
             class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-transparent hover:border-rose-200 dark:hover:border-rose-900/50 transition-colors cursor-pointer disabled:opacity-50"
-            [title]="'collection.removeFromCollection' | translate"
+            [appTooltip]="'collection.removeFromCollection' | translate"
           >
             <svg lucideTrash2 [size]="14"></svg>
             <span>{{ 'collection.removeFromCollection' | translate }}</span>

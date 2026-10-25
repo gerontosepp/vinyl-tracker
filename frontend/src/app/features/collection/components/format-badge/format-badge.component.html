@@ -4,7 +4,7 @@
       @case ('double_lp') {
         <div
           class="inline-flex items-center justify-center cursor-help py-1 px-1.5 rounded-lg bg-slate-100/80 dark:bg-slate-700/50 hover:bg-slate-200/70 dark:hover:bg-slate-700 transition-colors"
-          [title]="'collection.formatDoubleLp' | translate"
+          [appTooltip]="'collection.formatDoubleLp' | translate"
         >
           <div class="relative flex items-center">
             <svg
@@ -23,7 +23,7 @@
       @case ('double_cd') {
         <div
           class="inline-flex items-center justify-center cursor-help py-1 px-1.5 rounded-lg bg-cyan-50 dark:bg-cyan-950/40 hover:bg-cyan-100/70 dark:hover:bg-cyan-900/50 transition-colors"
-          [title]="'collection.formatDoubleCd' | translate"
+          [appTooltip]="'collection.formatDoubleCd' | translate"
         >
           <div class="relative flex items-center">
             <svg
@@ -42,7 +42,7 @@
       @case ('cd') {
         <div
           class="inline-flex items-center justify-center cursor-help py-1 px-1.5 rounded-lg bg-cyan-50 dark:bg-cyan-950/40 hover:bg-cyan-100/70 dark:hover:bg-cyan-900/50 transition-colors"
-          [title]="'collection.formatCd' | translate"
+          [appTooltip]="'collection.formatCd' | translate"
         >
           <svg
             lucideDiscAlbum
@@ -54,7 +54,7 @@
       @default {
         <div
           class="inline-flex items-center justify-center cursor-help py-1 px-1.5 rounded-lg bg-slate-100/80 dark:bg-slate-700/50 hover:bg-slate-200/70 dark:hover:bg-slate-700 transition-colors"
-          [title]="'collection.formatLp' | translate"
+          [appTooltip]="'collection.formatLp' | translate"
         >
           <svg
             lucideDisc
@@ -95,7 +95,7 @@
       @case ('double_lp') {
         <span
           class="inline-flex items-center gap-0.5 text-[10px] font-bold text-slate-600 dark:text-slate-300 cursor-help"
-          [title]="'collection.formatDoubleLp' | translate"
+          [appTooltip]="'collection.formatDoubleLp' | translate"
         >
           <svg lucideDisc class="text-slate-400" [size]="12"></svg>
           <svg lucideDisc class="text-slate-700 dark:text-slate-200 -ml-1.5" [size]="12"></svg>
@@ -105,7 +105,7 @@
       @case ('double_cd') {
         <span
           class="inline-flex items-center gap-0.5 text-[10px] font-bold text-cyan-700 dark:text-cyan-300 cursor-help"
-          [title]="'collection.formatDoubleCd' | translate"
+          [appTooltip]="'collection.formatDoubleCd' | translate"
         >
           <svg lucideDiscAlbum class="text-cyan-400" [size]="12"></svg>
           <svg lucideDiscAlbum class="text-cyan-600 dark:text-cyan-300 -ml-1.5" [size]="12"></svg>
@@ -115,7 +115,7 @@
       @case ('cd') {
         <span
           class="inline-flex items-center gap-0.5 text-[10px] font-bold text-cyan-600 dark:text-cyan-400 cursor-help"
-          [title]="'collection.formatCd' | translate"
+          [appTooltip]="'collection.formatCd' | translate"
         >
           <svg lucideDiscAlbum [size]="12"></svg>
           <span>CD</span>
@@ -124,7 +124,7 @@
       @default {
         <span
           class="inline-flex items-center gap-0.5 text-[10px] font-bold text-slate-600 dark:text-slate-300 cursor-help"
-          [title]="'collection.formatLp' | translate"
+          [appTooltip]="'collection.formatLp' | translate"
         >
           <svg lucideDisc [size]="12"></svg>
           <span>LP</span>

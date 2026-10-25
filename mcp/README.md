@@ -48,6 +48,9 @@ Der Server implementiert **Option 1 (REST-Client)**: Er kommuniziert direkt übe
 | `get_storage_layout` | Regal-Übersicht je Medium mit Füllstand und Künstlerbereich pro Fach | *keine* |
 | `get_label_inbox` | Offene Label-Fotos aus der App als Bilder (älteste zuerst) samt IDs | `limit` (int, optional, Standard: 5, max. 10) |
 | `resolve_label_photo` | Schließt ein Label-Foto ab (`identified` mit Discogs-Release-ID, `failed` oder zurück auf `pending`) | `id` (int), `status` (str), `discogs_id` (int, optional) |
+| `create_manual_record` | Legt eine Platte ohne Discogs-Eintrag manuell an (negative ID) und liefert den Regalplatz; ohne Cover | `artist`, `title`, `format` (`LP`, `Double LP`, `CD`, `Double CD`), optional `year`, `label`, `catno`, `country`, `barcode`, `genres`, `media_condition`, `sleeve_condition`, `notes`, `value` |
+| `check_manual_record` | Sucht den Discogs-Release einer manuellen Platte (Barcode, Katalognummer + Label, Künstler + Titel); markiert bereits vorhandene Exemplare, ändert nichts | `id` (int, negativ) |
+| `take_over_manual_record` | Macht eine manuelle Platte nach **Bestätigung des Nutzers** zur Discogs-Platte – als neues Exemplar oder zusammengeführt mit einem vorhandenen; Hör-Historie und Regalplatz bleiben, alte QR-Etiketten funktionieren weiter | `id` (int), `release_id` (int), `mode` (`new_copy` oder `merge`, optional), `target_instance_id` (int, optional) |
 
 ---
 
@@ -78,8 +81,9 @@ Der Server implementiert **Option 1 (REST-Client)**: Er kommuniziert direkt übe
 Ab jedem Release stehen vorkompilierte Archive direkt unter **GitHub Releases** bereit:
 * **Linux (x86_64):** `vinyl-mcp-server-linux-x86_64.tar.gz` (ideal für Proxmox, Ubuntu, Debian)
 * **macOS (Apple Silicon):** `vinyl-mcp-server-macos-aarch64.tar.gz` (für M1/M2/M3/M4 Macs)
+* **Windows (x86_64):** `vinyl-mcp-server-windows-x86_64.zip` (enthält `vinyl-mcp-server.exe`)
 
-Einfach entpacken und den Pfad in deiner `mcp_config.json` eintragen.
+Einfach entpacken und den Pfad in deiner `mcp_config.json` eintragen. Auf macOS beim Aktualisieren die alte Datei erst löschen und dann die neue kopieren (`rm` + `cp`), sonst beendet macOS den Prozess beim Start.
 
 ### Option B: Aus dem Quellcode bauen
 #### Voraussetzungen
@@ -143,7 +147,7 @@ Füge den Server in deine globale oder Workspace-spezifische MCP-Konfiguration e
 ```
 
 ### 2. Claude Desktop
-Bearbeite die Datei `~/Library/Application Support/Claude/claude_desktop_config.json`:
+Bearbeite die Datei `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) bzw. `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
 
 ```json
 {
@@ -159,6 +163,8 @@ Bearbeite die Datei `~/Library/Application Support/Claude/claude_desktop_config.
   }
 }
 ```
+
+Unter Windows zeigt `command` auf die `.exe`; Backslashes im JSON doppelt schreiben, z. B. `"command": "C:\\Tools\\vinyl-mcp-server.exe"`.
 
 ### 3. Cursor / VS Code (Cline / Roo-Code)
 In den MCP-Einstellungen der jeweiligen Erweiterung hinzufügen:

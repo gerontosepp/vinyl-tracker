@@ -7,6 +7,7 @@ import {
   LucideDisc,
   LucideUser,
   LucideScanLine,
+  LucideCircleQuestionMark,
 } from '@lucide/angular';
 
 @Component({
@@ -20,6 +21,7 @@ import {
     LucideDisc,
     LucideUser,
     LucideScanLine,
+    LucideCircleQuestionMark,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   template: `
@@ -93,6 +95,24 @@ import {
           <svg lucideScanLine [size]="26" [strokeWidth]="scannerService.showScanner() ? 2.5 : 2"></svg>
           <span class="mt-1.5 text-xs tracking-wide">{{ 'nav.scan' | translate }}</span>
         </button>
+
+        <!-- Help -->
+        <a
+          routerLink="/help"
+          (click)="scannerService.closeScanner()"
+          routerLinkActive
+          #rlaHelp="routerLinkActive"
+          data-testid="nav-help"
+          [class]="
+            'mt-auto flex flex-col items-center justify-center py-4 px-2 w-[calc(100%-1rem)] rounded-2xl mx-2 transition-all duration-200 cursor-pointer ' +
+            (rlaHelp.isActive
+              ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/20 shadow-sm font-bold'
+              : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 font-medium')
+          "
+        >
+          <svg lucideCircleQuestionMark [size]="26" [strokeWidth]="rlaHelp.isActive ? 2.5 : 2"></svg>
+          <span class="mt-1.5 text-xs tracking-wide">{{ 'nav.help' | translate }}</span>
+        </a>
       </nav>
     </aside>
   `,

@@ -9,7 +9,7 @@ import { LanguageService } from '../../../../core/services/language.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { NO_ERRORS_SCHEMA, signal } from '@angular/core';
 import { of, throwError } from 'rxjs';
-import { RecordDetailDto } from '../../../../core/types';
+import { RecordDetailDto, TakeoverResult } from '../../../../core/types';
 
 describe('RecordDetailModalComponent', () => {
   let component: RecordDetailModalComponent;
@@ -447,6 +447,69 @@ describe('RecordDetailModalComponent', () => {
       component.close.subscribe(closed);
       pressEscape();
       expect(closed).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('manual records', () => {
+    const q = (testId: string): HTMLElement | null => fixture.nativeElement.querySelector(`[data-testid="${testId}"]`);
+
+    function show(source: 'manual' | 'discogs'): void {
+      TestBed.inject(LanguageService).setLanguage('de');
+      fixture.componentRef.setInput('record', { id: -3, source, basic_information: { id: -3, title: 'Posen', artists: [] } } as any);
+      fixture.componentRef.setInput('detail', { ...mockDetail, discogs_id: -3, source });
+      fixture.detectChanges();
+    }
+
+    it('marks a manual record, shows its local number and offers editing instead of Discogs', () => {
+      show('manual');
+      expect(q('detail-manual-badge')?.textContent).toContain('Manuell');
+      expect(fixture.nativeElement.textContent).toContain('#3');
+      expect(q('detail-discogs-link')).toBeNull();
+
+      const edited: RecordDetailDto[] = [];
+      component.editManual.subscribe((d) => edited.push(d));
+      (q('detail-edit-manual') as HTMLButtonElement).click();
+      expect(edited[0].discogs_id).toBe(-3);
+    });
+
+    it('links Discogs releases to Discogs and offers no editing', () => {
+      show('discogs');
+      expect(q('detail-manual-badge')).toBeNull();
+      expect(q('detail-edit-manual')).toBeNull();
+      expect(q('detail-discogs-link')).not.toBeNull();
+      expect(q('discogs-takeover')).toBeNull();
+    });
+
+    it('offers the Discogs check only for manual records', () => {
+      show('manual');
+      expect(q('discogs-takeover')).not.toBeNull();
+      expect(q('detail-takeover-done')).toBeNull();
+    });
+
+    it('shows the result of a takeover with its shelf placement and passes it on', () => {
+      show('manual');
+      const emitted: TakeoverResult[] = [];
+      component.takenOver.subscribe((r) => emitted.push(r));
+      const record = { ...mockDetail, discogs_id: 1001, source: 'discogs' as const };
+      const result: TakeoverResult = {
+        record,
+        instanceId: 555,
+        mode: 'new_copy',
+        placement: { discogsId: 1001, slot: { unitName: 'Kallax', compartment: 2 } as any, neighbors: {} as any, moves: [] },
+      };
+
+      component.onTakenOver(result);
+      fixture.componentRef.setInput('detail', record);
+      fixture.detectChanges();
+
+      expect(emitted).toEqual([result]);
+      expect(q('detail-takeover-done')?.textContent).toContain('jetzt eine Discogs-Platte');
+      expect(q('discogs-takeover')).toBeNull();
+
+      // Another record does not show the result
+      fixture.componentRef.setInput('detail', { ...mockDetail, discogs_id: 7 });
+      fixture.detectChanges();
+      expect(q('detail-takeover-done')).toBeNull();
     });
   });
 });

@@ -1,6 +1,9 @@
 use crate::{
     error::AppError,
-    models::{collection::CollectionRelease, storage::StorageBackup},
+    models::{
+        collection::{CollectionRelease, ManualAliasBackup, ManualBackup},
+        storage::StorageBackup,
+    },
     services::image_proxy::ImageProxyService,
 };
 use chrono::Utc;
@@ -13,8 +16,9 @@ use serde::Serialize;
 use std::collections::HashMap;
 
 /// Version of the JSON backup format; 2 added `listen_history` per release, 3 the storage
-/// configuration (`storage`).
-pub const BACKUP_FORMAT_VERSION: u32 = 3;
+/// configuration (`storage`), 4 manual records (`manual` per release), 5 the old IDs of manual
+/// records taken over to Discogs (`manual_aliases`).
+pub const BACKUP_FORMAT_VERSION: u32 = 5;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct CollectionBackupDto<'a> {
@@ -26,6 +30,8 @@ pub struct CollectionBackupDto<'a> {
     pub releases: Vec<BackupReleaseDto<'a>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub storage: Option<&'a StorageBackup>,
+    #[serde(skip_serializing_if = "<[_]>::is_empty")]
+    pub manual_aliases: &'a [ManualAliasBackup],
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -33,6 +39,8 @@ pub struct BackupReleaseDto<'a> {
     #[serde(flatten)]
     pub release: &'a CollectionRelease,
     pub listen_history: &'a [String],
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub manual: Option<&'a ManualBackup>,
 }
 
 pub struct ExportService;
@@ -110,11 +118,14 @@ impl ExportService {
     }
 
     /// Generates a structured JSON backup of the user collection.
-    /// `listen_history` maps a Discogs release ID to its listen timestamps (RFC 3339, ascending).
+    /// `listen_history` maps a Discogs release ID to its listen timestamps (RFC 3339, ascending),
+    /// `manual` the (negative) ID of a manual record to its data.
     pub fn export_collection_json(
         username: &str,
         releases: &[CollectionRelease],
         listen_history: &HashMap<i64, Vec<String>>,
+        manual: &HashMap<i64, ManualBackup>,
+        manual_aliases: &[ManualAliasBackup],
         storage: Option<&StorageBackup>,
     ) -> Result<Vec<u8>, AppError> {
         let total_value: f64 = releases
@@ -141,20 +152,24 @@ impl ExportService {
                         .get(&release.id)
                         .map(Vec::as_slice)
                         .unwrap_or_default(),
+                    manual: manual.get(&release.id),
                 })
                 .collect(),
             storage,
+            manual_aliases,
         };
 
         serde_json::to_vec_pretty(&backup)
             .map_err(|e| AppError::Internal(format!("Failed to serialize JSON backup: {e}")))
     }
 
-    /// Generates a printable PDF Catalog & Insurance valuation document via `printpdf`
+    /// Generates a printable PDF Catalog & Insurance valuation document via `printpdf`.
+    /// `local_covers` holds the covers of manual records by their ID; they are not fetched.
     pub async fn export_collection_pdf(
         username: &str,
         releases: &[CollectionRelease],
         image_proxy: Option<&ImageProxyService>,
+        local_covers: &HashMap<i64, Vec<u8>>,
     ) -> Result<Vec<u8>, AppError> {
         let mut doc = PdfDocument::new("Vinyl Tracker Collection Catalog");
         let now = Utc::now();
@@ -233,10 +248,17 @@ impl ExportService {
                 let cover_size = 30.0;
 
                 let mut image_placed = false;
-                if let Some(raw_img) = match rel.basic_information.thumb_url.as_deref() {
-                    Some(thumb_url) => Self::fetch_and_prepare_image(thumb_url, image_proxy).await,
-                    None => None,
-                } {
+                let raw_img = match (
+                    local_covers.get(&rel.id),
+                    rel.basic_information.thumb_url.as_deref(),
+                ) {
+                    (Some(bytes), _) => Self::prepare_image(bytes),
+                    (None, Some(thumb_url)) => {
+                        Self::fetch_and_prepare_image(thumb_url, image_proxy).await
+                    }
+                    (None, None) => None,
+                };
+                if let Some(raw_img) = raw_img {
                     let img_w = raw_img.width;
                     let image_id = doc.add_image(&raw_img);
 
@@ -301,8 +323,11 @@ impl ExportService {
                 .ok()?
                 .ok()?;
 
-        let bytes = fetch_res.1;
-        let dyn_img = image::load_from_memory(&bytes).ok()?;
+        Self::prepare_image(&fetch_res.1)
+    }
+
+    fn prepare_image(bytes: &[u8]) -> Option<RawImage> {
+        let dyn_img = image::load_from_memory(bytes).ok()?;
         let resized = dyn_img.thumbnail(120, 120);
         let rgb = resized.to_rgb8();
         let (w, h) = rgb.dimensions();
@@ -970,6 +995,7 @@ mod tests {
             notes: None,
             sort_key: None,
             storage: None,
+            source: Default::default(),
             basic_information: BasicInformation {
                 id,
                 title: title.to_string(),
@@ -1022,14 +1048,33 @@ mod tests {
             ],
         )]);
 
-        let json_bytes =
-            ExportService::export_collection_json("testuser", &releases, &history, None)
-                .expect("JSON generation");
+        let manual = HashMap::from([(
+            11,
+            ManualBackup {
+                manual_uid: "6f1c2b0e-8a8e-4c55-9d43-1f5d2a7e9b10".to_string(),
+                catno: Some("SB 001".to_string()),
+                ..Default::default()
+            },
+        )]);
+
+        let json_bytes = ExportService::export_collection_json(
+            "testuser",
+            &releases,
+            &history,
+            &manual,
+            &[],
+            None,
+        )
+        .expect("JSON generation");
         let json_val: serde_json::Value =
             serde_json::from_slice(&json_bytes).expect("Valid JSON output");
 
-        assert_eq!(json_val["format_version"], 3);
+        assert_eq!(json_val["format_version"], 5);
         assert!(json_val.get("storage").is_none(), "no storage configured");
+        assert!(
+            json_val.get("manual_aliases").is_none(),
+            "no manual record taken over"
+        );
         assert_eq!(json_val["username"], "testuser");
         assert_eq!(json_val["total_records"], 2);
         assert_eq!(json_val["total_estimated_value"], 60.50);
@@ -1044,6 +1089,12 @@ mod tests {
             serde_json::json!(["2026-04-01T20:00:00.000000Z", "2026-04-12T15:30:00.123456Z"])
         );
         assert_eq!(exported[1]["listen_history"], serde_json::json!([]));
+        // Only manual records carry their own data
+        assert!(exported[0].get("manual").is_none());
+        assert_eq!(
+            exported[1]["manual"],
+            serde_json::json!({ "manualUid": "6f1c2b0e-8a8e-4c55-9d43-1f5d2a7e9b10", "catno": "SB 001" })
+        );
     }
 
     #[tokio::test]
@@ -1054,9 +1105,10 @@ mod tests {
             sample_release(103, "Queen", "A Night at the Opera", Some(35.00)),
         ];
 
-        let pdf_bytes = ExportService::export_collection_pdf("vinylegendlp", &releases, None)
-            .await
-            .expect("PDF generation");
+        let pdf_bytes =
+            ExportService::export_collection_pdf("vinylegendlp", &releases, None, &HashMap::new())
+                .await
+                .expect("PDF generation");
 
         assert!(!pdf_bytes.is_empty());
         assert_eq!(&pdf_bytes[0..4], b"%PDF");
@@ -1098,9 +1150,10 @@ mod tests {
             })
             .collect();
 
-        let pdf_bytes = ExportService::export_collection_pdf("user12", &releases, None)
-            .await
-            .expect("PDF generation");
+        let pdf_bytes =
+            ExportService::export_collection_pdf("user12", &releases, None, &HashMap::new())
+                .await
+                .expect("PDF generation");
 
         let doc = lopdf::Document::load_mem(&pdf_bytes).expect("Valid PDF");
         let pages = doc.get_pages();

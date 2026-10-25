@@ -15,8 +15,10 @@ import { RoonStatus } from '../../core/types';
 import { LucideDownload, LucideLogOut, LucideSettings, LucideHistory, LucideUpload, LucidePrinter } from '@lucide/angular';
 import { PrintDialogComponent } from '../../shared/components/print-dialog/print-dialog.component';
 import { ReleaseNotesComponent } from './components/release-notes/release-notes.component';
+import { TooltipDirective } from '../../shared/directives/tooltip.directive';
 import { OpenRouterSettingsComponent } from './components/openrouter-settings/openrouter-settings.component';
 import { APP_VERSION } from '../../core/constants/release-info.data';
+import { HelpLinkComponent } from '../../shared/components/help-link/help-link.component';
 
 interface PendingRestore {
   fileName: string;
@@ -28,6 +30,7 @@ interface PendingRestore {
   selector: 'app-settings',
   standalone: true,
   imports: [
+    HelpLinkComponent,
     FormsModule,
     LayoutComponent,
     TranslatePipe,
@@ -40,6 +43,7 @@ interface PendingRestore {
     PrintDialogComponent,
     ReleaseNotesComponent,
     OpenRouterSettingsComponent,
+    TooltipDirective,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   template: `
@@ -47,8 +51,9 @@ interface PendingRestore {
       <div class="max-w-6xl mx-auto space-y-6">
         <!-- HEADER & TAB NAVIGATION -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2 px-2">
-          <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+          <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-1">
             {{ 'settings.title' | translate }}
+            <app-help-link anchor="einstellungen" />
           </h1>
 
           <!-- Segmented Tab Navigation -->
@@ -288,7 +293,7 @@ interface PendingRestore {
                       {{ 'settings.roonPaired' | translate }}
                     </span>
                   } @else if (roonStatus()?.connected) {
-                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300" title="{{ 'settings.roonUnpaired' | translate }}">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300" [appTooltip]="'settings.roonUnpaired' | translate">
                       ⚠️ Autorisierung nötig
                     </span>
                   }

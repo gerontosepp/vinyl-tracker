@@ -8,6 +8,7 @@ import { ScannerService } from '../../../core/services/scanner.service';
 import { of, throwError } from 'rxjs';
 import { signal } from '@angular/core';
 import { User, ScanResult, SyncResult } from '../../../core/types';
+import { provideRouter } from '@angular/router';
 
 describe('BarcodeScannerComponent', () => {
   afterEach(() => {
@@ -48,6 +49,7 @@ describe('BarcodeScannerComponent', () => {
     await TestBed.configureTestingModule({
       imports: [BarcodeScannerComponent],
       providers: [
+        provideRouter([]),
         { provide: ApiService, useValue: apiServiceMock },
         { provide: ToastService, useValue: toastServiceMock },
         { provide: AuthService, useValue: authServiceMock },
@@ -217,5 +219,20 @@ describe('BarcodeScannerComponent', () => {
 
     expect(component.executeBarcodeScan).toHaveBeenCalledWith('075678645624');
     expect(component.isScanning()).toBe(false);
+  });
+
+  it('offers a manual record with the scanned barcode when nothing was found', async () => {
+    apiServiceMock.scanBarcode.mockReturnValue(of({ success: false, message: 'Release not found in collection or invalid barcode.' }));
+    await component.executeBarcodeScan('4006381333931');
+    fixture.detectChanges();
+
+    (fixture.nativeElement.querySelector('[data-testid="scanner-add-manual"]') as HTMLButtonElement).click();
+    expect(component.manualPrefill()).toEqual({ barcode: '4006381333931' });
+
+    // A title search is no barcode
+    component.manualPrefill.set(null);
+    await component.executeBarcodeScan('Die Sterne Posen');
+    component.openManualForm();
+    expect(component.manualPrefill()).toEqual({ barcode: null });
   });
 });

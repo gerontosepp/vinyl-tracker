@@ -9,10 +9,23 @@ use crate::{
     services::crypto_service::CryptoService,
 };
 use chrono::Utc;
-use sqlx::{PgPool, Row};
+use sqlx::{PgPool, Row, postgres::PgRow};
 use std::sync::Arc;
 
 pub struct ScanService;
+
+/// The scanned barcode plus its UPC-A / EAN-13 twin (leading zero added or removed).
+pub fn barcode_variants(barcode: &str) -> Vec<String> {
+    let mut variants = vec![barcode.to_string()];
+    if barcode.len() == 12 {
+        variants.push(format!("0{barcode}"));
+    } else if barcode.len() == 13
+        && let Some(upc) = barcode.strip_prefix('0')
+    {
+        variants.push(upc.to_string());
+    }
+    variants
+}
 
 impl ScanService {
     pub async fn process_scan(
@@ -47,58 +60,76 @@ impl ScanService {
                 .map(|(_, id)| id)
                 .unwrap_or(&clean_barcode);
 
+            // On a German keyboard layout, HID scanners type the '-' of manual records as 'ß'
             let release_id = id_str
                 .trim()
+                .replace('ß', "-")
                 .parse::<i64>()
                 .map_err(|_| AppError::BadRequest("Invalid custom barcode format".to_string()))?;
 
-            if let Some(ref token) = dec_token {
+            // Negative IDs are manual records, which exist only locally
+            if let Some(ref token) = dec_token
+                && release_id > 0
+            {
                 matched_release = discogs_client.get_release(release_id, token).await.ok();
             }
 
             // Fallback to local DB if Discogs API call failed or no token
             if matched_release.is_none() {
                 let local_rec = sqlx::query(
-                    "SELECT id, discogs_id, title, artist, release_year, thumb_url, format
-                     FROM record_cache
-                     WHERE discogs_id = $1 OR id = $1
+                    "SELECT id, discogs_id, title, artist, thumb_url
+                     FROM record_cache rc
+                     WHERE (discogs_id = $1 OR id = $1) AND (rc.source = 'discogs' OR rc.owner_id = $2)
                      LIMIT 1",
                 )
                 .bind(release_id)
+                .bind(user.id)
                 .fetch_optional(pool)
                 .await
                 .map_err(AppError::Database)?;
 
                 if let Some(row) = local_rec {
-                    let rec_id: i64 = row.get("id");
-                    let discogs_id: i64 = row.get("discogs_id");
-                    let title: String = row.get("title");
-                    let artist: Option<String> = row.get("artist");
-                    let thumb_url: Option<String> = row.get("thumb_url");
+                    return Self::log_local(pool, user.id, &row).await;
+                }
 
-                    // Insert listen_event
-                    let now = Utc::now().naive_utc();
-                    let _ = sqlx::query("INSERT INTO listen_event (user_id, record_id, timestamp) VALUES ($1, $2, $3)")
-                        .bind(user.id)
-                        .bind(rec_id)
-                        .bind(now)
-                        .execute(pool)
-                        .await;
-
-                    return Ok(ScanResultDto {
-                        success: true,
-                        message: format!("Now playing: {title}"),
-                        record: Some(TrackedRecordDto {
-                            discogs_id,
-                            title: title.clone(),
-                            artist: artist.unwrap_or_else(|| "Unknown".to_string()),
-                            thumb_url,
-                        }),
-                        discogs_matches: None,
-                    });
+                // A manual record taken over to Discogs keeps resolving via its old ID (#243)
+                if release_id < 0 {
+                    let alias_rec = sqlx::query(
+                        "SELECT rc.id, rc.discogs_id, rc.title, rc.artist, rc.thumb_url
+                         FROM manual_record_alias a
+                         JOIN collection_item ci
+                           ON ci.user_id = a.user_id AND ci.instance_id = a.instance_id
+                         JOIN record_cache rc ON rc.id = ci.record_id
+                         WHERE a.user_id = $1 AND a.old_id = $2",
+                    )
+                    .bind(user.id)
+                    .bind(release_id)
+                    .fetch_optional(pool)
+                    .await
+                    .map_err(AppError::Database)?;
+                    if let Some(row) = alias_rec {
+                        return Self::log_local(pool, user.id, &row).await;
+                    }
                 }
             }
         } else {
+            // Manual records of the user carry their own barcode and are found without Discogs
+            let local_rec = sqlx::query(
+                "SELECT rc.id, rc.discogs_id, rc.title, rc.artist, rc.thumb_url
+                 FROM record_cache rc
+                 JOIN collection_item ci ON ci.record_id = rc.id
+                 WHERE ci.user_id = $1 AND rc.source = 'manual' AND rc.barcode = ANY($2)
+                 LIMIT 1",
+            )
+            .bind(user.id)
+            .bind(barcode_variants(&clean_barcode))
+            .fetch_optional(pool)
+            .await
+            .map_err(AppError::Database)?;
+            if let Some(row) = local_rec {
+                return Self::log_local(pool, user.id, &row).await;
+            }
+
             // Standard Barcode Lookup via Discogs API
             let token = dec_token.as_deref().ok_or_else(|| {
                 AppError::BadRequest(
@@ -293,6 +324,36 @@ impl ScanService {
         })
     }
 
+    /// Logs a listen for a record found locally (QR fallback, manual record barcode).
+    async fn log_local(
+        pool: &PgPool,
+        user_id: i64,
+        row: &PgRow,
+    ) -> Result<ScanResultDto, AppError> {
+        let title: String = row.get("title");
+        sqlx::query("INSERT INTO listen_event (user_id, record_id, timestamp) VALUES ($1, $2, $3)")
+            .bind(user_id)
+            .bind(row.get::<i64, _>("id"))
+            .bind(Utc::now().naive_utc())
+            .execute(pool)
+            .await
+            .map_err(AppError::Database)?;
+
+        Ok(ScanResultDto {
+            success: true,
+            message: format!("Now playing: {title}"),
+            record: Some(TrackedRecordDto {
+                discogs_id: row.get("discogs_id"),
+                title,
+                artist: row
+                    .get::<Option<String>, _>("artist")
+                    .unwrap_or_else(|| "Unknown".to_string()),
+                thumb_url: row.get("thumb_url"),
+            }),
+            discogs_matches: None,
+        })
+    }
+
     pub async fn delete_scan(pool: &PgPool, user_id: i64, event_id: i64) -> Result<(), AppError> {
         let res = sqlx::query("DELETE FROM listen_event WHERE id = $1 AND user_id = $2")
             .bind(event_id)
@@ -323,5 +384,24 @@ impl ScanService {
             message: "All listens have been reset".to_string(),
             deleted_count: res.rows_affected() as i64,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn barcode_variants_add_the_upc_ean_twin() {
+        assert_eq!(
+            barcode_variants("075678164125"),
+            ["075678164125", "0075678164125"]
+        );
+        assert_eq!(
+            barcode_variants("0075678164125"),
+            ["0075678164125", "075678164125"]
+        );
+        assert_eq!(barcode_variants("4006381333931"), ["4006381333931"]);
+        assert_eq!(barcode_variants("ABC"), ["ABC"]);
     }
 }

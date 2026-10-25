@@ -1,6 +1,33 @@
 use crate::discogs::{DiscogsFormat, DiscogsIdentifier, DiscogsLabel, DiscogsTrack};
-use crate::storage::{StorageNeighborsDto, StorageSlotDto};
+use crate::storage::{StorageNeighborsDto, StoragePlacementDto, StorageSlotDto};
 use serde::{Deserialize, Serialize};
+
+/// Where a record comes from: a Discogs release, or a manual record without a Discogs entry
+/// (#242). Manual records have negative IDs (`discogs_id = instance_id = -n`).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum RecordSource {
+    #[default]
+    Discogs,
+    Manual,
+}
+
+impl RecordSource {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            RecordSource::Discogs => "discogs",
+            RecordSource::Manual => "manual",
+        }
+    }
+
+    pub fn parse(value: &str) -> Option<Self> {
+        match value {
+            "discogs" => Some(RecordSource::Discogs),
+            "manual" => Some(RecordSource::Manual),
+            _ => None,
+        }
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RecordDetailDto {
@@ -54,6 +81,11 @@ pub struct RecordDetailDto {
     pub storage: Option<StorageSlotDto>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub storage_neighbors: Option<StorageNeighborsDto>,
+    #[serde(default)]
+    pub source: RecordSource,
+    /// Barcode of a manual record (Discogs releases list theirs in `identifiers`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub barcode: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -69,4 +101,107 @@ pub struct UpdateConditionRequestDto {
 pub struct UpdateSortKeyRequestDto {
     #[serde(default, alias = "sortKey")]
     pub sort_key: Option<String>,
+}
+
+/// Creates or updates a manual record (#242). Artist, title and format are required; `value`
+/// is the user's own estimate and counts towards the collection value.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ManualRecordRequest {
+    pub artist: String,
+    pub title: String,
+    pub format: String,
+    #[serde(default)]
+    pub year: Option<String>,
+    #[serde(default)]
+    pub label: Option<String>,
+    #[serde(default)]
+    pub catno: Option<String>,
+    #[serde(default)]
+    pub country: Option<String>,
+    #[serde(default)]
+    pub barcode: Option<String>,
+    #[serde(default)]
+    pub genres: Vec<String>,
+    #[serde(default)]
+    pub media_condition: Option<String>,
+    #[serde(default)]
+    pub sleeve_condition: Option<String>,
+    #[serde(default)]
+    pub notes: Option<String>,
+    #[serde(default)]
+    pub value: Option<f64>,
+    /// Label photo the record was read from: it becomes the cover and is completed.
+    #[serde(default)]
+    pub label_photo_id: Option<i64>,
+}
+
+/// A newly created manual record and its shelf placement (when shelves exist for its medium).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ManualRecordCreatedDto {
+    pub record: RecordDetailDto,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub placement: Option<StoragePlacementDto>,
+}
+
+/// Which search of "Check on Discogs" found a candidate for a manual record (#243).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CandidateMatch {
+    Barcode,
+    Catno,
+    ArtistTitle,
+}
+
+/// A Discogs release that may be the release of a manual record. `in_collection` lists the
+/// instance IDs of Discogs copies of it the user already owns.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DiscogsCandidateDto {
+    pub discogs_id: i64,
+    pub artist: Option<String>,
+    pub title: String,
+    pub year: Option<String>,
+    pub country: Option<String>,
+    pub label: Option<String>,
+    pub catno: Option<String>,
+    pub format: Option<String>,
+    pub thumb_url: Option<String>,
+    pub matched_by: CandidateMatch,
+    #[serde(default)]
+    pub in_collection: Vec<i64>,
+}
+
+/// How a manual record becomes a Discogs record: as a new Discogs copy, or merged into a
+/// Discogs copy the user already owns (listens move over, the manual record is deleted).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "snake_case")]
+pub enum TakeoverMode {
+    #[default]
+    NewCopy,
+    Merge,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TakeoverRequest {
+    pub release_id: i64,
+    #[serde(default)]
+    pub mode: TakeoverMode,
+    /// Copy to merge into; may be omitted when the user owns exactly one copy of the release.
+    #[serde(default)]
+    pub target_instance_id: Option<i64>,
+}
+
+/// The record after the takeover, the copy it now is and its shelf placement.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TakeoverResultDto {
+    pub record: RecordDetailDto,
+    pub instance_id: i64,
+    pub mode: TakeoverMode,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub placement: Option<StoragePlacementDto>,
 }

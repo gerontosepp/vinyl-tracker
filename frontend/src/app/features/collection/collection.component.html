@@ -23,6 +23,7 @@
         </button>
       }
     </div>
+    <app-help-link [anchor]="view() === 'shelves' ? 'regale' : 'sammlung'" />
   </ng-template>
 
   <div
@@ -61,6 +62,7 @@
       [years]="years()"
       [storageShelves]="storageShelves()"
       [storageFilter]="storageFilter()"
+      [source]="source()"
       (searchChange)="onSearchChange($event)"
       (clearSearch)="clearSearch()"
       (sortChange)="onSortChange($event)"
@@ -80,6 +82,8 @@
       (yearsChange)="onYearsChange($event)"
       (storageFilterChange)="onStorageFilterChange($event)"
       (clearAllFilters)="clearAllFilters()"
+      (sourceChange)="onSourceChange($event)"
+      (addManual)="manualForm.set({ record: null })"
     >
       <ng-container viewSwitch [ngTemplateOutlet]="viewSwitch" />
     </app-collection-toolbar>
@@ -165,7 +169,13 @@
     (conditionUpdated)="onConditionUpdated($event)"
     (sortKeyUpdated)="onSortKeyUpdated($event)"
     (recordRemoved)="onRecordRemoved($event)"
+    (editManual)="manualForm.set({ record: $event })"
+    (takenOver)="onTakenOver($event)"
   />
+
+  @if (manualForm(); as form) {
+    <app-manual-record-form [record]="form.record" (saved)="onManualSaved($event)" (closed)="manualForm.set(null)" />
+  }
 
   @if (showPrintDialog()) {
     <app-print-dialog

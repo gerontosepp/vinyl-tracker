@@ -139,6 +139,65 @@ describe('CollectionComponent', () => {
       );
     });
 
+    it('filters list and print scope by source and resets it with all filters', () => {
+      mockAuthService.user = signal({ id: 1 });
+      component.onSourceChange('manual');
+      expect(mockApiService.getCollection).toHaveBeenLastCalledWith(
+        1, component.perPage(), 0, 'artist', 'asc', '', 'all', [], '', undefined, false, { source: 'manual' }
+      );
+      expect(component.printFilter().source).toBe('manual');
+
+      component.clearAllFilters();
+      expect(component.source()).toBe('');
+      expect(component.printFilter().source).toBeUndefined();
+    });
+
+    it('reloads the list and updates the open record after a manual record was saved', () => {
+      mockAuthService.user = signal({ id: 1 });
+      component.selectedRecord.set({ id: -3, basic_information: { id: -3, title: 'Alt', artists: [] } } as any);
+      component.recordDetail.set({ discogs_id: -3 } as any);
+      mockApiService.getCollection.mockClear();
+
+      component.onManualSaved({ discogs_id: -3, title: 'Neu', artist: 'Die Sterne', thumb_url: '/api/covers/u?v=2' } as any);
+
+      expect(component.recordDetail()?.title).toBe('Neu');
+      expect(component.selectedRecord()?.basic_information.title).toBe('Neu');
+      expect(component.selectedRecord()?.basic_information.thumb).toBe('/api/covers/u?v=2');
+      expect(mockApiService.getCollection).toHaveBeenCalled();
+    });
+
+    it('loads the details of the opened copy', () => {
+      mockApiService.getRecordDetails = vi.fn().mockReturnValue(of({ discogs_id: 1001, instance_id: 556 }));
+      component.openDetail({ id: 1001, instance_id: 556, basic_information: { id: 1001, title: 'Posen', artists: [] } } as any);
+
+      expect(mockApiService.getRecordDetails).toHaveBeenCalledWith(1001, 556);
+      expect(component.recordDetail()?.instance_id).toBe(556);
+      expect(component.loadingDetail()).toBe(false);
+    });
+
+    it('shows a taken-over record under its Discogs IDs and reloads the list', () => {
+      mockAuthService.user = signal({ id: 1 });
+      component.selectedRecord.set({
+        id: -3,
+        instance_id: -3,
+        source: 'manual',
+        basic_information: { id: -3, title: 'Posen', artists: [], thumb: '/api/covers/u' },
+      } as any);
+      mockApiService.getCollection.mockClear();
+      const record = { discogs_id: 1001, title: 'Posen', artist: 'Die Sterne', thumb_url: 'https://i.discogs.com/1001.jpg' } as any;
+
+      component.onTakenOver({ record, instanceId: 555, mode: 'new_copy' });
+
+      expect(component.recordDetail()).toBe(record);
+      const selected = component.selectedRecord()!;
+      expect(selected.id).toBe(1001);
+      expect(selected.instance_id).toBe(555);
+      expect(selected.source).toBe('discogs');
+      expect(selected.basic_information.thumb).toBe('https://i.discogs.com/1001.jpg');
+      expect(selected.basic_information.artists).toEqual([{ name: 'Die Sterne' }]);
+      expect(mockApiService.getCollection).toHaveBeenCalled();
+    });
+
     it('opens the list filtered to a compartment clicked in the shelf view', () => {
       mockApiService.getStorageLayout.mockReturnValue(of(layout));
       const loadData = vi.spyOn(component, 'loadData').mockImplementation(() => {});

@@ -3,7 +3,7 @@ import { Component, input, output, signal, computed, inject, ChangeDetectionStra
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
 import { LanguageService } from '../../../../core/services/language.service';
-import { StorageShelfOption } from '../../../../core/types';
+import { RecordSource, StorageShelfOption } from '../../../../core/types';
 import { parseStorageFilter } from '../../../../core/utils/storage-filter';
 import {
   LucidePrinter,
@@ -20,7 +20,10 @@ import {
   LucideChevronDown,
   LucideArchive,
   LucideSlidersHorizontal,
+  LucidePlus,
+  LucideDatabase,
 } from '@lucide/angular';
+import { TooltipDirective } from '../../../../shared/directives/tooltip.directive';
 
 const FILTERS_OPEN_KEY = 'collection.filtersOpen';
 
@@ -36,6 +39,7 @@ function readFiltersOpen(): boolean {
   selector: 'app-collection-toolbar',
   standalone: true,
   imports: [
+    TooltipDirective,
     FormsModule,
     TranslatePipe,
     LucidePrinter,
@@ -52,6 +56,8 @@ function readFiltersOpen(): boolean {
     LucideChevronDown,
     LucideArchive,
     LucideSlidersHorizontal,
+    LucidePlus,
+    LucideDatabase,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './collection-toolbar.component.html',
@@ -78,6 +84,8 @@ export class CollectionToolbarComponent {
   readonly storageShelves = input<StorageShelfOption[]>([]);
   /** Encoded storage filter, see `parseStorageFilter`. */
   readonly storageFilter = input<string>('');
+  /** Source filter; empty lists Discogs releases and manual records. */
+  readonly source = input<RecordSource | ''>('');
 
   readonly searchChange = output<string>();
   readonly clearSearch = output<void>();
@@ -98,6 +106,8 @@ export class CollectionToolbarComponent {
   readonly yearsChange = output<string>();
   readonly storageFilterChange = output<string>();
   readonly clearAllFilters = output<void>();
+  readonly sourceChange = output<RecordSource | ''>();
+  readonly addManual = output<void>();
 
   private readonly languageService = inject(LanguageService);
 
@@ -115,6 +125,7 @@ export class CollectionToolbarComponent {
       this.selectedGenres().length +
       (this.years().trim() ? 1 : 0) +
       (this.storageFilter() ? 1 : 0) +
+      (this.source() ? 1 : 0) +
       (this.showPlayedOnly() ? 1 : 0) +
       (this.unplayedOnly() || this.notPlayedSince().trim() ? 1 : 0),
   );

@@ -5,7 +5,7 @@ import { ApiService } from '../../../../core/services/api.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { LanguageService } from '../../../../core/services/language.service';
 import { AuthService } from '../../../../core/services/auth.service';
-import { CollectionRelease, RecordDetailDto, RoonZone } from '../../../../core/types';
+import { CollectionRelease, RecordDetailDto, RoonZone, TakeoverResult } from '../../../../core/types';
 import {
   LucideExternalLink,
   LucideX,
@@ -14,12 +14,15 @@ import {
   LucidePlay,
   LucideTrash2,
   LucideChevronDown,
+  LucidePencil,
 } from '@lucide/angular';
 import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
 import { LocalizedDatePipe } from '../../../../core/pipes/localized-date.pipe';
 import { StoragePlacementComponent } from '../../../../shared/components/storage-placement/storage-placement.component';
 import { getErrorMessage } from '../../../../core/utils/error';
 import { getConditionShortCode, MEDIA_CONDITION_OPTIONS, SLEEVE_CONDITION_OPTIONS } from '../../utils/condition.util';
+import { TooltipDirective } from '../../../../shared/directives/tooltip.directive';
+import { DiscogsTakeoverComponent } from '../discogs-takeover/discogs-takeover.component';
 
 export const ROON_LAST_ZONE_KEY = 'vinyl_last_roon_zone_id';
 
@@ -27,11 +30,13 @@ export const ROON_LAST_ZONE_KEY = 'vinyl_last_roon_zone_id';
   selector: 'app-record-detail-modal',
   standalone: true,
   imports: [
+    TooltipDirective,
     CommonModule,
     FormsModule,
     TranslatePipe,
     LocalizedDatePipe,
     StoragePlacementComponent,
+    DiscogsTakeoverComponent,
     LucideExternalLink,
     LucideX,
     LucideHeadphones,
@@ -39,6 +44,7 @@ export const ROON_LAST_ZONE_KEY = 'vinyl_last_roon_zone_id';
     LucidePlay,
     LucideTrash2,
     LucideChevronDown,
+    LucidePencil,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './record-detail-modal.component.html',
@@ -62,6 +68,10 @@ export class RecordDetailModalComponent implements OnInit {
   readonly conditionUpdated = output<RecordDetailDto>();
   readonly sortKeyUpdated = output<RecordDetailDto>();
   readonly recordRemoved = output<number>();
+  /** Edit a manual record (#242) in the manual record form. */
+  readonly editManual = output<RecordDetailDto>();
+  /** A manual record became a Discogs record (#243). */
+  readonly takenOver = output<TakeoverResult>();
 
   readonly isLoggingListen = signal<boolean>(false);
   readonly justListened = signal<boolean>(false);
@@ -70,6 +80,13 @@ export class RecordDetailModalComponent implements OnInit {
   readonly isSavingSortKey = signal<boolean>(false);
   readonly isRemoving = signal<boolean>(false);
   readonly showDeleteConfirm = signal<boolean>(false);
+
+  /** Last takeover in this modal, shown with its shelf placement while its record is open. */
+  readonly takeoverResult = signal<TakeoverResult | null>(null);
+  readonly shownTakeover = computed(() => {
+    const result = this.takeoverResult();
+    return result && result.record.discogs_id === this.detail()?.discogs_id ? result : null;
+  });
 
   readonly roonZones = signal<RoonZone[]>([]);
   readonly selectedZoneId = signal<string | null>(null);
@@ -82,6 +99,9 @@ export class RecordDetailModalComponent implements OnInit {
   });
   readonly hasMultipleZones = computed(() => this.roonZones().length > 1);
 
+  /** Manual records have no Discogs page and are edited in the manual record form. */
+  readonly isManual = computed(() => (this.detail()?.source ?? this.record()?.source) === 'manual');
+
   readonly currentMediaCondition = computed(() => this.detail()?.media_condition || this.record()?.media_condition || '');
   readonly currentSleeveCondition = computed(() => this.detail()?.sleeve_condition || this.record()?.sleeve_condition || '');
   readonly storedSortKey = computed(() => this.detail()?.sort_key ?? '');
@@ -89,6 +109,16 @@ export class RecordDetailModalComponent implements OnInit {
   readonly sortKeyValue = linkedSignal(() => this.storedSortKey());
   readonly sortKeyChanged = computed(() => this.sortKeyValue().trim() !== this.storedSortKey());
   private justListenedTimeout?: ReturnType<typeof setTimeout>;
+
+  onTakenOver(result: TakeoverResult): void {
+    this.takeoverResult.set(result);
+    this.takenOver.emit(result);
+  }
+
+  onEditManual(): void {
+    const detail = this.detail();
+    if (detail) this.editManual.emit(detail);
+  }
 
   ngOnInit(): void {
     if (this.authService.user()?.roonHost) {

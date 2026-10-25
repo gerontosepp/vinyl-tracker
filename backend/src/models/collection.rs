@@ -5,6 +5,7 @@ pub use vinyl_api_types::collection::{
     BasicInformation, CollectionNote, CollectionRelease, CollectionResponse, PriceRefreshResultDto,
     SyncResultDto,
 };
+use vinyl_api_types::record::RecordSource;
 
 #[derive(Debug, Clone, Default, Deserialize)]
 pub struct CollectionQueryParams {
@@ -23,6 +24,8 @@ pub struct CollectionQueryParams {
     /// Shelf ID or `unplaced`
     pub storage_unit: Option<String>,
     pub compartment: Option<i32>,
+    /// `discogs` or `manual`; anything else lists both
+    pub source: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -41,6 +44,7 @@ pub struct ParsedCollectionFilter {
     pub storage: Option<StorageFilter>,
     /// Instance IDs resolved from `storage` by the query service
     pub instance_ids: Option<Vec<i64>>,
+    pub source: Option<RecordSource>,
 }
 
 impl From<CollectionQueryParams> for ParsedCollectionFilter {
@@ -92,6 +96,7 @@ impl From<CollectionQueryParams> for ParsedCollectionFilter {
         let unplayed_only = params.unplayed_only.unwrap_or(false);
         let min_plays = params.min_plays.filter(|p| *p > 0);
         let storage = StorageFilter::parse(params.storage_unit.as_deref(), params.compartment);
+        let source = params.source.as_deref().and_then(RecordSource::parse);
 
         Self {
             page,
@@ -107,6 +112,7 @@ impl From<CollectionQueryParams> for ParsedCollectionFilter {
             min_plays,
             storage,
             instance_ids: None,
+            source,
         }
     }
 }
@@ -119,6 +125,16 @@ pub struct CollectionBackupRequest {
     pub releases: Vec<BackupRelease>,
     /// Storage configuration (format version 3); missing in older backups
     pub storage: Option<StorageBackup>,
+    /// Old IDs of manual records taken over to Discogs (format version 5)
+    #[serde(default)]
+    pub manual_aliases: Vec<ManualAliasBackup>,
+}
+
+/// Old negative ID of a manual record taken over to Discogs and the copy it became (#243).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ManualAliasBackup {
+    pub old_id: i64,
+    pub instance_id: i64,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -135,6 +151,31 @@ pub struct BackupRelease {
     pub basic_information: BackupBasicInformation,
     /// Listen timestamps (format version 2); missing in older backups
     pub listen_history: Option<Vec<String>>,
+    /// Data of a manual record (format version 4); its negative ID is only valid locally
+    #[serde(default)]
+    pub manual: Option<ManualBackup>,
+}
+
+/// Fields of a manual record that a collection release does not carry, plus its cover.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ManualBackup {
+    pub manual_uid: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub label: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub catno: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub country: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub barcode: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub notes: Option<String>,
+    /// Cover image, Base64
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cover: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cover_mime_type: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]

@@ -16,6 +16,7 @@
       "Bash(gh release view:*)",
       "Bash(gh release edit:*)",
       "Bash(node scripts/sync-release-info.js)",
+      "Bash(node scripts/sync-help.js)",
       "Bash(./scripts/opsx.sh:*)",
       "Bash(cargo fmt:*)",
       "Bash(cargo test:*)",

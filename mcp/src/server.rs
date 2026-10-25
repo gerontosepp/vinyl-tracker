@@ -21,7 +21,8 @@ fn label_identification_steps() -> String {
         "{LABEL_READING_STEPS}\n\
 4. Present the best match with its Discogs release ID, your reasoning and a confidence level, and list close alternatives. \
 If the pressing cannot be determined reliably, ask for another photo (other side, run-out groove, back cover).\n\
-5. Never add or log anything before the user has confirmed the match."
+5. Never add or log anything before the user has confirmed the match. \
+If the record is not on Discogs, offer to add it as a manual record with `create_manual_record`, filled with what you read from the label."
     )
 }
 
@@ -47,7 +48,7 @@ impl VinylMcpServer {
     /// Retrieve the user's vinyl collection with optional pagination, sorting, search, and min_plays filter.
     #[tool(
         name = "get_user_collection",
-        description = "Retrieve the user's vinyl collection from Vinyl Tracker. Supports pagination (page, per_page), sorting ('artist', 'listens', 'addedAt'), sort order ('asc', 'desc'), minimum plays filter, search terms, category filter ('all', 'vinyl', 'cd'), genres filter (e.g. ['Jazz', 'Rock']), years filter (e.g. '1970-1972, 1975') and storage filter (storage_unit = shelf ID or 'unplaced', optional compartment). Each release carries its computed shelf position in `storage` when shelves are configured."
+        description = "Retrieve the user's vinyl collection from Vinyl Tracker. Supports pagination (page, per_page), sorting ('artist', 'listens', 'addedAt'), sort order ('asc', 'desc'), minimum plays filter, search terms, category filter ('all', 'vinyl', 'cd'), genres filter (e.g. ['Jazz', 'Rock']), years filter (e.g. '1970-1972, 1975') and storage filter (storage_unit = shelf ID or 'unplaced', optional compartment). Each release carries its computed shelf position in `storage` when shelves are configured. Releases with `source` = 'manual' and a negative ID are manual records without a Discogs entry."
     )]
     async fn get_user_collection(
         &self,
@@ -283,7 +284,7 @@ impl VinylMcpServer {
     /// Retrieve comprehensive album details including tracklist, formats, labels, and listen history.
     #[tool(
         name = "get_record_details",
-        description = "Fetches comprehensive details for a record by its database ID or Discogs release ID, including tracklist, release formats, labels, identifiers (matrix / runout, label code, rights society), release notes, and personal listen history. Also works for Discogs releases that are not in the collection, e.g. to verify search candidates."
+        description = "Fetches comprehensive details for a record by its database ID or Discogs release ID, including tracklist, release formats, labels, identifiers (matrix / runout, label code, rights society), release notes, and personal listen history. Also works for Discogs releases that are not in the collection, e.g. to verify search candidates. Negative IDs are manual records without a Discogs entry (`source` = 'manual')."
     )]
     async fn get_record_details(
         &self,
@@ -476,6 +477,80 @@ impl VinylMcpServer {
             photo.id,
             photo.status.as_str()
         ))
+    }
+
+    /// Create a manual record without a Discogs entry.
+    #[tool(
+        name = "create_manual_record",
+        description = "Creates a manual record for a vinyl record or CD that has no Discogs entry. Required: artist, title and format ('LP', 'Double LP', 'CD', 'Double CD'); optional year, label, catno, country, barcode, genres, conditions, notes and an own value. Returns the record with its negative ID and its shelf placement. Covers cannot be uploaded via MCP. Only call it after the user confirmed the data."
+    )]
+    async fn create_manual_record(
+        &self,
+        Parameters(args): Parameters<CreateManualRecordArgs>,
+    ) -> Result<String, String> {
+        let request = ManualRecordRequest {
+            artist: args.artist,
+            title: args.title,
+            format: args.format,
+            year: args.year,
+            label: args.label,
+            catno: args.catno,
+            country: args.country,
+            barcode: args.barcode,
+            genres: args.genres.unwrap_or_default(),
+            media_condition: args.media_condition,
+            sleeve_condition: args.sleeve_condition,
+            notes: args.notes,
+            value: args.value,
+            label_photo_id: None,
+        };
+        let created = self.client.create_manual_record(&request).await?;
+        serde_json::to_string_pretty(&created)
+            .map_err(|e| format!("Failed to serialize manual record: {}", e))
+    }
+
+    /// Search Discogs for the release of a manual record.
+    #[tool(
+        name = "check_manual_record",
+        description = "Checks whether a manual record (negative ID) is on Discogs by now: searches by barcode, catalog number + label and artist + title and returns the candidate releases with Discogs release ID, artist, title, label, catalog number, format, country, year, which search found them (`matchedBy`) and `inCollection` (instance IDs of Discogs copies of the release the user already owns). Changes nothing."
+    )]
+    async fn check_manual_record(
+        &self,
+        Parameters(args): Parameters<CheckManualRecordArgs>,
+    ) -> Result<String, String> {
+        let candidates = self.client.check_manual_record(args.id).await?;
+        if candidates.is_empty() {
+            return Ok(format!(
+                "No Discogs release found for manual record {}.",
+                args.id
+            ));
+        }
+        serde_json::to_string_pretty(&candidates)
+            .map_err(|e| format!("Failed to serialize candidates: {}", e))
+    }
+
+    /// Take over a manual record to Discogs.
+    #[tool(
+        name = "take_over_manual_record",
+        description = "Turns a manual record (negative ID) into a Discogs record. ONLY call this after the user explicitly confirmed the release, because it cannot be undone. mode 'new_copy' (default) adds the release to the user's Discogs collection; 'merge' merges the manual record into a copy the user already owns (target_instance_id, required when the release is owned more than once): listens move over and the manual record is deleted. Listen history, shelf slot, conditions and sort string are kept; cover and value come from Discogs. Printed QR labels of the old ID keep working. Returns the record, its instance ID and shelf placement."
+    )]
+    async fn take_over_manual_record(
+        &self,
+        Parameters(args): Parameters<TakeOverManualRecordArgs>,
+    ) -> Result<String, String> {
+        let result = self
+            .client
+            .take_over_manual_record(
+                args.id,
+                &TakeoverRequest {
+                    release_id: args.release_id,
+                    mode: args.mode.unwrap_or_default(),
+                    target_instance_id: args.target_instance_id,
+                },
+            )
+            .await?;
+        serde_json::to_string_pretty(&result)
+            .map_err(|e| format!("Failed to serialize takeover result: {}", e))
     }
 
     /// Export the user's vinyl collection in JSON or CSV format.
@@ -856,6 +931,21 @@ mod tests {
 
         let t28 = VinylMcpServer::resolve_label_photo_tool_attr();
         assert_eq!(t28.name, "resolve_label_photo");
+
+        let t29 = VinylMcpServer::create_manual_record_tool_attr();
+        assert_eq!(t29.name, "create_manual_record");
+
+        let t30 = VinylMcpServer::check_manual_record_tool_attr();
+        assert_eq!(t30.name, "check_manual_record");
+
+        let t31 = VinylMcpServer::take_over_manual_record_tool_attr();
+        assert_eq!(t31.name, "take_over_manual_record");
+        assert!(
+            t31.description
+                .as_deref()
+                .unwrap_or_default()
+                .contains("ONLY call this after the user explicitly confirmed")
+        );
     }
 
     #[test]

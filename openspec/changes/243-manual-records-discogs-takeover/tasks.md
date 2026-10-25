@@ -40,7 +40,7 @@
 ## 7. Abschluss
 
 - [x] 7.1 README und `docs/Release-Info.md` aktualisieren; Issue #243 auf den reduzierten Umfang (keine automatische Prüfung) anpassen
-- [ ] 7.2 Gesamtprüfung: `cargo clippy --all-targets -- -D warnings`, `cargo llvm-cov --summary-only --fail-under-lines 80`, Frontend-Tests; lokalen Docker-Stack neu bauen und eine manuelle Platte end-to-end übernehmen (Prüfen → Übernehmen → altes QR-Etikett scannen)
+- [x] 7.2 Gesamtprüfung: `cargo clippy --all-targets -- -D warnings`, `cargo llvm-cov --summary-only --fail-under-lines 80`, Frontend-Tests; lokalen Docker-Stack neu bauen und eine manuelle Platte end-to-end übernehmen (Prüfen → Übernehmen → altes QR-Etikett scannen)
 
 ## Workflow follow-up
 

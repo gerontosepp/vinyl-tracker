@@ -231,9 +231,38 @@ impl ManualTakeoverService {
             }
         };
         // Loads the Discogs price when the release has none yet
-        let detail =
+        let mut detail =
             RecordService::get_record_details(pool, discogs_client, crypto, user, req.release_id)
                 .await?;
+        // With several copies of the release the details show any of them; show this one
+        if detail.instance_id != Some(instance_id) {
+            let copy = sqlx::query(
+                "SELECT added_at, media_condition, sleeve_condition, sort_key
+                 FROM collection_item WHERE user_id = $1 AND instance_id = $2",
+            )
+            .bind(user.id)
+            .bind(instance_id)
+            .fetch_one(pool)
+            .await
+            .map_err(AppError::Database)?;
+            detail.instance_id = Some(instance_id);
+            detail.added_at = Some(copy.get::<chrono::NaiveDateTime, _>("added_at").to_string());
+            detail.media_condition = copy.get("media_condition");
+            detail.sleeve_condition = copy.get("sleeve_condition");
+            detail.sort_key = copy.get("sort_key");
+            match &placement {
+                Some(p) => {
+                    detail.storage = Some(p.slot.clone());
+                    detail.storage_neighbors = Some(p.neighbors.clone());
+                }
+                None => {
+                    detail.storage = StorageService::slots(pool, user.id)
+                        .await?
+                        .remove(&instance_id);
+                    detail.storage_neighbors = None;
+                }
+            }
+        }
         Ok(TakeoverResultDto {
             record: detail,
             instance_id,

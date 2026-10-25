@@ -1009,3 +1009,54 @@ async fn test_backup_with_invalid_alias_is_rejected() {
         .await;
     assert_eq!(status, StatusCode::BAD_REQUEST, "{body}");
 }
+
+#[tokio::test]
+async fn test_result_shows_the_taken_over_copy_when_the_release_is_owned_twice() {
+    let t = TestApp::new().await;
+    let user = t.register().await;
+    let first = t
+        .take_over_ok(
+            &user,
+            t.create(&user, record_body()).await,
+            json!({ "releaseId": 1001 }),
+        )
+        .await;
+
+    let mut body = record_body();
+    body["mediaCondition"] = json!("Good (G)");
+    let second = t.create(&user, body).await;
+    let (status, _) = t
+        .json(
+            Method::PATCH,
+            &format!("/api/records/{second}/sort-key"),
+            &user,
+            json!({ "sortKey": "Zweites Exemplar" }),
+        )
+        .await;
+    assert_eq!(status, StatusCode::OK);
+
+    let result = t
+        .take_over_ok(&user, second, json!({ "releaseId": 1001 }))
+        .await;
+
+    assert_ne!(result.instance_id, first.instance_id);
+    assert_eq!(result.record.instance_id, Some(result.instance_id));
+    assert_eq!(result.record.media_condition.as_deref(), Some("Good (G)"));
+    assert_eq!(result.record.sort_key.as_deref(), Some("Zweites Exemplar"));
+
+    // Merging into the first copy shows that copy, not the second one
+    let third = t.create(&user, record_body()).await;
+    let merged = t
+        .take_over_ok(
+            &user,
+            third,
+            json!({ "releaseId": 1001, "mode": "merge", "targetInstanceId": first.instance_id }),
+        )
+        .await;
+    assert_eq!(merged.record.instance_id, Some(first.instance_id));
+    assert_eq!(
+        merged.record.media_condition.as_deref(),
+        Some("Very Good Plus (VG+)")
+    );
+    assert_eq!(merged.record.sort_key, None);
+}

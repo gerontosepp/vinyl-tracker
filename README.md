@@ -282,7 +282,7 @@ The project includes GitHub Actions workflows:
   - Runs Playwright end-to-end tests for all critical user workflows.
   - Builds and tests the MCP Server (Rust/Cargo, `rmcp`).
   - Enforces linting and tests across all components.
-  - Runs on push and pull requests for `main` and `develop` (plus manual `workflow_dispatch`). Pushes to `main` additionally build and publish multi-arch Docker images (`linux/amd64`, `linux/arm64`) to GHCR.
+  - Runs on pull requests for `main` and `develop`, on pushes to `main` and manually (`workflow_dispatch`). `develop` is tested in its pull requests and not again after the merge. Pull requests only run the jobs of the components they change (`backend/`, `frontend/`, `mcp/` plus `backend/crates/` for the MCP server, `.github/` for all); docs-only pull requests run no tests. Pushes to `main` run everything and additionally build and publish multi-arch Docker images (`linux/amd64`, `linux/arm64`) to GHCR.
   - **Self-Hosted Runners**: Jobs run on self-hosted Linux ARM64 runners (`[self-hosted, linux]`, Docker containers with mounted Docker socket for the PostgreSQL test container and Playwright), see [DEPLOYMENT.md](docs/DEPLOYMENT.md).
   - **Hybrid Multi-Platform Releases**: Release builds additionally use GitHub-hosted runners (`ubuntu-latest`, `macos-latest`, `windows-latest`) to produce native Linux, macOS and Windows MCP server binaries.
 - **Auto Release** (`.github/workflows/release.yml`):

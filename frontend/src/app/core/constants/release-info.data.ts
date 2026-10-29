@@ -14,6 +14,13 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "isUnreleased": true,
     "items": [
       {
+        "title": "Genres immer alphabetisch (`#278`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Die Genres eines Records werden in Sammlung, Details und Export in fester, alphabetischer Reihenfolge geliefert statt in der zufälligen Reihenfolge der Datenbank. Das beseitigt außerdem einen gelegentlich fehlschlagenden Test.",
+        "details": []
+      },
+      {
         "title": "Mehr Backend-Logs für Scan, Export/Restore und Label-Fotos (`#277`)",
         "type": "feat",
         "typeLabel": "Feature",

@@ -254,11 +254,13 @@ impl RecordService {
         // Fetch genres from DB or Discogs
         let mut genres: Vec<String> = Vec::new();
         if let Some(rec_id) = local_record_id {
-            let genre_rows = sqlx::query("SELECT genre FROM record_genres WHERE record_id = $1")
-                .bind(rec_id)
-                .fetch_all(pool)
-                .await
-                .map_err(AppError::Database)?;
+            let genre_rows = sqlx::query(
+                "SELECT genre FROM record_genres WHERE record_id = $1 ORDER BY genre COLLATE \"C\"",
+            )
+            .bind(rec_id)
+            .fetch_all(pool)
+            .await
+            .map_err(AppError::Database)?;
 
             for gr in genre_rows {
                 let g: String = gr.get("genre");
@@ -270,6 +272,8 @@ impl RecordService {
                 .as_ref()
                 .and_then(|r| r.genres.clone())
                 .unwrap_or_default();
+            // Same order as the stored genres
+            genres.sort();
         }
 
         let mut format = record_row

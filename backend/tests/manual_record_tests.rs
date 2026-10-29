@@ -317,6 +317,55 @@ async fn test_create_manual_record_with_cover() {
 }
 
 #[tokio::test]
+async fn test_genres_are_returned_in_a_fixed_alphabetical_order() {
+    let t = TestApp::new().await;
+    let token = t.register().await;
+
+    let created = t.create(&token, record_body()).await;
+    let id = created.record.discogs_id;
+
+    // Creating sorts the genres already, so store them directly in an unsorted order
+    let pool = &t.state.pool;
+    let record_ids = "SELECT id FROM record_cache WHERE id = $1 OR discogs_id = $1";
+    sqlx::query(&format!(
+        "DELETE FROM record_genres WHERE record_id IN ({record_ids})"
+    ))
+    .bind(id)
+    .execute(pool)
+    .await
+    .unwrap();
+    for genre in ["Rock", "Indie", "Folk"] {
+        sqlx::query(&format!(
+            "INSERT INTO record_genres (record_id, genre) SELECT id, $2 FROM ({record_ids}) r"
+        ))
+        .bind(id)
+        .bind(genre)
+        .execute(pool)
+        .await
+        .unwrap();
+    }
+
+    let detail = t
+        .call(
+            Method::GET,
+            &format!("/api/records/{id}"),
+            Some(&token),
+            "application/json",
+            Body::empty(),
+        )
+        .await;
+    assert_eq!(detail.0, StatusCode::OK);
+    let detail: RecordDetailDto = serde_json::from_slice(&detail.1).unwrap();
+    assert_eq!(detail.genres, ["Folk", "Indie", "Rock"]);
+
+    let listed = t.collection(&token, "source=manual").await;
+    assert_eq!(
+        listed.releases[0].basic_information.genres,
+        ["Folk", "Indie", "Rock"]
+    );
+}
+
+#[tokio::test]
 async fn test_manual_record_validation_and_ownership() {
     let t = TestApp::new().await;
     let token = t.register().await;

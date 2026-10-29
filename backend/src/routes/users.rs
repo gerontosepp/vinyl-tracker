@@ -13,13 +13,13 @@ use crate::{
 };
 use axum::{
     Json, Router,
-    extract::{ConnectInfo, Request, State},
+    extract::{ConnectInfo, Extension, Request, State},
     http::{HeaderMap, HeaderValue, StatusCode, header},
     middleware::Next,
     response::{IntoResponse, Response},
     routing::{get, post, put},
 };
-use std::net::SocketAddr;
+use std::net::{IpAddr, SocketAddr};
 
 pub fn make_auth_cookie(config: &Config, token: &str) -> HeaderValue {
     let mut parts = vec![
@@ -63,9 +63,24 @@ pub fn make_clearing_cookie(config: &Config) -> HeaderValue {
     })
 }
 
+/// Originating client IP, resolved by [`auth_rate_limit_middleware`] for the auth handlers' logs.
+#[derive(Clone, Copy)]
+pub struct ClientIp(pub IpAddr);
+
+/// Warns about a rejected credential check (wrong credentials or unknown user); other errors log
+/// themselves. The username is client-controlled and therefore logged Debug-escaped.
+fn log_auth_failure(action: &str, username: &str, client_ip: IpAddr, err: &AppError) {
+    if matches!(
+        err,
+        AppError::Unauthorized(_) | AppError::Forbidden(_) | AppError::NotFound(_)
+    ) {
+        tracing::warn!("Failed {action} for user {username:?} from {client_ip}");
+    }
+}
+
 pub async fn auth_rate_limit_middleware(
     State(state): State<AppState>,
-    request: Request,
+    mut request: Request,
     next: Next,
 ) -> Result<Response, AppError> {
     let peer = request
@@ -75,19 +90,27 @@ pub async fn auth_rate_limit_middleware(
     let client_ip = resolve_client_ip(peer, request.headers(), &state.config.trusted_proxies);
 
     if state.auth_rate_limiter.check_key(&client_ip).is_err() {
+        tracing::warn!(
+            "Auth rate limit exceeded for {client_ip} on {}",
+            request.uri().path()
+        );
         return Err(AppError::TooManyRequests(
             "Rate limit exceeded for authentication attempts. Please try again later.".to_string(),
         ));
     }
 
+    request.extensions_mut().insert(ClientIp(client_ip));
     Ok(next.run(request).await)
 }
 
 pub async fn register_handler(
     State(state): State<AppState>,
+    Extension(ClientIp(client_ip)): Extension<ClientIp>,
     Json(payload): Json<RegisterRequestDto>,
 ) -> Result<impl IntoResponse, AppError> {
+    let username = payload.username.trim().to_string();
     let dto = UserService::register(&state.pool, &state.config, payload).await?;
+    tracing::info!("Registered user {username:?} from {client_ip}");
 
     let mut headers = HeaderMap::new();
     if let Some(token) = &dto.token {
@@ -99,9 +122,14 @@ pub async fn register_handler(
 
 pub async fn login_handler(
     State(state): State<AppState>,
+    Extension(ClientIp(client_ip)): Extension<ClientIp>,
     Json(payload): Json<LoginRequestDto>,
 ) -> Result<impl IntoResponse, AppError> {
-    let dto = UserService::login(&state.pool, &state.config, payload).await?;
+    let username = payload.username.trim().to_string();
+    let dto = UserService::login(&state.pool, &state.config, payload)
+        .await
+        .inspect_err(|e| log_auth_failure("login", &username, client_ip, e))?;
+    tracing::info!("User {username:?} logged in from {client_ip}");
 
     let mut headers = HeaderMap::new();
     if let Some(token) = &dto.token {
@@ -150,10 +178,14 @@ pub async fn update_openrouter_handler(
 
 pub async fn reset_password_handler(
     State(state): State<AppState>,
+    Extension(ClientIp(client_ip)): Extension<ClientIp>,
     Json(payload): Json<ResetPasswordRequestDto>,
 ) -> Result<impl IntoResponse, AppError> {
-    let dto =
-        UserService::reset_password(&state.pool, &state.config, &state.crypto, payload).await?;
+    let username = payload.username.trim().to_string();
+    let dto = UserService::reset_password(&state.pool, &state.config, &state.crypto, payload)
+        .await
+        .inspect_err(|e| log_auth_failure("password reset", &username, client_ip, e))?;
+    tracing::info!("Password of user {username:?} reset from {client_ip}");
 
     let mut headers = HeaderMap::new();
     if let Some(token) = &dto.token {

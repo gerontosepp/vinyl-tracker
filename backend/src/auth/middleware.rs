@@ -65,7 +65,10 @@ where
         .fetch_optional(&app_state.pool)
         .await
         .map_err(AppError::Database)?
-        .ok_or_else(|| AppError::Unauthorized("User no longer exists".to_string()))?;
+        .ok_or_else(|| {
+            tracing::warn!("Valid JWT for deleted user {:?}", claims.sub);
+            AppError::Unauthorized("User no longer exists".to_string())
+        })?;
 
         Ok(CurrentUser(user))
     }

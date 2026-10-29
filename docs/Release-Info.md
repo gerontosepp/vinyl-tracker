@@ -9,6 +9,7 @@
 
 ## Unreleased
 
+- **Mehr Backend-Logs (`#273`)**: Fehlgeschlagene Logins und Passwort-Resets (Username, Client-IP), ausgelöstes Auth-Rate-Limit, ungültige JWTs sowie erfolgreiche Logins/Registrierungen werden geloggt. Der OpenRouter-Client loggt Fehlerantworten und pro Aufruf Modell, Dauer und Token-Verbrauch (`debug`). Client-Fehler (400/401/404/409/429) erscheinen auf `debug`, 403 auf `warn`. Passwörter und Tokens werden nie geloggt.
 - **Hinweis bei nicht erkanntem Scan (`#271`)**: Wird ein Hardware-Scan nicht erkannt (z. B. weil der Scanner am Handy zu langsam sendet), erscheint außerhalb von Eingabefeldern der Hinweis „Scan nicht erkannt. Bitte erneut scannen.“ statt stiller Funkstille.
 ---
 

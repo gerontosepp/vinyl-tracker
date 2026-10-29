@@ -19,42 +19,44 @@ permissions:
   contents: read
 
 jobs:
-  # Decides per component whether its job has to run. Everything runs outside pull requests and
-  # when the workflow itself changes; docs-only pull requests run nothing.
+  # Decides per component whether its job has to run in a pull request. Any other event, a failed
+  # lookup or a change to the workflow itself runs everything; docs-only pull requests run nothing.
   changes:
     name: Detect changed components
-    runs-on: [self-hosted, linux]
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
     outputs:
       backend: ${{ steps.filter.outputs.backend }}
       frontend: ${{ steps.filter.outputs.frontend }}
       mcp: ${{ steps.filter.outputs.mcp }}
     steps:
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      with:
-        fetch-depth: 2
-
     - name: Filter changed paths
       id: filter
       env:
-        EVENT_NAME: ${{ github.event_name }}
+        GH_TOKEN: ${{ github.token }}
+        REPO: ${{ github.repository }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
       run: |
-        if [ "$EVENT_NAME" = "pull_request" ]; then
-          # The checkout is the merge commit; its first parent is the current base branch tip.
-          FILES=$(git diff --name-only HEAD^1 HEAD)
-        else
+        if ! FILES=$(gh api --paginate "repos/$REPO/pulls/$PR_NUMBER/files" --jq '.[].filename'); then
+          echo "::warning::Could not list the changed files, running all jobs"
           FILES=".github/"
         fi
         echo "Changed files:"; echo "$FILES"
         match() { echo "$FILES" | grep -qE "$1" && echo true || echo false; }
+        # scripts/ and the Help/Release-Info docs feed the generated frontend assets.
         echo "backend=$(match '^(backend/|\.github/)')" >> "$GITHUB_OUTPUT"
-        echo "frontend=$(match '^(frontend/|\.github/)')" >> "$GITHUB_OUTPUT"
+        echo "frontend=$(match '^(frontend/|scripts/|docs/(Help|Release-Info)|\.github/)')" >> "$GITHUB_OUTPUT"
         # The MCP server shares the API types crate with the backend.
         echo "mcp=$(match '^(mcp/|backend/crates/|\.github/)')" >> "$GITHUB_OUTPUT"
 
   backend-test:
     name: Backend Tests & Linting (Linux)
     needs: changes
-    if: needs.changes.outputs.backend == 'true'
+    # !cancelled() keeps the job running when `changes` is skipped (non-PR events)
+    if: ${{ !cancelled() && (github.event_name != 'pull_request' || needs.changes.outputs.backend == 'true') }}
     runs-on: [self-hosted, linux]
     defaults:
       run:
@@ -178,7 +180,8 @@ jobs:
   frontend-test:
     name: Frontend Tests & Build (Linux)
     needs: changes
-    if: needs.changes.outputs.frontend == 'true'
+    # !cancelled() keeps the job running when `changes` is skipped (non-PR events)
+    if: ${{ !cancelled() && (github.event_name != 'pull_request' || needs.changes.outputs.frontend == 'true') }}
     runs-on: [self-hosted, linux]
     defaults:
       run:
@@ -231,7 +234,8 @@ jobs:
   mcp-test:
     name: MCP Server Tests (Linux)
     needs: changes
-    if: needs.changes.outputs.mcp == 'true'
+    # !cancelled() keeps the job running when `changes` is skipped (non-PR events)
+    if: ${{ !cancelled() && (github.event_name != 'pull_request' || needs.changes.outputs.mcp == 'true') }}
     runs-on: [self-hosted, linux]
     defaults:
       run:

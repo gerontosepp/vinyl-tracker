@@ -171,7 +171,8 @@ impl RoonClient {
         let msg = match MooMessage::parse(text) {
             Some(m) => m,
             None => {
-                tracing::debug!("Roon received unparseable message: {text}");
+                // The raw frame may carry the pairing token, so only its size is logged
+                tracing::debug!("Roon received unparseable message ({} bytes)", text.len());
                 return;
             }
         };
@@ -212,7 +213,8 @@ impl RoonClient {
                     *name_guard = Some(name.to_string());
                 }
 
-                tracing::info!("Roon pairing token confirmed: {new_token}");
+                // The token is a credential; log only that pairing succeeded
+                tracing::info!("Roon pairing token confirmed");
                 if let Some(saver) = token_saver {
                     let _ = saver.send(new_token.to_string()).await;
                 }

@@ -14,6 +14,13 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "isUnreleased": true,
     "items": [
       {
+        "title": "Roon-Pairing-Token nicht mehr im Log (`#275`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Das Backend schreibt das Roon-Pairing-Token nicht mehr im Klartext ins Log, sondern nur noch, dass das Pairing bestätigt wurde.",
+        "details": []
+      },
+      {
         "title": "Mehr Backend-Logs (`#273`)",
         "type": "feat",
         "typeLabel": "Feature",

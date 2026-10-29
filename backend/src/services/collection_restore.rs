@@ -379,6 +379,8 @@ impl CollectionRestoreService {
         .map_err(AppError::Database)?;
         let record_id: i64 = row.get("id");
 
+        // Fills only a record without genres, so unlike `record_genres::add_genres` it has its own
+        // statement and saves a round trip per release
         if !release.genres.is_empty() {
             sqlx::query(
                 "INSERT INTO record_genres (record_id, genre)

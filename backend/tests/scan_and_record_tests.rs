@@ -617,7 +617,24 @@ async fn test_scan_service_comprehensive_scenarios() {
         .fetch_one(pool)
         .await
         .unwrap();
-    assert!(genre_count >= 2);
+    assert_eq!(genre_count, 2, "Rock and Indie, each once");
+
+    // Scanning the same release again must not store its genres a second time
+    let again = ScanService::process_scan(
+        pool,
+        &mock_client,
+        &state.crypto,
+        &user_with_token,
+        "discogs-id:771122",
+    )
+    .await
+    .unwrap();
+    assert!(again.success);
+    let genre_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM record_genres rg JOIN record_cache rc ON rc.id = rg.record_id WHERE rc.discogs_id = 771122")
+        .fetch_one(pool)
+        .await
+        .unwrap();
+    assert_eq!(genre_count, 2);
 
     // 6. Direct barcode match in local collection
     let seed_id = 554433i64;

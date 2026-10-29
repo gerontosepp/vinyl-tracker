@@ -141,7 +141,7 @@ async fn test_pending_migrations_run_on_existing_history() {
 }
 
 #[tokio::test]
-async fn test_unique_genres_migration_removes_duplicates_and_blocks_new_ones() {
+async fn test_unique_genres_migration_removes_duplicates_and_empty_genres() {
     let db = TestDatabase::create().await;
     partial_migrator(15).run(&db.pool).await.unwrap();
 
@@ -151,7 +151,14 @@ async fn test_unique_genres_migration_removes_duplicates_and_blocks_new_ones() {
     .fetch_one(&db.pool)
     .await
     .unwrap();
-    for genre in ["Rock", "Rock", "Pop", "Rock"] {
+    for genre in [
+        Some("Rock"),
+        Some("Rock"),
+        Some("Pop"),
+        Some("Rock"),
+        None,
+        None,
+    ] {
         sqlx::query("INSERT INTO record_genres (record_id, genre) VALUES ($1, $2)")
             .bind(record_id)
             .bind(genre)
@@ -179,6 +186,12 @@ async fn test_unique_genres_migration_removes_duplicates_and_blocks_new_ones() {
         duplicate.is_err(),
         "the same genre must not be stored twice"
     );
+    let without_genre =
+        sqlx::query("INSERT INTO record_genres (record_id, genre) VALUES ($1, NULL)")
+            .bind(record_id)
+            .execute(&db.pool)
+            .await;
+    assert!(without_genre.is_err(), "a genre is required");
 
     db.drop().await;
 }

@@ -19,6 +19,7 @@ use axum::{
     routing::{get, post},
 };
 use serde::Deserialize;
+use std::time::Instant;
 
 #[derive(Debug, Deserialize)]
 pub struct RemoveReleaseQueryParams {
@@ -172,11 +173,19 @@ pub async fn refresh_prices_handler(
     Ok((StatusCode::OK, Json(res)))
 }
 
+fn log_export(user_id: i64, format: &str, records: usize, bytes: usize, started: Instant) {
+    tracing::info!(
+        "User {user_id} exported {records} record(s) as {format} ({bytes} bytes, {} ms)",
+        started.elapsed().as_millis()
+    );
+}
+
 pub async fn export_collection_handler(
     State(state): State<AppState>,
     CurrentUser(user): CurrentUser,
     Query(params): Query<CollectionExportQueryParams>,
 ) -> Result<impl IntoResponse, AppError> {
+    let started = Instant::now();
     let format_str = params.format.as_deref().unwrap_or("").trim().to_lowercase();
     let filter = ParsedCollectionFilter::from(params.filter);
     let releases =
@@ -185,6 +194,7 @@ pub async fn export_collection_handler(
     match format_str.as_str() {
         "csv" => {
             let csv_bytes = ExportService::export_collection_csv(&releases)?;
+            log_export(user.id, "csv", releases.len(), csv_bytes.len(), started);
             Ok((
                 StatusCode::OK,
                 [
@@ -214,6 +224,7 @@ pub async fn export_collection_handler(
                 &manual_aliases,
                 storage.as_ref(),
             )?;
+            log_export(user.id, "json", releases.len(), json_bytes.len(), started);
             Ok((
                 StatusCode::OK,
                 [
@@ -238,6 +249,7 @@ pub async fn export_collection_handler(
                 &local_covers,
             )
             .await?;
+            log_export(user.id, "pdf", releases.len(), pdf_bytes.len(), started);
             Ok((
                 StatusCode::OK,
                 [
@@ -266,6 +278,11 @@ pub async fn restore_collection_handler(
     CurrentUser(user): CurrentUser,
     body: Bytes,
 ) -> Result<impl IntoResponse, AppError> {
+    tracing::info!(
+        "User {} uploaded a collection backup ({} bytes)",
+        user.id,
+        body.len()
+    );
     let (backup, releases) = CollectionRestoreService::parse_backup(&body)?;
     let result =
         CollectionRestoreService::restore(&state.pool, user.id, &backup, &releases).await?;

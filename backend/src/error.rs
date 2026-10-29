@@ -96,16 +96,34 @@ impl IntoResponse for AppError {
                     msg.clone(),
                 )
             }
-            AppError::BadRequest(msg) => (StatusCode::BAD_REQUEST, "Bad Request", msg.clone()),
-            AppError::Unauthorized(msg) => (StatusCode::UNAUTHORIZED, "Unauthorized", msg.clone()),
-            AppError::Forbidden(msg) => (StatusCode::FORBIDDEN, "Forbidden", msg.clone()),
-            AppError::NotFound(msg) => (StatusCode::NOT_FOUND, "Not Found", msg.clone()),
-            AppError::Conflict(msg) => (StatusCode::CONFLICT, "Conflict", msg.clone()),
-            AppError::TooManyRequests(msg) => (
-                StatusCode::TOO_MANY_REQUESTS,
-                "Too Many Requests",
-                msg.clone(),
-            ),
+            AppError::BadRequest(msg) => {
+                tracing::debug!("Bad request: {msg}");
+                (StatusCode::BAD_REQUEST, "Bad Request", msg.clone())
+            }
+            AppError::Unauthorized(msg) => {
+                tracing::debug!("Unauthorized: {msg}");
+                (StatusCode::UNAUTHORIZED, "Unauthorized", msg.clone())
+            }
+            AppError::Forbidden(msg) => {
+                tracing::warn!("Forbidden: {msg}");
+                (StatusCode::FORBIDDEN, "Forbidden", msg.clone())
+            }
+            AppError::NotFound(msg) => {
+                tracing::debug!("Not found: {msg}");
+                (StatusCode::NOT_FOUND, "Not Found", msg.clone())
+            }
+            AppError::Conflict(msg) => {
+                tracing::debug!("Conflict: {msg}");
+                (StatusCode::CONFLICT, "Conflict", msg.clone())
+            }
+            AppError::TooManyRequests(msg) => {
+                tracing::debug!("Too many requests: {msg}");
+                (
+                    StatusCode::TOO_MANY_REQUESTS,
+                    "Too Many Requests",
+                    msg.clone(),
+                )
+            }
             AppError::Timeout(msg) => (
                 StatusCode::SERVICE_UNAVAILABLE,
                 "Service Unavailable",

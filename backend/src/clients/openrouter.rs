@@ -4,7 +4,7 @@
 use crate::error::AppError;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 /// Default model of the label identification (vision + tool calling).
 pub const DEFAULT_OPENROUTER_MODEL: &str = "anthropic/claude-sonnet-5.5";
@@ -102,9 +102,17 @@ struct ChatChoice {
     message: AssistantMessage,
 }
 
+/// Token counts as reported by OpenRouter; absent for some providers.
+#[derive(Debug, Deserialize)]
+struct Usage {
+    prompt_tokens: Option<u64>,
+    completion_tokens: Option<u64>,
+}
+
 #[derive(Debug, Deserialize)]
 struct ChatResponse {
     choices: Vec<ChatChoice>,
+    usage: Option<Usage>,
 }
 
 #[derive(Debug, Serialize)]
@@ -136,6 +144,7 @@ impl OpenRouterClient {
         messages: &[ChatMessage],
         tools: &Value,
     ) -> Result<AssistantMessage, AppError> {
+        let started = Instant::now();
         let res = self
             .http
             .post(format!("{}/chat/completions", self.base_url))
@@ -148,7 +157,10 @@ impl OpenRouterClient {
             })
             .send()
             .await
-            .map_err(|e| AppError::Internal(format!("OpenRouter request failed: {e}")))?;
+            .map_err(|e| {
+                tracing::warn!("OpenRouter request for model '{model}' failed: {e}");
+                AppError::Internal(format!("OpenRouter request failed: {e}"))
+            })?;
 
         let status = res.status();
         if !status.is_success() {
@@ -160,6 +172,7 @@ impl OpenRouterClient {
                 .chars()
                 .take(MAX_ERROR_BODY_CHARS)
                 .collect();
+            tracing::warn!("OpenRouter returned {status} for model '{model}'");
             return Err(match status.as_u16() {
                 401 | 403 => AppError::BadRequest("OpenRouter rejected the API key".to_string()),
                 402 => AppError::BadRequest("OpenRouter: insufficient credits".to_string()),
@@ -172,6 +185,13 @@ impl OpenRouterClient {
             .json()
             .await
             .map_err(|e| AppError::Internal(format!("Invalid OpenRouter response: {e}")))?;
+        let usage = parsed.usage.as_ref();
+        tracing::debug!(
+            "OpenRouter model '{model}' answered in {} ms (prompt tokens: {:?}, completion tokens: {:?})",
+            started.elapsed().as_millis(),
+            usage.and_then(|u| u.prompt_tokens),
+            usage.and_then(|u| u.completion_tokens),
+        );
         parsed
             .choices
             .into_iter()
@@ -193,6 +213,26 @@ mod tests {
             message["content"][1]["image_url"]["url"],
             "data:image/jpeg;base64,QUJD"
         );
+    }
+
+    #[test]
+    fn chat_response_parses_with_and_without_usage() {
+        let with_usage: ChatResponse = serde_json::from_value(serde_json::json!({
+            "choices": [{"message": {"content": "hi"}}],
+            "usage": {"prompt_tokens": 12, "completion_tokens": 3}
+        }))
+        .unwrap();
+        let usage = with_usage.usage.unwrap();
+        assert_eq!(
+            (usage.prompt_tokens, usage.completion_tokens),
+            (Some(12), Some(3))
+        );
+
+        let without_usage: ChatResponse = serde_json::from_value(serde_json::json!({
+            "choices": [{"message": {"content": "hi"}}]
+        }))
+        .unwrap();
+        assert!(without_usage.usage.is_none());
     }
 
     #[test]

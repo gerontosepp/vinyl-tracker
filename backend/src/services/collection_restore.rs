@@ -17,6 +17,7 @@ use crate::{
 use base64::Engine;
 use chrono::{DateTime, NaiveDateTime, Utc};
 use sqlx::{PgPool, Postgres, Row, Transaction, types::Uuid};
+use std::time::Instant;
 
 /// Upper bound for releases per restore; keeps a single transaction reasonably small.
 pub const MAX_RESTORE_RELEASES: usize = 20_000;
@@ -245,6 +246,12 @@ impl CollectionRestoreService {
             listen_history_included,
         };
 
+        tracing::info!(
+            "Collection restore for user {user_id} started: {} release(s), format version {}",
+            releases.len(),
+            result.format_version
+        );
+        let started = Instant::now();
         let mut tx = pool.begin().await.map_err(AppError::Database)?;
 
         Self::skip_backup_ids(&mut tx, backup, releases).await?;
@@ -330,7 +337,8 @@ impl CollectionRestoreService {
         StorageService::commit_all(pool, user_id).await?;
 
         tracing::info!(
-            "Collection restore for user {user_id}: added={}, updated={}, listens_added={}, listens_skipped={}",
+            "Collection restore for user {user_id} finished in {} ms: added={}, updated={}, listens_added={}, listens_skipped={}",
+            started.elapsed().as_millis(),
             result.records_added,
             result.records_updated,
             result.listens_added,

@@ -1,6 +1,8 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { Router, NavigationStart } from '@angular/router';
 import { filter } from 'rxjs';
+import { LanguageService } from './language.service';
+import { ToastService } from './toast.service';
 
 export type ScannerMode = 'hardware' | 'camera' | 'hybrid';
 
@@ -15,6 +17,8 @@ export interface ScannedCodeEvent {
 })
 export class ScannerService {
   private readonly router = inject(Router, { optional: true });
+  private readonly toastService = inject(ToastService);
+  private readonly languageService = inject(LanguageService);
 
   readonly showScanner = signal<boolean>(false);
   readonly scanLogged = signal<number>(0);
@@ -31,6 +35,11 @@ export class ScannerService {
   private keyBuffer: { char: string; time: number }[] = [];
   private bufferTimeoutId: any = null;
   private isListenerAttached = false;
+
+  // Keystrokes seen since the last Enter, including those the buffer dropped
+  // (slow gaps, "Unidentified" keys). Used to tell a failed scan from no input.
+  private strayKeyCount = 0;
+  private strayTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
     this.router?.events
@@ -108,34 +117,37 @@ export class ScannerService {
     }
 
     if (event.key === 'Enter') {
+      let scanAccepted = false;
       if (this.keyBuffer.length >= 3) {
         const count = this.keyBuffer.length;
         const totalDuration = this.keyBuffer[count - 1].time - this.keyBuffer[0].time;
         const avgInterval = count > 1 ? totalDuration / (count - 1) : 999;
 
-        const target = event.target as HTMLElement | null;
-        const isInput =
-          target &&
-          (target.tagName === 'INPUT' ||
-            target.tagName === 'TEXTAREA' ||
-            (target as HTMLElement).isContentEditable);
+        const isInput = this.isInputTarget(event);
 
         // Eyoyo EY-009P sends keys with ~10-40ms intervals.
         // Human typing is typically > 100-150ms per keystroke.
         const isScannerBurst = isInput ? avgInterval < 75 : avgInterval < 130;
 
         if (isScannerBurst) {
+          scanAccepted = true;
           event.preventDefault();
           const rawCode = this.keyBuffer.map((b) => b.char).join('').trim();
           this.processHardwareScan(rawCode);
         }
       }
+      this.notifyIfScanRejected(event, scanAccepted);
       this.keyBuffer = [];
       if (this.bufferTimeoutId) {
         clearTimeout(this.bufferTimeoutId);
         this.bufferTimeoutId = null;
       }
       return;
+    }
+
+    // Mobile keyboards may report "Unidentified"; count it so a dropped scan is noticed
+    if (event.key.length === 1 || event.key === 'Unidentified') {
+      this.countStrayKey();
     }
 
     // Ignore modifier and non-printable keys
@@ -160,6 +172,43 @@ export class ScannerService {
     this.bufferTimeoutId = setTimeout(() => {
       this.keyBuffer = [];
     }, 150);
+  }
+
+  private isInputTarget(event: KeyboardEvent): boolean {
+    const target = event.target as HTMLElement | null;
+    return (
+      !!target &&
+      (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
+    );
+  }
+
+  private countStrayKey(): void {
+    this.strayKeyCount++;
+    if (this.strayTimeoutId) {
+      clearTimeout(this.strayTimeoutId);
+    }
+    this.strayTimeoutId = setTimeout(() => {
+      this.strayKeyCount = 0;
+      this.strayTimeoutId = null;
+    }, 500);
+  }
+
+  /**
+   * Outside of input fields nobody types, so several keys followed by Enter
+   * without an accepted scan means the scanner burst was dropped.
+   */
+  private notifyIfScanRejected(event: KeyboardEvent, scanAccepted: boolean): void {
+    const strayKeys = this.strayKeyCount;
+    this.strayKeyCount = 0;
+    if (this.strayTimeoutId) {
+      clearTimeout(this.strayTimeoutId);
+      this.strayTimeoutId = null;
+    }
+    if (scanAccepted || strayKeys < 3) return;
+
+    if (this.isInputTarget(event)) return;
+
+    this.toastService.showToast(this.languageService.translate('scanner.notRecognized'), 'warning');
   }
 
   normalizeScannedCode(code: string): string {

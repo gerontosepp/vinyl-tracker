@@ -85,6 +85,10 @@ impl LabelPhotoService {
         .fetch_one(pool)
         .await
         .map_err(AppError::Database)?;
+        tracing::info!(
+            "Stored label photo {id} of user {user_id} ({} bytes, identification queued: {identify})",
+            jpeg.len()
+        );
 
         Ok(LabelPhotoUploadDto {
             id,
@@ -195,6 +199,10 @@ impl LabelPhotoService {
         .await
         .map_err(AppError::Database)?
         .ok_or_else(|| not_found(id))?;
+        tracing::info!(
+            "Label photo {id} of user {user_id} marked as {}",
+            status.as_str()
+        );
         to_dto(&row)
     }
 
@@ -208,6 +216,7 @@ impl LabelPhotoService {
         if result.rows_affected() == 0 {
             return Err(not_found(id));
         }
+        tracing::info!("User {user_id} deleted label photo {id}");
         Ok(())
     }
 
@@ -225,6 +234,11 @@ impl LabelPhotoService {
         .execute(pool)
         .await
         .map_err(AppError::Database)?;
+        tracing::info!(
+            "User {user_id} deleted {} label photo(s) (status filter: {})",
+            result.rows_affected(),
+            status.map_or("all", LabelPhotoStatus::as_str)
+        );
         Ok(LabelPhotoDeleteDto {
             deleted: i64::try_from(result.rows_affected()).unwrap_or(i64::MAX),
             pending_count: Self::pending_count(pool, user_id).await?,
@@ -273,6 +287,7 @@ impl LabelPhotoService {
         .await
         .map_err(AppError::Database)?
         .ok_or_else(|| not_found(id))?;
+        tracing::info!("Label photo {id} of user {user_id} queued for identification");
         to_dto(&row)
     }
 
@@ -324,6 +339,10 @@ impl LabelPhotoService {
         .execute(pool)
         .await
         .map_err(AppError::Database)?;
+        tracing::debug!(
+            "Label photo {id} identification finished as '{}' (model '{model}')",
+            state.as_str()
+        );
         Ok(())
     }
 
@@ -334,7 +353,7 @@ impl LabelPhotoService {
         id: i64,
         message: &str,
     ) -> Result<(), AppError> {
-        sqlx::query(
+        let result = sqlx::query(
             "UPDATE label_photo SET identify_state = 'error', identify_error = $2
              WHERE id = $1 AND identify_state IN ('queued', 'running')",
         )
@@ -343,6 +362,9 @@ impl LabelPhotoService {
         .execute(pool)
         .await
         .map_err(AppError::Database)?;
+        if result.rows_affected() > 0 {
+            tracing::warn!("Aborted identification of label photo {id}: {message}");
+        }
         Ok(())
     }
 

@@ -11,6 +11,16 @@
 
 ---
 
+## v1.5.0 (2026-10-29)
+
+- **Plus/Minus im Sortiermodus (`#283`)**: Zeile und Spalte des Startfachs lassen sich mit **+** und **−** verstellen. Das hilft am Handy, wenn die Bildschirmtastatur fehlt, weil ein Bluetooth-Scanner verbunden ist (iOS hält ihn für eine Hardware-Tastatur). Die Eingabe per Tastatur bleibt möglich.
+- **Fix: Hinweis bei nicht erkanntem Scan (`#271`)**: Wird ein Hardware-Scan nicht erkannt (z. B. weil der Scanner am Handy zu langsam sendet), erscheint außerhalb von Eingabefeldern der Hinweis „Scan nicht erkannt. Bitte erneut scannen.“ statt stiller Funkstille.
+- **Fix: Genres immer alphabetisch (`#278`)**: Die Genres einer Platte werden in Sammlung, Details und Export in fester, alphabetischer Reihenfolge geliefert statt in der zufälligen Reihenfolge der Datenbank. Die Reihenfolge der Genres in der API-Antwort ändert sich dadurch gegenüber der Anzeige in Discogs.
+- **Security: Roon-Pairing-Token nicht mehr im Log (`#275`)**: Das Backend schreibt das Roon-Pairing-Token nicht mehr ins Log, sondern nur noch, dass das Pairing bestätigt wurde. **Hinweis:** Logs älterer Versionen können das Token noch enthalten – gib sie nicht weiter und lösche sie bei Bedarf; wer ganz sichergehen will, koppelt die Erweiterung in Roon neu.
+- **Mehr Backend-Logs (`#273`, `#277`)**: Das Backend protokolliert jetzt sicherheits- und betriebsrelevante Ereignisse: fehlgeschlagene Logins und Passwort-Resets (Benutzername, Client-IP), das Auth-Rate-Limit, ungültige Token, erfolgreiche Logins und Registrierungen, den Scan-Ablauf, Export und Restore (Format, Anzahl, Größe, Dauer), Label-Foto-Upload, -Statuswechsel und -Löschen sowie das Löschen einzelner Scans und das Zurücksetzen aller Listens. Der OpenRouter-Client loggt Fehlerantworten sowie Modell, Dauer und Token-Verbrauch je Aufruf (`debug`). Passwörter, Tokens und API-Keys werden nie geloggt; Details stehen im Log-Level `debug`, den du über `RUST_LOG` steuerst.
+
+---
+
 ## v1.4.1 (2026-10-25)
 
 - **Kleinere Label-Fotos für Claude (`#251`)**: `get_label_inbox` liefert die Label-Fotos auf höchstens 1024 px Kantenlänge verkleinert, das spart Tokens im Chat. Dafür akzeptiert `GET /api/label-photos/{id}/image` den optionalen Parameter `max_edge` (64–4096); ohne ihn kommt weiterhin das Original.

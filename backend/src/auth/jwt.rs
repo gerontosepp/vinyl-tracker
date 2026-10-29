@@ -1,6 +1,8 @@
 use crate::error::AppError;
 use chrono::Utc;
-use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
+use jsonwebtoken::{
+    DecodingKey, EncodingKey, Header, Validation, decode, encode, errors::ErrorKind,
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -38,7 +40,14 @@ pub fn validate_token(token: &str, secret: &str) -> Result<Claims, AppError> {
         &validation,
     )
     .map(|data| data.claims)
-    .map_err(|e| AppError::Unauthorized(format!("Invalid or expired token: {e}")))
+    .map_err(|e| {
+        // Expired or malformed tokens are routine (stale cookies, scanners) and appear in the
+        // debug log of the resulting 401; only a wrong signature hints at a forged token
+        if matches!(e.kind(), ErrorKind::InvalidSignature) {
+            tracing::warn!("Rejected JWT with invalid signature");
+        }
+        AppError::Unauthorized(format!("Invalid or expired token: {e}"))
+    })
 }
 
 #[cfg(test)]

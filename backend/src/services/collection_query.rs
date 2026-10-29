@@ -8,7 +8,10 @@ use crate::{
         discogs::{DiscogsArtist, DiscogsPagination},
         record::RecordSource,
     },
-    services::storage::StorageService,
+    services::{
+        shelf_order::{SHELF_ARTIST_KEY_SQL, shelf_order_sql},
+        storage::StorageService,
+    },
 };
 use sqlx::{PgPool, Row, postgres::PgRow};
 use std::collections::HashMap;
@@ -30,22 +33,6 @@ const RELEASE_SELECT_SQL: &str = "SELECT ci.id as item_id, ci.instance_id, ci.ad
                  WHERE user_id = $1
                  GROUP BY record_id, user_id
              ) le ON le.record_id = ci.record_id";
-
-/// Automatic artist sort key: artist without a leading article, lowercase.
-/// Ignored articles: The, A, An, Der, Die, Das, Le, La, Les ("Die Sterne" sorts under S).
-pub const DEFAULT_ARTIST_KEY_SQL: &str =
-    r#"REGEXP_REPLACE(LOWER(rc.artist), '^(the|an?|der|die|das|les?|la)\s+', '', 'i')"#;
-/// Shelf sort key columns (custom sort string or automatic artist key, year, title). The
-/// storage layout compares the selected values byte-wise, which matches `COLLATE "C"` in
-/// [`shelf_order_sql`].
-pub const SHELF_ARTIST_KEY_SQL: &str = r#"COALESCE(LOWER(ci.sort_key), REGEXP_REPLACE(LOWER(rc.artist), '^(the|an?|der|die|das|les?|la)\s+', '', 'i'))"#;
-pub const SHELF_TITLE_KEY_SQL: &str = "COALESCE(LOWER(rc.title), '')";
-/// Shelf order of the collection view ("artist", ascending) and of the storage layout.
-pub fn shelf_order_sql() -> String {
-    format!(
-        r#"{SHELF_ARTIST_KEY_SQL} COLLATE "C" ASC NULLS LAST, rc.release_year COLLATE "C" ASC NULLS LAST, {SHELF_TITLE_KEY_SQL} COLLATE "C" ASC, ci.instance_id ASC"#
-    )
-}
 
 impl CollectionQueryService {
     /// Resolves the storage filter into the instance IDs the query is restricted to.
@@ -235,7 +222,7 @@ impl CollectionQueryService {
 
         if !record_ids.is_empty() {
             let genre_rows =
-                sqlx::query("SELECT record_id, genre FROM record_genres WHERE record_id = ANY($1)")
+                sqlx::query("SELECT record_id, genre FROM record_genres WHERE record_id = ANY($1) ORDER BY genre COLLATE \"C\"")
                     .bind(&record_ids)
                     .fetch_all(pool)
                     .await
@@ -305,11 +292,13 @@ impl CollectionQueryService {
             None => return Ok(None),
         };
 
-        let genre_rows = sqlx::query("SELECT genre FROM record_genres WHERE record_id = $1")
-            .bind(row.get::<i64, _>("record_id"))
-            .fetch_all(pool)
-            .await
-            .map_err(AppError::Database)?;
+        let genre_rows = sqlx::query(
+            "SELECT genre FROM record_genres WHERE record_id = $1 ORDER BY genre COLLATE \"C\"",
+        )
+        .bind(row.get::<i64, _>("record_id"))
+        .fetch_all(pool)
+        .await
+        .map_err(AppError::Database)?;
         let genres: Vec<String> = genre_rows.iter().map(|r| r.get("genre")).collect();
 
         Ok(Some(map_release(&row, genres)))

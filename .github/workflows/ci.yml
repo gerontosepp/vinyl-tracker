@@ -4,8 +4,9 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 on:
+  # develop is tested in its pull requests; only main runs again after the merge (it publishes images)
   push:
-    branches: [ "main", "develop" ]
+    branches: [ "main" ]
   pull_request:
     branches: [ "main", "develop" ]
   workflow_dispatch:
@@ -18,10 +19,44 @@ permissions:
   contents: read
 
 jobs:
+  # Decides per component whether its job has to run in a pull request. Any other event, a failed
+  # lookup or a change to the workflow itself runs everything; docs-only pull requests run nothing.
+  changes:
+    name: Detect changed components
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      mcp: ${{ steps.filter.outputs.mcp }}
+    steps:
+    - name: Filter changed paths
+      id: filter
+      env:
+        GH_TOKEN: ${{ github.token }}
+        REPO: ${{ github.repository }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+      run: |
+        if ! FILES=$(gh api --paginate "repos/$REPO/pulls/$PR_NUMBER/files" --jq '.[].filename'); then
+          echo "::warning::Could not list the changed files, running all jobs"
+          FILES=".github/"
+        fi
+        echo "Changed files:"; echo "$FILES"
+        match() { echo "$FILES" | grep -qE "$1" && echo true || echo false; }
+        # scripts/ and the Help/Release-Info docs feed the generated frontend assets.
+        echo "backend=$(match '^(backend/|\.github/)')" >> "$GITHUB_OUTPUT"
+        echo "frontend=$(match '^(frontend/|scripts/|docs/(Help|Release-Info)|\.github/)')" >> "$GITHUB_OUTPUT"
+        # The MCP server shares the API types crate with the backend.
+        echo "mcp=$(match '^(mcp/|backend/crates/|\.github/)')" >> "$GITHUB_OUTPUT"
+
   backend-test:
     name: Backend Tests & Linting (Linux)
-    # Skip redundant test execution on PRs from develop (develop is already fully tested on push)
-    if: github.event_name != 'pull_request' || github.head_ref != 'develop'
+    needs: changes
+    # !cancelled() keeps the job running when `changes` is skipped (non-PR events)
+    if: ${{ !cancelled() && (github.event_name != 'pull_request' || needs.changes.outputs.backend == 'true') }}
     runs-on: [self-hosted, linux]
     defaults:
       run:
@@ -29,8 +64,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      with:
-        fetch-depth: 0
 
     - name: Set up Rust toolchain
       uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master (no release tags)
@@ -39,23 +72,20 @@ jobs:
         components: clippy, rustfmt, llvm-tools-preview
 
     - name: Install cargo-llvm-cov
-      uses: taiki-e/install-action@8cca0918f8471c33515202b73f56ab27f2bed283 # v2.87.29
+      uses: taiki-e/install-action@1e29709c0ec63babbe8f266397a465f29a825f91 # v2.87.31
       with:
         tool: cargo-llvm-cov
 
     - name: Rust Cache
-      uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       with:
         workspaces: "./backend -> ./backend/target"
 
     - name: Check Formatting
       run: cargo fmt --all -- --check
 
-    - name: Run Cargo Check
-      run: cargo check
-
     - name: Run Clippy Linter
-      run: cargo clippy -- -D warnings
+      run: cargo clippy --all-targets -- -D warnings
 
     - name: Start PostgreSQL Test Container
       run: |
@@ -149,8 +179,9 @@ jobs:
 
   frontend-test:
     name: Frontend Tests & Build (Linux)
-    # Skip redundant test execution on PRs from develop (develop is already fully tested on push)
-    if: github.event_name != 'pull_request' || github.head_ref != 'develop'
+    needs: changes
+    # !cancelled() keeps the job running when `changes` is skipped (non-PR events)
+    if: ${{ !cancelled() && (github.event_name != 'pull_request' || needs.changes.outputs.frontend == 'true') }}
     runs-on: [self-hosted, linux]
     defaults:
       run:
@@ -158,8 +189,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      with:
-        fetch-depth: 0
     
     - name: Set up Node.js
       uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -204,8 +233,9 @@ jobs:
 
   mcp-test:
     name: MCP Server Tests (Linux)
-    # Skip redundant test execution on PRs from develop (develop is already fully tested on push)
-    if: github.event_name != 'pull_request' || github.head_ref != 'develop'
+    needs: changes
+    # !cancelled() keeps the job running when `changes` is skipped (non-PR events)
+    if: ${{ !cancelled() && (github.event_name != 'pull_request' || needs.changes.outputs.mcp == 'true') }}
     runs-on: [self-hosted, linux]
     defaults:
       run:
@@ -213,8 +243,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      with:
-        fetch-depth: 0
 
     - name: Set up Rust toolchain
       uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master (no release tags)
@@ -223,15 +251,12 @@ jobs:
         components: clippy, rustfmt
 
     - name: Rust Cache
-      uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       with:
         workspaces: "./mcp -> ./mcp/target"
 
     - name: Check Formatting
       run: cargo fmt --all -- --check
-
-    - name: Run Cargo Check
-      run: cargo check
 
     - name: Run Unit Tests
       run: cargo test --verbose
@@ -264,7 +289,7 @@ jobs:
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}

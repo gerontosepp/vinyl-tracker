@@ -9,6 +9,7 @@ import { getErrorMessage } from '../../core/utils/error';
 import { StorageMedia, StorageSequenceItem } from '../../core/types';
 import { compartmentProgress, isNewCompartment, startIndex } from './sort-sequence';
 import { HelpLinkComponent } from '../../shared/components/help-link/help-link.component';
+import { TooltipDirective } from '../../shared/directives/tooltip.directive';
 
 interface SortShelf {
   id: number;
@@ -25,7 +26,7 @@ interface SortShelf {
 @Component({
   selector: 'app-sort-mode',
   standalone: true,
-  imports: [FormsModule, TranslatePipe, HelpLinkComponent],
+  imports: [FormsModule, TranslatePipe, HelpLinkComponent, TooltipDirective],
   changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <div
@@ -64,36 +65,88 @@ interface SortShelf {
                 </select>
               </label>
               <div class="grid grid-cols-2 gap-3">
-                <label class="block text-xs font-bold text-slate-600 dark:text-slate-300">
-                  {{ 'sort.row' | translate }}
-                  <input
-                    type="number"
-                    inputmode="numeric"
-                    name="row"
-                    min="1"
-                    [max]="shelf()?.rows ?? 1"
-                    [ngModel]="row()"
-                    (ngModelChange)="row.set(+$event)"
-                    data-testid="sort-row"
-                    [class]="inputClass"
-                    [class.border-red-500]="!rowValid()"
-                  />
-                </label>
-                <label class="block text-xs font-bold text-slate-600 dark:text-slate-300">
-                  {{ 'sort.column' | translate }}
-                  <input
-                    type="number"
-                    inputmode="numeric"
-                    name="column"
-                    min="1"
-                    [max]="shelf()?.columns ?? 1"
-                    [ngModel]="column()"
-                    (ngModelChange)="column.set(+$event)"
-                    data-testid="sort-column"
-                    [class]="inputClass"
-                    [class.border-red-500]="!columnValid()"
-                  />
-                </label>
+                <div>
+                  <label for="sort-row-input" class="block text-xs font-bold text-slate-600 dark:text-slate-300">{{ 'sort.row' | translate }}</label>
+                  <div class="mt-1 flex items-center gap-2">
+                    <button
+                      type="button"
+                      (click)="step('row', -1)"
+                      [disabled]="row() <= 1"
+                      [attr.aria-label]="'sort.rowDecrease' | translate"
+                      [appTooltip]="'sort.rowDecrease' | translate"
+                      data-testid="sort-row-minus"
+                      [class]="stepClass"
+                    >
+                      <span aria-hidden="true">−</span>
+                    </button>
+                    <input
+                      id="sort-row-input"
+                      type="number"
+                      inputmode="numeric"
+                      name="row"
+                      min="1"
+                      [max]="shelf()?.rows ?? 1"
+                      [ngModel]="row()"
+                      (ngModelChange)="row.set(+$event)"
+                      data-testid="sort-row"
+                      [class]="stepInputClass"
+                      class="min-w-0 text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                      [class.border-red-500]="!rowValid()"
+                    />
+                    <button
+                      type="button"
+                      (click)="step('row', 1)"
+                      [disabled]="row() >= (shelf()?.rows ?? 1)"
+                      [attr.aria-label]="'sort.rowIncrease' | translate"
+                      [appTooltip]="'sort.rowIncrease' | translate"
+                      data-testid="sort-row-plus"
+                      [class]="stepClass"
+                    >
+                      <span aria-hidden="true">+</span>
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label for="sort-column-input" class="block text-xs font-bold text-slate-600 dark:text-slate-300">{{ 'sort.column' | translate }}</label>
+                  <div class="mt-1 flex items-center gap-2">
+                    <button
+                      type="button"
+                      (click)="step('column', -1)"
+                      [disabled]="column() <= 1"
+                      [attr.aria-label]="'sort.columnDecrease' | translate"
+                      [appTooltip]="'sort.columnDecrease' | translate"
+                      data-testid="sort-column-minus"
+                      [class]="stepClass"
+                    >
+                      <span aria-hidden="true">−</span>
+                    </button>
+                    <input
+                      id="sort-column-input"
+                      type="number"
+                      inputmode="numeric"
+                      name="column"
+                      min="1"
+                      [max]="shelf()?.columns ?? 1"
+                      [ngModel]="column()"
+                      (ngModelChange)="column.set(+$event)"
+                      data-testid="sort-column"
+                      [class]="stepInputClass"
+                      class="min-w-0 text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                      [class.border-red-500]="!columnValid()"
+                    />
+                    <button
+                      type="button"
+                      (click)="step('column', 1)"
+                      [disabled]="column() >= (shelf()?.columns ?? 1)"
+                      [attr.aria-label]="'sort.columnIncrease' | translate"
+                      [appTooltip]="'sort.columnIncrease' | translate"
+                      data-testid="sort-column-plus"
+                      [class]="stepClass"
+                    >
+                      <span aria-hidden="true">+</span>
+                    </button>
+                  </div>
+                </div>
               </div>
               @if (shelf(); as s) {
                 <p class="text-xs" [class]="startValid() ? 'text-slate-500 dark:text-slate-400' : 'text-red-600 dark:text-red-400 font-semibold'" data-testid="sort-grid-hint">
@@ -210,6 +263,13 @@ export class SortModeComponent implements OnInit, OnDestroy {
   readonly inputClass =
     'mt-1 w-full border border-slate-200 dark:border-slate-600 rounded-xl py-3 px-3 bg-white dark:bg-slate-800 text-lg font-semibold outline-none focus:ring-2 focus:ring-indigo-500/50';
 
+  /** The row around the stepper carries the top margin instead, so input and buttons line up. */
+  readonly stepInputClass = this.inputClass.replace('mt-1 ', '');
+
+  /** Round +/- buttons next to row and column; the on-screen keyboard is missing while a Bluetooth scanner is connected. */
+  readonly stepClass =
+    'h-12 w-11 shrink-0 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-2xl font-black leading-none cursor-pointer disabled:opacity-40 disabled:cursor-default';
+
   readonly state = signal<'setup' | 'sorting' | 'done'>('setup');
   readonly loading = signal(true);
   readonly starting = signal(false);
@@ -265,6 +325,18 @@ export class SortModeComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     void this.wakeLock.release();
+  }
+
+  /** Moves row or column by one, kept within the grid of the chosen shelf. */
+  step(axis: 'row' | 'column', delta: 1 | -1): void {
+    const shelf = this.shelf();
+    if (!shelf) return;
+    const value = axis === 'row' ? this.row : this.column;
+    const max = axis === 'row' ? shelf.rows : shelf.columns;
+    const typed = value();
+    // A typed 1.5 moves to the next whole number in the direction of the button; an empty field to 1
+    const next = !Number.isFinite(typed) ? 1 : delta > 0 ? Math.floor(typed) + 1 : Math.ceil(typed) - 1;
+    value.set(Math.min(max, Math.max(1, next)));
   }
 
   start(): void {

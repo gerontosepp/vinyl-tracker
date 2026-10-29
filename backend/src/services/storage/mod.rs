@@ -12,7 +12,7 @@ use crate::{
         StorageLayoutDto, StorageMedia, StorageMoveDto, StoragePlacementDto, StorageSequenceDto,
         StorageSequenceItemDto, StorageSlotDto, StorageUnitLayoutDto,
     },
-    services::collection_query::{SHELF_ARTIST_KEY_SQL, SHELF_TITLE_KEY_SQL},
+    services::shelf_order::{SHELF_ARTIST_KEY_SQL, SHELF_TITLE_KEY_SQL},
 };
 use layout::{Bound, Layout, LayoutItem, ShelfKey, ShelfSpec, assign, compartments_of, distribute};
 use sqlx::{PgPool, Row};

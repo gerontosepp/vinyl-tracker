@@ -40,6 +40,8 @@ Under **Settings → Barcode & QR scanner** you choose:
 
 **Scanner live test** checks whether the hardware scanner is detected; an optional beep confirms each scan.
 
+If a scan is not recognized (e.g. because the scanner sends too slowly), the hint "Scan not recognized. Please scan again." appears outside of input fields.
+
 ## Records without barcode (label photo) {#label-foto}
 
 Older records often have no barcode. A photo of the **label** (the paper sticker in the middle of the record) helps.
@@ -119,7 +121,7 @@ The overview shows every shelf as a grid with fill level and artist range. **Red
 
 Sort mode (shelf icon in the bottom bar on phones) guides you record by record through the shelves – handy when filling the shelves for the first time or after **Redistribute**.
 
-1. Choose the shelf and the start compartment (row:column).
+1. Choose the shelf and the start compartment (row:column) – row and column can be changed with **+** and **−**, so no keyboard is needed (e.g. when a Bluetooth scanner is connected and iOS hides the on-screen keyboard).
 2. Step through the records with **Next**: cover, title, artist, compartment and position within it are shown; a new compartment is highlighted.
 
 The screen stays on while sorting.

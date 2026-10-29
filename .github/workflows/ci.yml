@@ -264,7 +264,9 @@ jobs:
   publish-images:
     name: Build & Publish Container Images (Multi-Arch)
     needs: [backend-test, frontend-test, mcp-test]
-    if: github.ref == 'refs/heads/main'
+    # The skipped `changes` job (non-PR events) is an indirect ancestor; the implicit success() of a
+    # plain if would then skip this job, so the direct results are checked instead
+    if: ${{ !cancelled() && github.ref == 'refs/heads/main' && needs.backend-test.result == 'success' && needs.frontend-test.result == 'success' && needs.mcp-test.result == 'success' }}
     runs-on: [self-hosted, linux]
     permissions:
       contents: read
@@ -341,7 +343,7 @@ jobs:
   cleanup-ghcr:
     name: Cleanup GHCR Packages
     needs: [publish-images]
-    if: github.ref == 'refs/heads/main'
+    if: ${{ !cancelled() && github.ref == 'refs/heads/main' && needs.publish-images.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       packages: write

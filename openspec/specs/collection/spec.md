@@ -90,6 +90,21 @@ Der Nutzer MUST für eine Platte seiner Sammlung einen eigenen Sortier-String fe
 - **WHEN** der Sortier-String für eine Platte gesetzt wird, die nicht in der Sammlung ist
 - **THEN** antwortet das Backend mit 404
 
+### Requirement: Genres einer Platte
+Die Genres einer Platte MUST pro Platte und Genre genau einmal gespeichert sein (eindeutig in `record_genres`, Migration 16), auch wenn Scans, Discogs-Sync, Übernahme und Wiederherstellung gleichzeitig dieselbe Platte schreiben. Das Backend MUST die Genres in Sammlung, Detailansicht und Export in fester Reihenfolge liefern, aufsteigend nach der byteweisen Sortierung des Genre-Namens (Collation `C`), unabhängig von der Reihenfolge bei Discogs oder in der Datenbank.
+
+#### Scenario: Feste Reihenfolge
+- **WHEN** Discogs die Genres „Rock“, „Pop“ liefert
+- **THEN** zeigen Sammlung, Detailansicht und Export „Pop“, „Rock“
+
+#### Scenario: Wiederholtes Schreiben
+- **WHEN** dieselbe Platte mehrfach gescannt, synchronisiert oder gleichzeitig von mehreren Nutzern übernommen wird
+- **THEN** ist jedes Genre der Platte genau einmal vorhanden
+
+#### Scenario: Bestehende Duplikate
+- **WHEN** die Datenbank vor Migration 16 doppelte Genre-Zeilen enthält
+- **THEN** behält die Migration je Platte und Genre eine Zeile und legt den Eindeutigkeits-Index an
+
 ### Requirement: Manuelle Platten anlegen und verwalten
 Der Nutzer MUST Platten und CDs ohne Discogs-Eintrag manuell anlegen können (Pflicht: Künstler, Titel, Format; optional u. a. Jahr, Label, Katalognummer, Land, Barcode, Genres, Zustand, Notizen, eigener Wert, Cover). Manuelle Platten MUST in Sammlung, Regal, Statistik, Backup und Druck erscheinen und als „Manuell“ gekennzeichnet sein.
 

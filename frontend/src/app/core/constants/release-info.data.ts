@@ -12,7 +12,15 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "tag": "In Entwicklung",
     "isCurrent": false,
     "isUnreleased": true,
-    "items": []
+    "items": [
+      {
+        "title": "Fix: Genres werden nicht mehr doppelt gespeichert (`#285`)",
+        "type": "fix",
+        "typeLabel": "Fix",
+        "summary": "Scans, Discogs-Sync, Übernahme und Wiederherstellung konnten dasselbe Genre einer Platte mehrfach ablegen, besonders bei gleichzeitigen Zugriffen. Eine neue Migration entfernt vorhandene Duplikate und macht Genre pro Platte eindeutig; alle Schreiber gehen durch eine gemeinsame, wiederholbare Funktion. Die Migration läuft beim Start automatisch.",
+        "details": []
+      }
+    ]
   },
   {
     "version": "v1.5.0",

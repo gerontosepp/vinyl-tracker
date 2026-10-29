@@ -6,7 +6,7 @@ use crate::{
         scan::{DiscogsMatchDto, ResetResultDto, ScanResultDto, TrackedRecordDto},
         user::AppUser,
     },
-    services::crypto_service::CryptoService,
+    services::{crypto_service::CryptoService, record_genres::add_genres},
 };
 use chrono::Utc;
 use sqlx::{PgPool, Row, postgres::PgRow};
@@ -305,14 +305,10 @@ impl ScanService {
 
         let record_id: i64 = row.get("id");
 
-        if let Some(genres) = &release.genres {
-            for g in genres {
-                let _ = sqlx::query("INSERT INTO record_genres (record_id, genre) VALUES ($1, $2) ON CONFLICT DO NOTHING")
-                    .bind(record_id)
-                    .bind(g)
-                    .execute(pool)
-                    .await;
-            }
+        if let Some(genres) = &release.genres
+            && let Err(e) = add_genres(pool, record_id, genres).await
+        {
+            tracing::warn!("Could not store the genres of record {record_id}: {e}");
         }
 
         // 3. Insert listen_event

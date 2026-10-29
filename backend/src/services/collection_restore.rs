@@ -7,9 +7,9 @@ use crate::{
     services::{
         export_service::BACKUP_FORMAT_VERSION,
         manual_record_service::{
-            ManualRecordService, ValidatedManualRecord, normalize_cover, replace_genres,
-            store_cover,
+            ManualRecordService, ValidatedManualRecord, normalize_cover, store_cover,
         },
+        record_genres::replace_genres,
         record_service::MAX_SORT_KEY_LEN,
         storage::{StorageService, backup::StorageBackupService},
     },
@@ -383,7 +383,8 @@ impl CollectionRestoreService {
             sqlx::query(
                 "INSERT INTO record_genres (record_id, genre)
                  SELECT $1, genre FROM UNNEST($2::varchar[]) AS genre
-                 WHERE NOT EXISTS (SELECT 1 FROM record_genres WHERE record_id = $1)",
+                 WHERE NOT EXISTS (SELECT 1 FROM record_genres WHERE record_id = $1)
+                 ON CONFLICT DO NOTHING",
             )
             .bind(record_id)
             .bind(&release.genres)
@@ -467,7 +468,7 @@ impl CollectionRestoreService {
             }
         };
 
-        replace_genres(tx, record_id, &record.genres).await?;
+        replace_genres(&mut **tx, record_id, &record.genres).await?;
         if let Some(cover) = &manual.cover {
             // Re-encoded like an upload: downscaled and without metadata, as it is served publicly
             let jpeg = normalize_cover(cover.clone().into()).await?;

@@ -139,3 +139,46 @@ async fn test_pending_migrations_run_on_existing_history() {
 
     db.drop().await;
 }
+
+#[tokio::test]
+async fn test_unique_genres_migration_removes_duplicates_and_blocks_new_ones() {
+    let db = TestDatabase::create().await;
+    partial_migrator(15).run(&db.pool).await.unwrap();
+
+    let record_id: i64 = sqlx::query_scalar(
+        "INSERT INTO record_cache (discogs_id, title) VALUES (1, 'Posen') RETURNING id",
+    )
+    .fetch_one(&db.pool)
+    .await
+    .unwrap();
+    for genre in ["Rock", "Rock", "Pop", "Rock"] {
+        sqlx::query("INSERT INTO record_genres (record_id, genre) VALUES ($1, $2)")
+            .bind(record_id)
+            .bind(genre)
+            .execute(&db.pool)
+            .await
+            .unwrap();
+    }
+
+    run_migrations(&db.pool).await.unwrap();
+
+    let mut genres: Vec<String> =
+        sqlx::query_scalar("SELECT genre FROM record_genres WHERE record_id = $1")
+            .bind(record_id)
+            .fetch_all(&db.pool)
+            .await
+            .unwrap();
+    genres.sort();
+    assert_eq!(genres, ["Pop", "Rock"]);
+
+    let duplicate = sqlx::query("INSERT INTO record_genres (record_id, genre) VALUES ($1, 'Pop')")
+        .bind(record_id)
+        .execute(&db.pool)
+        .await;
+    assert!(
+        duplicate.is_err(),
+        "the same genre must not be stored twice"
+    );
+
+    db.drop().await;
+}

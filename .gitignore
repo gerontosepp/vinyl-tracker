@@ -35,3 +35,7 @@ frontend/certs/
 
 # graphify knowledge graph output
 graphify-out/
+
+# Editor swap files
+*.swp
+*.swo

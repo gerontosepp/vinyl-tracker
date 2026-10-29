@@ -8,7 +8,10 @@ use crate::{
         discogs::{DiscogsArtist, DiscogsPagination},
         record::RecordSource,
     },
-    services::storage::StorageService,
+    services::{
+        shelf_order::{SHELF_ARTIST_KEY_SQL, shelf_order_sql},
+        storage::StorageService,
+    },
 };
 use sqlx::{PgPool, Row, postgres::PgRow};
 use std::collections::HashMap;
@@ -35,17 +38,6 @@ const RELEASE_SELECT_SQL: &str = "SELECT ci.id as item_id, ci.instance_id, ci.ad
 /// Ignored articles: The, A, An, Der, Die, Das, Le, La, Les ("Die Sterne" sorts under S).
 pub const DEFAULT_ARTIST_KEY_SQL: &str =
     r#"REGEXP_REPLACE(LOWER(rc.artist), '^(the|an?|der|die|das|les?|la)\s+', '', 'i')"#;
-/// Shelf sort key columns (custom sort string or automatic artist key, year, title). The
-/// storage layout compares the selected values byte-wise, which matches `COLLATE "C"` in
-/// [`shelf_order_sql`].
-pub const SHELF_ARTIST_KEY_SQL: &str = r#"COALESCE(LOWER(ci.sort_key), REGEXP_REPLACE(LOWER(rc.artist), '^(the|an?|der|die|das|les?|la)\s+', '', 'i'))"#;
-pub const SHELF_TITLE_KEY_SQL: &str = "COALESCE(LOWER(rc.title), '')";
-/// Shelf order of the collection view ("artist", ascending) and of the storage layout.
-pub fn shelf_order_sql() -> String {
-    format!(
-        r#"{SHELF_ARTIST_KEY_SQL} COLLATE "C" ASC NULLS LAST, rc.release_year COLLATE "C" ASC NULLS LAST, {SHELF_TITLE_KEY_SQL} COLLATE "C" ASC, ci.instance_id ASC"#
-    )
-}
 
 impl CollectionQueryService {
     /// Resolves the storage filter into the instance IDs the query is restricted to.

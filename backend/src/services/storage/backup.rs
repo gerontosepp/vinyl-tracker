@@ -60,7 +60,7 @@ impl StorageBackupService {
                 });
         }
 
-        let units = sqlx::query(
+        let units: Vec<StorageBackupUnit> = sqlx::query(
             "SELECT su.id, su.name, st.name AS type_name
              FROM storage_unit su
              JOIN storage_type st ON st.id = su.type_id
@@ -78,6 +78,11 @@ impl StorageBackupService {
         })
         .collect();
 
+        tracing::debug!(
+            "Exported storage backup of user {user_id}: {} type(s), {} shelf/shelves",
+            types.len(),
+            units.len()
+        );
         Ok(Some(StorageBackup { types, units }))
     }
 
@@ -148,6 +153,11 @@ impl StorageBackupService {
         .into_iter()
         .collect();
 
+        tracing::debug!(
+            "Restoring storage backup of user {user_id}: {} type(s), {} shelf/shelves",
+            backup.types.len(),
+            backup.units.len()
+        );
         for storage_type in &backup.types {
             sqlx::query(
                 "INSERT INTO storage_type (user_id, name, media, grid_rows, grid_columns, capacity)

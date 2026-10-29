@@ -42,6 +42,7 @@ impl ScanService {
 
         let clean_barcode: String = raw_barcode.chars().filter(|c| !c.is_whitespace()).collect();
         let lower = clean_barcode.to_lowercase();
+        tracing::debug!("Scan of user {}: code {clean_barcode:?}", user.id);
 
         // 1. Check if Custom QR Code
         let is_custom_qr = lower.starts_with("discogs-id:")
@@ -66,6 +67,8 @@ impl ScanService {
                 .replace('ß', "-")
                 .parse::<i64>()
                 .map_err(|_| AppError::BadRequest("Invalid custom barcode format".to_string()))?;
+
+            tracing::debug!("Scan is a custom QR code for release id {release_id}");
 
             // Negative IDs are manual records, which exist only locally
             if let Some(ref token) = dec_token
@@ -114,6 +117,8 @@ impl ScanService {
             }
         } else {
             // Manual records of the user carry their own barcode and are found without Discogs
+            let variants = barcode_variants(&clean_barcode);
+            tracing::debug!("Looking up manual records by barcode variants {variants:?}");
             let local_rec = sqlx::query(
                 "SELECT rc.id, rc.discogs_id, rc.title, rc.artist, rc.thumb_url
                  FROM record_cache rc
@@ -122,7 +127,7 @@ impl ScanService {
                  LIMIT 1",
             )
             .bind(user.id)
-            .bind(barcode_variants(&clean_barcode))
+            .bind(&variants)
             .fetch_optional(pool)
             .await
             .map_err(AppError::Database)?;
@@ -180,6 +185,11 @@ impl ScanService {
                 }
             }
 
+            tracing::debug!(
+                "Barcode {clean_barcode:?}: {} Discogs result(s)",
+                results.len()
+            );
+
             // Check if any result is in the user's collection
             for candidate in &results {
                 let in_local = sqlx::query_scalar::<_, bool>(
@@ -236,6 +246,11 @@ impl ScanService {
             Some(rel) => rel,
             None => {
                 if !discogs_matches.is_empty() {
+                    tracing::info!(
+                        "Scan of user {} not in the collection, {} Discogs match(es)",
+                        user.id,
+                        discogs_matches.len()
+                    );
                     return Ok(ScanResultDto {
                         success: false,
                         message: "Release not found in collection, but found on Discogs."
@@ -244,6 +259,8 @@ impl ScanService {
                         discogs_matches: Some(discogs_matches),
                     });
                 }
+                // Ordinary input (partial scan, record not owned), not a server problem
+                tracing::info!("Scan {clean_barcode:?} of user {} not recognized", user.id);
                 return Ok(ScanResultDto {
                     success: false,
                     message: "Release not found in collection or invalid barcode.".to_string(),
@@ -308,6 +325,11 @@ impl ScanService {
             .await
             .map_err(AppError::Database)?;
 
+        tracing::info!(
+            "Scan of user {} logged a listen of release {}",
+            user.id,
+            release.id
+        );
         let title = release.title.clone();
         let thumb_url = release.thumb.clone();
 
@@ -331,13 +353,15 @@ impl ScanService {
         row: &PgRow,
     ) -> Result<ScanResultDto, AppError> {
         let title: String = row.get("title");
+        let record_id: i64 = row.get("id");
         sqlx::query("INSERT INTO listen_event (user_id, record_id, timestamp) VALUES ($1, $2, $3)")
             .bind(user_id)
-            .bind(row.get::<i64, _>("id"))
+            .bind(record_id)
             .bind(Utc::now().naive_utc())
             .execute(pool)
             .await
             .map_err(AppError::Database)?;
+        tracing::info!("Scan of user {user_id} logged a listen of local record {record_id}");
 
         Ok(ScanResultDto {
             success: true,
@@ -366,6 +390,7 @@ impl ScanService {
             return Err(AppError::NotFound("Scan not found".to_string()));
         }
 
+        tracing::info!("User {user_id} deleted scan {event_id}");
         Ok(())
     }
 
@@ -379,6 +404,10 @@ impl ScanService {
             .await
             .map_err(AppError::Database)?;
 
+        tracing::info!(
+            "User {user_id} reset all listens ({} deleted)",
+            res.rows_affected()
+        );
         Ok(ResetResultDto {
             success: true,
             message: "All listens have been reset".to_string(),

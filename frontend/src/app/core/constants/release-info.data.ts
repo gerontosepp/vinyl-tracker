@@ -14,6 +14,13 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "isUnreleased": true,
     "items": [
       {
+        "title": "Mehr Backend-Logs für Scan, Export/Restore und Label-Fotos (`#277`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Das Backend protokolliert jetzt den Scan-Ablauf (erkannter Code, Discogs-Treffer, geloggtes Listen, nicht erkannte Scans), Export (Format, Anzahl, Größe, Dauer) und Restore (Start, Ergebnis, Dauer), Label-Foto-Upload, Statuswechsel und Löschen sowie das Löschen einzelner Scans und das Zurücksetzen aller Listens als Audit-Spur.",
+        "details": []
+      },
+      {
         "title": "Roon-Pairing-Token nicht mehr im Log (`#275`)",
         "type": "feat",
         "typeLabel": "Feature",

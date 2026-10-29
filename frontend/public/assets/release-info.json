@@ -11,7 +11,7 @@
     "version": "v1.5.0",
     "rawHeader": "v1.5.0 (2026-10-29)",
     "date": "2026-10-29",
-    "isCurrent": false,
+    "isCurrent": true,
     "isUnreleased": false,
     "items": [
       {
@@ -55,7 +55,7 @@
     "version": "v1.4.1",
     "rawHeader": "v1.4.1 (2026-10-25)",
     "date": "2026-10-25",
-    "isCurrent": true,
+    "isCurrent": false,
     "isUnreleased": false,
     "items": [
       {

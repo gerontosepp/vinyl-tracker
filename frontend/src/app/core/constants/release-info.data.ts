@@ -3,7 +3,7 @@
 import { ReleaseEntry } from '../models/release-info.model';
 
 // Application version from frontend/package.json – single source for all version badges.
-export const APP_VERSION = '1.4.1';
+export const APP_VERSION = '1.5.0';
 
 export const RELEASE_INFO_DATA: ReleaseEntry[] = [
   {
@@ -18,7 +18,7 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "version": "v1.5.0",
     "rawHeader": "v1.5.0 (2026-10-29)",
     "date": "2026-10-29",
-    "isCurrent": false,
+    "isCurrent": true,
     "isUnreleased": false,
     "items": [
       {
@@ -62,7 +62,7 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "version": "v1.4.1",
     "rawHeader": "v1.4.1 (2026-10-25)",
     "date": "2026-10-25",
-    "isCurrent": true,
+    "isCurrent": false,
     "isUnreleased": false,
     "items": [
       {

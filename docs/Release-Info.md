@@ -9,6 +9,7 @@
 
 ## Unreleased
 
+- **Hinweis bei nicht erkanntem Scan (`#271`)**: Wird ein Hardware-Scan nicht erkannt (z. B. weil der Scanner am Handy zu langsam sendet), erscheint außerhalb von Eingabefeldern der Hinweis „Scan nicht erkannt. Bitte erneut scannen.“ statt stiller Funkstille.
 ---
 
 ## v1.4.1 (2026-10-25)

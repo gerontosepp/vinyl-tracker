@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { ScannerService } from './scanner.service';
+import { ToastService } from './toast.service';
 
 describe('ScannerService', () => {
   afterEach(() => {
@@ -105,6 +106,65 @@ describe('ScannerService', () => {
     expect(lastCode?.type).toBe('1d');
     expect(service.showScanner()).toBe(true);
     expect(service.scanTrigger()?.code).toBe(barcode);
+  });
+
+  it('should warn when a keystroke burst outside inputs is dropped', () => {
+    service.setScannerMode('hardware');
+    const toast = TestBed.inject(ToastService);
+    const showToast = vi.spyOn(toast, 'showToast');
+
+    // Mobile keyboard that never reports a usable key
+    for (let i = 0; i < 12; i++) {
+      service.handleKeyDown(new KeyboardEvent('keydown', { key: 'Unidentified' }));
+    }
+    service.handleKeyDown(new KeyboardEvent('keydown', { key: 'Enter' }));
+
+    expect(showToast).toHaveBeenCalledWith(expect.any(String), 'warning');
+    expect(service.lastScannedCode()).toBeNull();
+  });
+
+  it('should not warn for an accepted scan or a lone Enter', () => {
+    service.setScannerMode('hardware');
+    const showToast = vi.spyOn(TestBed.inject(ToastService), 'showToast');
+
+    service.handleKeyDown(new KeyboardEvent('keydown', { key: 'Enter' }));
+    for (const char of '075678645624') {
+      service.handleKeyDown(new KeyboardEvent('keydown', { key: char }));
+    }
+    service.handleKeyDown(new KeyboardEvent('keydown', { key: 'Enter' }));
+
+    expect(showToast).not.toHaveBeenCalled();
+  });
+
+  it('should not warn for slow typing inside an input field', () => {
+    vi.useFakeTimers();
+    service.setScannerMode('hardware');
+    const showToast = vi.spyOn(TestBed.inject(ToastService), 'showToast');
+    const input = document.createElement('input');
+
+    // ~100 ms per key: too slow for a scanner in an input, so the burst is rejected
+    for (const char of 'abcd') {
+      service.handleKeyDown({ key: char } as KeyboardEvent);
+      vi.advanceTimersByTime(100);
+    }
+    service.handleKeyDown({ key: 'Enter', target: input } as unknown as KeyboardEvent);
+
+    expect(service.lastScannedCode()).toBeNull();
+    expect(showToast).not.toHaveBeenCalled();
+  });
+
+  it('should only count keys that follow each other closely', () => {
+    vi.useFakeTimers();
+    service.setScannerMode('hardware');
+    const showToast = vi.spyOn(TestBed.inject(ToastService), 'showToast');
+
+    for (let i = 0; i < 3; i++) {
+      service.handleKeyDown(new KeyboardEvent('keydown', { key: 'Unidentified' }));
+      vi.advanceTimersByTime(600);
+    }
+    service.handleKeyDown(new KeyboardEvent('keydown', { key: 'Enter' }));
+
+    expect(showToast).not.toHaveBeenCalled();
   });
 
   it('should recognize 2D QR Code when format is discogs-id', () => {

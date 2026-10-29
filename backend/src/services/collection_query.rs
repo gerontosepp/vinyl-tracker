@@ -34,11 +34,6 @@ const RELEASE_SELECT_SQL: &str = "SELECT ci.id as item_id, ci.instance_id, ci.ad
                  GROUP BY record_id, user_id
              ) le ON le.record_id = ci.record_id";
 
-/// Automatic artist sort key: artist without a leading article, lowercase.
-/// Ignored articles: The, A, An, Der, Die, Das, Le, La, Les ("Die Sterne" sorts under S).
-pub const DEFAULT_ARTIST_KEY_SQL: &str =
-    r#"REGEXP_REPLACE(LOWER(rc.artist), '^(the|an?|der|die|das|les?|la)\s+', '', 'i')"#;
-
 impl CollectionQueryService {
     /// Resolves the storage filter into the instance IDs the query is restricted to.
     async fn resolve_storage_filter(

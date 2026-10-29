@@ -121,7 +121,7 @@ Die Übersicht zeigt jedes Regal als Raster mit Füllstand und Künstlerbereich.
 
 Der Sortiermodus (Regal-Symbol in der unteren Leiste am Handy) führt dich Platte für Platte durch die Regale – praktisch beim ersten Einräumen oder nach dem **Neu verteilen**.
 
-1. Regal und Startfach (Reihe:Spalte) wählen.
+1. Regal und Startfach (Reihe:Spalte) wählen – Zeile und Spalte lassen sich mit **+** und **−** verstellen, sodass keine Tastatur nötig ist (z. B. wenn ein Bluetooth-Scanner verbunden ist und iOS die Bildschirmtastatur ausblendet).
 2. Mit **Weiter** durch die Platten gehen: Cover, Titel, Künstler, Fach und Position im Fach werden angezeigt; ein neues Fach wird hervorgehoben.
 
 Der Bildschirm bleibt dabei an.

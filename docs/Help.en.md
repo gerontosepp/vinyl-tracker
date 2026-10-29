@@ -121,7 +121,7 @@ The overview shows every shelf as a grid with fill level and artist range. **Red
 
 Sort mode (shelf icon in the bottom bar on phones) guides you record by record through the shelves – handy when filling the shelves for the first time or after **Redistribute**.
 
-1. Choose the shelf and the start compartment (row:column).
+1. Choose the shelf and the start compartment (row:column) – row and column can be changed with **+** and **−**, so no keyboard is needed (e.g. when a Bluetooth scanner is connected and iOS hides the on-screen keyboard).
 2. Step through the records with **Next**: cover, title, artist, compartment and position within it are shown; a new compartment is highlighted.
 
 The screen stays on while sorting.

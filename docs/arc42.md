@@ -228,7 +228,7 @@ The system is deployed as a multi-container Docker application orchestrated by D
 - Lightweight success responses (e.g. scan, reset) are typed DTOs instead of ad-hoc maps.
 
 ### 8.4 Observability & Logging
-- **Backend Logging**: Structured text logs via `tracing` (filter `RUST_LOG`); `tower_http::TraceLayer` logs every HTTP request with status and latency, `AppError` logs server-side failures.
+- **Backend Logging**: Structured text logs via `tracing` (filter `RUST_LOG`); `tower_http::TraceLayer` logs every HTTP request with status and latency, `AppError` logs server-side failures (`error`) and client errors (`debug`, 403 `warn`); auth failures (login, password reset, rate limit, invalid JWT) are logged at `warn` with username and client IP, never with passwords or tokens; the OpenRouter client logs model, duration and token usage at `debug`.
 - **Frontend Logging**: 
     - **Browser Environment**: An Angular `HttpInterceptorFn` (`authInterceptor`) logs request latencies and response statuses transparently into the browser console.
     - **Container Proxy**: The frontend Docker container (Nginx in production, Angular dev-server in development) intercepts proxy API traffic and logs metrics matching the backend console format for centralized Docker monitoring.

@@ -12,9 +12,9 @@ use crate::{
         user::AppUser,
     },
     services::{
-        collection_query::DEFAULT_ARTIST_KEY_SQL,
         crypto_service::CryptoService,
         marketplace::{extract_suggested_price, validate_goldmine_condition},
+        shelf_order::DEFAULT_ARTIST_KEY_SQL,
         storage::StorageService,
     },
 };

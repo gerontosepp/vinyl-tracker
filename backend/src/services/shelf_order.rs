@@ -5,10 +5,25 @@
 //! queries using them must join both under these names. The storage layout compares the selected
 //! keys byte-wise in Rust, so the order must stay `COLLATE "C"`.
 
-/// Shelf sort key columns (custom sort string or automatic artist key, year, title). The
+/// Single definition of the automatic artist key: artist without a leading article, lowercase.
+/// Ignored articles: The, A, An, Der, Die, Das, Le, La, Les ("Die Sterne" sorts under S).
+/// `concat!` only accepts literals, hence a macro instead of a const.
+macro_rules! default_artist_key_sql {
+    () => {
+        r"REGEXP_REPLACE(LOWER(rc.artist), '^(the|an?|der|die|das|les?|la)\s+', '', 'i')"
+    };
+}
+
+pub const DEFAULT_ARTIST_KEY_SQL: &str = default_artist_key_sql!();
+
+/// Shelf sort key columns (custom sort string or [`DEFAULT_ARTIST_KEY_SQL`], year, title). The
 /// storage layout compares the selected values byte-wise, which matches `COLLATE "C"` in
 /// [`shelf_order_sql`].
-pub const SHELF_ARTIST_KEY_SQL: &str = r#"COALESCE(LOWER(ci.sort_key), REGEXP_REPLACE(LOWER(rc.artist), '^(the|an?|der|die|das|les?|la)\s+', '', 'i'))"#;
+pub const SHELF_ARTIST_KEY_SQL: &str = concat!(
+    "COALESCE(LOWER(ci.sort_key), ",
+    default_artist_key_sql!(),
+    ")"
+);
 pub const SHELF_TITLE_KEY_SQL: &str = "COALESCE(LOWER(rc.title), '')";
 /// Shelf order of the collection view ("artist", ascending) and of the storage layout.
 pub fn shelf_order_sql() -> String {

@@ -40,6 +40,8 @@ Under **Settings → Barcode & QR scanner** you choose:
 
 **Scanner live test** checks whether the hardware scanner is detected; an optional beep confirms each scan.
 
+If a scan is not recognized (e.g. because the scanner sends too slowly), the hint "Scan not recognized. Please scan again." appears outside of input fields.
+
 ## Records without barcode (label photo) {#label-foto}
 
 Older records often have no barcode. A photo of the **label** (the paper sticker in the middle of the record) helps.

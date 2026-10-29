@@ -12,7 +12,15 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "tag": "In Entwicklung",
     "isCurrent": false,
     "isUnreleased": true,
-    "items": []
+    "items": [
+      {
+        "title": "Hinweis bei nicht erkanntem Scan (`#271`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Wird ein Hardware-Scan nicht erkannt (z. B. weil der Scanner am Handy zu langsam sendet), erscheint außerhalb von Eingabefeldern der Hinweis „Scan nicht erkannt. Bitte erneut scannen.“ statt stiller Funkstille.",
+        "details": []
+      }
+    ]
   },
   {
     "version": "v1.4.1",

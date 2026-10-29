@@ -40,6 +40,8 @@ Unter **Einstellungen → Barcode & QR Scanner** wählst du:
 
 Mit **Scanner Live-Test** prüfst du, ob der Hardware-Scanner erkannt wird; auf Wunsch gibt es einen Bestätigungston.
 
+Wird ein Scan nicht erkannt (z. B. weil der Scanner zu langsam sendet), erscheint außerhalb von Eingabefeldern der Hinweis „Scan nicht erkannt. Bitte erneut scannen.“
+
 ## Platten ohne Barcode (Label-Foto) {#label-foto}
 
 Ältere Platten haben oft keinen Barcode. Dann hilft ein Foto des **Labels** (der Papieraufkleber in der Mitte der Platte).

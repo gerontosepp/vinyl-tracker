@@ -645,7 +645,8 @@ async fn test_takeover_as_new_copy_keeps_listens_conditions_and_sort_key() {
         Some("Near Mint (NM or M-)")
     );
     assert_eq!(record.sort_key.as_deref(), Some("Sterne, Die"));
-    assert_eq!(record.genres, ["Rock", "Pop"]);
+    // Genres are returned alphabetically, regardless of the order in the release
+    assert_eq!(record.genres, ["Pop", "Rock"]);
     // Discogs replaces cover and own value
     assert_eq!(
         record.thumb_url.as_deref(),

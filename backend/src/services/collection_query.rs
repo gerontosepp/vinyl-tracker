@@ -222,7 +222,7 @@ impl CollectionQueryService {
 
         if !record_ids.is_empty() {
             let genre_rows =
-                sqlx::query("SELECT record_id, genre FROM record_genres WHERE record_id = ANY($1)")
+                sqlx::query("SELECT record_id, genre FROM record_genres WHERE record_id = ANY($1) ORDER BY genre COLLATE \"C\"")
                     .bind(&record_ids)
                     .fetch_all(pool)
                     .await
@@ -292,11 +292,13 @@ impl CollectionQueryService {
             None => return Ok(None),
         };
 
-        let genre_rows = sqlx::query("SELECT genre FROM record_genres WHERE record_id = $1")
-            .bind(row.get::<i64, _>("record_id"))
-            .fetch_all(pool)
-            .await
-            .map_err(AppError::Database)?;
+        let genre_rows = sqlx::query(
+            "SELECT genre FROM record_genres WHERE record_id = $1 ORDER BY genre COLLATE \"C\"",
+        )
+        .bind(row.get::<i64, _>("record_id"))
+        .fetch_all(pool)
+        .await
+        .map_err(AppError::Database)?;
         let genres: Vec<String> = genre_rows.iter().map(|r| r.get("genre")).collect();
 
         Ok(Some(map_release(&row, genres)))

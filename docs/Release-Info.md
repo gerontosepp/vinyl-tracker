@@ -9,6 +9,7 @@
 
 ## Unreleased
 
+- **Genres immer alphabetisch (`#278`)**: Die Genres eines Records werden in Sammlung, Details und Export in fester, alphabetischer Reihenfolge geliefert statt in der zufälligen Reihenfolge der Datenbank. Das beseitigt außerdem einen gelegentlich fehlschlagenden Test.
 - **Mehr Backend-Logs für Scan, Export/Restore und Label-Fotos (`#277`)**: Das Backend protokolliert jetzt den Scan-Ablauf (erkannter Code, Discogs-Treffer, geloggtes Listen, nicht erkannte Scans), Export (Format, Anzahl, Größe, Dauer) und Restore (Start, Ergebnis, Dauer), Label-Foto-Upload, Statuswechsel und Löschen sowie das Löschen einzelner Scans und das Zurücksetzen aller Listens als Audit-Spur.
 - **Roon-Pairing-Token nicht mehr im Log (`#275`)**: Das Backend schreibt das Roon-Pairing-Token nicht mehr im Klartext ins Log, sondern nur noch, dass das Pairing bestätigt wurde.
 - **Mehr Backend-Logs (`#273`)**: Fehlgeschlagene Logins und Passwort-Resets (Username, Client-IP), ausgelöstes Auth-Rate-Limit, ungültige JWTs sowie erfolgreiche Logins/Registrierungen werden geloggt. Der OpenRouter-Client loggt Fehlerantworten und pro Aufruf Modell, Dauer und Token-Verbrauch (`debug`). Client-Fehler (400/401/404/409/429) erscheinen auf `debug`, 403 auf `warn`. Passwörter und Tokens werden nie geloggt.

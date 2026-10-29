@@ -4,8 +4,9 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 on:
+  # develop is tested in its pull requests; only main runs again after the merge (it publishes images)
   push:
-    branches: [ "main", "develop" ]
+    branches: [ "main" ]
   pull_request:
     branches: [ "main", "develop" ]
   workflow_dispatch:
@@ -18,10 +19,42 @@ permissions:
   contents: read
 
 jobs:
+  # Decides per component whether its job has to run. Everything runs outside pull requests and
+  # when the workflow itself changes; docs-only pull requests run nothing.
+  changes:
+    name: Detect changed components
+    runs-on: [self-hosted, linux]
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      mcp: ${{ steps.filter.outputs.mcp }}
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        fetch-depth: 2
+
+    - name: Filter changed paths
+      id: filter
+      env:
+        EVENT_NAME: ${{ github.event_name }}
+      run: |
+        if [ "$EVENT_NAME" = "pull_request" ]; then
+          # The checkout is the merge commit; its first parent is the current base branch tip.
+          FILES=$(git diff --name-only HEAD^1 HEAD)
+        else
+          FILES=".github/"
+        fi
+        echo "Changed files:"; echo "$FILES"
+        match() { echo "$FILES" | grep -qE "$1" && echo true || echo false; }
+        echo "backend=$(match '^(backend/|\.github/)')" >> "$GITHUB_OUTPUT"
+        echo "frontend=$(match '^(frontend/|\.github/)')" >> "$GITHUB_OUTPUT"
+        # The MCP server shares the API types crate with the backend.
+        echo "mcp=$(match '^(mcp/|backend/crates/|\.github/)')" >> "$GITHUB_OUTPUT"
+
   backend-test:
     name: Backend Tests & Linting (Linux)
-    # Skip redundant test execution on PRs from develop (develop is already fully tested on push)
-    if: github.event_name != 'pull_request' || github.head_ref != 'develop'
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     runs-on: [self-hosted, linux]
     defaults:
       run:
@@ -29,8 +62,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      with:
-        fetch-depth: 0
 
     - name: Set up Rust toolchain
       uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master (no release tags)
@@ -51,11 +82,8 @@ jobs:
     - name: Check Formatting
       run: cargo fmt --all -- --check
 
-    - name: Run Cargo Check
-      run: cargo check
-
     - name: Run Clippy Linter
-      run: cargo clippy -- -D warnings
+      run: cargo clippy --all-targets -- -D warnings
 
     - name: Start PostgreSQL Test Container
       run: |
@@ -149,8 +177,8 @@ jobs:
 
   frontend-test:
     name: Frontend Tests & Build (Linux)
-    # Skip redundant test execution on PRs from develop (develop is already fully tested on push)
-    if: github.event_name != 'pull_request' || github.head_ref != 'develop'
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
     runs-on: [self-hosted, linux]
     defaults:
       run:
@@ -158,8 +186,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      with:
-        fetch-depth: 0
     
     - name: Set up Node.js
       uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -204,8 +230,8 @@ jobs:
 
   mcp-test:
     name: MCP Server Tests (Linux)
-    # Skip redundant test execution on PRs from develop (develop is already fully tested on push)
-    if: github.event_name != 'pull_request' || github.head_ref != 'develop'
+    needs: changes
+    if: needs.changes.outputs.mcp == 'true'
     runs-on: [self-hosted, linux]
     defaults:
       run:
@@ -213,8 +239,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      with:
-        fetch-depth: 0
 
     - name: Set up Rust toolchain
       uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master (no release tags)
@@ -229,9 +253,6 @@ jobs:
 
     - name: Check Formatting
       run: cargo fmt --all -- --check
-
-    - name: Run Cargo Check
-      run: cargo check
 
     - name: Run Unit Tests
       run: cargo test --verbose

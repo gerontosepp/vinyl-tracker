@@ -15,5 +15,6 @@ pub mod print;
 pub mod record_service;
 pub mod roon;
 pub mod scan_service;
+pub mod shelf_order;
 pub mod storage;
 pub mod user_service;

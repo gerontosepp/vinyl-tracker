@@ -9,12 +9,16 @@
 
 ## Unreleased
 
-- **Plus/Minus im Sortiermodus (`#283`)**: Zeile und Spalte des Startfachs lassen sich mit **+** und **−** verstellen. Das hilft am Handy, wenn die Bildschirmtastatur fehlt, weil ein Bluetooth-Scanner verbunden ist. Die Eingabe per Tastatur bleibt möglich.
-- **Genres immer alphabetisch (`#278`)**: Die Genres eines Records werden in Sammlung, Details und Export in fester, alphabetischer Reihenfolge geliefert statt in der zufälligen Reihenfolge der Datenbank. Das beseitigt außerdem einen gelegentlich fehlschlagenden Test.
-- **Mehr Backend-Logs für Scan, Export/Restore und Label-Fotos (`#277`)**: Das Backend protokolliert jetzt den Scan-Ablauf (erkannter Code, Discogs-Treffer, geloggtes Listen, nicht erkannte Scans), Export (Format, Anzahl, Größe, Dauer) und Restore (Start, Ergebnis, Dauer), Label-Foto-Upload, Statuswechsel und Löschen sowie das Löschen einzelner Scans und das Zurücksetzen aller Listens als Audit-Spur.
-- **Roon-Pairing-Token nicht mehr im Log (`#275`)**: Das Backend schreibt das Roon-Pairing-Token nicht mehr im Klartext ins Log, sondern nur noch, dass das Pairing bestätigt wurde.
-- **Mehr Backend-Logs (`#273`)**: Fehlgeschlagene Logins und Passwort-Resets (Username, Client-IP), ausgelöstes Auth-Rate-Limit, ungültige JWTs sowie erfolgreiche Logins/Registrierungen werden geloggt. Der OpenRouter-Client loggt Fehlerantworten und pro Aufruf Modell, Dauer und Token-Verbrauch (`debug`). Client-Fehler (400/401/404/409/429) erscheinen auf `debug`, 403 auf `warn`. Passwörter und Tokens werden nie geloggt.
-- **Hinweis bei nicht erkanntem Scan (`#271`)**: Wird ein Hardware-Scan nicht erkannt (z. B. weil der Scanner am Handy zu langsam sendet), erscheint außerhalb von Eingabefeldern der Hinweis „Scan nicht erkannt. Bitte erneut scannen.“ statt stiller Funkstille.
+---
+
+## v1.5.0 (2026-10-29)
+
+- **Plus/Minus im Sortiermodus (`#283`)**: Zeile und Spalte des Startfachs lassen sich mit **+** und **−** verstellen. Das hilft am Handy, wenn die Bildschirmtastatur fehlt, weil ein Bluetooth-Scanner verbunden ist (iOS hält ihn für eine Hardware-Tastatur). Die Eingabe per Tastatur bleibt möglich.
+- **Fix: Hinweis bei nicht erkanntem Scan (`#271`)**: Wird ein Hardware-Scan nicht erkannt (z. B. weil der Scanner am Handy zu langsam sendet), erscheint außerhalb von Eingabefeldern der Hinweis „Scan nicht erkannt. Bitte erneut scannen.“ statt stiller Funkstille.
+- **Fix: Genres immer alphabetisch (`#278`)**: Die Genres einer Platte werden in Sammlung, Details und Export in fester, alphabetischer Reihenfolge geliefert statt in der zufälligen Reihenfolge der Datenbank. Die Reihenfolge der Genres in der API-Antwort ändert sich dadurch gegenüber der Anzeige in Discogs.
+- **Security: Roon-Pairing-Token nicht mehr im Log (`#275`)**: Das Backend schreibt das Roon-Pairing-Token nicht mehr ins Log, sondern nur noch, dass das Pairing bestätigt wurde. **Hinweis:** Logs älterer Versionen können das Token noch enthalten – gib sie nicht weiter und lösche sie bei Bedarf; wer ganz sichergehen will, koppelt die Erweiterung in Roon neu.
+- **Mehr Backend-Logs (`#273`, `#277`)**: Das Backend protokolliert jetzt sicherheits- und betriebsrelevante Ereignisse: fehlgeschlagene Logins und Passwort-Resets (Benutzername, Client-IP), das Auth-Rate-Limit, ungültige Token, erfolgreiche Logins und Registrierungen, den Scan-Ablauf, Export und Restore (Format, Anzahl, Größe, Dauer), Label-Foto-Upload, -Statuswechsel und -Löschen sowie das Löschen einzelner Scans und das Zurücksetzen aller Listens. Der OpenRouter-Client loggt Fehlerantworten sowie Modell, Dauer und Token-Verbrauch je Aufruf (`debug`). Passwörter, Tokens und API-Keys werden nie geloggt; Details stehen im Log-Level `debug`, den du über `RUST_LOG` steuerst.
+
 ---
 
 ## v1.4.1 (2026-10-25)

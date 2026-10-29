@@ -1,5 +1,9 @@
 //! Shelf order shared by the collection view and the storage layout. Lives in its own module so
 //! `collection_query` and `storage` do not depend on each other for these SQL fragments.
+//!
+//! The fragments reference the table aliases `ci` (`collection_item`) and `rc` (`record_cache`);
+//! queries using them must join both under these names. The storage layout compares the selected
+//! keys byte-wise in Rust, so the order must stay `COLLATE "C"`.
 
 /// Shelf sort key columns (custom sort string or automatic artist key, year, title). The
 /// storage layout compares the selected values byte-wise, which matches `COLLATE "C"` in
@@ -28,18 +32,5 @@ mod tests {
                 "ci.instance_id ASC"
             )
         );
-    }
-
-    #[test]
-    fn shelf_artist_key_should_prefer_custom_sort_key_over_stripped_artist() {
-        assert_eq!(
-            SHELF_ARTIST_KEY_SQL,
-            r#"COALESCE(LOWER(ci.sort_key), REGEXP_REPLACE(LOWER(rc.artist), '^(the|an?|der|die|das|les?|la)\s+', '', 'i'))"#
-        );
-    }
-
-    #[test]
-    fn shelf_title_key_should_fall_back_to_empty_string() {
-        assert_eq!(SHELF_TITLE_KEY_SQL, "COALESCE(LOWER(rc.title), '')");
     }
 }

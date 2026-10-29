@@ -14,6 +14,13 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "isUnreleased": true,
     "items": [
       {
+        "title": "Plus/Minus im Sortiermodus (`#283`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Zeile und Spalte des Startfachs lassen sich mit **+** und **−** verstellen. Das hilft am Handy, wenn die Bildschirmtastatur fehlt, weil ein Bluetooth-Scanner verbunden ist. Die Eingabe per Tastatur bleibt möglich.",
+        "details": []
+      },
+      {
         "title": "Genres immer alphabetisch (`#278`)",
         "type": "feat",
         "typeLabel": "Feature",

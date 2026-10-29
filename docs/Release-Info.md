@@ -9,6 +9,7 @@
 
 ## Unreleased
 
+- **Plus/Minus im Sortiermodus (`#283`)**: Zeile und Spalte des Startfachs lassen sich mit **+** und **−** verstellen. Das hilft am Handy, wenn die Bildschirmtastatur fehlt, weil ein Bluetooth-Scanner verbunden ist. Die Eingabe per Tastatur bleibt möglich.
 - **Genres immer alphabetisch (`#278`)**: Die Genres eines Records werden in Sammlung, Details und Export in fester, alphabetischer Reihenfolge geliefert statt in der zufälligen Reihenfolge der Datenbank. Das beseitigt außerdem einen gelegentlich fehlschlagenden Test.
 - **Mehr Backend-Logs für Scan, Export/Restore und Label-Fotos (`#277`)**: Das Backend protokolliert jetzt den Scan-Ablauf (erkannter Code, Discogs-Treffer, geloggtes Listen, nicht erkannte Scans), Export (Format, Anzahl, Größe, Dauer) und Restore (Start, Ergebnis, Dauer), Label-Foto-Upload, Statuswechsel und Löschen sowie das Löschen einzelner Scans und das Zurücksetzen aller Listens als Audit-Spur.
 - **Roon-Pairing-Token nicht mehr im Log (`#275`)**: Das Backend schreibt das Roon-Pairing-Token nicht mehr im Klartext ins Log, sondern nur noch, dass das Pairing bestätigt wurde.

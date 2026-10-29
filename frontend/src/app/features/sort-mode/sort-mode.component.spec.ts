@@ -107,6 +107,65 @@ describe('SortModeComponent', () => {
     expect(component.rowValid()).toBe(false);
   });
 
+  it('steps row and column with the plus and minus buttons within the grid of the shelf', async () => {
+    await setup();
+    component.shelfId.set(2); // Kallax-2: 2 rows, 2 columns
+    fixture.detectChanges();
+    const disabled = (testId: string): boolean => (el(testId) as HTMLButtonElement).disabled;
+
+    expect(disabled('sort-row-minus')).toBe(true);
+    expect(disabled('sort-row-plus')).toBe(false);
+
+    click('sort-row-plus');
+    expect(component.row()).toBe(2);
+    expect(disabled('sort-row-plus')).toBe(true); // last row
+    click('sort-column-plus');
+    expect(component.column()).toBe(2);
+    expect(disabled('sort-column-plus')).toBe(true);
+
+    click('sort-row-minus');
+    click('sort-column-minus');
+    expect([component.row(), component.column()]).toEqual([1, 1]);
+    expect(disabled('sort-row-minus')).toBe(true);
+    expect(disabled('sort-column-minus')).toBe(true);
+  });
+
+  it('pulls an invalid typed value back into the grid when stepping', async () => {
+    await setup();
+    component.shelfId.set(2);
+    component.row.set(9);
+    fixture.detectChanges();
+    expect((el('sort-row-plus') as HTMLButtonElement).disabled).toBe(true);
+    click('sort-row-minus');
+    expect(component.row()).toBe(2);
+
+    component.column.set(Number.NaN);
+    component.step('column', 1);
+    expect(component.column()).toBe(1);
+    component.column.set(1.5);
+    component.step('column', 1);
+    expect(component.column()).toBe(2);
+    component.column.set(1.5);
+    component.step('column', -1);
+    expect(component.column()).toBe(1);
+    component.row.set(0);
+    component.step('row', 1);
+    expect(component.row()).toBe(1);
+  });
+
+  it('does not step without a shelf', async () => {
+    await setup(of({ media: [] }));
+    component.row.set(3);
+    component.step('row', 1);
+    expect(component.row()).toBe(3);
+  });
+
+  it('labels the plus and minus buttons for screen readers', async () => {
+    await setup();
+    expect(el('sort-row-plus')?.getAttribute('aria-label')).toBe('Zeile erhöhen');
+    expect(el('sort-column-minus')?.getAttribute('aria-label')).toBe('Spalte verringern');
+  });
+
   it('starts at the chosen compartment with its compartment, progress and highlight', async () => {
     await setup();
     component.column.set(2);

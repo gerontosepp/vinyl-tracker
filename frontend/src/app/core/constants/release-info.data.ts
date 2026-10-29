@@ -3,7 +3,7 @@
 import { ReleaseEntry } from '../models/release-info.model';
 
 // Application version from frontend/package.json – single source for all version badges.
-export const APP_VERSION = '1.4.1';
+export const APP_VERSION = '1.5.0';
 
 export const RELEASE_INFO_DATA: ReleaseEntry[] = [
   {
@@ -12,47 +12,48 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "tag": "In Entwicklung",
     "isCurrent": false,
     "isUnreleased": true,
+    "items": []
+  },
+  {
+    "version": "v1.5.0",
+    "rawHeader": "v1.5.0 (2026-10-29)",
+    "date": "2026-10-29",
+    "isCurrent": true,
+    "isUnreleased": false,
     "items": [
       {
         "title": "Plus/Minus im Sortiermodus (`#283`)",
         "type": "feat",
         "typeLabel": "Feature",
-        "summary": "Zeile und Spalte des Startfachs lassen sich mit **+** und **−** verstellen. Das hilft am Handy, wenn die Bildschirmtastatur fehlt, weil ein Bluetooth-Scanner verbunden ist. Die Eingabe per Tastatur bleibt möglich.",
+        "summary": "Zeile und Spalte des Startfachs lassen sich mit **+** und **−** verstellen. Das hilft am Handy, wenn die Bildschirmtastatur fehlt, weil ein Bluetooth-Scanner verbunden ist (iOS hält ihn für eine Hardware-Tastatur). Die Eingabe per Tastatur bleibt möglich.",
         "details": []
       },
       {
-        "title": "Genres immer alphabetisch (`#278`)",
-        "type": "feat",
-        "typeLabel": "Feature",
-        "summary": "Die Genres eines Records werden in Sammlung, Details und Export in fester, alphabetischer Reihenfolge geliefert statt in der zufälligen Reihenfolge der Datenbank. Das beseitigt außerdem einen gelegentlich fehlschlagenden Test.",
-        "details": []
-      },
-      {
-        "title": "Mehr Backend-Logs für Scan, Export/Restore und Label-Fotos (`#277`)",
-        "type": "feat",
-        "typeLabel": "Feature",
-        "summary": "Das Backend protokolliert jetzt den Scan-Ablauf (erkannter Code, Discogs-Treffer, geloggtes Listen, nicht erkannte Scans), Export (Format, Anzahl, Größe, Dauer) und Restore (Start, Ergebnis, Dauer), Label-Foto-Upload, Statuswechsel und Löschen sowie das Löschen einzelner Scans und das Zurücksetzen aller Listens als Audit-Spur.",
-        "details": []
-      },
-      {
-        "title": "Roon-Pairing-Token nicht mehr im Log (`#275`)",
-        "type": "feat",
-        "typeLabel": "Feature",
-        "summary": "Das Backend schreibt das Roon-Pairing-Token nicht mehr im Klartext ins Log, sondern nur noch, dass das Pairing bestätigt wurde.",
-        "details": []
-      },
-      {
-        "title": "Mehr Backend-Logs (`#273`)",
-        "type": "feat",
-        "typeLabel": "Feature",
-        "summary": "Fehlgeschlagene Logins und Passwort-Resets (Username, Client-IP), ausgelöstes Auth-Rate-Limit, ungültige JWTs sowie erfolgreiche Logins/Registrierungen werden geloggt. Der OpenRouter-Client loggt Fehlerantworten und pro Aufruf Modell, Dauer und Token-Verbrauch (`debug`). Client-Fehler (400/401/404/409/429) erscheinen auf `debug`, 403 auf `warn`. Passwörter und Tokens werden nie geloggt.",
-        "details": []
-      },
-      {
-        "title": "Hinweis bei nicht erkanntem Scan (`#271`)",
-        "type": "feat",
-        "typeLabel": "Feature",
+        "title": "Fix: Hinweis bei nicht erkanntem Scan (`#271`)",
+        "type": "fix",
+        "typeLabel": "Fix",
         "summary": "Wird ein Hardware-Scan nicht erkannt (z. B. weil der Scanner am Handy zu langsam sendet), erscheint außerhalb von Eingabefeldern der Hinweis „Scan nicht erkannt. Bitte erneut scannen.“ statt stiller Funkstille.",
+        "details": []
+      },
+      {
+        "title": "Fix: Genres immer alphabetisch (`#278`)",
+        "type": "fix",
+        "typeLabel": "Fix",
+        "summary": "Die Genres einer Platte werden in Sammlung, Details und Export in fester, alphabetischer Reihenfolge geliefert statt in der zufälligen Reihenfolge der Datenbank. Die Reihenfolge der Genres in der API-Antwort ändert sich dadurch gegenüber der Anzeige in Discogs.",
+        "details": []
+      },
+      {
+        "title": "Security: Roon-Pairing-Token nicht mehr im Log (`#275`)",
+        "type": "security",
+        "typeLabel": "Security",
+        "summary": "Das Backend schreibt das Roon-Pairing-Token nicht mehr ins Log, sondern nur noch, dass das Pairing bestätigt wurde. **Hinweis:** Logs älterer Versionen können das Token noch enthalten – gib sie nicht weiter und lösche sie bei Bedarf; wer ganz sichergehen will, koppelt die Erweiterung in Roon neu.",
+        "details": []
+      },
+      {
+        "title": "Mehr Backend-Logs (`#273`, `#277`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Das Backend protokolliert jetzt sicherheits- und betriebsrelevante Ereignisse: fehlgeschlagene Logins und Passwort-Resets (Benutzername, Client-IP), das Auth-Rate-Limit, ungültige Token, erfolgreiche Logins und Registrierungen, den Scan-Ablauf, Export und Restore (Format, Anzahl, Größe, Dauer), Label-Foto-Upload, -Statuswechsel und -Löschen sowie das Löschen einzelner Scans und das Zurücksetzen aller Listens. Der OpenRouter-Client loggt Fehlerantworten sowie Modell, Dauer und Token-Verbrauch je Aufruf (`debug`). Passwörter, Tokens und API-Keys werden nie geloggt; Details stehen im Log-Level `debug`, den du über `RUST_LOG` steuerst.",
         "details": []
       }
     ]
@@ -61,7 +62,7 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "version": "v1.4.1",
     "rawHeader": "v1.4.1 (2026-10-25)",
     "date": "2026-10-25",
-    "isCurrent": true,
+    "isCurrent": false,
     "isUnreleased": false,
     "items": [
       {

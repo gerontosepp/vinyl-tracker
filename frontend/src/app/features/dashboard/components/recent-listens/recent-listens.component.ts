@@ -1,15 +1,15 @@
-import { Component, input, output, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, input, output, inject, signal, computed, effect, ChangeDetectionStrategy } from '@angular/core';
 import { ApiService } from '../../../../core/services/api.service';
 import { ListenEvent, TrackedRecord } from '../../../../core/types';
 import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
 import { LocalizedDatePipe } from '../../../../core/pipes/localized-date.pipe';
-import { LucideTrash2 } from '@lucide/angular';
+import { LucideChevronDown, LucideChevronUp, LucideTrash2 } from '@lucide/angular';
 import { TooltipDirective } from '../../../../shared/directives/tooltip.directive';
 
 @Component({
   selector: 'app-recent-listens',
   standalone: true,
-  imports: [LocalizedDatePipe, TranslatePipe, LucideTrash2, TooltipDirective],
+  imports: [LocalizedDatePipe, TranslatePipe, LucideTrash2, LucideChevronDown, LucideChevronUp, TooltipDirective],
   changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <div
@@ -33,7 +33,7 @@ import { TooltipDirective } from '../../../../shared/directives/tooltip.directiv
           class="flex flex-col gap-1 md:grid md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 md:gap-8"
           data-testid="recent-listens-list"
         >
-          @for (event of listens(); track event.id; let idx = $index) {
+          @for (event of visibleListens(); track event.id; let idx = $index) {
             <div
               class="relative flex flex-row items-center gap-3 rounded-xl p-2 group transition-all duration-300 animate-slide-up hover:bg-slate-50 dark:hover:bg-slate-700/40 md:flex-col md:items-stretch md:gap-3 md:rounded-2xl md:p-4 md:border md:border-slate-200 md:dark:border-slate-600 md:bg-white md:dark:bg-slate-800 md:hover:bg-white md:dark:hover:bg-slate-800 md:hover:shadow-xl md:hover:-translate-y-1"
               [style.animationDelay]="(idx % 6) * 75 + 'ms'"
@@ -106,6 +106,28 @@ import { TooltipDirective } from '../../../../shared/directives/tooltip.directiv
           }
         </div>
 
+        <!-- Show More / Less Toggle if more than the default number of entries -->
+        @if (listens().length > DEFAULT_COUNT) {
+          <div class="pt-4 flex justify-center">
+            <button
+              type="button"
+              (click)="toggleShowAll()"
+              class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-700/50 py-1.5 px-3 rounded-lg transition-all duration-200 cursor-pointer shadow-2xs border border-slate-200/60 dark:border-slate-700"
+              data-testid="recent-toggle"
+            >
+              <span>{{ (showAll() ? 'stats.showLess' : 'stats.showMore') | translate }}</span>
+              <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                {{ showAll() ? DEFAULT_COUNT : listens().length }}
+              </span>
+              @if (showAll()) {
+                <svg lucideChevronUp [size]="14"></svg>
+              } @else {
+                <svg lucideChevronDown [size]="14"></svg>
+              }
+            </button>
+          </div>
+        }
+
         @if (listens().length === 0) {
           <div
             class="flex flex-col items-center justify-center py-12 px-4 text-center border-2 border-dashed border-slate-200 dark:border-slate-600 rounded-2xl bg-white dark:bg-slate-800/30 animate-fade-in"
@@ -138,5 +160,24 @@ export class RecentListensComponent {
   readonly className = input<string>('');
   readonly delete = output<number>();
   readonly openRecord = output<TrackedRecord>();
+
+  /** Entries shown until "show more" is clicked. */
+  readonly DEFAULT_COUNT = 10;
+  readonly showAll = signal<boolean>(false);
+  readonly visibleListens = computed(() => {
+    const all = this.listens();
+    return this.showAll() ? all : all.slice(0, this.DEFAULT_COUNT);
+  });
+
+  constructor() {
+    // A short list (e.g. after a narrower period) must not leave the next long one expanded
+    effect(() => {
+      if (this.listens().length <= this.DEFAULT_COUNT) this.showAll.set(false);
+    });
+  }
+
+  toggleShowAll(): void {
+    this.showAll.update((v) => !v);
+  }
 }
 

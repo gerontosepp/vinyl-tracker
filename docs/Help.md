@@ -16,7 +16,7 @@ Tipp: Fast jedes Symbol erklärt sich, wenn du mit der Maus darauf zeigst oder e
 
 Die Startseite zeigt deine Hörgewohnheiten für einen wählbaren Zeitraum (heute, 7 Tage, 30 Tage, eigener Zeitraum):
 
-- **Kürzlich gehört** – die zuletzt erfassten Hördurchgänge.
+- **Kürzlich gehört** – die zuletzt erfassten Hördurchgänge, steht ganz oben. Es sind zunächst die letzten 10; **Mehr anzeigen** zeigt alle im gewählten Zeitraum.
 - **Meistgespielt** – wechselt zwischen **Alben** und **Künstlern**. Ein Klick auf einen Künstler öffnet die Sammlung, gefiltert nach diesem Künstler.
 - **Wert der Sammlung** und **Genre-Verteilung** – Schätzwert in Euro (Median, Minimum, Maximum laut Discogs-Marktplatz).
 

@@ -16,7 +16,7 @@ Tip: Almost every icon explains itself when you hover over it with the mouse or 
 
 The home page shows your listening habits for a selectable period (today, 7 days, 30 days, custom range):
 
-- **Recently played** – the latest logged listens.
+- **Recently played** – the latest logged listens, shown at the top. The latest 10 are shown first; **Show more** reveals all of the chosen period.
 - **Most played** – switches between **albums** and **artists**. Clicking an artist opens the collection filtered by that artist.
 - **Collection value** and **genre breakdown** – estimated value in euros (median, minimum, maximum from the Discogs marketplace).
 

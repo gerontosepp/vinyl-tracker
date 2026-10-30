@@ -63,8 +63,15 @@ import { TooltipDirective } from '../../shared/directives/tooltip.directive';
         </div>
       } @else {
         <div class="flex flex-col lg:grid lg:grid-cols-3 gap-4 md:gap-6">
-          <!-- Left/Center content: Top Records & Recent Listens -->
+          <!-- Left/Center content: Recent Listens & Top Records -->
           <div class="lg:col-span-2 flex flex-col space-y-4 md:space-y-6">
+            <app-recent-listens
+              [listens]="recentListens()"
+              (delete)="handleDelete($event)"
+              (openRecord)="openRecord($event)"
+              class="min-h-0"
+            />
+
             <app-top-records
               [data]="topRecords()"
               [artists]="topArtists()"
@@ -127,13 +134,6 @@ import { TooltipDirective } from '../../shared/directives/tooltip.directive';
                 />
               </div>
             </app-top-records>
-
-            <app-recent-listens
-              [listens]="recentListens()"
-              (delete)="handleDelete($event)"
-              (openRecord)="openRecord($event)"
-              class="min-h-0"
-            />
           </div>
 
           <!-- Right side panel: Collection Value & Genre Breakdown -->

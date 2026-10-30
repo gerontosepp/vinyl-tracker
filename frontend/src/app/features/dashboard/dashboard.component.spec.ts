@@ -333,6 +333,13 @@ describe('DashboardComponent', () => {
       mockApiService.getRecordDetails = vi.fn().mockReturnValue(of(detail));
     });
 
+    it('renders "Kürzlich gehört" above "Meist gespielt"', () => {
+      const tags = Array.from(fixture.nativeElement.querySelectorAll('app-recent-listens, app-top-records')).map(
+        (el) => (el as HTMLElement).tagName.toLowerCase(),
+      );
+      expect(tags).toEqual(['app-recent-listens', 'app-top-records']);
+    });
+
     it('opens from "Zuletzt gehört" and loads the details', () => {
       component.openRecord(mockListens[0].record);
 

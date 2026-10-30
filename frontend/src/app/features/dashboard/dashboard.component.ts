@@ -65,6 +65,61 @@ import { TooltipDirective } from '../../shared/directives/tooltip.directive';
         <div class="flex flex-col lg:grid lg:grid-cols-3 gap-4 md:gap-6">
           <!-- Left/Center content: Recent Listens & Top Records -->
           <div class="lg:col-span-2 flex flex-col space-y-4 md:space-y-6">
+            <!-- Date filter: applies to recent listens and top records -->
+            <div
+              class="flex gap-2 items-center bg-white dark:bg-slate-800 p-1.5 rounded-xl shadow-sm border border-slate-200/50 dark:border-slate-600 w-full sm:w-fit max-w-full overflow-x-auto transition-colors"
+            >
+              <button
+                (click)="setFilterAll()"
+                [class]="
+                  'text-xs px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer ' +
+                  (!startDate() && !endDate()
+                    ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-bold shadow-sm'
+                    : 'text-slate-500 dark:text-slate-400 font-medium hover:bg-slate-50 dark:hover:bg-slate-700/50')
+                "
+              >
+                {{ 'dashboard.all' | translate }}
+              </button>
+              <button
+                (click)="setFilterSevenDays()"
+                [class]="
+                  'text-xs px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer ' +
+                  (startDate() === sevenDaysAgoString && endDate() === todayString
+                    ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-bold shadow-sm'
+                    : 'text-slate-500 dark:text-slate-400 font-medium hover:bg-slate-50 dark:hover:bg-slate-700/50')
+                "
+              >
+                {{ 'dashboard.days7' | translate }}
+              </button>
+              <button
+                (click)="setFilterToday()"
+                [class]="
+                  'text-xs px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer ' +
+                  (startDate() === todayString && endDate() === todayString
+                    ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-bold shadow-sm'
+                    : 'text-slate-500 dark:text-slate-400 font-medium hover:bg-slate-50 dark:hover:bg-slate-700/50')
+                "
+              >
+                {{ 'dashboard.today' | translate }}
+              </button>
+              <div class="w-px h-5 bg-slate-200 dark:bg-slate-700 mx-1"></div>
+              <input
+                type="date"
+                [ngModel]="startDate()"
+                (ngModelChange)="onStartDateChange($event)"
+                class="bg-transparent border-slate-200 dark:border-slate-700 rounded-lg text-xs py-1.5 px-2 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-slate-900 dark:text-slate-100 outline-none font-medium"
+                [appTooltip]="'dashboard.startDate' | translate"
+              />
+              <span class="text-slate-400 dark:text-slate-500 font-medium">-</span>
+              <input
+                type="date"
+                [ngModel]="endDate()"
+                (ngModelChange)="onEndDateChange($event)"
+                class="bg-transparent border-slate-200 dark:border-slate-700 rounded-lg text-xs py-1.5 px-2 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-slate-900 dark:text-slate-100 outline-none font-medium"
+                [appTooltip]="'dashboard.endDate' | translate"
+              />
+            </div>
+
             <app-recent-listens
               [listens]="recentListens()"
               (delete)="handleDelete($event)"
@@ -78,62 +133,7 @@ import { TooltipDirective } from '../../shared/directives/tooltip.directive';
               (openRecord)="openTopRecord($event)"
               (openArtist)="openArtist($event)"
               class="min-h-0"
-            >
-              <!-- Date Filter Controls projected here -->
-              <div
-                class="flex gap-2 items-center bg-white dark:bg-slate-800 p-1.5 rounded-xl shadow-sm border border-slate-200/50 dark:border-slate-600 w-full md:w-auto max-w-full overflow-x-auto transition-colors"
-              >
-                <button
-                  (click)="setFilterAll()"
-                  [class]="
-                    'text-xs px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer ' +
-                    (!startDate() && !endDate()
-                      ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-bold shadow-sm'
-                      : 'text-slate-500 dark:text-slate-400 font-medium hover:bg-slate-50 dark:hover:bg-slate-700/50')
-                  "
-                >
-                  {{ 'dashboard.all' | translate }}
-                </button>
-                <button
-                  (click)="setFilterSevenDays()"
-                  [class]="
-                    'text-xs px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer ' +
-                    (startDate() === sevenDaysAgoString && endDate() === todayString
-                      ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-bold shadow-sm'
-                      : 'text-slate-500 dark:text-slate-400 font-medium hover:bg-slate-50 dark:hover:bg-slate-700/50')
-                  "
-                >
-                  {{ 'dashboard.days7' | translate }}
-                </button>
-                <button
-                  (click)="setFilterToday()"
-                  [class]="
-                    'text-xs px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer ' +
-                    (startDate() === todayString && endDate() === todayString
-                      ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-bold shadow-sm'
-                      : 'text-slate-500 dark:text-slate-400 font-medium hover:bg-slate-50 dark:hover:bg-slate-700/50')
-                  "
-                >
-                  {{ 'dashboard.today' | translate }}
-                </button>
-                <div class="w-px h-5 bg-slate-200 dark:bg-slate-700 mx-1"></div>
-                <input
-                  type="date"
-                  [ngModel]="startDate()"
-                  (ngModelChange)="onStartDateChange($event)"
-                  class="bg-transparent border-slate-200 dark:border-slate-700 rounded-lg text-xs py-1.5 px-2 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-slate-900 dark:text-slate-100 outline-none font-medium"
-                  [appTooltip]="'dashboard.startDate' | translate"
-                />
-                <span class="text-slate-400 dark:text-slate-500 font-medium">-</span>
-                <input
-                  type="date"
-                  [ngModel]="endDate()"
-                  (ngModelChange)="onEndDateChange($event)"
-                  class="bg-transparent border-slate-200 dark:border-slate-700 rounded-lg text-xs py-1.5 px-2 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-slate-900 dark:text-slate-100 outline-none font-medium"
-                  [appTooltip]="'dashboard.endDate' | translate"
-                />
-              </div>
-            </app-top-records>
+            />
           </div>
 
           <!-- Right side panel: Collection Value & Genre Breakdown -->

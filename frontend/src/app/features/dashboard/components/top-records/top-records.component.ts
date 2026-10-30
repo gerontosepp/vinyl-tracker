@@ -66,9 +66,6 @@ import { LucideChevronDown, LucideChevronUp } from '@lucide/angular';
               }
             </div>
           </div>
-          <div class="w-full sm:w-auto">
-            <ng-content></ng-content>
-          </div>
         </div>
       </div>
 

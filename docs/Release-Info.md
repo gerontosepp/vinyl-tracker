@@ -9,6 +9,10 @@
 
 ## Unreleased
 
+---
+
+## v1.6.0 (2026-10-30)
+
 - **Avatar-Badge aus der Menüleiste entfernt (`#297`)**: Der runde Badge mit dem Anfangsbuchstaben des Benutzernamens hatte keine Funktion und ist am Desktop und am Handy weg. Am Desktop bleiben Benutzername und Version, am Handy nur die Version neben dem Logo.
 - **Identify-Modus im Scanner und Cover in voller Auflösung (`#294`)**: Mit dem Schalter **Identify-Modus** auf der Scan-Seite zeigt ein Scan die Platte aus deiner Sammlung in der Detailansicht (Regalplatz, Zustand, Preis), ohne sie als gehört zu erfassen; danach ist der Scanner sofort wieder bereit. Platten außerhalb der Sammlung laufen wie bisher durch Discogs-Suche und Übernahme. Ein Klick auf das Cover in der Detailansicht zeigt es in voller Auflösung (Klick oder Esc schließt). API: `POST /api/scan` nimmt das optionale Feld `identify` (Standard `false`), `RecordDetailDto` liefert `cover_url`.
 - **Fix: Genres werden nicht mehr doppelt gespeichert (`#285`)**: Scans, Discogs-Sync, Übernahme und Wiederherstellung konnten dasselbe Genre einer Platte mehrfach ablegen, besonders bei gleichzeitigen Zugriffen. Eine neue Migration entfernt vorhandene Duplikate und macht Genre pro Platte eindeutig; die Schreiber sind wiederholbar und blockieren sich bei gleichzeitigen Zugriffen nicht gegenseitig. Die Migration läuft beim Start automatisch.

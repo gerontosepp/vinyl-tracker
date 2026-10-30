@@ -31,6 +31,7 @@ async fn scan_barcode(
         &state.crypto,
         &user,
         &req.barcode,
+        req.identify,
     )
     .await?;
 

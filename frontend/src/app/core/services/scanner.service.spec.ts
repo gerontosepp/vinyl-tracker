@@ -86,6 +86,17 @@ describe('ScannerService', () => {
     expect(localStorage.getItem('scanner_sound')).toBe('true');
   });
 
+  it('should manage the identify mode preference', () => {
+    expect(service.identifyMode()).toBe(false);
+
+    service.setIdentifyMode(true);
+    expect(service.identifyMode()).toBe(true);
+    expect(localStorage.getItem('scanner_identify')).toBe('true');
+
+    service.setIdentifyMode(false);
+    expect(localStorage.getItem('scanner_identify')).toBe('false');
+  });
+
   it('should capture fast HID scanner burst as a 1D barcode scan', () => {
     service.setScannerMode('hardware');
     const barcode = '075678645624';

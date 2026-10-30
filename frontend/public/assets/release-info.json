@@ -7,6 +7,13 @@
     "isUnreleased": true,
     "items": [
       {
+        "title": "Identify-Modus im Scanner und Cover in voller Auflösung (`#294`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Mit dem Schalter **Identify-Modus** auf der Scan-Seite zeigt ein Scan die Platte aus deiner Sammlung in der Detailansicht (Regalplatz, Zustand, Preis), ohne sie als gehört zu erfassen; danach ist der Scanner sofort wieder bereit. Platten außerhalb der Sammlung laufen wie bisher durch Discogs-Suche und Übernahme. Ein Klick auf das Cover in der Detailansicht zeigt es in voller Auflösung (Klick oder Esc schließt). API: `POST /api/scan` nimmt das optionale Feld `identify` (Standard `false`), `RecordDetailDto` liefert `cover_url`.",
+        "details": []
+      },
+      {
         "title": "Fix: Genres werden nicht mehr doppelt gespeichert (`#285`)",
         "type": "fix",
         "typeLabel": "Fix",

@@ -3,6 +3,9 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ScanRequest {
     pub barcode: String,
+    /// Identify mode (#294): resolve the record without logging a listen.
+    #[serde(default)]
+    pub identify: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

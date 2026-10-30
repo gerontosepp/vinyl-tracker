@@ -58,7 +58,7 @@ import { TooltipDirective } from '../../shared/directives/tooltip.directive';
             &larr; {{ 'nav.home' | translate }}
           </button>
           <div class="max-w-md mx-auto">
-            <app-barcode-scanner />
+            <app-barcode-scanner (identified)="openRecord($event)" />
           </div>
         </div>
       } @else {

@@ -252,6 +252,11 @@ impl RecordService {
             .and_then(|r| r.thumb.clone())
             .or_else(|| record_row.as_ref().and_then(|r| r.get("thumb_url")));
 
+        let cover_url = discogs_release
+            .as_ref()
+            .and_then(|r| r.cover_url())
+            .or_else(|| thumb_url.clone());
+
         // Fetch genres from DB or Discogs
         let mut genres: Vec<String> = Vec::new();
         if let Some(rec_id) = local_record_id {
@@ -352,6 +357,7 @@ impl RecordService {
             artist,
             year,
             thumb_url,
+            cover_url,
             genres,
             in_collection,
             instance_id,

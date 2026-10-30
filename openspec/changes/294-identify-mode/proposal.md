@@ -9,7 +9,7 @@ Der Scanner erfasst heute jeden Treffer als Hör-Ereignis. Wer nur wissen will, 
 - **Identify Mode:** Umschalter im Scanner (gemerkt in `localStorage`). Der Scanner bleibt offen, mehrere Platten können nacheinander identifiziert werden.
 - **Rein lesend:** `POST /api/scan` nimmt das optionale Feld `identify` (Standard `false`). Mit `identify: true` findet die Suche denselben Treffer wie bisher, schreibt aber kein `listen_event`.
 - **Anzeige:** Ist die Platte im Bestand, öffnet das Frontend dasselbe Detail-Modal wie der Klick auf das Cover in der Plattenliste. Ist sie nicht im Bestand, läuft der normale Ablauf (Discogs-Treffer, Übernahme, manuell anlegen).
-- **Cover in voller Auflösung:** Klick auf das Cover im Detail-Modal öffnet eine Lightbox mit dem Originalbild (`cover_image`, sonst `thumb`); Schließen per Klick oder Esc. Gilt überall, wo das Modal verwendet wird.
+- **Cover in voller Auflösung:** Klick auf das Cover im Detail-Modal öffnet eine Lightbox mit dem Originalbild (`cover_url` der Detail-API: primäres Discogs-Bild bzw. eigenes Cover, sonst Thumbnail); Schließen per Klick oder Esc. Gilt überall, wo das Modal verwendet wird.
 
 ## Capabilities
 

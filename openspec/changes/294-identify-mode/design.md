@@ -5,6 +5,8 @@
 
 Hinweis: Der Discogs-Pfad legt weiterhin den `record_cache`-Eintrag an, wenn die Platte im Bestand ist (Cache, keine Nutzerdaten).
 
+`RecordDetailDto` bekommt `cover_url`: das primäre Bild des Discogs-Releases (`images[]`, volle Auflösung), sonst `thumb_url` (bei manuellen Platten ist das schon das eigene Cover). Die Lightbox nutzt `cover_url`, dann `cover_image` der Liste, dann das Thumbnail.
+
 ## Frontend
 - `ScannerService.identifyMode` (Signal, `localStorage` `scanner_identify`).
 - `BarcodeScannerComponent`: Toggle über dem Scanbereich; sendet `identify` mit; bei Erfolg im Identify Mode gibt es das Output `identified` (`RecordRef`) und der Scanner setzt sich zurück, bleibt also bereit. Kein „Zur Sammlung hinzufügen“/Hör-Toast.

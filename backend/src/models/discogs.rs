@@ -26,6 +26,28 @@ pub struct DiscogsRelease {
     pub notes: Option<String>,
     pub country: Option<String>,
     pub released: Option<String>,
+    /// Full-size images of the release; the primary one is the cover.
+    #[serde(default)]
+    pub images: Option<Vec<DiscogsImage>>,
+}
+
+impl DiscogsRelease {
+    /// Full-resolution cover: the primary image, else the first one.
+    pub fn cover_url(&self) -> Option<String> {
+        let images = self.images.as_deref()?;
+        images
+            .iter()
+            .find(|i| i.kind.as_deref() == Some("primary"))
+            .or_else(|| images.first())
+            .and_then(|i| i.uri.clone())
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DiscogsImage {
+    #[serde(rename = "type")]
+    pub kind: Option<String>,
+    pub uri: Option<String>,
 }
 
 /// Criteria for `GET /database/search`: free text and/or structured fields.
@@ -439,5 +461,42 @@ mod tests {
             None,
             "no entry of the classified medium"
         );
+    }
+}
+
+#[cfg(test)]
+mod cover_url_tests {
+    use super::DiscogsRelease;
+    use serde_json::json;
+
+    fn release(images: serde_json::Value) -> DiscogsRelease {
+        serde_json::from_value(json!({ "id": 1, "title": "T", "images": images })).unwrap()
+    }
+
+    #[test]
+    fn cover_url_should_prefer_the_primary_image() {
+        let r = release(json!([
+            {"type": "secondary", "uri": "https://i.discogs.com/b.jpg"},
+            {"type": "primary", "uri": "https://i.discogs.com/a.jpg"}
+        ]));
+        assert_eq!(
+            r.cover_url().as_deref(),
+            Some("https://i.discogs.com/a.jpg")
+        );
+    }
+
+    #[test]
+    fn cover_url_should_fall_back_to_the_first_image() {
+        let r = release(json!([{"type": "secondary", "uri": "https://i.discogs.com/b.jpg"}]));
+        assert_eq!(
+            r.cover_url().as_deref(),
+            Some("https://i.discogs.com/b.jpg")
+        );
+    }
+
+    #[test]
+    fn cover_url_should_be_none_without_images() {
+        let r: DiscogsRelease = serde_json::from_value(json!({ "id": 1, "title": "T" })).unwrap();
+        assert_eq!(r.cover_url(), None);
     }
 }

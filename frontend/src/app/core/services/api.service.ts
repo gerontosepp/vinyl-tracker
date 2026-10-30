@@ -49,8 +49,9 @@ export class ApiService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = '/api';
 
-  scanBarcode(barcode: string): Observable<ScanResult> {
-    return this.http.post<ScanResult>(`${this.baseUrl}/scan`, { barcode });
+  /** `identify` resolves the record without logging a listen (identify mode, #294). */
+  scanBarcode(barcode: string, identify = false): Observable<ScanResult> {
+    return this.http.post<ScanResult>(`${this.baseUrl}/scan`, identify ? { barcode, identify } : { barcode });
   }
 
   /** Stores a label photo (JPEG) in the inbox for identification via MCP. */

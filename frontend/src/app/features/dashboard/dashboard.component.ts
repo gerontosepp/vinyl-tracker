@@ -63,18 +63,17 @@ import { TooltipDirective } from '../../shared/directives/tooltip.directive';
         </div>
       } @else {
         <div class="flex flex-col lg:grid lg:grid-cols-3 gap-4 md:gap-6">
-          <!-- Left/Center content: Top Records & Recent Listens -->
+          <!-- Left/Center content: Recent Listens & Top Records -->
           <div class="lg:col-span-2 flex flex-col space-y-4 md:space-y-6">
-            <app-top-records
-              [data]="topRecords()"
-              [artists]="topArtists()"
-              (openRecord)="openTopRecord($event)"
-              (openArtist)="openArtist($event)"
+            <app-recent-listens
+              [listens]="recentListens()"
+              (delete)="handleDelete($event)"
+              (openRecord)="openRecord($event)"
               class="min-h-0"
             >
-              <!-- Date Filter Controls projected here -->
+              <!-- Date filter: applies to recent listens and top records -->
               <div
-                class="flex gap-2 items-center bg-white dark:bg-slate-800 p-1.5 rounded-xl shadow-sm border border-slate-200/50 dark:border-slate-600 w-full md:w-auto max-w-full overflow-x-auto transition-colors"
+                class="flex gap-2 items-center bg-white dark:bg-slate-800 p-1.5 rounded-xl shadow-sm border border-slate-200/50 dark:border-slate-600 w-full sm:w-auto max-w-full overflow-x-auto transition-colors"
               >
                 <button
                   (click)="setFilterAll()"
@@ -126,12 +125,13 @@ import { TooltipDirective } from '../../shared/directives/tooltip.directive';
                   [appTooltip]="'dashboard.endDate' | translate"
                 />
               </div>
-            </app-top-records>
+            </app-recent-listens>
 
-            <app-recent-listens
-              [listens]="recentListens()"
-              (delete)="handleDelete($event)"
-              (openRecord)="openRecord($event)"
+            <app-top-records
+              [data]="topRecords()"
+              [artists]="topArtists()"
+              (openRecord)="openTopRecord($event)"
+              (openArtist)="openArtist($event)"
               class="min-h-0"
             />
           </div>

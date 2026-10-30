@@ -9,6 +9,8 @@
 
 ## Unreleased
 
+- **Startansicht: Reihenfolge getauscht, „Kürzlich gehört“ gekürzt (`#301`)**: „Kürzlich gehört“ steht jetzt über „Meist gespielt“ und zeigt standardmäßig nur die letzten 10 Platten; weitere erscheinen per „Mehr anzeigen“ (wie bei „Meist gespielt“). Der Datumsfilter steht rechts in der Kopfzeile von „Kürzlich gehört“ und gilt für beide Listen.
+
 ---
 
 ## v1.6.0 (2026-10-30)

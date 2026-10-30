@@ -3,7 +3,7 @@
 import { ReleaseEntry } from '../models/release-info.model';
 
 // Application version from frontend/package.json – single source for all version badges.
-export const APP_VERSION = '1.6.0';
+export const APP_VERSION = '1.7.0';
 
 export const RELEASE_INFO_DATA: ReleaseEntry[] = [
   {
@@ -15,10 +15,33 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "items": []
   },
   {
+    "version": "v1.7.0",
+    "rawHeader": "v1.7.0 (2026-10-30)",
+    "date": "2026-10-30",
+    "isCurrent": true,
+    "isUnreleased": false,
+    "items": [
+      {
+        "title": "Entwicklungsprozess abgesichert (`#304`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Ein Claude-Hook verhindert Änderungen und Commits direkt auf `develop`/`main`, prüft das Branch-Namensschema und verlangt `Closes #<Issue>` beim Anlegen eines PR. Ein neues PR-Template mit Checkliste und der CI-Job „Ticket workflow“ prüfen Branchname, Issue-Verweis und Review-Abschnitt. Kein Einfluss auf die App.",
+        "details": []
+      },
+      {
+        "title": "Startansicht: Reihenfolge getauscht, „Kürzlich gehört“ gekürzt (`#301`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "„Kürzlich gehört“ steht jetzt über „Meist gespielt“ und zeigt standardmäßig nur die letzten 10 Platten; weitere erscheinen per „Mehr anzeigen“ (wie bei „Meist gespielt“). Der Datumsfilter steht rechts in der Kopfzeile von „Kürzlich gehört“ und gilt für beide Listen.",
+        "details": []
+      }
+    ]
+  },
+  {
     "version": "v1.6.0",
     "rawHeader": "v1.6.0 (2026-10-30)",
     "date": "2026-10-30",
-    "isCurrent": true,
+    "isCurrent": false,
     "isUnreleased": false,
     "items": [
       {

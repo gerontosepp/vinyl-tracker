@@ -152,4 +152,51 @@ describe('RecentListensComponent', () => {
     expect(deleted).toHaveBeenCalledWith(42);
     expect(opened).toHaveBeenCalledTimes(1);
   });
+
+  describe('show more', () => {
+    const many: ListenEvent[] = Array.from({ length: 12 }, (_, i) => ({
+      ...sampleListens[0],
+      id: i + 1,
+    }));
+    const rows = () => fixture.nativeElement.querySelectorAll('[data-testid="recent-open"]').length;
+    const toggle = () => fixture.nativeElement.querySelector('[data-testid="recent-toggle"]') as HTMLButtonElement | null;
+
+    it('shows only 10 entries by default and all after "show more"', () => {
+      fixture.componentRef.setInput('listens', many);
+      fixture.detectChanges();
+      expect(rows()).toBe(10);
+      expect(toggle()?.textContent).toContain('stats.showMore');
+      expect(toggle()?.textContent).toContain('12');
+
+      toggle()!.click();
+      fixture.detectChanges();
+      expect(rows()).toBe(12);
+      expect(toggle()?.textContent).toContain('stats.showLess');
+
+      toggle()!.click();
+      fixture.detectChanges();
+      expect(rows()).toBe(10);
+    });
+
+    it('collapses again when a short list replaces the expanded one', () => {
+      fixture.componentRef.setInput('listens', many);
+      fixture.detectChanges();
+      toggle()!.click();
+      fixture.detectChanges();
+      expect(rows()).toBe(12);
+
+      fixture.componentRef.setInput('listens', many.slice(0, 3));
+      fixture.detectChanges();
+      fixture.componentRef.setInput('listens', many);
+      fixture.detectChanges();
+      expect(rows()).toBe(10);
+    });
+
+    it('hides the toggle with 10 or fewer entries', () => {
+      fixture.componentRef.setInput('listens', many.slice(0, 10));
+      fixture.detectChanges();
+      expect(rows()).toBe(10);
+      expect(toggle()).toBeNull();
+    });
+  });
 });

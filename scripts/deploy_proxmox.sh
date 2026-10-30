@@ -8,7 +8,7 @@ set -e
 #   ./scripts/deploy_proxmox.sh [VERSION_TAG] [REGISTRY_PREFIX]
 # Examples:
 #   ./scripts/deploy_proxmox.sh                     # Deploy latest version from default GHCR
-#   ./scripts/deploy_proxmox.sh v1.6.0              # Deploy specific version v1.6.0
+#   ./scripts/deploy_proxmox.sh v1.7.0              # Deploy specific version v1.7.0
 #   ./scripts/deploy_proxmox.sh latest myuser/      # Custom registry prefix
 #
 # Before an update, a verified database backup is created via scripts/backup_db.sh

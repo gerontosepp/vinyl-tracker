@@ -11,6 +11,13 @@
 
 ---
 
+## v1.7.0 (2026-10-30)
+
+- **Entwicklungsprozess abgesichert (`#304`)**: Ein Claude-Hook verhindert Änderungen und Commits direkt auf `develop`/`main`, prüft das Branch-Namensschema und verlangt `Closes #<Issue>` beim Anlegen eines PR. Ein neues PR-Template mit Checkliste und der CI-Job „Ticket workflow“ prüfen Branchname, Issue-Verweis und Review-Abschnitt. Kein Einfluss auf die App.
+- **Startansicht: Reihenfolge getauscht, „Kürzlich gehört“ gekürzt (`#301`)**: „Kürzlich gehört“ steht jetzt über „Meist gespielt“ und zeigt standardmäßig nur die letzten 10 Platten; weitere erscheinen per „Mehr anzeigen“ (wie bei „Meist gespielt“). Der Datumsfilter steht rechts in der Kopfzeile von „Kürzlich gehört“ und gilt für beide Listen.
+
+---
+
 ## v1.6.0 (2026-10-30)
 
 - **Avatar-Badge aus der Menüleiste entfernt (`#297`)**: Der runde Badge mit dem Anfangsbuchstaben des Benutzernamens hatte keine Funktion und ist am Desktop und am Handy weg. Am Desktop bleiben Benutzername und Version, am Handy nur die Version neben dem Logo.

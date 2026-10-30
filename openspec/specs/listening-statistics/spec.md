@@ -21,7 +21,7 @@ TBD - created by archiving change 178-top-artists. Update Purpose after archive.
 - **THEN** zählt es für keinen Eintrag der Rangliste
 
 ### Requirement: Interpreten-Tab auf der Startseite
-Der Block „Meistgespielte Alben“ MUST die Tabs „Alben“ und „Interpreten“ anbieten; der Zeitraum-Filter des Blocks MUST für beide gelten. Der Tab „Interpreten“ MUST je Eintrag Rang, eine Cover-Collage (1 Cover vollflächig, 2 nebeneinander, 3–4 als 2×2, ohne Cover ein Platzhalter), den Interpreten, die Anzahl der gehörten Alben und die Anzahl der Hördurchgänge zeigen (DE/EN).
+Der Block „Meistgespielte Alben“ MUST die Tabs „Alben“ und „Interpreten“ anbieten; der Zeitraum-Filter der Startseite (siehe „Reihenfolge und Umfang der Startseiten-Listen“) MUST für beide gelten. Der Tab „Interpreten“ MUST je Eintrag Rang, eine Cover-Collage (1 Cover vollflächig, 2 nebeneinander, 3–4 als 2×2, ohne Cover ein Platzhalter), den Interpreten, die Anzahl der gehörten Alben und die Anzahl der Hördurchgänge zeigen (DE/EN).
 
 #### Scenario: Tab wechseln
 - **WHEN** der Nutzer den Tab „Interpreten“ wählt und danach den Zeitraum „7 Tage“
@@ -30,6 +30,17 @@ Der Block „Meistgespielte Alben“ MUST die Tabs „Alben“ und „Interprete
 #### Scenario: Collage
 - **WHEN** ein Interpret drei gehörte Releases mit Cover hat
 - **THEN** zeigt sein Bild die drei Cover als 2×2-Collage
+
+### Requirement: Reihenfolge und Umfang der Startseiten-Listen
+Die Startseite MUST „Kürzlich gehört“ über „Meistgespielte Alben“ zeigen. Der Zeitraum-Filter (Alle, 7 Tage, Heute, eigener Zeitraum) MUST rechts in der Kopfzeile von „Kürzlich gehört“ stehen und für beide Listen gelten. „Kürzlich gehört“ MUST standardmäßig nur die 10 neuesten Einträge zeigen; bei mehr Einträgen MUST ein Button „Mehr anzeigen“ alle zeigen und danach „Weniger anzeigen“ anbieten (DE/EN).
+
+#### Scenario: Mehr als 10 Einträge
+- **WHEN** im gewählten Zeitraum 12 Hördurchgänge vorliegen
+- **THEN** zeigt „Kürzlich gehört“ 10 Einträge und den Button „Mehr anzeigen“; ein Klick zeigt alle 12
+
+#### Scenario: Kurzer Zeitraum nach dem Aufklappen
+- **WHEN** der Nutzer die Liste aufgeklappt hat und einen Zeitraum mit höchstens 10 Einträgen wählt
+- **THEN** ist der Button ausgeblendet, und bei einem späteren längeren Zeitraum startet die Liste wieder mit 10 Einträgen
 
 ### Requirement: Interpret in der Sammlung öffnen
 Ein Klick auf einen Interpreten MUST die Sammlung mit der Suche nach dem Interpreten öffnen. Die Sammlung MUST eine Suche aus dem URL-Parameter `search` übernehmen.

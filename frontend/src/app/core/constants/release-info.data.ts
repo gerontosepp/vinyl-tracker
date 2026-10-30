@@ -12,15 +12,7 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "tag": "In Entwicklung",
     "isCurrent": false,
     "isUnreleased": true,
-    "items": [
-      {
-        "title": "Entwicklungsprozess abgesichert (`#304`)",
-        "type": "feat",
-        "typeLabel": "Feature",
-        "summary": "Ein Claude-Hook verhindert Änderungen und Commits direkt auf `develop`/`main`, prüft das Branch-Namensschema und verlangt `Closes #<Issue>` beim Anlegen eines PR. Ein neues PR-Template mit Checkliste und der CI-Job „Ticket workflow“ prüfen Branchname, Issue-Verweis und Review-Abschnitt. Kein Einfluss auf die App.",
-        "details": []
-      }
-    ]
+    "items": []
   },
   {
     "version": "v1.7.0",
@@ -29,6 +21,13 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "isCurrent": true,
     "isUnreleased": false,
     "items": [
+      {
+        "title": "Entwicklungsprozess abgesichert (`#304`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Ein Claude-Hook verhindert Änderungen und Commits direkt auf `develop`/`main`, prüft das Branch-Namensschema und verlangt `Closes #<Issue>` beim Anlegen eines PR. Ein neues PR-Template mit Checkliste und der CI-Job „Ticket workflow“ prüfen Branchname, Issue-Verweis und Review-Abschnitt. Kein Einfluss auf die App.",
+        "details": []
+      },
       {
         "title": "Startansicht: Reihenfolge getauscht, „Kürzlich gehört“ gekürzt (`#301`)",
         "type": "feat",

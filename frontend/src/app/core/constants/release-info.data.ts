@@ -3,7 +3,7 @@
 import { ReleaseEntry } from '../models/release-info.model';
 
 // Application version from frontend/package.json – single source for all version badges.
-export const APP_VERSION = '1.6.0';
+export const APP_VERSION = '1.7.0';
 
 export const RELEASE_INFO_DATA: ReleaseEntry[] = [
   {
@@ -12,6 +12,14 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "tag": "In Entwicklung",
     "isCurrent": false,
     "isUnreleased": true,
+    "items": []
+  },
+  {
+    "version": "v1.7.0",
+    "rawHeader": "v1.7.0 (2026-10-30)",
+    "date": "2026-10-30",
+    "isCurrent": true,
+    "isUnreleased": false,
     "items": [
       {
         "title": "Startansicht: Reihenfolge getauscht, „Kürzlich gehört“ gekürzt (`#301`)",
@@ -26,7 +34,7 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "version": "v1.6.0",
     "rawHeader": "v1.6.0 (2026-10-30)",
     "date": "2026-10-30",
-    "isCurrent": true,
+    "isCurrent": false,
     "isUnreleased": false,
     "items": [
       {

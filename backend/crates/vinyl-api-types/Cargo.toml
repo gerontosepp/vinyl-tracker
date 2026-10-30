@@ -1,6 +1,6 @@
 [package]
 name = "vinyl-api-types"
-version = "1.6.0"
+version = "1.7.0"
 edition = "2024"
 description = "Request/response types of the Vinyl Tracker REST API, shared by backend and MCP server"
 publish = false

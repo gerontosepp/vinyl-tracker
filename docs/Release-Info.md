@@ -9,6 +9,8 @@
 
 ## Unreleased
 
+- **Entwicklungsprozess abgesichert (`#304`)**: Ein Claude-Hook verhindert Änderungen und Commits direkt auf `develop`/`main`, prüft das Branch-Namensschema und verlangt `Closes #<Issue>` beim Anlegen eines PR. Ein neues PR-Template mit Checkliste und der CI-Job „Ticket workflow“ prüfen Branchname, Issue-Verweis und Review-Abschnitt. Kein Einfluss auf die App.
+
 ---
 
 ## v1.7.0 (2026-10-30)

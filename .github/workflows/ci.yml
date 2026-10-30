@@ -52,6 +52,50 @@ jobs:
         # The MCP server shares the API types crate with the backend.
         echo "mcp=$(match '^(mcp/|backend/crates/|\.github/)')" >> "$GITHUB_OUTPUT"
 
+  # Keeps pull requests on the ticket-workflow track (.claude/skills/ticket-workflow): branch name,
+  # issue reference and review section. Release, archive and Dependabot pull requests are exempt.
+  workflow-check:
+    name: Ticket workflow
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+    - name: Check branch, issue reference and review section
+      env:
+        GH_TOKEN: ${{ github.token }}
+        REPO: ${{ github.repository }}
+        PR: ${{ github.event.pull_request.number }}
+        HEAD_REF: ${{ github.head_ref }}
+        BASE_REF: ${{ github.base_ref }}
+        BODY: ${{ github.event.pull_request.body }}
+      run: |
+        if [[ "$BASE_REF" == "main" || "$HEAD_REF" =~ ^release/v[0-9] || "$HEAD_REF" =~ ^chore/archive- || "$HEAD_REF" =~ ^dependabot/ ]]; then
+          echo "Release, archive or dependency pull request: nothing to check."
+          exit 0
+        fi
+        failed=0
+        if ! [[ "$HEAD_REF" =~ ^(feat|fix|chore|docs|test|refactor)/[0-9]+- ]]; then
+          echo "::error::Branch '$HEAD_REF' must be named <type>/<issue>-<description> (e.g. feat/70-last-played-at-column)."
+          failed=1
+        fi
+        if ! grep -qiE '(closes|fixes|resolves|refs)[[:space:]]+#[0-9]+' <<<"$BODY"; then
+          echo "::error::The PR body must reference an issue, e.g. 'Closes #<issue>'."
+          failed=1
+        fi
+        files=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename')
+        if grep -qE '^(backend/(src|migrations)/|frontend/src/|mcp/src/)' <<<"$files"; then
+          if ! grep -qE '^## +Review' <<<"$BODY"; then
+            echo "::error::The PR body needs a '## Review' section (code-review level, findings)."
+            failed=1
+          fi
+          if ! grep -qx 'docs/Release-Info.md' <<<"$files"; then
+            echo "::warning::Code changed but docs/Release-Info.md was not updated."
+          fi
+        fi
+        exit $failed
+
   backend-test:
     name: Backend Tests & Linting (Linux)
     needs: changes

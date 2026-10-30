@@ -162,3 +162,32 @@ describe('ApiService label photos', () => {
     });
   });
 });
+
+describe('ApiService scanBarcode', () => {
+  let service: ApiService;
+  let http: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
+    service = TestBed.inject(ApiService);
+    http = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => http.verify());
+
+  it('sends only the barcode for a normal scan', () => {
+    service.scanBarcode('4006381333931').subscribe();
+    const req = http.expectOne('/api/scan');
+    expect(req.request.body).toEqual({ barcode: '4006381333931' });
+    req.flush({ success: true, message: 'ok' });
+  });
+
+  it('sends identify for a scan in identify mode', () => {
+    service.scanBarcode('4006381333931', true).subscribe();
+    const req = http.expectOne('/api/scan');
+    expect(req.request.body).toEqual({ barcode: '4006381333931', identify: true });
+    req.flush({ success: true, message: 'ok' });
+  });
+});

@@ -80,6 +80,24 @@ export class RecordDetailModalComponent implements OnInit {
   readonly isSavingSortKey = signal<boolean>(false);
   readonly isRemoving = signal<boolean>(false);
   readonly showDeleteConfirm = signal<boolean>(false);
+  /** Lightbox state; closes whenever another record is shown. */
+  readonly showCover = linkedSignal<CollectionRelease | null, boolean>({
+    source: () => this.record(),
+    computation: () => false,
+  });
+
+  /** Full-resolution cover: the loaded detail, else what the list knows, else the thumbnail. */
+  readonly coverSrc = computed(() => {
+    // A detail that still belongs to the previously shown record must not leak its cover
+    const detail = this.detail()?.discogs_id === this.record()?.basic_information?.id ? this.detail() : null;
+    return (
+      detail?.cover_url ||
+      this.record()?.basic_information?.cover_image ||
+      detail?.thumb_url ||
+      this.record()?.basic_information?.thumb ||
+      ''
+    );
+  });
 
   /** Last takeover in this modal, shown with its shelf placement while its record is open. */
   readonly takeoverResult = signal<TakeoverResult | null>(null);
@@ -189,7 +207,9 @@ export class RecordDetailModalComponent implements OnInit {
   /** Escape closes the delete confirmation first, then the modal. */
   onEscape(): void {
     if (!this.record()) return;
-    if (this.showDeleteConfirm()) {
+    if (this.showCover()) {
+      this.showCover.set(false);
+    } else if (this.showDeleteConfirm()) {
       this.cancelDelete();
     } else {
       this.close.emit();

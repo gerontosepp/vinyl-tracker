@@ -361,6 +361,7 @@ impl VinylApiClient {
 
         let payload = ScanRequest {
             barcode: barcode.to_string(),
+            identify: false,
         };
 
         let res = self

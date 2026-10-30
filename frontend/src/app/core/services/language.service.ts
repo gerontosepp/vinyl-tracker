@@ -15,6 +15,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'nav.help': 'Hilfe',
     'nav.switchLanguage': 'Switch to English',
     'common.close': 'Schließen',
+    'detail.coverZoom': 'Cover in voller Auflösung anzeigen',
     'manual.createTitle': 'Platte manuell anlegen',
     'manual.editTitle': 'Manuelle Platte bearbeiten',
     'manual.intro': 'Für Platten und CDs ohne Discogs-Eintrag. Pflichtfelder sind mit * markiert.',
@@ -218,6 +219,8 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
 
     // Scanner UI in Dashboard / BarcodeScannerComponent
     'scanner.hardwareReady': 'Hardware-Scanner bereit',
+    'scanner.identifyMode': 'Identify-Modus',
+    'scanner.identifyHint': 'Zeigt die Platte aus deiner Sammlung, ohne sie als gehört zu erfassen.',
     'scanner.hardwareHint': 'Halte den Scanner an den Barcode des Plattencovers oder deinen Vinyl-Tracker QR-Code.',
     'scanner.badgeHardware': 'Eyoyo EY-009P aktiv',
     'scanner.title': 'Platte scannen',
@@ -509,6 +512,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'nav.help': 'Help',
     'nav.switchLanguage': 'Auf Deutsch wechseln',
     'common.close': 'Close',
+    'detail.coverZoom': 'Show cover in full resolution',
     'manual.createTitle': 'Add record manually',
     'manual.editTitle': 'Edit manual record',
     'manual.intro': 'For records and CDs without a Discogs entry. Required fields are marked with *.',
@@ -712,6 +716,8 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
 
     // Scanner UI in Dashboard / BarcodeScannerComponent
     'scanner.hardwareReady': 'Hardware Scanner Ready',
+    'scanner.identifyMode': 'Identify mode',
+    'scanner.identifyHint': 'Shows the record from your collection without logging a listen.',
     'scanner.hardwareHint': 'Aim the scanner at the record sleeve barcode or Vinyl Tracker QR code.',
     'scanner.badgeHardware': 'Eyoyo EY-009P active',
     'scanner.title': 'Scan a record',

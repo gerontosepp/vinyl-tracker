@@ -27,6 +27,14 @@ pub fn barcode_variants(barcode: &str) -> Vec<String> {
     variants
 }
 
+fn scan_message(identify: bool, title: &str) -> String {
+    if identify {
+        format!("Found: {title}")
+    } else {
+        format!("Now playing: {title}")
+    }
+}
+
 impl ScanService {
     pub async fn process_scan(
         pool: &PgPool,
@@ -34,6 +42,7 @@ impl ScanService {
         crypto: &CryptoService,
         user: &AppUser,
         raw_barcode: &str,
+        identify: bool,
     ) -> Result<ScanResultDto, AppError> {
         let dec_token = user
             .discogs_token
@@ -92,7 +101,7 @@ impl ScanService {
                 .map_err(AppError::Database)?;
 
                 if let Some(row) = local_rec {
-                    return Self::log_local(pool, user.id, &row).await;
+                    return Self::resolve_local(pool, user.id, &row, identify).await;
                 }
 
                 // A manual record taken over to Discogs keeps resolving via its old ID (#243)
@@ -111,7 +120,7 @@ impl ScanService {
                     .await
                     .map_err(AppError::Database)?;
                     if let Some(row) = alias_rec {
-                        return Self::log_local(pool, user.id, &row).await;
+                        return Self::resolve_local(pool, user.id, &row, identify).await;
                     }
                 }
             }
@@ -132,7 +141,7 @@ impl ScanService {
             .await
             .map_err(AppError::Database)?;
             if let Some(row) = local_rec {
-                return Self::log_local(pool, user.id, &row).await;
+                return Self::resolve_local(pool, user.id, &row, identify).await;
             }
 
             // Standard Barcode Lookup via Discogs API
@@ -311,9 +320,12 @@ impl ScanService {
             tracing::warn!("Could not store the genres of record {record_id}: {e}");
         }
 
-        // 3. Insert listen_event
-        let now = Utc::now().naive_utc();
-        sqlx::query("INSERT INTO listen_event (user_id, record_id, timestamp) VALUES ($1, $2, $3)")
+        // 3. Insert listen_event (not in identify mode)
+        if !identify {
+            let now = Utc::now().naive_utc();
+            sqlx::query(
+                "INSERT INTO listen_event (user_id, record_id, timestamp) VALUES ($1, $2, $3)",
+            )
             .bind(user.id)
             .bind(record_id)
             .bind(now)
@@ -321,17 +333,18 @@ impl ScanService {
             .await
             .map_err(AppError::Database)?;
 
-        tracing::info!(
-            "Scan of user {} logged a listen of release {}",
-            user.id,
-            release.id
-        );
+            tracing::info!(
+                "Scan of user {} logged a listen of release {}",
+                user.id,
+                release.id
+            );
+        }
         let title = release.title.clone();
         let thumb_url = release.thumb.clone();
 
         Ok(ScanResultDto {
             success: true,
-            message: format!("Now playing: {title}"),
+            message: scan_message(identify, &title),
             record: Some(TrackedRecordDto {
                 discogs_id: release.id,
                 title,
@@ -342,26 +355,32 @@ impl ScanService {
         })
     }
 
-    /// Logs a listen for a record found locally (QR fallback, manual record barcode).
-    async fn log_local(
+    /// Resolves a record found locally (QR fallback, manual record barcode) and logs a listen
+    /// for it, except in identify mode.
+    async fn resolve_local(
         pool: &PgPool,
         user_id: i64,
         row: &PgRow,
+        identify: bool,
     ) -> Result<ScanResultDto, AppError> {
         let title: String = row.get("title");
         let record_id: i64 = row.get("id");
-        sqlx::query("INSERT INTO listen_event (user_id, record_id, timestamp) VALUES ($1, $2, $3)")
+        if !identify {
+            sqlx::query(
+                "INSERT INTO listen_event (user_id, record_id, timestamp) VALUES ($1, $2, $3)",
+            )
             .bind(user_id)
             .bind(record_id)
             .bind(Utc::now().naive_utc())
             .execute(pool)
             .await
             .map_err(AppError::Database)?;
-        tracing::info!("Scan of user {user_id} logged a listen of local record {record_id}");
+            tracing::info!("Scan of user {user_id} logged a listen of local record {record_id}");
+        }
 
         Ok(ScanResultDto {
             success: true,
-            message: format!("Now playing: {title}"),
+            message: scan_message(identify, &title),
             record: Some(TrackedRecordDto {
                 discogs_id: row.get("discogs_id"),
                 title,

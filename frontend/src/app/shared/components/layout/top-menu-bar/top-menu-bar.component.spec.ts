@@ -51,6 +51,13 @@ describe('TopMenuBarComponent', () => {
     expect(logo.getAttribute('src')).toBe('/favicon.svg');
   });
 
+  it('shows the username without an avatar badge', () => {
+    const header: HTMLElement = fixture.nativeElement.querySelector('header');
+    expect(header.textContent).toContain('opolm');
+    // No round badge with the user's initial (the logo image is the only round element)
+    expect(header.querySelector('div.rounded-full')).toBeNull();
+  });
+
   it('links to the help on phones and closes the scanner', () => {
     const help: HTMLAnchorElement = fixture.nativeElement.querySelector('[data-testid="nav-help-mobile"]');
     expect(help.getAttribute('href')).toBe('/help');

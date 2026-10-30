@@ -63,12 +63,6 @@ import { TooltipDirective } from '../../../directives/tooltip.directive';
             </span>
           </div>
 
-          <div
-            class="h-8 w-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 cursor-pointer hover:ring-2 hover:ring-indigo-400 transition-all font-bold"
-          >
-            {{ user.username.charAt(0).toUpperCase() }}
-          </div>
-
           <div class="flex items-center gap-2 ml-1 pl-3 border-l border-slate-200 dark:border-slate-700">
             <a
               routerLink="/help"

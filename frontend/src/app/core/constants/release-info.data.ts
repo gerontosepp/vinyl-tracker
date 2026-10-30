@@ -14,6 +14,13 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "isUnreleased": true,
     "items": [
       {
+        "title": "Avatar-Badge aus der Menüleiste entfernt (`#297`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Der runde Badge mit dem Anfangsbuchstaben des Benutzernamens hatte keine Funktion und ist am Desktop und am Handy weg. Am Desktop bleiben Benutzername und Version, am Handy nur die Version neben dem Logo.",
+        "details": []
+      },
+      {
         "title": "Identify-Modus im Scanner und Cover in voller Auflösung (`#294`)",
         "type": "feat",
         "typeLabel": "Feature",

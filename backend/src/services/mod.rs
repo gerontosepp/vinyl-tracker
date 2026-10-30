@@ -12,6 +12,7 @@ pub mod manual_takeover_service;
 pub mod marketplace;
 pub mod openrouter_settings_service;
 pub mod print;
+pub mod record_genres;
 pub mod record_service;
 pub mod roon;
 pub mod scan_service;

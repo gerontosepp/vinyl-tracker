@@ -9,6 +9,8 @@
 
 ## Unreleased
 
+- **Fix: Genres werden nicht mehr doppelt gespeichert (`#285`)**: Scans, Discogs-Sync, Übernahme und Wiederherstellung konnten dasselbe Genre einer Platte mehrfach ablegen, besonders bei gleichzeitigen Zugriffen. Eine neue Migration entfernt vorhandene Duplikate und macht Genre pro Platte eindeutig; die Schreiber sind wiederholbar und blockieren sich bei gleichzeitigen Zugriffen nicht gegenseitig. Die Migration läuft beim Start automatisch.
+
 ---
 
 ## v1.5.0 (2026-10-29)

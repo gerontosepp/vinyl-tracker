@@ -5,6 +5,14 @@
     "tag": "In Entwicklung",
     "isCurrent": false,
     "isUnreleased": true,
+    "items": []
+  },
+  {
+    "version": "v1.7.0",
+    "rawHeader": "v1.7.0 (2026-10-30)",
+    "date": "2026-10-30",
+    "isCurrent": true,
+    "isUnreleased": false,
     "items": [
       {
         "title": "Startansicht: Reihenfolge getauscht, „Kürzlich gehört“ gekürzt (`#301`)",
@@ -19,7 +27,7 @@
     "version": "v1.6.0",
     "rawHeader": "v1.6.0 (2026-10-30)",
     "date": "2026-10-30",
-    "isCurrent": true,
+    "isCurrent": false,
     "isUnreleased": false,
     "items": [
       {

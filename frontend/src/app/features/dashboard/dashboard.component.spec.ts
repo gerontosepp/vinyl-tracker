@@ -340,12 +340,9 @@ describe('DashboardComponent', () => {
       expect(tags).toEqual(['app-recent-listens', 'app-top-records']);
     });
 
-    it('places the period filter above "Kürzlich gehört"', () => {
-      const el: HTMLElement = fixture.nativeElement;
-      const filter = el.querySelector('input[type="date"]') as HTMLElement;
-      const recent = el.querySelector('app-recent-listens') as HTMLElement;
-      expect(filter).toBeTruthy();
-      expect(filter.compareDocumentPosition(recent) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    it('shows the period filter in the "Kürzlich gehört" header', () => {
+      const header = fixture.nativeElement.querySelector('app-recent-listens h2')?.parentElement as HTMLElement;
+      expect(header.querySelector('input[type="date"]')).toBeTruthy();
     });
 
     it('opens from "Zuletzt gehört" and loads the details', () => {

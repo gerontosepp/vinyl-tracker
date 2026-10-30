@@ -21,9 +21,14 @@ import { TooltipDirective } from '../../../../shared/directives/tooltip.directiv
       <div
         class="p-4 pb-3 md:p-6 md:pb-4 border-b border-slate-100 dark:border-slate-600 bg-white dark:bg-slate-800 z-10 transition-colors"
       >
-        <h2 class="text-lg md:text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-          {{ 'dashboard.recentListens' | translate }}
-        </h2>
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <h2 class="text-lg md:text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+            {{ 'dashboard.recentListens' | translate }}
+          </h2>
+          <div class="w-full sm:w-auto min-w-0">
+            <ng-content></ng-content>
+          </div>
+        </div>
       </div>
 
       <!-- Scrollable Container -->

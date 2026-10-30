@@ -1,4 +1,4 @@
-import { Component, AfterViewInit, OnDestroy, inject, signal, effect, ChangeDetectionStrategy } from '@angular/core';
+import { Component, AfterViewInit, OnDestroy, inject, signal, effect, output, ChangeDetectionStrategy } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
 import { Html5QrcodeScanner } from 'html5-qrcode';
@@ -10,6 +10,7 @@ import { TranslatePipe } from '../../../core/pipes/translate.pipe';
 import { ScanResult, DiscogsMatch, SyncResult, StoragePlacement } from '../../../core/types';
 import { StoragePlacementComponent } from '../storage-placement/storage-placement.component';
 import { LabelPhotoCaptureComponent } from '../label-photo-capture/label-photo-capture.component';
+import { RecordRef } from '../../../features/collection/components/record-detail-modal/record-ref';
 import { firstValueFrom } from 'rxjs';
 import { HelpLinkComponent } from '../help-link/help-link.component';
 import { ManualRecordFormComponent, ManualRecordPrefill } from '../manual-record-form/manual-record-form.component';
@@ -34,6 +35,29 @@ import { ManualRecordFormComponent, ManualRecordPrefill } from '../manual-record
       </h2>
 
       @if (isScanning()) {
+        <!-- Identify mode (#294): show the record instead of logging a listen -->
+        <div class="w-full max-w-md mb-4 flex items-center justify-between gap-3 px-4 py-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200/80 dark:border-slate-700">
+          <div class="min-w-0">
+            <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ 'scanner.identifyMode' | translate }}</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400">{{ 'scanner.identifyHint' | translate }}</p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            data-testid="identify-toggle"
+            [attr.aria-checked]="scannerService.identifyMode()"
+            [attr.aria-label]="'scanner.identifyMode' | translate"
+            (click)="scannerService.setIdentifyMode(!scannerService.identifyMode())"
+            class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors cursor-pointer"
+            [class]="scannerService.identifyMode() ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-600'"
+          >
+            <span
+              class="inline-block h-5 w-5 rounded-full bg-white shadow transition-transform"
+              [class]="scannerService.identifyMode() ? 'translate-x-5' : 'translate-x-0.5'"
+            ></span>
+          </button>
+        </div>
+
         @if (scannerService.scannerMode() === 'hardware') {
           <!-- Hardware Scanner Status Card -->
           <div class="w-full max-w-md p-6 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-700 text-center animate-fade-in">
@@ -337,6 +361,8 @@ export class BarcodeScannerComponent implements AfterViewInit, OnDestroy {
   readonly scannerService = inject(ScannerService);
 
   readonly scanResult = signal<ScanResult | null>(null);
+  /** A scan in identify mode found a record of the collection (#294). */
+  readonly identified = output<RecordRef>();
   readonly isScanning = signal<boolean>(true);
   readonly isAddingToCollection = signal<boolean>(false);
   readonly selectedMatchId = signal<number | null>(null);
@@ -431,11 +457,14 @@ export class BarcodeScannerComponent implements AfterViewInit, OnDestroy {
     this.lastCode.set(normalizedCode);
     this.isSearchingManual.set(true);
 
+    // Fixed per request: flipping the switch while it is in flight must not change how it is handled
+    const identify = this.scannerService.identifyMode();
+
     try {
       const apiResult: ScanResult = await firstValueFrom(
-        this.apiService.scanBarcode(normalizedCode)
+        this.apiService.scanBarcode(normalizedCode, identify)
       );
-      this.handleScanResponse(apiResult);
+      this.handleScanResponse(apiResult, identify);
     } catch (error: any) {
       const errorResult = error?.error;
       if (
@@ -443,7 +472,7 @@ export class BarcodeScannerComponent implements AfterViewInit, OnDestroy {
         typeof errorResult === 'object' &&
         ('discogsMatches' in errorResult || 'message' in errorResult)
       ) {
-        this.handleScanResponse(errorResult);
+        this.handleScanResponse(errorResult, identify);
       } else {
         const msg =
           errorResult?.message || error?.message || 'Netzwerkfehler oder Serverfehler';
@@ -454,7 +483,18 @@ export class BarcodeScannerComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  private handleScanResponse(apiResult: ScanResult): void {
+  private handleScanResponse(apiResult: ScanResult, identify: boolean): void {
+    if (apiResult.success && apiResult.record && identify) {
+      // No listen was logged: hand the record to the host and stay ready for the next scan
+      this.identified.emit({
+        discogsId: apiResult.record.discogsId,
+        title: apiResult.record.title,
+        artist: apiResult.record.artist,
+        thumbUrl: apiResult.record.thumbUrl,
+      });
+      this.handleReset();
+      return;
+    }
     this.scanResult.set(apiResult);
     if (apiResult.success) {
       this.scannerService.notifyScanLogged();

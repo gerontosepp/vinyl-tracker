@@ -553,6 +553,7 @@ async fn test_scan_service_comprehensive_scenarios() {
         &state.crypto,
         &user_no_token,
         "vt:invalid-id",
+        false,
     )
     .await;
     assert!(matches!(err_qr, Err(AppError::BadRequest(_))));
@@ -564,6 +565,7 @@ async fn test_scan_service_comprehensive_scenarios() {
         &state.crypto,
         &user_no_token,
         "vt:999888",
+        false,
     )
     .await
     .unwrap();
@@ -577,6 +579,7 @@ async fn test_scan_service_comprehensive_scenarios() {
         &state.crypto,
         &user_no_token,
         "012345678901",
+        false,
     )
     .await;
     assert!(matches!(err_barcode, Err(AppError::BadRequest(_))));
@@ -606,6 +609,7 @@ async fn test_scan_service_comprehensive_scenarios() {
         &state.crypto,
         &user_with_token,
         "discogs-id:771122",
+        false,
     )
     .await
     .unwrap();
@@ -617,7 +621,25 @@ async fn test_scan_service_comprehensive_scenarios() {
         .fetch_one(pool)
         .await
         .unwrap();
-    assert!(genre_count >= 2);
+    assert_eq!(genre_count, 2, "Rock and Indie, each once");
+
+    // Scanning the same release again must not store its genres a second time
+    let again = ScanService::process_scan(
+        pool,
+        &mock_client,
+        &state.crypto,
+        &user_with_token,
+        "discogs-id:771122",
+        false,
+    )
+    .await
+    .unwrap();
+    assert!(again.success);
+    let genre_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM record_genres rg JOIN record_cache rc ON rc.id = rg.record_id WHERE rc.discogs_id = 771122")
+        .fetch_one(pool)
+        .await
+        .unwrap();
+    assert_eq!(genre_count, 2);
 
     // 6. Direct barcode match in local collection
     let seed_id = 554433i64;
@@ -640,10 +662,60 @@ async fn test_scan_service_comprehensive_scenarios() {
         &state.crypto,
         &user_with_token,
         "012345678901",
+        false,
     )
     .await
     .unwrap();
     assert!(direct_scan.success);
+
+    // 6b. Identify mode (#294) resolves the record but logs no listen
+    let listens = || async {
+        sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM listen_event WHERE user_id = $1")
+            .bind(user_id)
+            .fetch_one(pool)
+            .await
+            .unwrap()
+    };
+    let before = listens().await;
+    let identified_local = ScanService::process_scan(
+        pool,
+        &mock_client,
+        &state.crypto,
+        &user_no_token,
+        &format!("vt:{seed_id}"),
+        true,
+    )
+    .await
+    .unwrap();
+    assert!(identified_local.success);
+    assert_eq!(identified_local.record.unwrap().discogs_id, seed_id);
+    assert!(identified_local.message.starts_with("Found:"));
+    let identified_remote = ScanService::process_scan(
+        pool,
+        &mock_client,
+        &state.crypto,
+        &user_with_token,
+        "discogs-id:771122",
+        true,
+    )
+    .await
+    .unwrap();
+    assert!(identified_remote.success);
+    assert_eq!(listens().await, before, "identify must not log a listen");
+
+    // The same local scan without identify still logs one
+    let logged = ScanService::process_scan(
+        pool,
+        &mock_client,
+        &state.crypto,
+        &user_no_token,
+        &format!("vt:{seed_id}"),
+        false,
+    )
+    .await
+    .unwrap();
+    assert!(logged.message.starts_with("Now playing:"));
+    assert_eq!(listens().await, before + 1);
 
     // 7. 12-digit barcode fallback to 13-digit EAN (0 + barcode) -> found in remote collection
     let ean_scan = ScanService::process_scan(
@@ -652,6 +724,7 @@ async fn test_scan_service_comprehensive_scenarios() {
         &state.crypto,
         &user_with_token,
         "123456789012",
+        false,
     )
     .await
     .unwrap();
@@ -664,6 +737,7 @@ async fn test_scan_service_comprehensive_scenarios() {
         &state.crypto,
         &user_with_token,
         "0234567890123",
+        false,
     )
     .await
     .unwrap();
@@ -676,6 +750,7 @@ async fn test_scan_service_comprehensive_scenarios() {
         &state.crypto,
         &user_with_token,
         "SOMEBARCODE",
+        false,
     )
     .await
     .unwrap();
@@ -688,6 +763,7 @@ async fn test_scan_service_comprehensive_scenarios() {
         &state.crypto,
         &user_with_token,
         "999999999999",
+        false,
     )
     .await
     .unwrap();
@@ -702,6 +778,7 @@ async fn test_scan_service_comprehensive_scenarios() {
         &state.crypto,
         &user_with_token,
         "000000000000",
+        false,
     )
     .await
     .unwrap();

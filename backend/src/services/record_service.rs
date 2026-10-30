@@ -14,6 +14,7 @@ use crate::{
     services::{
         crypto_service::CryptoService,
         marketplace::{extract_suggested_price, validate_goldmine_condition},
+        record_genres::add_genres,
         shelf_order::DEFAULT_ARTIST_KEY_SQL,
         storage::StorageService,
     },
@@ -251,6 +252,11 @@ impl RecordService {
             .and_then(|r| r.thumb.clone())
             .or_else(|| record_row.as_ref().and_then(|r| r.get("thumb_url")));
 
+        let cover_url = discogs_release
+            .as_ref()
+            .and_then(|r| r.cover_url())
+            .or_else(|| thumb_url.clone());
+
         // Fetch genres from DB or Discogs
         let mut genres: Vec<String> = Vec::new();
         if let Some(rec_id) = local_record_id {
@@ -351,6 +357,7 @@ impl RecordService {
             artist,
             year,
             thumb_url,
+            cover_url,
             genres,
             in_collection,
             instance_id,
@@ -450,14 +457,10 @@ impl RecordService {
 
                 let rec_id: i64 = inserted.get("id");
 
-                if let Some(genres) = &release.genres {
-                    for g in genres {
-                        let _ = sqlx::query("INSERT INTO record_genres (record_id, genre) VALUES ($1, $2) ON CONFLICT DO NOTHING")
-                            .bind(rec_id)
-                            .bind(g)
-                            .execute(pool)
-                            .await;
-                    }
+                if let Some(genres) = &release.genres
+                    && let Err(e) = add_genres(pool, rec_id, genres).await
+                {
+                    tracing::warn!("Could not store the genres of record {rec_id}: {e}");
                 }
 
                 rec_id

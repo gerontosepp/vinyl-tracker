@@ -39,6 +39,9 @@ pub struct RecordDetailDto {
     pub year: Option<String>,
     #[serde(rename = "thumb_url")]
     pub thumb_url: Option<String>,
+    /// Cover in full resolution (identify mode, lightbox); falls back to `thumb_url`.
+    #[serde(default)]
+    pub cover_url: Option<String>,
     pub genres: Vec<String>,
     #[serde(rename = "in_collection")]
     pub in_collection: bool,

@@ -3,7 +3,7 @@
 import { ReleaseEntry } from '../models/release-info.model';
 
 // Application version from frontend/package.json – single source for all version badges.
-export const APP_VERSION = '1.5.0';
+export const APP_VERSION = '1.6.0';
 
 export const RELEASE_INFO_DATA: ReleaseEntry[] = [
   {
@@ -15,10 +15,40 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "items": []
   },
   {
+    "version": "v1.6.0",
+    "rawHeader": "v1.6.0 (2026-10-30)",
+    "date": "2026-10-30",
+    "isCurrent": true,
+    "isUnreleased": false,
+    "items": [
+      {
+        "title": "Avatar-Badge aus der Menüleiste entfernt (`#297`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Der runde Badge mit dem Anfangsbuchstaben des Benutzernamens hatte keine Funktion und ist am Desktop und am Handy weg. Am Desktop bleiben Benutzername und Version, am Handy nur die Version neben dem Logo.",
+        "details": []
+      },
+      {
+        "title": "Identify-Modus im Scanner und Cover in voller Auflösung (`#294`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Mit dem Schalter **Identify-Modus** auf der Scan-Seite zeigt ein Scan die Platte aus deiner Sammlung in der Detailansicht (Regalplatz, Zustand, Preis), ohne sie als gehört zu erfassen; danach ist der Scanner sofort wieder bereit. Platten außerhalb der Sammlung laufen wie bisher durch Discogs-Suche und Übernahme. Ein Klick auf das Cover in der Detailansicht zeigt es in voller Auflösung (Klick oder Esc schließt). API: `POST /api/scan` nimmt das optionale Feld `identify` (Standard `false`), `RecordDetailDto` liefert `cover_url`.",
+        "details": []
+      },
+      {
+        "title": "Fix: Genres werden nicht mehr doppelt gespeichert (`#285`)",
+        "type": "fix",
+        "typeLabel": "Fix",
+        "summary": "Scans, Discogs-Sync, Übernahme und Wiederherstellung konnten dasselbe Genre einer Platte mehrfach ablegen, besonders bei gleichzeitigen Zugriffen. Eine neue Migration entfernt vorhandene Duplikate und macht Genre pro Platte eindeutig; die Schreiber sind wiederholbar und blockieren sich bei gleichzeitigen Zugriffen nicht gegenseitig. Die Migration läuft beim Start automatisch.",
+        "details": []
+      }
+    ]
+  },
+  {
     "version": "v1.5.0",
     "rawHeader": "v1.5.0 (2026-10-29)",
     "date": "2026-10-29",
-    "isCurrent": true,
+    "isCurrent": false,
     "isUnreleased": false,
     "items": [
       {

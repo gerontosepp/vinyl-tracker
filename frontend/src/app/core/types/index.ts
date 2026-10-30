@@ -166,6 +166,8 @@ export interface RecordDetailDto {
   artist?: string;
   year?: string;
   thumb_url?: string;
+  /** Cover in full resolution; falls back to `thumb_url`. */
+  cover_url?: string;
   genres: string[];
   in_collection: boolean;
   instance_id?: number;

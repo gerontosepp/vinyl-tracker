@@ -7,7 +7,9 @@ use crate::{
         record::RecordSource,
         user::AppUser,
     },
-    services::{crypto_service::CryptoService, storage::StorageService},
+    services::{
+        crypto_service::CryptoService, record_genres::replace_genres, storage::StorageService,
+    },
 };
 use chrono::{DateTime, Utc};
 use sqlx::{PgPool, Postgres, Row, Transaction};
@@ -409,20 +411,7 @@ impl CollectionSyncService {
 
         // 2. Genres
         if let Some(genres) = &item.basic_information.genres {
-            sqlx::query("DELETE FROM record_genres WHERE record_id = $1")
-                .bind(record_id)
-                .execute(pool)
-                .await
-                .map_err(AppError::Database)?;
-
-            for g in genres {
-                sqlx::query("INSERT INTO record_genres (record_id, genre) VALUES ($1, $2)")
-                    .bind(record_id)
-                    .bind(g)
-                    .execute(pool)
-                    .await
-                    .map_err(AppError::Database)?;
-            }
+            replace_genres(pool, record_id, genres).await?;
         }
 
         // 3. Extract conditions from notes
@@ -526,20 +515,7 @@ pub async fn upsert_release(
     let record_id: i64 = record_row.get("id");
 
     if let Some(genres) = &release.genres {
-        sqlx::query("DELETE FROM record_genres WHERE record_id = $1")
-            .bind(record_id)
-            .execute(&mut **tx)
-            .await
-            .map_err(AppError::Database)?;
-
-        for g in genres {
-            sqlx::query("INSERT INTO record_genres (record_id, genre) VALUES ($1, $2)")
-                .bind(record_id)
-                .bind(g)
-                .execute(&mut **tx)
-                .await
-                .map_err(AppError::Database)?;
-        }
+        replace_genres(&mut **tx, record_id, genres).await?;
     }
 
     Ok(record_id)

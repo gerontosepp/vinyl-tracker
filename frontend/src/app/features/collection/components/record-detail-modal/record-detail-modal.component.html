@@ -12,8 +12,15 @@
         class="p-5 border-b border-slate-100 dark:border-slate-700/60 flex items-start justify-between gap-4"
       >
         <div class="flex items-center gap-4 min-w-0">
-          <div
-            class="w-16 h-16 rounded-xl bg-slate-100 dark:bg-slate-700 overflow-hidden shadow-sm shrink-0"
+          <button
+            type="button"
+            class="w-16 h-16 rounded-xl bg-slate-100 dark:bg-slate-700 overflow-hidden shadow-sm shrink-0 p-0 border-0"
+            [class.cursor-zoom-in]="coverSrc()"
+            [disabled]="!coverSrc()"
+            [appTooltip]="coverSrc() ? ('detail.coverZoom' | translate) : ''"
+            [attr.aria-label]="coverSrc() ? ('detail.coverZoom' | translate) : null"
+            data-testid="detail-cover"
+            (click)="showCover.set(true)"
           >
             @if (record()?.basic_information?.thumb) {
               <img
@@ -28,7 +35,7 @@
                 💿
               </div>
             }
-          </div>
+          </button>
           <div class="min-w-0">
             <h2
               class="text-lg md:text-xl font-bold text-slate-900 dark:text-slate-100 truncate"
@@ -729,4 +736,27 @@
       </div>
     </div>
   </div>
+
+  @if (showCover() && coverSrc(); as src) {
+    <!-- Cover in full resolution -->
+    <div
+      class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-950/90 animate-fade-in cursor-zoom-out"
+      data-testid="cover-lightbox"
+      (click)="showCover.set(false)"
+    >
+      <img
+        [src]="apiService.getProxiedImageUrl(src)"
+        [alt]="record()?.basic_information?.title ?? ''"
+        class="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+      />
+      <button
+        type="button"
+        class="absolute top-4 right-4 p-2 rounded-full bg-slate-900/70 text-white hover:bg-slate-800 cursor-pointer"
+        [attr.aria-label]="'common.close' | translate"
+        (click)="showCover.set(false)"
+      >
+        <svg lucideX [size]="20"></svg>
+      </button>
+    </div>
+  }
 }

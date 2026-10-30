@@ -14,8 +14,8 @@ use crate::{
     },
     services::{
         crypto_service::CryptoService, label_photo_service::LabelPhotoService,
-        marketplace::validate_goldmine_condition, record_service::RecordService,
-        storage::StorageService,
+        marketplace::validate_goldmine_condition, record_genres::replace_genres,
+        record_service::RecordService, storage::StorageService,
     },
 };
 use base64::Engine;
@@ -182,7 +182,7 @@ impl ManualRecordService {
         let record_id: i64 = row.get("id");
         let discogs_id: i64 = row.get("discogs_id");
 
-        replace_genres(&mut tx, record_id, &record.genres).await?;
+        replace_genres(&mut *tx, record_id, &record.genres).await?;
         sqlx::query(
             "INSERT INTO collection_item (user_id, record_id, instance_id, added_at, media_condition, sleeve_condition)
              VALUES ($1, $2, $3, $4, $5, $6)",
@@ -283,7 +283,7 @@ impl ManualRecordService {
         .execute(&mut *tx)
         .await
         .map_err(AppError::Database)?;
-        replace_genres(&mut tx, record_id, &record.genres).await?;
+        replace_genres(&mut *tx, record_id, &record.genres).await?;
         sqlx::query(
             "UPDATE collection_item SET media_condition = $3, sleeve_condition = $4
              WHERE user_id = $1 AND record_id = $2",
@@ -472,25 +472,6 @@ pub async fn normalize_cover(upload: Bytes) -> Result<Vec<u8>, AppError> {
     })
     .await
     .map_err(|e| AppError::Internal(format!("Cover processing failed: {e}")))?
-}
-
-pub async fn replace_genres(
-    tx: &mut Transaction<'_, Postgres>,
-    record_id: i64,
-    genres: &[String],
-) -> Result<(), AppError> {
-    sqlx::query("DELETE FROM record_genres WHERE record_id = $1")
-        .bind(record_id)
-        .execute(&mut **tx)
-        .await
-        .map_err(AppError::Database)?;
-    sqlx::query("INSERT INTO record_genres (record_id, genre) SELECT $1, UNNEST($2::varchar[])")
-        .bind(record_id)
-        .bind(genres)
-        .execute(&mut **tx)
-        .await
-        .map_err(AppError::Database)?;
-    Ok(())
 }
 
 fn optional(value: Option<&str>) -> Option<String> {

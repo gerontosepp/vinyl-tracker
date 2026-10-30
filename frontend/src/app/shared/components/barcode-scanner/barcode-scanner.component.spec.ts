@@ -5,7 +5,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { ApiService } from '../../../core/services/api.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ScannerService } from '../../../core/services/scanner.service';
-import { of, throwError } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 import { signal } from '@angular/core';
 import { User, ScanResult, SyncResult } from '../../../core/types';
 import { provideRouter } from '@angular/router';
@@ -219,6 +219,86 @@ describe('BarcodeScannerComponent', () => {
 
     expect(component.executeBarcodeScan).toHaveBeenCalledWith('075678645624');
     expect(component.isScanning()).toBe(false);
+  });
+
+  describe('identify mode', () => {
+    const found: ScanResult = {
+      success: true,
+      message: 'Found: Abbey Road',
+      record: { discogsId: 100, title: 'Abbey Road', artist: 'The Beatles', thumbUrl: 't.jpg' },
+    };
+
+    beforeEach(() => localStorage.clear());
+    afterEach(() => localStorage.clear());
+
+    it('toggles the mode with the switch', () => {
+      fixture.detectChanges();
+      const toggle = fixture.nativeElement.querySelector('[data-testid="identify-toggle"]') as HTMLButtonElement;
+      expect(toggle.getAttribute('aria-checked')).toBe('false');
+
+      toggle.click();
+      fixture.detectChanges();
+      expect(component.scannerService.identifyMode()).toBe(true);
+      expect(toggle.getAttribute('aria-checked')).toBe('true');
+    });
+
+    it('hands the found record to the host without a success card and stays ready', async () => {
+      component.scannerService.setIdentifyMode(true);
+      apiServiceMock.scanBarcode.mockReturnValue(of(found));
+      const identified = vi.fn();
+      component.identified.subscribe(identified);
+      const logged = component.scannerService.scanLogged();
+
+      await component.executeBarcodeScan('4006381333931');
+
+      expect(apiServiceMock.scanBarcode).toHaveBeenCalledWith('4006381333931', true);
+      expect(identified).toHaveBeenCalledWith({ discogsId: 100, title: 'Abbey Road', artist: 'The Beatles', thumbUrl: 't.jpg' });
+      expect(component.scanResult()).toBeNull();
+      expect(component.isScanning()).toBe(true);
+      expect(component.scannerService.scanLogged()).toBe(logged);
+    });
+
+    it('handles a response by the mode it was requested with', async () => {
+      let respond!: (r: ScanResult) => void;
+      apiServiceMock.scanBarcode.mockReturnValue(
+        new Observable<ScanResult>((sub) => { respond = (r) => { sub.next(r); sub.complete(); }; }),
+      );
+      const identified = vi.fn();
+      component.identified.subscribe(identified);
+
+      const pending = component.executeBarcodeScan('4006381333931');
+      component.scannerService.setIdentifyMode(true);
+      respond({ ...found, message: 'Now playing: Abbey Road' });
+      await pending;
+
+      expect(identified).not.toHaveBeenCalled();
+      expect(component.scanResult()?.success).toBe(true);
+    });
+
+    it('does not hand over a record outside the identify mode', async () => {
+      apiServiceMock.scanBarcode.mockReturnValue(of({ ...found, message: 'Now playing: Abbey Road' }));
+      const identified = vi.fn();
+      component.identified.subscribe(identified);
+
+      await component.executeBarcodeScan('4006381333931');
+
+      expect(apiServiceMock.scanBarcode).toHaveBeenCalledWith('4006381333931', false);
+      expect(identified).not.toHaveBeenCalled();
+      expect(component.scanResult()?.success).toBe(true);
+    });
+
+    it('shows Discogs matches for a record that is not in the collection', async () => {
+      component.scannerService.setIdentifyMode(true);
+      const match = { id: 7, title: 'Other', year: '1970', thumbUrl: '', coverImage: '', format: [], country: 'DE' };
+      apiServiceMock.scanBarcode.mockReturnValue(of({ success: false, message: 'found on Discogs', discogsMatches: [match] }));
+      const identified = vi.fn();
+      component.identified.subscribe(identified);
+
+      await component.executeBarcodeScan('4006381333931');
+
+      expect(identified).not.toHaveBeenCalled();
+      expect(component.scanResult()?.discogsMatches?.length).toBe(1);
+    });
   });
 
   it('offers a manual record with the scanned barcode when nothing was found', async () => {

@@ -26,6 +26,8 @@ export class ScannerService {
   // Scanner preferences
   readonly scannerMode = signal<ScannerMode>(this.getInitialScannerMode());
   readonly soundFeedback = signal<boolean>(this.getInitialSoundFeedback());
+  /** Identify mode (#294): a scan shows the record instead of logging a listen. */
+  readonly identifyMode = signal<boolean>(this.getInitialIdentifyMode());
 
   // Captured scan events
   readonly lastScannedCode = signal<ScannedCodeEvent | null>(null);
@@ -74,6 +76,20 @@ export class ScannerService {
     this.scannerMode.set(mode);
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('scanner_mode', mode);
+    }
+  }
+
+  private getInitialIdentifyMode(): boolean {
+    if (typeof localStorage !== 'undefined') {
+      return localStorage.getItem('scanner_identify') === 'true';
+    }
+    return false;
+  }
+
+  setIdentifyMode(enabled: boolean): void {
+    this.identifyMode.set(enabled);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('scanner_identify', enabled ? 'true' : 'false');
     }
   }
 

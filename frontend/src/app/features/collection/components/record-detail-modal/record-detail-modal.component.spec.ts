@@ -459,6 +459,74 @@ describe('RecordDetailModalComponent', () => {
     });
   });
 
+  describe('cover lightbox', () => {
+    const q = (testId: string): HTMLElement | null => fixture.nativeElement.querySelector(`[data-testid="${testId}"]`);
+    const pressEscape = () => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    const rec = (cover = '') =>
+      ({ id: 123456, basic_information: { id: 123456, title: 'Abbey Road', thumb: 'thumb.jpg', cover_image: cover, artists: [] } }) as any;
+
+    function show(detail: Partial<RecordDetailDto> = {}, record = rec()): void {
+      fixture.componentRef.setInput('record', record);
+      fixture.componentRef.setInput('detail', { ...mockDetail, ...detail });
+      fixture.detectChanges();
+    }
+
+    it('prefers the full resolution cover of the detail', () => {
+      show({ cover_url: 'full.jpg', thumb_url: 'small.jpg' }, rec('list.jpg'));
+      expect(component.coverSrc()).toBe('full.jpg');
+    });
+
+    it('falls back to the list cover and then to the thumbnail', () => {
+      show({}, rec('list.jpg'));
+      expect(component.coverSrc()).toBe('list.jpg');
+      show({}, rec(''));
+      expect(component.coverSrc()).toBe('thumb.jpg');
+    });
+
+    it('ignores the cover of a detail that belongs to another record', () => {
+      show({ discogs_id: 999, cover_url: 'stale.jpg' }, rec('list.jpg'));
+      expect(component.coverSrc()).toBe('list.jpg');
+    });
+
+    it('opens the full cover on click and closes it on click', () => {
+      show({ cover_url: 'full.jpg' });
+      expect(q('cover-lightbox')).toBeNull();
+
+      q('detail-cover')!.click();
+      fixture.detectChanges();
+      expect(q('cover-lightbox')!.querySelector('img')!.getAttribute('src')).toBe('full.jpg');
+
+      q('cover-lightbox')!.click();
+      fixture.detectChanges();
+      expect(q('cover-lightbox')).toBeNull();
+    });
+
+    it('closes only the lightbox on Escape, then the modal', () => {
+      show({ cover_url: 'full.jpg' });
+      const closed = vi.fn();
+      component.close.subscribe(closed);
+      q('detail-cover')!.click();
+      fixture.detectChanges();
+
+      pressEscape();
+      fixture.detectChanges();
+      expect(q('cover-lightbox')).toBeNull();
+      expect(closed).not.toHaveBeenCalled();
+
+      pressEscape();
+      expect(closed).toHaveBeenCalledTimes(1);
+    });
+
+    it('closes the lightbox when another record is shown', () => {
+      show({ cover_url: 'full.jpg' });
+      q('detail-cover')!.click();
+      fixture.detectChanges();
+
+      show({ cover_url: 'other.jpg' }, rec('x.jpg'));
+      expect(q('cover-lightbox')).toBeNull();
+    });
+  });
+
   describe('manual records', () => {
     const q = (testId: string): HTMLElement | null => fixture.nativeElement.querySelector(`[data-testid="${testId}"]`);
 

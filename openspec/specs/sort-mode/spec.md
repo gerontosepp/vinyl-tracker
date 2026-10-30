@@ -54,7 +54,7 @@ Während der Sortier-Screen sichtbar ist, MUST der Modus eine Screen Wake Lock a
 - **THEN** stimmt die Reihenfolge mit der Regal-Übersicht überein und jedes Exemplar trägt seinen Lagerplatz
 
 ### Requirement: Sortier-Modus über die untere Leiste starten
-Die untere Navigationsleiste der Mobil-Ansicht MUST einen Eintrag „Sortieren“ mit Regal-Icon enthalten, der den Sortier-Modus öffnet; er MUST in Größe und Stil den übrigen Einträgen entsprechen. Ohne Regale MUST der Sortier-Modus einen Hinweis zeigen, zuerst ein Regal anzulegen. Der Start-Screen MUST ein Regal (vorbelegt mit dem ersten in Regal-Reihenfolge) und ein Startfach als Zeile und Spalte innerhalb des Regal-Rasters abfragen.
+Die untere Navigationsleiste der Mobil-Ansicht MUST einen Eintrag „Sortieren“ mit Regal-Icon enthalten, der den Sortier-Modus öffnet; er MUST in Größe und Stil den übrigen Einträgen entsprechen. Ohne Regale MUST der Sortier-Modus einen Hinweis zeigen, zuerst ein Regal anzulegen. Der Start-Screen MUST ein Regal (vorbelegt mit dem ersten in Regal-Reihenfolge) und ein Startfach als Zeile und Spalte innerhalb des Regal-Rasters abfragen. Zeile und Spalte MUST sich zusätzlich mit Plus- und Minus-Buttons um jeweils eins verstellen lassen, sodass die Wahl ohne Bildschirmtastatur möglich ist (z. B. wenn ein verbundener Bluetooth-Scanner sie auf dem Handy ausblendet); die Eingabe per Tastatur MUST möglich bleiben.
 
 #### Scenario: Einstieg über die untere Leiste
 - **WHEN** der Nutzer am Handy in der unteren Leiste auf „Sortieren“ tippt
@@ -67,6 +67,18 @@ Die untere Navigationsleiste der Mobil-Ansicht MUST einen Eintrag „Sortieren�
 #### Scenario: Startfach wählen
 - **WHEN** der Nutzer „Kallax-2“ und Zeile 1, Spalte 3 wählt und startet
 - **THEN** beginnt der Sortier-Modus mit der ersten Platte, die laut Belegung in Kallax-2 Fach 1:3 liegt
+
+#### Scenario: Startfach mit Plus und Minus verstellen
+- **WHEN** der Nutzer bei „Kallax-2“ (2 Zeilen, 2 Spalten) auf Zeile „+“ und auf Spalte „+“ tippt
+- **THEN** zeigen die Felder Zeile 2 und Spalte 2
+
+#### Scenario: Grenzen der Buttons
+- **WHEN** Zeile oder Spalte den kleinsten Wert 1 oder die Zeilen- bzw. Spaltenzahl des Regals erreicht haben
+- **THEN** ist der Button für die Richtung über die Grenze hinaus deaktiviert
+
+#### Scenario: Ungültiger Wert und Buttons
+- **WHEN** der Nutzer einen ungültigen Wert eingetippt hat (z. B. Zeile 9 bei 2 Zeilen, ein leeres Feld oder 1,5) und einen Button tippt
+- **THEN** springt das Feld in Richtung des Buttons auf die nächste gültige ganze Zahl im Raster (leer: 1)
 
 #### Scenario: Leeres Startfach
 - **WHEN** das gewählte Fach leer ist

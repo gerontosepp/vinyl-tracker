@@ -33,6 +33,8 @@ describe('BarcodeScannerComponent', () => {
     apiServiceMock = {
       scanBarcode: vi.fn().mockName("ApiService.scanBarcode"),
       addReleaseToCollection: vi.fn().mockName("ApiService.addReleaseToCollection"),
+      getWantToHave: vi.fn().mockName("ApiService.getWantToHave").mockReturnValue(of([])),
+      addWantToHave: vi.fn().mockName("ApiService.addWantToHave"),
       getProxiedImageUrl: vi.fn().mockName("ApiService.getProxiedImageUrl"),
       labelPhotosResource: vi.fn().mockName("ApiService.labelPhotosResource").mockReturnValue({ hasValue: () => true, value: () => ({ photos: [], pendingCount: 0 }) })
     } as unknown as MockedObject<ApiService>;
@@ -149,6 +151,29 @@ describe('BarcodeScannerComponent', () => {
     expect(toastServiceMock.showToast).toHaveBeenCalledWith('Erfolgreich zu deiner Discogs-Sammlung hinzugefügt!', 'success');
     expect(component.isAddingToCollection()).toBe(false);
     expect(component.placement()).toBeNull();
+  });
+
+  it('saves the chosen match on the want-to-have list and then shows the hint instead of the button', async () => {
+    apiServiceMock.addWantToHave.mockReturnValue(
+      of({ id: 9, discogs_id: 501, title: 'Abbey Road', artist: 'The Beatles', genres: [], created_at: '2026-11-04T10:00:00+00:00' })
+    );
+    component.scanResult.set({
+      success: false,
+      message: 'Choose',
+      discogsMatches: [{ id: 501, title: 'Abbey Road' }],
+    });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    fixture.nativeElement.querySelector('[data-testid="scanner-want"]').click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(apiServiceMock.addWantToHave).toHaveBeenCalledWith(501);
+    expect(fixture.nativeElement.querySelector('[data-testid="scanner-want"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="scanner-want-listed"]')).not.toBeNull();
+    expect(component.isAddingWanted()).toBe(false);
   });
 
   it('should show where the added record belongs on the shelf', async () => {

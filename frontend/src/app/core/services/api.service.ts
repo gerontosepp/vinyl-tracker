@@ -23,6 +23,7 @@ import {
   RoonZone,
   RoonSettings,
   RoonPlayRequest,
+  WantToHaveItem,
   RestoreResult,
   PrintRequest,
   StorageType,
@@ -287,6 +288,23 @@ export class ApiService {
 
   addReleaseToCollection(releaseId: number): Observable<SyncResult> {
     return this.http.post<SyncResult>(`${this.baseUrl}/collection/releases/${releaseId}`, {});
+  }
+
+  getWantToHave(): Observable<WantToHaveItem[]> {
+    return this.http.get<WantToHaveItem[]>(`${this.baseUrl}/want-to-have`);
+  }
+
+  addWantToHave(discogsId: number): Observable<WantToHaveItem> {
+    return this.http.post<WantToHaveItem>(`${this.baseUrl}/want-to-have`, { discogs_id: discogsId });
+  }
+
+  removeWantToHave(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/want-to-have/${id}`);
+  }
+
+  /** Adds the record to the collection and removes it from the list. */
+  wantToHaveToCollection(id: number): Observable<SyncResult> {
+    return this.http.post<SyncResult>(`${this.baseUrl}/want-to-have/${id}/to-collection`, {});
   }
 
   removeReleaseFromCollection(releaseId: number, instanceId?: number): Observable<void> {

@@ -8,6 +8,7 @@ import {
   LucideUser,
   LucideScanLine,
   LucideCircleQuestionMark,
+  LucideBookmark,
 } from '@lucide/angular';
 
 @Component({
@@ -22,6 +23,7 @@ import {
     LucideUser,
     LucideScanLine,
     LucideCircleQuestionMark,
+    LucideBookmark,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   template: `
@@ -62,6 +64,24 @@ import {
         >
           <svg lucideDisc [size]="26" [strokeWidth]="rlaCol.isActive ? 2.5 : 2"></svg>
           <span class="mt-1.5 text-xs tracking-wide">{{ 'nav.collection' | translate }}</span>
+        </a>
+
+        <!-- Want-to-Have -->
+        <a
+          routerLink="/want-to-have"
+          (click)="scannerService.closeScanner()"
+          routerLinkActive
+          #rlaWant="routerLinkActive"
+          data-testid="nav-want-to-have"
+          [class]="
+            'flex flex-col items-center justify-center py-4 px-2 w-[calc(100%-1rem)] rounded-2xl mx-2 transition-all duration-200 cursor-pointer ' +
+            (rlaWant.isActive
+              ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/20 shadow-sm font-bold'
+              : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 font-medium')
+          "
+        >
+          <svg lucideBookmark [size]="26" [strokeWidth]="rlaWant.isActive ? 2.5 : 2"></svg>
+          <span class="mt-1.5 text-xs tracking-wide">{{ 'nav.wantToHave' | translate }}</span>
         </a>
 
         <!-- Profile -->

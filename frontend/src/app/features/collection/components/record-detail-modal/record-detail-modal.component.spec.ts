@@ -589,4 +589,88 @@ describe('RecordDetailModalComponent', () => {
       expect(q('detail-takeover-done')).toBeNull();
     });
   });
+
+  describe('want-to-have mode (#310)', () => {
+    const wanted: RecordDetailDto = {
+      ...mockDetail,
+      in_collection: false,
+      listen_count: 0,
+      median_price: 25,
+      storage: { unitId: 1, unitName: 'Kallax_1', compartment: 1, row: 1, column: 1, oversized: false, unplaced: false },
+      media_condition: 'Mint (M)',
+      listen_history: ['2026-10-01T10:00:00Z'],
+    };
+    const q = (testId: string) => fixture.nativeElement.querySelector(`[data-testid="${testId}"]`) as HTMLElement | null;
+
+    function open(mode: 'collection' | 'wantToHave'): void {
+      fixture.componentRef.setInput('mode', mode);
+      fixture.componentRef.setInput('record', { id: 42, basic_information: { id: 123456, title: 'Abbey Road', artists: [] } } as any);
+      fixture.componentRef.setInput('detail', mode === 'collection' ? { ...wanted, in_collection: true } : wanted);
+      fixture.detectChanges();
+    }
+
+    it('hides listen, value, shelf, condition, sort and history but keeps Roon play', () => {
+      open('wantToHave');
+      const html = fixture.nativeElement as HTMLElement;
+
+      expect(html.querySelector('#listen-now-header-btn')).toBeNull();
+      expect(html.querySelector('#play-on-roon-btn')).not.toBeNull();
+      expect(html.textContent).not.toContain(languageService.translate('collection.estimatedPrice'));
+      expect(q('detail-storage')).toBeNull();
+      expect(q('detail-sort-key')).toBeNull();
+      expect(html.querySelector('#delete-record-btn')).toBeNull();
+      expect(html.textContent).not.toContain(languageService.translate('collection.condition'));
+    });
+
+    it('still shows all of it for a record from the collection', () => {
+      open('collection');
+      const html = fixture.nativeElement as HTMLElement;
+
+      expect(html.querySelector('#listen-now-header-btn')).not.toBeNull();
+      expect(html.textContent).toContain(languageService.translate('collection.estimatedPrice'));
+      expect(q('detail-storage')).not.toBeNull();
+      expect(q('detail-sort-key')).not.toBeNull();
+      expect(html.querySelector('#delete-record-btn')).not.toBeNull();
+    });
+
+    it('offers add to collection and remove, and emits them', () => {
+      open('wantToHave');
+      const added = vi.fn();
+      const removed = vi.fn();
+      component.addToCollection.subscribe(added);
+      component.removeWanted.subscribe(removed);
+
+      q('detail-want-to-collection')!.click();
+      q('detail-want-remove')!.click();
+
+      expect(added).toHaveBeenCalledTimes(1);
+      expect(removed).toHaveBeenCalledTimes(1);
+    });
+
+    it('ignores the actions while one is running', () => {
+      open('wantToHave');
+      fixture.componentRef.setInput('isWantBusy', true);
+      fixture.detectChanges();
+      const added = vi.fn();
+      const removed = vi.fn();
+      component.addToCollection.subscribe(added);
+      component.removeWanted.subscribe(removed);
+
+      component.onAddToCollection();
+      component.onRemoveWanted();
+
+      expect(added).not.toHaveBeenCalled();
+      expect(removed).not.toHaveBeenCalled();
+      expect((q('detail-want-to-collection') as HTMLButtonElement).disabled).toBe(true);
+    });
+
+    it('plays on Roon without logging a listen', () => {
+      open('wantToHave');
+
+      component.onPlayOnRoon();
+
+      expect(mockApiService.playOnRoon).toHaveBeenCalled();
+      expect(mockApiService.logRecordListen).not.toHaveBeenCalled();
+    });
+  });
 });

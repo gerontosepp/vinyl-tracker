@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { LayoutComponent } from '../../shared/components/layout/layout.component';
 import { ApiService } from '../../core/services/api.service';
+import { WantToHaveService } from '../../core/services/want-to-have.service';
 import { LanguageService } from '../../core/services/language.service';
 import { ToastService } from '../../core/services/toast.service';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
@@ -155,6 +156,7 @@ export const IDENTIFY_POLL_MS = 5000;
                   (identify)="identify(photo)"
                   (add)="add(photo, $event)"
                   (complete)="complete(photo, $event)"
+                  (wantToHave)="wantToHave($event)"
                   (manual)="manualPrefill.set(prefill(photo))"
                 />
               </li>
@@ -172,6 +174,7 @@ export class LabelInboxComponent {
   private readonly apiService = inject(ApiService);
   private readonly toastService = inject(ToastService);
   private readonly languageService = inject(LanguageService);
+  private readonly wantList = inject(WantToHaveService);
 
   /** Pending photos; deletions update the loaded value locally instead of reloading. */
   readonly inbox = this.apiService.labelPhotosResource('pending', MAX_PHOTOS);
@@ -194,6 +197,7 @@ export class LabelInboxComponent {
   );
 
   constructor() {
+    void this.wantList.ensureLoaded();
     effect((onCleanup) => {
       if (!this.identifying()) return;
       const timer = setInterval(() => this.inbox.reload(), IDENTIFY_POLL_MS);
@@ -238,6 +242,17 @@ export class LabelInboxComponent {
       this.removeLocally(photo.id);
       this.toastService.showToast(this.languageService.translate('labelInbox.added', { title }), 'success');
     });
+  }
+
+  /** Saves the pressing for listening; the photo stays in the inbox until the user decides. */
+  async wantToHave(candidate: LabelCandidate): Promise<void> {
+    this.busy.set(true);
+    try {
+      // The service reports success and failure with a toast itself
+      await this.wantList.add(candidate.discogsId, `${candidate.artist ?? ''} – ${candidate.title ?? ''}`);
+    } finally {
+      this.busy.set(false);
+    }
   }
 
   complete(photo: LabelPhoto, candidate: LabelCandidate): Promise<void> {

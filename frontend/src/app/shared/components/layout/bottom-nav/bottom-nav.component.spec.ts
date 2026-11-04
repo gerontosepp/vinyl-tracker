@@ -25,14 +25,14 @@ describe('BottomNavComponent', () => {
     };
   }
 
-  it('shows five equally styled entries including scan and sort', () => {
+  it('shows six equally styled entries including scan, sort and want-to-have', () => {
     const { el } = render();
     const items = Array.from(el.querySelectorAll('nav > a, nav > button'));
 
     const language = TestBed.inject(LanguageService);
 
     expect(items.map((item) => item.getAttribute('aria-label'))).toEqual(
-      ['nav.home', 'nav.collection', 'nav.scan', 'nav.sort', 'nav.profile'].map((key) => language.translate(key)),
+      ['nav.home', 'nav.collection', 'nav.wantToHave', 'nav.scan', 'nav.sort', 'nav.profile'].map((key) => language.translate(key)),
     );
     for (const item of items) {
       expect(item.className).toContain('p-3');

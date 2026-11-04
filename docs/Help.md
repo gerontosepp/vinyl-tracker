@@ -60,6 +60,7 @@ Wird ein Scan nicht erkannt (z. B. weil der Scanner zu langsam sendet), erschein
 Hast du unter **Einstellungen → Label-Erkennung (OpenRouter)** einen API-Key hinterlegt, erkennt die App jedes neue Foto im Hintergrund (meist 10–30 Sekunden). In der Label-Inbox erscheint dann ein **Vorschlag** mit Cover, Katalognummer, Land, Jahr, Sicherheit und Begründung – oft auch mit **anderen Pressungen** zur Auswahl.
 
 - **Hinzufügen** übernimmt die gewählte Pressung in deine Sammlung und zeigt, in welches Regalfach sie gehört.
+- **Zu Want-to-Have** merkt die Pressung zum Anhören vor, ohne sie zu besitzen (siehe **Want-to-Have**); das Foto bleibt in der Inbox.
 - **Nur abschließen** markiert das Foto als erledigt, ohne etwas hinzuzufügen – z. B. wenn die Platte schon in der Sammlung ist.
 - **Erneut erkennen** startet die Erkennung noch einmal, etwa nach einem Fehler.
 - Ein Hinweis schlägt manchmal ein weiteres Foto vor (andere Seite, Auslaufrille) – so lässt sich die genaue Pressung bestimmen.
@@ -152,6 +153,18 @@ Mit Roon spielst du ein Album direkt aus der Detailansicht ab.
 3. Eine **Standard-Wiedergabezone** wählen.
 
 Danach startet **Auf Roon abspielen** das Album in der gewählten Zone.
+
+## Want-to-Have {#want-to-have}
+
+Hier sammelst du Platten, die du dir erst **anhören** möchtest, ohne sie in die Sammlung aufzunehmen – etwa eine Besprechung aus der Zeitschrift MINT, die du per Label-Erkennung gefunden hast.
+
+- **Vormerken:** In der Label-Inbox (**Zu Want-to-Have** beim vorgeschlagenen Treffer oder bei einer Alternative) und nach einem Scan bei den Discogs-Treffern. Ist die Platte schon in der Sammlung oder bereits vorgemerkt, erscheint stattdessen ein Hinweis bzw. kein Button.
+- **Liste:** Der Menüpunkt **Want-to-Have** zeigt alle vorgemerkten Platten, die neuesten zuerst. Ein Tipp öffnet die Details mit Cover, Tracklist, Format und Genres.
+- **Anhören:** **Auf Roon abspielen** startet das Album in der gewählten Zone. Das zählt **nicht** als Hören: Plays, Verlauf und Statistik bleiben unverändert.
+- **In Bestand übernehmen** fügt die Platte deiner Sammlung (und deinem Discogs-Konto) hinzu und entfernt sie aus der Liste. Schlägt das fehl, bleibt sie vorgemerkt.
+- **Aus Want-to-Have entfernen** löscht den Eintrag.
+
+Geschätzter Wert, Plays, Lagerplatz, Zustand und Sortierung gibt es hier nicht – sie entstehen erst, wenn die Platte in der Sammlung liegt.
 
 ## Einstellungen {#einstellungen}
 

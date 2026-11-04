@@ -19,4 +19,4 @@
 
 - [x] 3.1 `docs/Help.md` + `docs/Help.en.md`, `README.md`, `docs/Release-Info.md` (Unreleased), `docs/arc42.md` (Schema)
 - [x] 3.2 `openspec/specs/` prüfen (label-photo, collection, roon) und Delta-Specs konsistent halten
-- [ ] 3.3 Code-Review (`code-review`, effort `high` wegen Migration/neuer Endpunkte), lokalen Docker-Stack aktualisieren, PR mit `Closes #310`
+- [x] 3.3 Code-Review (`code-review`, effort `high` wegen Migration/neuer Endpunkte), lokalen Docker-Stack aktualisieren, PR mit `Closes #310`

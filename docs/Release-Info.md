@@ -9,6 +9,8 @@
 
 ## Unreleased
 
+- **Want-to-Have (`#310`)**: Per Label-Erkennung oder Scan gefundene Platten lassen sich in einem neuen Bereich **Want-to-Have** vormerken und dort über Roon anhören, ohne sie in die Sammlung aufzunehmen. Die Details zeigen Cover, Tracklist, Format und Genres, aber keinen Wert, keine Plays, keinen Lagerplatz, keinen Zustand und keine Sortierung; Roon-Wiedergabe wird nicht als Hören geloggt. Mit **In Bestand übernehmen** wandert die Platte in die Sammlung, mit **Aus Want-to-Have entfernen** verschwindet sie. Doppelte Einträge werden verhindert.
+
 ---
 
 ## v1.7.0 (2026-10-30)

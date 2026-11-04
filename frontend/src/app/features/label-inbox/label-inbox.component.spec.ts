@@ -89,8 +89,14 @@ describe('LabelInboxComponent', () => {
     fixture.autoDetectChanges();
   }
 
+  /** Answers the Want-to-Have list request that the cards use for their "already saved" hint. */
+  function answerWantToHave(items: unknown[] = []): void {
+    http.match((r) => r.url === '/api/want-to-have' && r.method === 'GET').forEach((req) => req.flush(items));
+  }
+
   /** Answers the OpenRouter settings request (once per component). */
   function answerSettings(hasApiKey: boolean): void {
+    answerWantToHave();
     http
       .match((r) => r.url === '/api/users/me/openrouter')
       .forEach((req) => req.flush({ hasApiKey, model: 'm', defaultModel: 'm' }));
@@ -304,6 +310,48 @@ describe('LabelInboxComponent', () => {
       expect(card.textContent).toContain('Andere Pressungen');
       expect(card.textContent).toContain('Auslaufrille prüfen');
       expect(one('label-photo-add')?.textContent).toContain('Weiteres Exemplar hinzufügen');
+    });
+
+    it('saves a pressing that is not owned on the want-to-have list and keeps the photo', async () => {
+      await loadInbox([suggested(1)], true);
+      // The best match is already owned: no want-to-have action for it
+      expect(one('label-photo-want')).toBeNull();
+
+      el().querySelectorAll<HTMLInputElement>('input[type="radio"]')[1].click();
+      await fixture!.whenStable();
+      one('label-photo-want')!.click();
+      const req = http.expectOne({ url: '/api/want-to-have', method: 'POST' });
+      expect(req.request.body).toEqual({ discogs_id: 18105178 });
+      req.flush({
+        id: 5,
+        discogs_id: 18105178,
+        title: "Embryo's Rache",
+        artist: 'Embryo (3)',
+        genres: [],
+        created_at: '2026-11-04T12:00:00+00:00',
+      });
+      await fixture!.whenStable();
+
+      expect(one('label-photo-want')).toBeNull();
+      expect(one('label-photo-want-listed')?.textContent).toContain('Schon vorgemerkt');
+      expect(all('label-inbox-photo').length).toBe(1);
+      expect(toast.showToast).toHaveBeenCalledWith("„Embryo (3) – Embryo's Rache“ zu Want-to-Have hinzugefügt.", 'success');
+    });
+
+    it('shows a toast when saving on the want-to-have list fails', async () => {
+      await loadInbox([suggested(1)], true);
+      el().querySelectorAll<HTMLInputElement>('input[type="radio"]')[1].click();
+      await fixture!.whenStable();
+
+      one('label-photo-want')!.click();
+      http.expectOne({ url: '/api/want-to-have', method: 'POST' }).flush(
+        { detail: 'Record is already on your Want-to-Have list' },
+        { status: 409, statusText: 'Conflict' }
+      );
+      await fixture!.whenStable();
+
+      expect(one('label-photo-want')).not.toBeNull();
+      expect(toast.showToast).toHaveBeenCalledWith(expect.any(String), 'error');
     });
 
     it('adds the chosen release, completes the photo and shows the shelf slot', async () => {

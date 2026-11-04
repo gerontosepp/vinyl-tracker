@@ -565,3 +565,16 @@ export interface LabelPhotoDeleteResult {
   deleted: number;
   pendingCount: number;
 }
+
+/** A record on the Want-to-Have list (#310): known, not owned. */
+export interface WantToHaveItem {
+  id: number;
+  discogs_id: number;
+  title: string;
+  artist: string;
+  year?: string | null;
+  thumb_url?: string | null;
+  format?: string | null;
+  genres: string[];
+  created_at: string;
+}

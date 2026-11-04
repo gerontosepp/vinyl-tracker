@@ -5,6 +5,7 @@ import { Html5QrcodeScanner } from 'html5-qrcode';
 import { AuthService } from '../../../core/services/auth.service';
 import { ApiService } from '../../../core/services/api.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { WantToHaveService } from '../../../core/services/want-to-have.service';
 import { ScannerService } from '../../../core/services/scanner.service';
 import { TranslatePipe } from '../../../core/pipes/translate.pipe';
 import { ScanResult, DiscogsMatch, SyncResult, StoragePlacement } from '../../../core/types';
@@ -261,7 +262,7 @@ import { ManualRecordFormComponent, ManualRecordPrefill } from '../manual-record
                 <!-- Add to Discogs Button -->
                 <button
                   (click)="addToDiscogs(selected.id)"
-                  [disabled]="isAddingToCollection()"
+                  [disabled]="isAddingToCollection() || isAddingWanted()"
                   class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-medium rounded-lg shadow transition-colors cursor-pointer"
                 >
                   @if (isAddingToCollection()) {
@@ -272,6 +273,25 @@ import { ManualRecordFormComponent, ManualRecordPrefill } from '../manual-record
                     <span>Zu Discogs hinzufügen & synchronisieren</span>
                   }
                 </button>
+
+                <!-- Save for listening first (#310) -->
+                @if (addSuccessMessage()) {
+                  <!-- Already added to the collection -->
+                } @else if (wantList.has(selected.id)) {
+                  <p class="mt-2 text-center text-sm font-semibold text-sky-700 dark:text-sky-300" data-testid="scanner-want-listed">
+                    {{ 'wantToHave.alreadyListed' | translate }}
+                  </p>
+                } @else {
+                  <button
+                    type="button"
+                    (click)="addToWantToHave(selected)"
+                    [disabled]="isAddingToCollection() || isAddingWanted()"
+                    data-testid="scanner-want"
+                    class="w-full mt-2 px-4 py-2.5 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 font-medium rounded-lg transition-colors cursor-pointer"
+                  >
+                    {{ 'wantToHave.add' | translate }}
+                  </button>
+                }
               }
             }
 
@@ -365,6 +385,8 @@ export class BarcodeScannerComponent implements AfterViewInit, OnDestroy {
   readonly identified = output<RecordRef>();
   readonly isScanning = signal<boolean>(true);
   readonly isAddingToCollection = signal<boolean>(false);
+  readonly isAddingWanted = signal<boolean>(false);
+  readonly wantList = inject(WantToHaveService);
   readonly selectedMatchId = signal<number | null>(null);
   readonly addSuccessMessage = signal<string | null>(null);
   /** Where the newly added record belongs on the shelf (only with configured shelves). */
@@ -381,6 +403,7 @@ export class BarcodeScannerComponent implements AfterViewInit, OnDestroy {
   private timerId: any = null;
 
   constructor() {
+    void this.wantList.ensureLoaded();
     effect(() => {
       const trigger = this.scannerService.scanTrigger();
       if (trigger && trigger.code) {
@@ -537,6 +560,15 @@ export class BarcodeScannerComponent implements AfterViewInit, OnDestroy {
       if (found) return found;
     }
     return matches[0];
+  }
+
+  async addToWantToHave(match: DiscogsMatch): Promise<void> {
+    this.isAddingWanted.set(true);
+    try {
+      await this.wantList.add(match.id, match.title);
+    } finally {
+      this.isAddingWanted.set(false);
+    }
   }
 
   async addToDiscogs(releaseId: number): Promise<void> {

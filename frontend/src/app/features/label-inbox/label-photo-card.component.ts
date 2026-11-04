@@ -16,6 +16,7 @@ import { httpResource } from '@angular/common/http';
 import { ApiService } from '../../core/services/api.service';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { LocalizedDatePipe } from '../../core/pipes/localized-date.pipe';
+import { WantToHaveService } from '../../core/services/want-to-have.service';
 import { LabelCandidate, LabelMatchConfidence, LabelPhoto } from '../../core/types';
 
 const CONFIDENCE_CLASSES: Record<LabelMatchConfidence, string> = {
@@ -190,6 +191,15 @@ const CONFIDENCE_CLASSES: Record<LabelMatchConfidence, string> = {
                   <button type="button" (click)="complete.emit(candidate)" [disabled]="busy()" [class]="secondaryButton" data-testid="label-photo-complete">
                     {{ 'labelInbox.complete' | translate }}
                   </button>
+                  @if (wantList.has(candidate.discogsId)) {
+                    <span class="px-3 py-1.5 text-sm font-semibold text-sky-700 dark:text-sky-300" data-testid="label-photo-want-listed">
+                      {{ 'wantToHave.alreadyListed' | translate }}
+                    </span>
+                  } @else if (!candidate.inCollection) {
+                    <button type="button" (click)="wantToHave.emit(candidate)" [disabled]="busy()" [class]="secondaryButton" data-testid="label-photo-want">
+                      {{ 'wantToHave.add' | translate }}
+                    </button>
+                  }
                   @if (canIdentify()) {
                     <button type="button" (click)="identify.emit()" [disabled]="busy()" [class]="secondaryButton" data-testid="label-photo-identify">
                       {{ 'labelInbox.retryIdentify' | translate }}
@@ -240,6 +250,9 @@ export class LabelPhotoCardComponent {
   readonly complete = output<LabelCandidate>();
   /** Create a manual record from this photo (no or no reliable Discogs match). */
   readonly manual = output<void>();
+  /** Save the chosen pressing on the Want-to-Have list to listen to it first (#310). */
+  readonly wantToHave = output<LabelCandidate>();
+  readonly wantList = inject(WantToHaveService);
 
   readonly secondaryButton =
     'px-3 py-1.5 rounded-lg text-sm font-semibold border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50';

@@ -976,7 +976,7 @@ async fn test_backup_carries_aliases_and_old_backups_do_not_duplicate() {
         .await;
 
     let after = export(&t, &user).await;
-    assert_eq!(after["format_version"], 5);
+    assert_eq!(after["format_version"], 6);
     assert_eq!(
         after["manual_aliases"],
         json!([{ "old_id": id, "instance_id": result.instance_id }])

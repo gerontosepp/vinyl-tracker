@@ -14,6 +14,13 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "isUnreleased": true,
     "items": [
       {
+        "title": "Want-to-Have im Backup (`#313`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Das JSON-Backup (`format_version: 6`) enthält jetzt die Want-to-Have-Liste und stellt sie beim Wiederherstellen samt ursprünglichem Zeitpunkt wieder her. Platten, die bereits in der Sammlung oder auf der Liste sind, werden übersprungen. Ältere Backups lassen sich weiterhin einspielen.",
+        "details": []
+      },
+      {
         "title": "Want-to-Have (`#310`)",
         "type": "feat",
         "typeLabel": "Feature",

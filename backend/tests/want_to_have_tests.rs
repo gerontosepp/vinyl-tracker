@@ -471,3 +471,162 @@ async fn to_collection_of_unknown_entry_is_not_found() {
             .unwrap_err();
     assert!(matches!(err, AppError::NotFound(_)));
 }
+
+// --- JSON backup (#313) ---
+
+async fn export_backup(app: &Router, token: &str) -> Value {
+    let (status, backup) = json_request(
+        app,
+        Method::GET,
+        "/api/collection/export?format=json",
+        Some(token),
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    backup
+}
+
+#[tokio::test]
+async fn backup_exports_and_restores_want_to_have_list() {
+    let (app, state) = setup_app().await;
+    let (user_id, token) = create_user(&app).await;
+    let user = user_with_token(&state, user_id).await;
+    let client = mock_discogs().await;
+    WantToHaveService::add(&state.pool, &client, &state.crypto, &user, 313_001)
+        .await
+        .unwrap();
+    let original = WantToHaveService::list(&state.pool, user_id).await.unwrap();
+
+    let backup = export_backup(&app, &token).await;
+    assert_eq!(backup["format_version"], 6);
+    let exported = backup["want_to_have"].as_array().unwrap();
+    assert_eq!(exported.len(), 1);
+    assert_eq!(exported[0]["discogs_id"], 313_001);
+    assert_eq!(exported[0]["artist"], "Miles Davis");
+    assert_eq!(exported[0]["created_at"], original[0].created_at);
+
+    // Another account restores it, keeping the original timestamp
+    let (other_id, other_token) = create_user(&app).await;
+    let (status, result) = json_request(
+        &app,
+        Method::POST,
+        "/api/collection/restore",
+        Some(&other_token),
+        Some(backup.clone()),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{result}");
+    assert_eq!(result["want_to_have_added"], 1);
+    assert_eq!(result["want_to_have_skipped"], 0);
+    let restored = WantToHaveService::list(&state.pool, other_id)
+        .await
+        .unwrap();
+    assert_eq!(restored.len(), 1);
+    assert_eq!(restored[0].discogs_id, 313_001);
+    assert_eq!(restored[0].title, "Kind of Blue");
+    assert_eq!(restored[0].created_at, original[0].created_at);
+
+    // A second restore creates no duplicate
+    let (_, again) = json_request(
+        &app,
+        Method::POST,
+        "/api/collection/restore",
+        Some(&other_token),
+        Some(backup),
+    )
+    .await;
+    assert_eq!(again["want_to_have_added"], 0);
+    assert_eq!(again["want_to_have_skipped"], 1);
+    assert_eq!(
+        WantToHaveService::list(&state.pool, other_id)
+            .await
+            .unwrap()
+            .len(),
+        1
+    );
+}
+
+#[tokio::test]
+async fn backup_without_want_to_have_section_still_restores() {
+    let (app, state) = setup_app().await;
+    let (user_id, token) = create_user(&app).await;
+    let body = json!({ "format_version": 5, "releases": [] });
+    let (status, result) = json_request(
+        &app,
+        Method::POST,
+        "/api/collection/restore",
+        Some(&token),
+        Some(body),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{result}");
+    assert_eq!(result["want_to_have_added"], 0);
+    assert_eq!(result["want_to_have_skipped"], 0);
+    assert!(
+        WantToHaveService::list(&state.pool, user_id)
+            .await
+            .unwrap()
+            .is_empty()
+    );
+}
+
+#[tokio::test]
+async fn restore_skips_want_to_have_entries_for_owned_records() {
+    let (app, state) = setup_app().await;
+    let (user_id, token) = create_user(&app).await;
+    let body = json!({
+        "format_version": 6,
+        "releases": [{
+            "id": 313_002,
+            "instance_id": 913_002,
+            "basic_information": { "title": "Kind of Blue", "artists": [{"name": "Miles Davis"}] }
+        }],
+        "want_to_have": [
+            { "discogs_id": 313_002, "title": "Kind of Blue", "artist": "Miles Davis" },
+            { "discogs_id": 313_003, "title": "Blue Train", "artist": "John Coltrane" }
+        ]
+    });
+    let (status, result) = json_request(
+        &app,
+        Method::POST,
+        "/api/collection/restore",
+        Some(&token),
+        Some(body),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{result}");
+    assert_eq!(result["want_to_have_added"], 1);
+    assert_eq!(result["want_to_have_skipped"], 1);
+    let list = WantToHaveService::list(&state.pool, user_id).await.unwrap();
+    assert_eq!(list.len(), 1);
+    assert_eq!(list[0].discogs_id, 313_003);
+}
+
+#[tokio::test]
+async fn restore_rejects_invalid_want_to_have_entry() {
+    let (app, _) = setup_app().await;
+    let (_, token) = create_user(&app).await;
+    for entry in [
+        json!({ "discogs_id": 0, "title": "X" }),
+        json!({ "discogs_id": 5, "title": "  " }),
+        json!({ "discogs_id": 5, "title": "X", "created_at": "yesterday" }),
+    ] {
+        let body = json!({ "format_version": 6, "releases": [], "want_to_have": [entry] });
+        let (status, problem) = json_request(
+            &app,
+            Method::POST,
+            "/api/collection/restore",
+            Some(&token),
+            Some(body),
+        )
+        .await;
+        assert_eq!(status, StatusCode::BAD_REQUEST);
+        assert!(
+            problem["detail"]
+                .as_str()
+                .unwrap()
+                .contains("Want-to-Have entry #1")
+        );
+    }
+}

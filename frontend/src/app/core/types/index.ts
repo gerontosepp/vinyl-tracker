@@ -87,6 +87,9 @@ export interface RestoreResult {
   listens_added: number;
   listens_skipped: number;
   listen_history_included: boolean;
+  /** Want-to-Have entries added / skipped (owned or already listed); absent in old servers. */
+  want_to_have_added?: number;
+  want_to_have_skipped?: number;
 }
 
 export interface ResetResult {

@@ -137,6 +137,21 @@ Das JSON-Backup MUST manuelle Platten inklusive Cover enthalten (`format_version
 - **WHEN** ein Backup mit manuellen Platten in eine Instanz eingespielt wird, die diese bereits enthält
 - **THEN** werden die vorhandenen Einträge aktualisiert und keine doppelt angelegt
 
+### Requirement: Backup mit Want-to-Have-Liste
+Das JSON-Backup MUST die Want-to-Have-Liste des Nutzers enthalten (`format_version: 6`, Feld `want_to_have` mit Discogs-ID, Titel, Künstler, Jahr, Cover, Format, Genres und `created_at` in UTC; ohne Einträge entfällt das Feld). Die Wiederherstellung MUST die Einträge ohne Discogs-Abfrage anlegen, Platten überspringen, die der Nutzer besitzt oder bereits vorgemerkt hat, und Backups ohne dieses Feld wie bisher einspielen.
+
+#### Scenario: Liste wiederherstellen
+- **WHEN** ein Backup mit Want-to-Have-Einträgen eingespielt wird
+- **THEN** stehen die Einträge mit ihrem ursprünglichen Zeitpunkt auf der Liste und mehrfaches Einspielen erzeugt keine Duplikate
+
+#### Scenario: Platte bereits im Bestand
+- **WHEN** ein Eintrag des Backups eine Platte betrifft, die der Nutzer besitzt
+- **THEN** wird er übersprungen und im Ergebnis als übersprungen gezählt
+
+#### Scenario: Älteres Backup
+- **WHEN** ein Backup ohne `want_to_have` (z. B. `format_version: 5`) eingespielt wird
+- **THEN** wird es wie bisher wiederhergestellt
+
 ### Requirement: Manuelle Platte bei Discogs prüfen
 Die Detailansicht einer manuellen Platte MUST die Aktion „Bei Discogs prüfen“ anbieten. Die Prüfung MUST nach Barcode, nach Katalognummer + Label und nach Künstler + Titel suchen, soweit diese Felder gesetzt sind, und die Treffer ohne Duplikate als Kandidaten liefern. Jeder Kandidat MUST anzeigen, ob der Release bereits als Discogs-Exemplar in der Sammlung des Nutzers ist. Die Prüfung MUST nichts verändern.
 

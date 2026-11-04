@@ -1,12 +1,12 @@
 use crate::{
     auth::CurrentUser,
     error::AppError,
-    models::collection::{CollectionQueryParams, ParsedCollectionFilter},
+    models::collection::{CollectionQueryParams, ParsedCollectionFilter, WantToHaveBackup},
     services::{
         collection_query::CollectionQueryService, collection_restore::CollectionRestoreService,
         collection_sync::CollectionSyncService, export_service::ExportService,
         manual_record_service::ManualRecordService, manual_takeover_service::ManualTakeoverService,
-        storage::backup::StorageBackupService,
+        storage::backup::StorageBackupService, want_to_have_service::WantToHaveService,
     },
     state::AppState,
 };
@@ -216,6 +216,11 @@ pub async fn export_collection_handler(
             let manual_aliases =
                 ManualTakeoverService::backup_aliases(&state.pool, user.id).await?;
             let storage = StorageBackupService::export(&state.pool, user.id).await?;
+            let want_to_have: Vec<WantToHaveBackup> = WantToHaveService::list(&state.pool, user.id)
+                .await?
+                .into_iter()
+                .map(Into::into)
+                .collect();
             let json_bytes = ExportService::export_collection_json(
                 &user.username,
                 &releases,
@@ -223,6 +228,7 @@ pub async fn export_collection_handler(
                 &manual,
                 &manual_aliases,
                 storage.as_ref(),
+                &want_to_have,
             )?;
             log_export(user.id, "json", releases.len(), json_bytes.len(), started);
             Ok((

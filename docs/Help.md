@@ -173,8 +173,8 @@ Geschätzter Wert, Plays, Lagerplatz, Zustand und Sortierung gibt es hier nicht 
 - **Barcode & QR Scanner** – siehe **Scannen**.
 - **Roon Integration** – siehe **Roon**.
 - **Label-Erkennung (OpenRouter)** – API-Key und Modell für die automatische Erkennung; der Key wird verschlüsselt gespeichert und nie wieder angezeigt. Standard ist Claude Sonnet, deutlich günstiger ist Claude Haiku.
-- **Sammlung exportieren & sichern** – CSV-Tabelle, vollständiges **JSON-Backup** (mit Hör-Historie und Regalen) oder PDF-Versicherungskatalog.
-- **Backup wiederherstellen** – ein JSON-Backup mit der Sammlung zusammenführen; nichts wird gelöscht, mehrfaches Einspielen erzeugt keine Duplikate.
+- **Sammlung exportieren & sichern** – CSV-Tabelle, vollständiges **JSON-Backup** (mit Hör-Historie, Regalen und Want-to-Have-Liste) oder PDF-Versicherungskatalog.
+- **Backup wiederherstellen** – ein JSON-Backup mit der Sammlung zusammenführen; nichts wird gelöscht, mehrfaches Einspielen erzeugt keine Duplikate. Platten, die schon in der Sammlung sind, werden aus der Want-to-Have-Liste nicht noch einmal übernommen.
 - **Alle Hördurchgänge zurücksetzen** – löscht die gesamte Hör-Historie (mit Rückfrage).
 - **Versionshinweise** – was sich in den letzten Versionen geändert hat.
 

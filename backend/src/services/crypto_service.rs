@@ -1,5 +1,4 @@
 use aes_gcm::{Aes256Gcm, KeyInit, Nonce, aead::Aead};
-use rand::RngCore;
 
 const MODERN_PREFIX: &str = "v2:";
 const PBKDF2_MODERN_ITERATIONS: u32 = 100_000;
@@ -39,10 +38,10 @@ impl CryptoService {
 
         let cipher = Aes256Gcm::new_from_slice(&self.modern_key).ok()?;
         let mut nonce_bytes = [0u8; GCM_NONCE_SIZE];
-        rand::thread_rng().fill_bytes(&mut nonce_bytes);
-        let nonce = Nonce::from_slice(&nonce_bytes);
+        rand::fill(&mut nonce_bytes);
+        let nonce = Nonce::from(nonce_bytes);
 
-        let ciphertext_and_tag = cipher.encrypt(nonce, plaintext.as_bytes()).ok()?;
+        let ciphertext_and_tag = cipher.encrypt(&nonce, plaintext.as_bytes()).ok()?;
 
         let mut combined = Vec::with_capacity(GCM_NONCE_SIZE + ciphertext_and_tag.len());
         combined.extend_from_slice(&nonce_bytes);
@@ -64,10 +63,10 @@ impl CryptoService {
             return None;
         }
 
-        let (nonce_bytes, ct_and_tag) = data.split_at(GCM_NONCE_SIZE);
-        let nonce = Nonce::from_slice(nonce_bytes);
+        let (nonce_bytes, ct_and_tag) = data.split_first_chunk::<GCM_NONCE_SIZE>()?;
+        let nonce = Nonce::from(*nonce_bytes);
         let cipher = Aes256Gcm::new_from_slice(&self.modern_key).ok()?;
-        let pt = cipher.decrypt(nonce, ct_and_tag).ok()?;
+        let pt = cipher.decrypt(&nonce, ct_and_tag).ok()?;
 
         String::from_utf8(pt).ok()
     }
@@ -124,5 +123,47 @@ mod tests {
         );
         assert!(crypto.decrypt("v2:invalid-garbage").is_none());
         assert!(crypto.decrypt("v2:1234").is_none());
+    }
+
+    // Fixtures produced before the RustCrypto upgrade (aes-gcm 0.10, pbkdf2 0.12, sha2 0.10); the
+    // key was cross-checked with Python's `hashlib.pbkdf2_hmac`. They pin the stored format so
+    // that values encrypted by earlier versions stay readable.
+    const FIXTURE_PASSWORD: &str = "fixture-password-1234567890";
+    const FIXTURE_SALT_HEX: &str = "00112233445566778899aabbccddeeff";
+    const FIXTURE_KEY_HEX: &str =
+        "a78b8db61f9d81a6480ba53490d1ae75a4413b9b9269b5cf61c58299692b09fc";
+    const FIXTURE_PLAINTEXT: &str = "discogs_pat_fixture_token_0123456789";
+    const FIXTURE_CIPHERTEXT: &str = "v2:e3fa3896fbc417b7264412879c2f31647288ef48dddacea8b7809355936aa86faf4f148b474ce5ce5a1e7da073de7030b7ec6e07da7a8594bee20785862a791f";
+
+    #[test]
+    fn test_key_derivation_matches_independent_pbkdf2() {
+        let crypto = CryptoService::new(FIXTURE_PASSWORD, FIXTURE_SALT_HEX).unwrap();
+        assert_eq!(hex::encode(crypto.modern_key), FIXTURE_KEY_HEX);
+    }
+
+    #[test]
+    fn test_existing_ciphertext_stays_decryptable() {
+        let crypto = CryptoService::new(FIXTURE_PASSWORD, FIXTURE_SALT_HEX).unwrap();
+        assert_eq!(
+            crypto.decrypt(FIXTURE_CIPHERTEXT).as_deref(),
+            Some(FIXTURE_PLAINTEXT)
+        );
+    }
+
+    #[test]
+    fn test_existing_ciphertext_is_rejected_with_other_key() {
+        let other = CryptoService::new("another-password-1234567890", FIXTURE_SALT_HEX).unwrap();
+        assert!(other.decrypt(FIXTURE_CIPHERTEXT).is_none());
+    }
+
+    #[test]
+    fn test_nonce_is_random_and_ciphertext_layout_is_stable() {
+        let crypto = CryptoService::new(FIXTURE_PASSWORD, FIXTURE_SALT_HEX).unwrap();
+        let a = crypto.encrypt(FIXTURE_PLAINTEXT).unwrap();
+        let b = crypto.encrypt(FIXTURE_PLAINTEXT).unwrap();
+        assert_ne!(a, b, "two encryptions must use different nonces");
+        // Layout: `v2:` + hex(nonce 12 B + ciphertext + tag 16 B), same size as the fixture
+        assert_eq!(a.len(), FIXTURE_CIPHERTEXT.len());
+        assert_eq!(a.len(), 3 + 2 * (12 + FIXTURE_PLAINTEXT.len() + 16));
     }
 }

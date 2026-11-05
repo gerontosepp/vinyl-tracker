@@ -33,17 +33,17 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 dotenvy = "0.15"
 
 # Security, Auth & Crypto
-bcrypt = "0.17"
+bcrypt = "0.19"
 # Only HS256 is used. v10+ requires an explicit crypto backend: `rust_crypto` is pure Rust (no C
 # toolchain in the multi-arch Docker builds, unlike `aws_lc_rs`) but compiles all algorithms in,
 # including `rsa` (RUSTSEC-2023-0071, unreachable here; it was already in Cargo.lock via sqlx).
 jsonwebtoken = { version = "11", default-features = false, features = ["rust_crypto"] }
-pbkdf2 = { version = "0.12", default-features = false, features = ["hmac"] }
-sha2 = { version = "0.10", default-features = false }
-hmac = "0.12"
-aes-gcm = "0.10"
+pbkdf2 = { version = "0.13", default-features = false, features = ["hmac"] }
+sha2 = { version = "0.11", default-features = false }
+hmac = "0.13"
+aes-gcm = "0.11"
 hex = "0.4"
-rand = "0.8"
+rand = "0.10"
 
 # HTTP Client, Rate-Limiting & Caching
 base64 = "0.23"

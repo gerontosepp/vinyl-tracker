@@ -3,7 +3,7 @@
 * **Status:** Accepted
 * **Datum:** 2026-10-05
 * **Beteiligte:** Entwicklungsteam / Core Maintainer
-* **Kontextbezug:** [Lastenheft Rust-Migration](../rust-migration-lastenheft.md)
+* **Kontextbezug:** [Lastenheft Rust-Migration](https://github.com/gerontosepp/vinyl-tracker/blob/f88eafc/docs/rust-migration-lastenheft.md) (aus dem Repository entfernt, in der Git-Historie erhalten)
 
 ---
 

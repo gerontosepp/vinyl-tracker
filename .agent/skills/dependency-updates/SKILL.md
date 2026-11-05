@@ -26,7 +26,7 @@ cd ..
 2. **Axum & Tower**:
    Ensure compatibility between `axum` (0.8) and `tower-http` (0.6).
 3. **Database Driver**:
-   `sqlx` (0.8) is the only PostgreSQL driver; schema migrations run via `sqlx::migrate!` (feature `migrate`). Do not reintroduce `tokio-postgres`/`refinery`.
+   `sqlx` (0.9) is the only PostgreSQL driver; schema migrations run via `sqlx::migrate!` (feature `migrate`). Do not reintroduce `tokio-postgres`/`refinery`.
 4. **Workspace**:
    `backend/` is a Cargo workspace including `crates/vinyl-api-types` (shared with the MCP server in `mcp/`, which has its own `Cargo.toml`/`Cargo.lock` – update and test it separately).
 

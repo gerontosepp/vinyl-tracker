@@ -70,7 +70,8 @@ impl CollectionQueryService {
              WHERE {where_clause}"
         );
 
-        let mut count_query = sqlx::query_scalar::<_, i64>(&count_sql).bind(user_id);
+        let mut count_query =
+            sqlx::query_scalar::<_, i64>(sqlx::AssertSqlSafe(count_sql.as_str())).bind(user_id);
         count_query = Self::bind_filter_params_scalar(count_query, &filter);
         let total_items = count_query
             .fetch_one(pool)
@@ -210,7 +211,7 @@ impl CollectionQueryService {
              {limit_str}"
         );
 
-        let mut select_query = sqlx::query(&select_sql).bind(user_id);
+        let mut select_query = sqlx::query(sqlx::AssertSqlSafe(select_sql.as_str())).bind(user_id);
         select_query = Self::bind_filter_params(select_query, filter);
         let rows = select_query
             .fetch_all(pool)
@@ -280,7 +281,7 @@ impl CollectionQueryService {
              LIMIT 1"
         );
 
-        let mut query = sqlx::query(&sql).bind(user_id);
+        let mut query = sqlx::query(sqlx::AssertSqlSafe(sql.as_str())).bind(user_id);
         query = Self::bind_filter_params(query, &filter);
         let row_opt = query
             .fetch_optional(pool)

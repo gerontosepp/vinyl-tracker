@@ -30,7 +30,7 @@ The **Vinyl Tracker** is a personal web application designed for vinyl enthusias
 ## 2. Architecture Constraints
 
 - **Technology Stack**:
-    - **Backend**: Rust 2024 (Axum 0.8, Tokio, Tower-HTTP, SQLx 0.8). The former Spring Boot backend was replaced ([ADR-0001](adr/0001-backend-migration-spring-boot-zu-rust-axum.md)).
+    - **Backend**: Rust 2024 (Axum 0.8, Tokio, Tower-HTTP, SQLx 0.9). The former Spring Boot backend was replaced ([ADR-0001](adr/0001-backend-migration-spring-boot-zu-rust-axum.md)).
     - **Frontend**: Angular 22 (TypeScript, Signals, Tailwind CSS).
     - **MCP Server**: Rust (`rmcp` v3.5 SDK, stdio JSON-RPC).
     - **Database**: PostgreSQL 16.

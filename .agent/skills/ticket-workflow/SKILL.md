@@ -57,7 +57,7 @@ This skill defines the complete operational procedure for processing a GitHub is
 Apply the mandatory project rules defined in `.agent/rules/`:
 - **Coding Standards** ([`coding_standards.md`](../../rules/coding_standards.md)):
   - Layered architecture (Routes -> Services -> Models / SQLx queries).
-  - Rust 2024 edition, Axum 0.8, Tokio 1.x & SQLx 0.8.
+  - Rust 2024 edition, Axum 0.8, Tokio 1.x & SQLx 0.9.
   - Strict UTC date/time handling (`chrono::DateTime<Utc>`).
   - Angular 22 standalone components with Signals and Tailwind CSS.
   - Multi-language support via `LanguageService` (maintain both `de` and `en` keys).

@@ -23,7 +23,7 @@ impl TestDatabase {
             .expect("PostgreSQL must be accessible for integration tests");
 
         let name = format!("vt_mig_{:016x}", rand::random::<u64>());
-        sqlx::query(&format!("CREATE DATABASE {name}"))
+        sqlx::query(sqlx::AssertSqlSafe(format!("CREATE DATABASE {name}")))
             .execute(&admin)
             .await
             .expect("Test user must be allowed to create databases");
@@ -41,10 +41,13 @@ impl TestDatabase {
 
     async fn drop(self) {
         self.pool.close().await;
-        sqlx::query(&format!("DROP DATABASE {} WITH (FORCE)", self.name))
-            .execute(&self.admin)
-            .await
-            .unwrap();
+        sqlx::query(sqlx::AssertSqlSafe(format!(
+            "DROP DATABASE {} WITH (FORCE)",
+            self.name
+        )))
+        .execute(&self.admin)
+        .await
+        .unwrap();
     }
 
     /// Returns (version, execution_time) rows.

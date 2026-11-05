@@ -3,7 +3,8 @@ trigger: always_on
 ---
 
 1. **Backend Tech Stack & Architecture**: 
-   - Use Rust (2024 edition), Axum 0.8, Tokio 1.x, and SQLx 0.8.
+   - Use Rust (2024 edition), Axum 0.8, Tokio 1.x, and SQLx 0.9.
+   - Dynamic SQL: `sqlx` 0.9 only accepts string literals; a `format!`-built query must be wrapped in `sqlx::AssertSqlSafe(...)`. Do that only when everything interpolated is a compile-time constant, a `&'static str` from an enum, an integer or a `$n` placeholder index, and bind every user value. Never interpolate user input into SQL.
    - Enforce a strict layered architecture: Handlers/Routes (`routes/`) handle HTTP routing/delegation. Services (`services/`) contain business logic. Models (`models/`) define DTOs, domain models, and SQL representations.
    - DTOs & Serialization: Use expressive DTOs with snake_case JSON serialization via Serde (`#[serde(rename_all = "snake_case")]` or `#[serde(rename = "...")]`).
    - Resilience & Caching: Guard external APIs (Discogs, Roon) with Governor rate limiting, Reqwest HTTP client with retries/timeouts, and Moka in-memory caching.

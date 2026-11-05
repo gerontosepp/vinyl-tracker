@@ -351,6 +351,76 @@ impl VinylApiClient {
     }
 
     // ------------------------------------------------------------------------
+    // Want-to-Have APIs
+    // ------------------------------------------------------------------------
+
+    pub async fn get_want_to_have(&self) -> Result<Vec<WantToHaveItemDto>, String> {
+        self.ensure_authenticated().await?;
+        let url = format!("{}/api/want-to-have", self.base_url);
+        let headers = self.build_auth_headers().await;
+
+        let res = self
+            .http_client
+            .get(&url)
+            .headers(headers)
+            .send()
+            .await
+            .map_err(|e| format!("Request to /api/want-to-have failed: {}", e))?;
+
+        if !res.status().is_success() {
+            return Err(want_to_have_error(res).await);
+        }
+
+        res.json::<Vec<WantToHaveItemDto>>()
+            .await
+            .map_err(|e| format!("Failed to parse Want-to-Have JSON: {}", e))
+    }
+
+    /// Adds a release to the list. 409 (already owned or listed) becomes a plain-language error.
+    pub async fn add_to_want_to_have(&self, discogs_id: i64) -> Result<WantToHaveItemDto, String> {
+        self.ensure_authenticated().await?;
+        let url = format!("{}/api/want-to-have", self.base_url);
+        let headers = self.build_auth_headers().await;
+
+        let res = self
+            .http_client
+            .post(&url)
+            .headers(headers)
+            .json(&AddWantToHaveRequestDto { discogs_id })
+            .send()
+            .await
+            .map_err(|e| format!("Request to add release to Want-to-Have failed: {}", e))?;
+
+        if !res.status().is_success() {
+            return Err(want_to_have_error(res).await);
+        }
+
+        res.json::<WantToHaveItemDto>()
+            .await
+            .map_err(|e| format!("Failed to parse Want-to-Have item JSON: {}", e))
+    }
+
+    pub async fn remove_from_want_to_have(&self, id: i64) -> Result<(), String> {
+        self.ensure_authenticated().await?;
+        let url = format!("{}/api/want-to-have/{}", self.base_url, id);
+        let headers = self.build_auth_headers().await;
+
+        let res = self
+            .http_client
+            .delete(&url)
+            .headers(headers)
+            .send()
+            .await
+            .map_err(|e| format!("Request to remove Want-to-Have entry failed: {}", e))?;
+
+        if !res.status().is_success() {
+            return Err(want_to_have_error(res).await);
+        }
+
+        Ok(())
+    }
+
+    // ------------------------------------------------------------------------
     // Scan & Listen APIs
     // ------------------------------------------------------------------------
 
@@ -1121,5 +1191,21 @@ impl VinylApiClient {
         res.text()
             .await
             .map_err(|e| format!("Failed to read export response body: {}", e))
+    }
+}
+
+/// Turns a failed Want-to-Have response into a readable message, using the
+/// `ProblemDetail.detail` of the backend when present (409 reads "Not added …").
+async fn want_to_have_error(res: reqwest::Response) -> String {
+    let status = res.status();
+    let body = res.text().await.unwrap_or_default();
+    let detail = serde_json::from_str::<serde_json::Value>(&body)
+        .ok()
+        .and_then(|v| v["detail"].as_str().map(str::to_string))
+        .unwrap_or(body);
+    if status == reqwest::StatusCode::CONFLICT {
+        format!("Not added to Want-to-Have: {detail}")
+    } else {
+        format!("Backend error {status}: {detail}")
     }
 }

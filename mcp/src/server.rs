@@ -118,6 +118,52 @@ impl VinylMcpServer {
         ))
     }
 
+    /// List the user's Want-to-Have list.
+    #[tool(
+        name = "get_want_to_have",
+        description = "Returns the user's Want-to-Have list: records saved to listen to (e.g. via Roon) before owning them, newest first, with `id` (list entry), `discogs_id`, title, artist, year, format, genres and `created_at` (UTC). Records the user already owns are not listed. To play an entry on Roon, pass its artist and title to `play_record_on_roon` (this logs no listen)."
+    )]
+    async fn get_want_to_have(&self) -> Result<String, String> {
+        let items = self.client.get_want_to_have().await?;
+        if items.is_empty() {
+            return Ok("The Want-to-Have list is empty.".to_string());
+        }
+        serde_json::to_string_pretty(&items)
+            .map_err(|e| format!("Failed to serialize Want-to-Have list: {}", e))
+    }
+
+    /// Put a release on the Want-to-Have list.
+    #[tool(
+        name = "add_to_want_to_have",
+        description = "Saves a release by its Discogs release ID on the user's Want-to-Have list (not the collection) so it can be listened to via Roon first. Fails with a clear message if the record is already in the collection or already on the list. Use `add_to_collection` to own it."
+    )]
+    async fn add_to_want_to_have(
+        &self,
+        Parameters(args): Parameters<AddToWantToHaveArgs>,
+    ) -> Result<String, String> {
+        let item = self.client.add_to_want_to_have(args.discogs_id).await?;
+        Ok(format!(
+            "Added \"{}\" by {} (release {}) to the Want-to-Have list (entry id {}).",
+            item.title, item.artist, item.discogs_id, item.id
+        ))
+    }
+
+    /// Remove an entry from the Want-to-Have list.
+    #[tool(
+        name = "remove_from_want_to_have",
+        description = "Removes an entry from the user's Want-to-Have list by its list `id` (from `get_want_to_have`, not the Discogs ID). The collection is not touched."
+    )]
+    async fn remove_from_want_to_have(
+        &self,
+        Parameters(args): Parameters<RemoveFromWantToHaveArgs>,
+    ) -> Result<String, String> {
+        self.client.remove_from_want_to_have(args.id).await?;
+        Ok(format!(
+            "Removed entry {} from the Want-to-Have list.",
+            args.id
+        ))
+    }
+
     /// Log a listen event by scanning a barcode or custom QR code.
     #[tool(
         name = "scan_barcode",
@@ -860,6 +906,19 @@ mod tests {
 
         let t2 = VinylMcpServer::sync_collection_tool_attr();
         assert_eq!(t2.name, "sync_collection");
+
+        assert_eq!(
+            VinylMcpServer::get_want_to_have_tool_attr().name,
+            "get_want_to_have"
+        );
+        assert_eq!(
+            VinylMcpServer::add_to_want_to_have_tool_attr().name,
+            "add_to_want_to_have"
+        );
+        assert_eq!(
+            VinylMcpServer::remove_from_want_to_have_tool_attr().name,
+            "remove_from_want_to_have"
+        );
 
         let t3 = VinylMcpServer::add_to_collection_tool_attr();
         assert_eq!(t3.name, "add_to_collection");

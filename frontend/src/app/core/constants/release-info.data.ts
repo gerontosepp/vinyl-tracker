@@ -14,6 +14,13 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "isUnreleased": true,
     "items": [
       {
+        "title": "Dependency-Update `lopdf` 0.47 (`#331`)",
+        "type": "chore",
+        "typeLabel": "DevOps / Tooling",
+        "summary": "Die Test-Bibliothek, mit der die erzeugten QR-Code-PDFs geprüft werden, wurde von 0.44 auf 0.47 aktualisiert. Nur Dev-Dependency, keine Änderung am Verhalten der App.",
+        "details": []
+      },
+      {
         "title": "Dependency-Updates (`#324`)",
         "type": "chore",
         "typeLabel": "DevOps / Tooling",

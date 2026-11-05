@@ -9,6 +9,7 @@
 
 ## Unreleased
 
+- **Dependency-Update `lopdf` 0.47 (`#331`)**: Die Test-Bibliothek, mit der die erzeugten QR-Code-PDFs geprüft werden, wurde von 0.44 auf 0.47 aktualisiert. Nur Dev-Dependency, keine Änderung am Verhalten der App.
 - **Dependency-Updates (`#324`)**: Patch- und Minor-Updates eingespielt: Angular 22.2.x, Vitest 5.1, Playwright 1.64.1, Tailwind CSS 4.3.4, PostCSS, Lucide-Icons und `tslib` im Frontend sowie die kompatiblen Rust-Crates (u. a. `tokio` 1.54, `rustls-webpki`, `uuid`) in Backend und MCP-Server. Keine Änderung am Verhalten.
 
 ---

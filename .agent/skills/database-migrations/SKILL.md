@@ -39,7 +39,7 @@ When changing the schema:
 ## 3. Migration Execution
 
 - **Automatic Startup Migration**: `backend/src/db/migrations.rs` (`run_migrations(&PgPool)`) applies pending migrations on server startup under a PostgreSQL advisory lock. History table: `_sqlx_migrations`.
-- **Legacy databases**: On the first start against a database without `_sqlx_migrations` history, already applied versions are imported once from `refinery_schema_history`, `flyway_schema_history` or by schema inspection. The legacy tables are left untouched.
+- **Legacy databases**: Databases from before v1.0.0 (refinery/Flyway history, no `_sqlx_migrations`) are no longer imported automatically; they must first be started once with v1.0.0 (see `docs/DEPLOYMENT.md`, ADR-0017 addendum).
 
 ## 4. Verification & Testing
 

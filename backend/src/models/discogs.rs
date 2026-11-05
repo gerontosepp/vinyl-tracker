@@ -286,7 +286,6 @@ fn classify_format(f: &DiscogsFormat) -> FormatEntry {
 }
 
 /// Determines the canonical format label from Discogs format descriptions.
-/// Matches the Java logic in `DiscogsDto.determineFormat`.
 pub fn determine_format(formats: Option<&[DiscogsFormat]>) -> String {
     let formats = match formats {
         Some(f) if !f.is_empty() => f,

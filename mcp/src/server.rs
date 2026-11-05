@@ -164,6 +164,32 @@ impl VinylMcpServer {
         ))
     }
 
+    /// Online sources for a Want-to-Have entry.
+    #[tool(
+        name = "get_want_to_have_sources",
+        description = "Online sources for an entry of the Want-to-Have list (`id` from `get_want_to_have`): all Vinyl versions (pressings) of the record from its Discogs master, the wanted one first (`is_wanted`), each with a Discogs marketplace link and, for the first few versions, the lowest price and number of offers (`stats`), plus search links to shops. Versions with `stats: null` have no figures yet: pass their `release_id` to get them (Discogs allows only 60 requests per minute, so figures are not loaded for all versions at once). Offers of individual sellers are not available, only the lowest price and count per version."
+    )]
+    async fn get_want_to_have_sources(
+        &self,
+        Parameters(args): Parameters<GetWantToHaveSourcesArgs>,
+    ) -> Result<String, String> {
+        match args.release_id {
+            Some(release_id) => {
+                let stats = self
+                    .client
+                    .get_want_to_have_version_stats(args.id, release_id)
+                    .await?;
+                serde_json::to_string_pretty(&stats)
+                    .map_err(|e| format!("Failed to serialize version stats: {}", e))
+            }
+            None => {
+                let sources = self.client.get_want_to_have_sources(args.id).await?;
+                serde_json::to_string_pretty(&sources)
+                    .map_err(|e| format!("Failed to serialize sources: {}", e))
+            }
+        }
+    }
+
     /// Log a listen event by scanning a barcode or custom QR code.
     #[tool(
         name = "scan_barcode",
@@ -918,6 +944,10 @@ mod tests {
         assert_eq!(
             VinylMcpServer::remove_from_want_to_have_tool_attr().name,
             "remove_from_want_to_have"
+        );
+        assert_eq!(
+            VinylMcpServer::get_want_to_have_sources_tool_attr().name,
+            "get_want_to_have_sources"
         );
 
         let t3 = VinylMcpServer::add_to_collection_tool_attr();

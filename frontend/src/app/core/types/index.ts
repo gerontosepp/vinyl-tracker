@@ -581,3 +581,45 @@ export interface WantToHaveItem {
   genres: string[];
   created_at: string;
 }
+
+/** Discogs marketplace figures of one release (#319). */
+export interface MarketplaceStats {
+  release_id: number;
+  lowest_price: number | null;
+  currency: string | null;
+  num_for_sale: number;
+  blocked_from_sale: boolean;
+}
+
+/** One Vinyl pressing of a wanted record. `stats` is null until loaded. */
+export interface VinylVersion {
+  release_id: number;
+  title: string;
+  label: string | null;
+  catno: string | null;
+  country: string | null;
+  released: string | null;
+  format: string | null;
+  thumb: string | null;
+  is_wanted: boolean;
+  marketplace_url: string;
+  stats: MarketplaceStats | null;
+}
+
+/** Search link to an online shop. */
+export interface ShopLink {
+  shop: string;
+  name: string;
+  url: string;
+}
+
+/** Online sources of a Want-to-Have record (#319): its Vinyl versions plus shop links. */
+export interface PurchaseSources {
+  discogs_id: number;
+  master_id: number | null;
+  currency: string;
+  versions: VinylVersion[];
+  total_versions: number;
+  truncated: boolean;
+  shop_links: ShopLink[];
+}

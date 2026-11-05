@@ -420,6 +420,60 @@ impl VinylApiClient {
         Ok(())
     }
 
+    /// Online sources of a list entry: all Vinyl versions with marketplace figures (first few)
+    /// and shop search links.
+    pub async fn get_want_to_have_sources(&self, id: i64) -> Result<PurchaseSourcesDto, String> {
+        self.ensure_authenticated().await?;
+        let url = format!("{}/api/want-to-have/{}/sources", self.base_url, id);
+        let headers = self.build_auth_headers().await;
+
+        let res = self
+            .http_client
+            .get(&url)
+            .headers(headers)
+            .send()
+            .await
+            .map_err(|e| format!("Request for Want-to-Have sources failed: {}", e))?;
+
+        if !res.status().is_success() {
+            return Err(want_to_have_error(res).await);
+        }
+
+        res.json::<PurchaseSourcesDto>()
+            .await
+            .map_err(|e| format!("Failed to parse Want-to-Have sources JSON: {}", e))
+    }
+
+    /// Marketplace figures of one version of a list entry.
+    pub async fn get_want_to_have_version_stats(
+        &self,
+        id: i64,
+        release_id: i64,
+    ) -> Result<MarketplaceStatsDto, String> {
+        self.ensure_authenticated().await?;
+        let url = format!(
+            "{}/api/want-to-have/{}/sources/{}/stats",
+            self.base_url, id, release_id
+        );
+        let headers = self.build_auth_headers().await;
+
+        let res = self
+            .http_client
+            .get(&url)
+            .headers(headers)
+            .send()
+            .await
+            .map_err(|e| format!("Request for Want-to-Have version stats failed: {}", e))?;
+
+        if !res.status().is_success() {
+            return Err(want_to_have_error(res).await);
+        }
+
+        res.json::<MarketplaceStatsDto>()
+            .await
+            .map_err(|e| format!("Failed to parse Want-to-Have version stats JSON: {}", e))
+    }
+
     // ------------------------------------------------------------------------
     // Scan & Listen APIs
     // ------------------------------------------------------------------------

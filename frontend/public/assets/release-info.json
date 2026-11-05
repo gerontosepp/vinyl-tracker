@@ -7,6 +7,13 @@
     "isUnreleased": true,
     "items": [
       {
+        "title": "Bezugsquellen für Want-to-Have (`#319`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "In den Details einer vorgemerkten Platte zeigt der neue, aufklappbare Abschnitt **Bezugsquellen** alle Vinyl-Versionen der Platte (Erstpressung, Reissues, Länder …) mit dem günstigsten Discogs-Preis und der Anzahl Angebote; deine vorgemerkte Version ist hervorgehoben. Dazu gibt es Suchlinks zu Discogs, eBay, Amazon, JPC und HHV. Preise lädst du bei Bedarf pro Version nach, das schont das Discogs-Limit. Auch der KI-Assistent kann die Bezugsquellen abfragen (`get_want_to_have_sources`).",
+        "details": []
+      },
+      {
         "title": "Want-to-Have per MCP (`#317`)",
         "type": "feat",
         "typeLabel": "Feature",

@@ -23,6 +23,7 @@ import { getErrorMessage } from '../../../../core/utils/error';
 import { getConditionShortCode, MEDIA_CONDITION_OPTIONS, SLEEVE_CONDITION_OPTIONS } from '../../utils/condition.util';
 import { TooltipDirective } from '../../../../shared/directives/tooltip.directive';
 import { DiscogsTakeoverComponent } from '../discogs-takeover/discogs-takeover.component';
+import { PurchaseSourcesComponent } from '../../../../shared/components/purchase-sources/purchase-sources.component';
 
 export const ROON_LAST_ZONE_KEY = 'vinyl_last_roon_zone_id';
 
@@ -37,6 +38,7 @@ export const ROON_LAST_ZONE_KEY = 'vinyl_last_roon_zone_id';
     LocalizedDatePipe,
     StoragePlacementComponent,
     DiscogsTakeoverComponent,
+    PurchaseSourcesComponent,
     LucideExternalLink,
     LucideX,
     LucideHeadphones,
@@ -83,6 +85,8 @@ export class RecordDetailModalComponent implements OnInit {
   readonly removeWanted = output<void>();
   /** Set by the Want-to-Have page while one of its actions is running. */
   readonly isWantBusy = input<boolean>(false);
+  /** Want-to-Have mode: ID of the list entry; enables the "Bezugsquellen" section (#319). */
+  readonly wantToHaveId = input<number | null>(null);
 
   readonly isLoggingListen = signal<boolean>(false);
   readonly justListened = signal<boolean>(false);

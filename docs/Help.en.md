@@ -162,8 +162,9 @@ Collect records you want to **listen to** first without adding them to your coll
 - **Listen:** **Play on Roon** starts the album in the chosen zone. It does **not** count as a listen: plays, history and statistics stay unchanged.
 - **Add to collection** adds the record to your collection (and your Discogs account) and removes it from the list. If that fails it stays saved.
 - **Remove from want-to-have** deletes the entry.
+- **Where to buy:** The collapsible section in the details shows all vinyl versions of the record (first pressing, reissues, countries …). Your saved version is highlighted as **Wanted version**. For each version you see label, catalog number, country, year and format, the lowest Discogs price and the number of offers; the link opens the Discogs marketplace. Prices for the first versions appear right away; for the others **Load price** fetches them. Above the list there are search links to Discogs, eBay, Amazon, JPC and HHV. If Discogs reports its request limit, wait a moment and tap **Try again**. Individual offers and sellers are not available through the Discogs interface – open the link for those.
 
-Estimated value, plays, shelf slot, condition and sort string do not exist here – they only appear once the record is in your collection.
+An estimated value, plays, shelf slot, condition and sort string do not exist here – they only appear once the record is in your collection.
 
 ## Settings {#einstellungen}
 

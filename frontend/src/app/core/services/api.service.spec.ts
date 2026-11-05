@@ -219,4 +219,12 @@ describe('ApiService want-to-have', () => {
     service.wantToHaveToCollection(3).subscribe();
     http.expectOne({ url: '/api/want-to-have/3/to-collection', method: 'POST' }).flush({ added: 1, removed: 0 });
   });
+
+  it('loads the online sources of an entry and the stats of one version', () => {
+    service.getWantToHaveSources(3).subscribe();
+    http.expectOne({ url: '/api/want-to-have/3/sources', method: 'GET' }).flush({});
+
+    service.getWantToHaveVersionStats(3, 42).subscribe();
+    http.expectOne({ url: '/api/want-to-have/3/sources/42/stats', method: 'GET' }).flush({});
+  });
 });

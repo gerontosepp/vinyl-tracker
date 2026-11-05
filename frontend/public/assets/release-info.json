@@ -7,6 +7,13 @@
     "isUnreleased": true,
     "items": [
       {
+        "title": "Dependency-Update `reqwest` 0.13 (`#328`)",
+        "type": "chore",
+        "typeLabel": "DevOps / Tooling",
+        "summary": "Die HTTP-Bibliothek, mit der das Backend Discogs, den KI-Assistenten (OpenRouter) und den Bild-Proxy anspricht, wurde von 0.12 auf 0.13 aktualisiert. Die TLS-Verschlüsselung läuft weiter über `ring`. Neu: Die Zertifikate der Gegenstellen werden jetzt über den Zertifikatsspeicher des Systems geprüft statt über mitgelieferte Zertifikate. Das Docker-Image bringt `ca-certificates` mit; wer das Backend ohne unser Image betreibt (z. B. Proxmox/LXC), muss das Paket installiert haben, sonst scheitern Verbindungen zu Discogs und zum KI-Assistenten. Eigene Firmenzertifikate (TLS-inspizierender Proxy) werden dadurch auch erkannt. Sonst keine Änderung am Verhalten der App.",
+        "details": []
+      },
+      {
         "title": "Dependency-Update `jsonwebtoken` 11 (`#329`)",
         "type": "chore",
         "typeLabel": "DevOps / Tooling",

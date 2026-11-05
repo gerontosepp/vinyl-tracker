@@ -69,7 +69,7 @@ impl DiscogsClient {
     }
 
     pub fn with_base_url(base_url: String, user_agent: String) -> Self {
-        let http = reqwest::Client::builder()
+        let http = crate::tls::http_client_builder()
             .timeout(Duration::from_secs(15))
             .build()
             .expect("Failed to build HTTP client");

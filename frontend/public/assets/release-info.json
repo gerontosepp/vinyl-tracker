@@ -7,6 +7,13 @@
     "isUnreleased": true,
     "items": [
       {
+        "title": "Dependency-Update Datenbanktreiber `sqlx` 0.9 (`#327`)",
+        "type": "chore",
+        "typeLabel": "DevOps / Tooling",
+        "summary": "Der Treiber für die PostgreSQL-Datenbank wurde von 0.8 auf 0.9 aktualisiert. An deinen Daten ändert sich nichts: Die Datenbank-Migrationen laufen unverändert weiter (die gespeicherten Prüfsummen aller 17 Migrationen bleiben identisch), niemand muss etwas tun. Die neue Version verlangt, dass jede dynamisch zusammengesetzte Abfrage ausdrücklich als sicher bestätigt wird; alle 12 betroffenen Stellen wurden einzeln geprüft: Nutzereingaben fließen nur über Platzhalter in die Abfragen.",
+        "details": []
+      },
+      {
         "title": "Dependency-Update Verschlüsselung und Passwort-Hashing (`#326`)",
         "type": "chore",
         "typeLabel": "DevOps / Tooling",

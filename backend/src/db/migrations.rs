@@ -21,7 +21,7 @@ pub async fn run_migrations(pool: &PgPool) -> Result<(), AppError> {
         .execute(&mut *conn)
         .await?;
     let ensure_result = conn
-        .ensure_migrations_table()
+        .ensure_migrations_table(&MIGRATOR.table_name)
         .await
         .map_err(|e| AppError::Migration(format!("Failed to ensure _sqlx_migrations: {e}")));
     sqlx::query("SELECT pg_advisory_unlock($1)")
@@ -56,7 +56,7 @@ pub async fn run_migrations(pool: &PgPool) -> Result<(), AppError> {
 async fn applied_versions(pool: &PgPool) -> Result<BTreeSet<i64>, AppError> {
     let mut conn = pool.acquire().await?;
     let applied = conn
-        .list_applied_migrations()
+        .list_applied_migrations(&MIGRATOR.table_name)
         .await
         .map_err(|e| AppError::Migration(format!("Failed to list applied migrations: {e}")))?;
     Ok(applied.into_iter().map(|m| m.version).collect())

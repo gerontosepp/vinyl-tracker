@@ -90,7 +90,10 @@ impl StorageService {
              WHERE ci.user_id = $1 AND {}",
             media_condition_sql(media)
         );
-        let rows = sqlx::query(&sql).bind(user_id).fetch_all(pool).await?;
+        let rows = sqlx::query(sqlx::AssertSqlSafe(sql.as_str()))
+            .bind(user_id)
+            .fetch_all(pool)
+            .await?;
         Ok(rows
             .into_iter()
             .map(|row| LayoutItem {

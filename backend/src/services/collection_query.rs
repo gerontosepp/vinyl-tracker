@@ -70,7 +70,8 @@ impl CollectionQueryService {
              WHERE {where_clause}"
         );
 
-        let mut count_query = sqlx::query_scalar::<_, i64>(&count_sql).bind(user_id);
+        let mut count_query =
+            sqlx::query_scalar::<_, i64>(sqlx::AssertSqlSafe(count_sql.as_str())).bind(user_id);
         count_query = Self::bind_filter_params_scalar(count_query, &filter);
         let total_items = count_query
             .fetch_one(pool)
@@ -91,10 +92,9 @@ impl CollectionQueryService {
 
         let offset = ((filter.page - 1) * filter.per_page) as i64;
         let limit = filter.per_page as i64;
-        let limit_clause = format!("LIMIT {limit} OFFSET {offset}");
 
         let mut releases =
-            Self::fetch_and_map_releases(pool, user_id, &filter, Some(&limit_clause)).await?;
+            Self::fetch_and_map_releases(pool, user_id, &filter, Some((limit, offset))).await?;
         let slots = StorageService::slots(pool, user_id).await?;
         if !slots.is_empty() {
             for release in &mut releases {
@@ -197,11 +197,14 @@ impl CollectionQueryService {
         pool: &PgPool,
         user_id: i64,
         filter: &ParsedCollectionFilter,
-        limit_clause: Option<&str>,
+        // (limit, offset): typed on purpose, so only integers can reach the `AssertSqlSafe` query
+        page: Option<(i64, i64)>,
     ) -> Result<Vec<CollectionRelease>, AppError> {
         let where_clause = Self::build_where_clause(filter);
         let order_by = Self::build_order_by(&filter.sort, &filter.sort_order);
-        let limit_str = limit_clause.unwrap_or("");
+        let limit_str = page
+            .map(|(limit, offset)| format!("LIMIT {limit} OFFSET {offset}"))
+            .unwrap_or_default();
 
         let select_sql = format!(
             "{RELEASE_SELECT_SQL}
@@ -210,7 +213,7 @@ impl CollectionQueryService {
              {limit_str}"
         );
 
-        let mut select_query = sqlx::query(&select_sql).bind(user_id);
+        let mut select_query = sqlx::query(sqlx::AssertSqlSafe(select_sql.as_str())).bind(user_id);
         select_query = Self::bind_filter_params(select_query, filter);
         let rows = select_query
             .fetch_all(pool)
@@ -280,7 +283,7 @@ impl CollectionQueryService {
              LIMIT 1"
         );
 
-        let mut query = sqlx::query(&sql).bind(user_id);
+        let mut query = sqlx::query(sqlx::AssertSqlSafe(sql.as_str())).bind(user_id);
         query = Self::bind_filter_params(query, &filter);
         let row_opt = query
             .fetch_optional(pool)

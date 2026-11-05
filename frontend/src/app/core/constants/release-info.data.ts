@@ -14,6 +14,13 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "isUnreleased": true,
     "items": [
       {
+        "title": "Fix: Verbindung zur Datenbank ohne Konfiguration nutzt `127.0.0.1` (`#340`)",
+        "type": "fix",
+        "typeLabel": "Fix",
+        "summary": "Ist weder `DATABASE_URL` noch `POSTGRES_HOST` gesetzt, verbindet sich das Backend jetzt mit `127.0.0.1` statt mit `localhost`. `localhost` wird zuerst über IPv6 (`::1`) aufgelöst, und ein Verbindungsaufbau dorthin hing unter Docker Desktop auf macOS gelegentlich, bis der Timeout griff. Das ist sehr wahrscheinlich die Ursache eines lokal sporadisch fehlschlagenden Tests. Für den Docker-Betrieb und überall, wo `DATABASE_URL` oder `POSTGRES_HOST` gesetzt ist, ändert sich nichts. Wer das Backend ohne diese Variablen betreibt (z. B. Proxmox/LXC) und eine PostgreSQL hat, die nur auf IPv6 (`::1`) oder einem Socket lauscht, muss `POSTGRES_HOST` jetzt ausdrücklich setzen.",
+        "details": []
+      },
+      {
         "title": "Dependency-Update Datenbanktreiber `sqlx` 0.9 (`#327`)",
         "type": "chore",
         "typeLabel": "DevOps / Tooling",

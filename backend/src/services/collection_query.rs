@@ -92,10 +92,9 @@ impl CollectionQueryService {
 
         let offset = ((filter.page - 1) * filter.per_page) as i64;
         let limit = filter.per_page as i64;
-        let limit_clause = format!("LIMIT {limit} OFFSET {offset}");
 
         let mut releases =
-            Self::fetch_and_map_releases(pool, user_id, &filter, Some(&limit_clause)).await?;
+            Self::fetch_and_map_releases(pool, user_id, &filter, Some((limit, offset))).await?;
         let slots = StorageService::slots(pool, user_id).await?;
         if !slots.is_empty() {
             for release in &mut releases {
@@ -198,11 +197,14 @@ impl CollectionQueryService {
         pool: &PgPool,
         user_id: i64,
         filter: &ParsedCollectionFilter,
-        limit_clause: Option<&str>,
+        // (limit, offset): typed on purpose, so only integers can reach the `AssertSqlSafe` query
+        page: Option<(i64, i64)>,
     ) -> Result<Vec<CollectionRelease>, AppError> {
         let where_clause = Self::build_where_clause(filter);
         let order_by = Self::build_order_by(&filter.sort, &filter.sort_order);
-        let limit_str = limit_clause.unwrap_or("");
+        let limit_str = page
+            .map(|(limit, offset)| format!("LIMIT {limit} OFFSET {offset}"))
+            .unwrap_or_default();
 
         let select_sql = format!(
             "{RELEASE_SELECT_SQL}

@@ -9,7 +9,7 @@ use axum::{
     extract::{Path, Query},
     http::StatusCode,
     response::IntoResponse,
-    routing::{get, patch, post},
+    routing::{delete, get, patch, post},
 };
 use rmcp::handler::server::wrapper::Parameters;
 use std::collections::HashMap;
@@ -22,6 +22,9 @@ use vinyl_api_types::{
     storage::{
         MediaLayoutDto, StorageCompartmentDto, StorageMedia, StorageMoveDto, StorageNeighborsDto,
         StorageRecordRefDto, StorageSlotDto, StorageUnitLayoutDto,
+    },
+    want_to_have::{
+        MarketplaceStatsDto, PurchaseSourcesDto, ShopLinkDto, VinylVersionDto, WantToHaveItemDto,
     },
 };
 
@@ -178,8 +181,140 @@ fn label_photo(id: i64, status: LabelPhotoStatus, discogs_id: Option<i64>) -> La
     }
 }
 
+fn want_item(id: i64, discogs_id: i64) -> WantToHaveItemDto {
+    WantToHaveItemDto {
+        id,
+        discogs_id,
+        title: "Phaedra".to_string(),
+        artist: "Tangerine Dream".to_string(),
+        year: Some("1974".to_string()),
+        thumb_url: None,
+        format: Some("LP".to_string()),
+        genres: vec!["Electronic".to_string()],
+        created_at: "2026-11-05T09:00:00+00:00".to_string(),
+    }
+}
+
+fn sources_dto() -> PurchaseSourcesDto {
+    let version =
+        |release_id: i64, is_wanted: bool, stats: Option<MarketplaceStatsDto>| VinylVersionDto {
+            release_id,
+            title: format!("Phaedra v{release_id}"),
+            label: Some("Virgin".to_string()),
+            catno: Some("V 2010".to_string()),
+            country: Some("UK".to_string()),
+            released: Some("1974".to_string()),
+            format: Some("LP".to_string()),
+            thumb: None,
+            is_wanted,
+            marketplace_url: format!("https://www.discogs.com/sell/release/{release_id}"),
+            stats,
+        };
+    PurchaseSourcesDto {
+        discogs_id: 777,
+        master_id: Some(55),
+        currency: "EUR".to_string(),
+        versions: vec![
+            version(
+                777,
+                true,
+                Some(MarketplaceStatsDto {
+                    release_id: 777,
+                    lowest_price: Some(18.5),
+                    currency: Some("EUR".to_string()),
+                    num_for_sale: 4,
+                    blocked_from_sale: false,
+                }),
+            ),
+            version(101, false, None),
+        ],
+        total_versions: 2,
+        truncated: false,
+        shop_links: vec![ShopLinkDto {
+            shop: "ebay".to_string(),
+            name: "eBay".to_string(),
+            url: "https://www.ebay.de/sch/i.html?_nkw=Phaedra".to_string(),
+        }],
+    }
+}
+
+fn not_found_problem() -> axum::response::Response {
+    (
+        StatusCode::NOT_FOUND,
+        Json(serde_json::json!({
+            "type": "about:blank", "title": "Not Found", "status": 404,
+            "detail": "Release is not a version of this entry"
+        })),
+    )
+        .into_response()
+}
+
 async fn mock_backend() -> VinylMcpServer {
     let app = Router::new()
+        .route(
+            "/api/want-to-have",
+            get(|| async { Json(vec![want_item(5, 777)]) }).post(
+                |Json(body): Json<serde_json::Value>| async move {
+                    match body["discogs_id"].as_i64() {
+                        Some(888) => (
+                            StatusCode::CONFLICT,
+                            Json(serde_json::json!({
+                                "type": "about:blank", "title": "Conflict", "status": 409,
+                                "detail": "Record is already in your collection"
+                            })),
+                        )
+                            .into_response(),
+                        Some(999) => (
+                            StatusCode::BAD_REQUEST,
+                            Json(serde_json::json!({
+                                "type": "about:blank", "title": "Bad Request", "status": 400,
+                                "detail": "Discogs token is not configured"
+                            })),
+                        )
+                            .into_response(),
+                        Some(id) => (StatusCode::CREATED, Json(want_item(6, id))).into_response(),
+                        None => StatusCode::BAD_REQUEST.into_response(),
+                    }
+                },
+            ),
+        )
+        .route(
+            "/api/want-to-have/{id}/sources",
+            get(|Path(id): Path<i64>| async move {
+                if id == 5 {
+                    Json(sources_dto()).into_response()
+                } else {
+                    not_found_problem()
+                }
+            }),
+        )
+        .route(
+            "/api/want-to-have/{id}/sources/{release_id}/stats",
+            get(|Path((id, release_id)): Path<(i64, i64)>| async move {
+                if id == 5 && release_id == 101 {
+                    Json(MarketplaceStatsDto {
+                        release_id,
+                        lowest_price: Some(24.0),
+                        currency: Some("EUR".to_string()),
+                        num_for_sale: 2,
+                        blocked_from_sale: false,
+                    })
+                    .into_response()
+                } else {
+                    not_found_problem()
+                }
+            }),
+        )
+        .route(
+            "/api/want-to-have/{id}",
+            delete(|Path(id): Path<i64>| async move {
+                if id == 5 {
+                    StatusCode::NO_CONTENT
+                } else {
+                    StatusCode::NOT_FOUND
+                }
+            }),
+        )
         .route(
             "/api/discogs/search",
             get(|Query(query): Query<HashMap<String, String>>| async move {
@@ -715,7 +850,20 @@ async fn test_resolve_label_photo_sets_status() {
         }))
         .await
         .unwrap_err();
-    assert!(err.contains("404"), "{err}");
+    assert!(err.starts_with("Backend error 404"), "{err}");
+}
+
+#[tokio::test]
+async fn test_add_to_want_to_have_surfaces_other_backend_errors() {
+    let server = mock_backend().await;
+    let err = server
+        .add_to_want_to_have(Parameters(AddToWantToHaveArgs { discogs_id: 999 }))
+        .await
+        .expect_err("backend 400 must surface");
+    assert_eq!(
+        err,
+        "Backend error 400 Bad Request: Discogs token is not configured"
+    );
 }
 
 #[tokio::test]
@@ -848,4 +996,124 @@ async fn test_take_over_manual_record_passes_mode_and_target() {
         "id": -7, "release_id": 1001, "mode": "replace"
     }));
     assert!(invalid.is_err());
+}
+
+#[tokio::test]
+async fn test_get_want_to_have_returns_the_list() {
+    let server = mock_backend().await;
+    let output = server.get_want_to_have().await.expect("list must succeed");
+    let json: serde_json::Value = serde_json::from_str(&output).unwrap();
+    assert_eq!(json[0]["id"], 5);
+    assert_eq!(json[0]["discogs_id"], 777);
+    assert_eq!(json[0]["artist"], "Tangerine Dream");
+    assert_eq!(json[0]["created_at"], "2026-11-05T09:00:00+00:00");
+}
+
+#[tokio::test]
+async fn test_add_to_want_to_have_reports_the_new_entry() {
+    let server = mock_backend().await;
+    let output = server
+        .add_to_want_to_have(Parameters(AddToWantToHaveArgs { discogs_id: 321 }))
+        .await
+        .expect("add must succeed");
+    assert!(output.contains("Phaedra"), "{output}");
+    assert!(output.contains("release 321"), "{output}");
+    assert!(output.contains("entry id 6"), "{output}");
+}
+
+#[tokio::test]
+async fn test_add_to_want_to_have_explains_duplicates() {
+    let server = mock_backend().await;
+    let err = server
+        .add_to_want_to_have(Parameters(AddToWantToHaveArgs { discogs_id: 888 }))
+        .await
+        .expect_err("owned record must be refused");
+    assert_eq!(
+        err,
+        "Not added to Want-to-Have: Record is already in your collection"
+    );
+}
+
+#[tokio::test]
+async fn test_remove_from_want_to_have_succeeds_and_reports_unknown_ids() {
+    let server = mock_backend().await;
+    let output = server
+        .remove_from_want_to_have(Parameters(RemoveFromWantToHaveArgs { id: 5 }))
+        .await
+        .expect("remove must succeed");
+    assert_eq!(output, "Removed entry 5 from the Want-to-Have list.");
+
+    let err = server
+        .remove_from_want_to_have(Parameters(RemoveFromWantToHaveArgs { id: 99 }))
+        .await
+        .expect_err("unknown id must fail");
+    assert!(err.contains("404"), "{err}");
+}
+
+#[tokio::test]
+async fn test_get_want_to_have_sources_returns_versions_and_shop_links() {
+    let server = mock_backend().await;
+    let output = server
+        .get_want_to_have_sources(Parameters(GetWantToHaveSourcesArgs {
+            id: 5,
+            release_id: None,
+        }))
+        .await
+        .expect("sources must succeed");
+    let json: serde_json::Value = serde_json::from_str(&output).unwrap();
+    assert_eq!(json["master_id"], 55);
+    assert_eq!(json["versions"][0]["is_wanted"], true);
+    assert_eq!(json["versions"][0]["stats"]["lowest_price"], 18.5);
+    assert!(json["versions"][1]["stats"].is_null());
+    assert_eq!(json["shop_links"][0]["shop"], "ebay");
+}
+
+#[tokio::test]
+async fn test_get_want_to_have_sources_with_release_id_returns_that_versions_stats() {
+    let server = mock_backend().await;
+    let output = server
+        .get_want_to_have_sources(Parameters(GetWantToHaveSourcesArgs {
+            id: 5,
+            release_id: Some(101),
+        }))
+        .await
+        .expect("stats must succeed");
+    let json: serde_json::Value = serde_json::from_str(&output).unwrap();
+    assert_eq!(json["release_id"], 101);
+    assert_eq!(json["lowest_price"], 24.0);
+    assert_eq!(json["num_for_sale"], 2);
+}
+
+#[tokio::test]
+async fn test_get_want_to_have_sources_reports_unknown_entries() {
+    let server = mock_backend().await;
+    let err = server
+        .get_want_to_have_sources(Parameters(GetWantToHaveSourcesArgs {
+            id: 99,
+            release_id: None,
+        }))
+        .await
+        .expect_err("unknown entry must fail");
+    assert!(err.contains("404"), "{err}");
+}
+
+#[tokio::test]
+async fn test_get_want_to_have_sources_reports_versions_outside_the_master() {
+    let server = mock_backend().await;
+    let err = server
+        .get_want_to_have_sources(Parameters(GetWantToHaveSourcesArgs {
+            id: 5,
+            release_id: Some(999),
+        }))
+        .await
+        .expect_err("foreign release must fail");
+    assert!(err.contains("404"), "{err}");
+    assert!(err.contains("not a version"), "{err}");
+}
+
+#[test]
+fn test_get_want_to_have_sources_args_make_release_id_optional() {
+    let args: GetWantToHaveSourcesArgs =
+        serde_json::from_value(serde_json::json!({"id": 5})).expect("release_id is optional");
+    assert_eq!(args.release_id, None);
 }

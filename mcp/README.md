@@ -24,6 +24,9 @@ Der Server implementiert **Option 1 (REST-Client)**: Er kommuniziert direkt übe
 | `sync_collection` | Startet den bidirektionalen Abgleich mit Discogs | *keine* |
 | `add_to_collection` | Fügt ein Album via Discogs-Release-ID zur Sammlung hinzu, gleicht ab und nennt den Lagerplatz samt nötiger Verschiebungen | `release_id` (int) |
 | `remove_from_collection` | Entfernt ein Album aus der Sammlung und von Discogs | `release_id` (int), `instance_id` (int, optional) |
+| `get_want_to_have` | Ruft die Want-to-Have-Liste ab (Listen-`id`, `discogs_id`, Titel, Künstler, Jahr, Format, Genres, `created_at` in UTC), neueste zuerst | *keine* |
+| `add_to_want_to_have` | Merkt ein Album per Discogs-Release-ID vor (nicht in der Sammlung); Meldung, wenn es schon im Bestand oder auf der Liste ist (409) | `discogs_id` (int) |
+| `remove_from_want_to_have` | Entfernt einen Eintrag von der Want-to-Have-Liste (Sammlung bleibt unberührt) | `id` (int, Listen-ID aus `get_want_to_have`) |
 | `scan_barcode` | Protokolliert ein Hör-Event via Barcode oder QR-Code | `barcode` (str, z. B. `discogs-id:12345` oder UPC/EAN) |
 | `log_record_listen` | Protokolliert ein Hör-Event direkt per Record-ID oder Release-ID | `id` (int) |
 | `delete_scan` | Löscht ein einzelnes Hör-Event | `id` (int) |

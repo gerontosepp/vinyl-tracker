@@ -116,6 +116,17 @@ describe('WantToHaveComponent', () => {
     expect(detailModal().detail()?.discogs_id).toBe(100);
   });
 
+  it('hands the list entry to the details for the online sources', async () => {
+    await create([item(4, 100)]);
+    expect(detailModal().wantToHaveId()).toBeNull();
+
+    all('want-to-have-item')[0].click();
+    http.expectOne((r) => r.url === '/api/records/100').flush(null, { status: 404, statusText: 'Not Found' });
+    await fixture.whenStable();
+
+    expect(detailModal().wantToHaveId()).toBe(4);
+  });
+
   it('keeps the header when the details cannot be loaded', async () => {
     await create([item(1, 100)]);
 

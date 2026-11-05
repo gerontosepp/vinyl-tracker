@@ -24,6 +24,8 @@ import {
   RoonSettings,
   RoonPlayRequest,
   WantToHaveItem,
+  PurchaseSources,
+  MarketplaceStats,
   RestoreResult,
   PrintRequest,
   StorageType,
@@ -305,6 +307,16 @@ export class ApiService {
   /** Adds the record to the collection and removes it from the list. */
   wantToHaveToCollection(id: number): Observable<SyncResult> {
     return this.http.post<SyncResult>(`${this.baseUrl}/want-to-have/${id}/to-collection`, {});
+  }
+
+  /** Vinyl versions of a list entry with marketplace figures for the first ones, plus shop links. */
+  getWantToHaveSources(id: number): Observable<PurchaseSources> {
+    return this.http.get<PurchaseSources>(`${this.baseUrl}/want-to-have/${id}/sources`);
+  }
+
+  /** Marketplace figures of one version of a list entry. */
+  getWantToHaveVersionStats(id: number, releaseId: number): Observable<MarketplaceStats> {
+    return this.http.get<MarketplaceStats>(`${this.baseUrl}/want-to-have/${id}/sources/${releaseId}/stats`);
   }
 
   removeReleaseFromCollection(releaseId: number, instanceId?: number): Observable<void> {

@@ -3,6 +3,7 @@ use axum::{
     body::Body,
     extract::Path,
     http::{Method, Request, StatusCode, header},
+    response::IntoResponse,
     routing::{get, post},
 };
 use backend_rs::{
@@ -12,7 +13,10 @@ use backend_rs::{
 };
 use http_body_util::BodyExt;
 use serde_json::{Value, json};
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{
+    Arc,
+    atomic::{AtomicU64, AtomicUsize, Ordering},
+};
 use tower::ServiceExt;
 
 static USER_COUNTER: AtomicU64 = AtomicU64::new(3100);
@@ -146,6 +150,8 @@ async fn want_to_have_endpoints_require_authentication() {
         (Method::POST, "/api/want-to-have"),
         (Method::DELETE, "/api/want-to-have/1"),
         (Method::POST, "/api/want-to-have/1/to-collection"),
+        (Method::GET, "/api/want-to-have/1/sources"),
+        (Method::GET, "/api/want-to-have/1/sources/2/stats"),
     ] {
         let (status, _) = json_request(&app, method, uri, None, None).await;
         assert_eq!(status, StatusCode::UNAUTHORIZED, "{uri}");
@@ -628,5 +634,315 @@ async fn restore_rejects_invalid_want_to_have_entry() {
                 .unwrap()
                 .contains("Want-to-Have entry #1")
         );
+    }
+}
+
+// --- Online sources (#319) ---
+
+/// Release IDs of the sources mock: a release with a master of 8 versions, one without master,
+/// and one whose master no longer exists.
+const WITH_MASTER: i64 = 319_001;
+const NO_MASTER: i64 = 319_002;
+const GONE_MASTER: i64 = 319_003;
+
+/// Mock Discogs for the sources endpoints. Counts requests to `/marketplace/stats/{id}`.
+async fn mock_discogs_sources() -> (DiscogsClient, Arc<AtomicUsize>) {
+    let stats_hits = Arc::new(AtomicUsize::new(0));
+    let hits = stats_hits.clone();
+    let mock = Router::new()
+        .route(
+            "/releases/{id}",
+            get(|Path(id): Path<i64>| async move {
+                let master = match id {
+                    WITH_MASTER => 55,
+                    GONE_MASTER => 404,
+                    _ => 0,
+                };
+                axum::Json(json!({
+                    "id": id,
+                    "title": "Kind of Blue",
+                    "artists": [{"name": "Miles Davis (2)"}],
+                    "year": 1959,
+                    "master_id": master,
+                    "labels": [{"name": "Columbia", "catno": "CL 1355"}],
+                    "formats": [{"name": "Vinyl", "descriptions": ["LP"]}]
+                }))
+            }),
+        )
+        .route(
+            "/masters/{id}/versions",
+            get(|Path(id): Path<i64>| async move {
+                if id == 404 {
+                    return StatusCode::NOT_FOUND.into_response();
+                }
+                // The wanted release is in the middle of the list
+                let ids = [100, 101, 102, WITH_MASTER, 104, 105, 106, 107];
+                axum::Json(json!({
+                    "pagination": {"page": 1, "pages": 1, "per_page": 100, "items": ids.len()},
+                    "versions": ids.iter().map(|id| json!({
+                        "id": id, "title": format!("Kind of Blue v{id}"), "format": "LP",
+                        "label": "Columbia", "catno": "CL 1355", "country": "US",
+                        "released": "1959", "major_formats": ["Vinyl"]
+                    })).collect::<Vec<_>>()
+                }))
+                .into_response()
+            }),
+        )
+        .route(
+            "/marketplace/stats/{id}",
+            get(move |Path(id): Path<i64>| {
+                let hits = hits.clone();
+                async move {
+                    hits.fetch_add(1, Ordering::SeqCst);
+                    axum::Json(json!({
+                        "lowest_price": {"value": id as f64 / 10.0, "currency": "EUR"},
+                        "num_for_sale": 3,
+                        "blocked_from_sale": false
+                    }))
+                }
+            }),
+        );
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    tokio::spawn(async move {
+        axum::serve(listener, mock).await.unwrap();
+    });
+    (
+        DiscogsClient::with_base_url(format!("http://{addr}"), "wth-test/1.0".to_string()),
+        stats_hits,
+    )
+}
+
+/// A user with a token and `discogs_id` on the list.
+async fn user_with_item(
+    app: &Router,
+    state: &AppState,
+    client: &DiscogsClient,
+    discogs_id: i64,
+) -> (AppUser, i64) {
+    let (user_id, _) = create_user(app).await;
+    let user = user_with_token(state, user_id).await;
+    let item = WantToHaveService::add(&state.pool, client, &state.crypto, &user, discogs_id)
+        .await
+        .unwrap();
+    (user, item.id)
+}
+
+#[tokio::test]
+async fn sources_return_all_vinyl_versions_with_the_wanted_one_first() {
+    let (app, state) = setup_app().await;
+    let (client, _) = mock_discogs_sources().await;
+    let (user, id) = user_with_item(&app, &state, &client, WITH_MASTER).await;
+
+    let sources = WantToHaveService::sources(&state.pool, &client, &state.crypto, &user, id)
+        .await
+        .unwrap();
+
+    assert_eq!(sources.master_id, Some(55));
+    assert_eq!(sources.currency, "EUR");
+    assert_eq!(sources.versions.len(), 8);
+    assert_eq!(sources.total_versions, 8);
+    assert!(!sources.truncated);
+    assert_eq!(sources.versions[0].release_id, WITH_MASTER);
+    assert!(sources.versions[0].is_wanted);
+    assert_eq!(sources.versions.iter().filter(|v| v.is_wanted).count(), 1);
+    assert_eq!(
+        sources.versions[0].marketplace_url,
+        format!("https://www.discogs.com/sell/release/{WITH_MASTER}")
+    );
+}
+
+#[tokio::test]
+async fn sources_load_marketplace_stats_only_for_the_first_versions() {
+    let (app, state) = setup_app().await;
+    let (client, stats_hits) = mock_discogs_sources().await;
+    let (user, id) = user_with_item(&app, &state, &client, WITH_MASTER).await;
+
+    let sources = WantToHaveService::sources(&state.pool, &client, &state.crypto, &user, id)
+        .await
+        .unwrap();
+
+    let eager = backend_rs::services::purchase_sources::EAGER_STATS;
+    assert_eq!(stats_hits.load(Ordering::SeqCst), eager);
+    assert!(sources.versions[..eager].iter().all(|v| v.stats.is_some()));
+    assert!(sources.versions[eager..].iter().all(|v| v.stats.is_none()));
+    let stats = sources.versions[0].stats.as_ref().unwrap();
+    assert_eq!(stats.num_for_sale, 3);
+    assert_eq!(stats.lowest_price, Some(WITH_MASTER as f64 / 10.0));
+}
+
+#[tokio::test]
+async fn sources_build_shop_links_from_artist_and_title() {
+    let (app, state) = setup_app().await;
+    let (client, _) = mock_discogs_sources().await;
+    let (user, id) = user_with_item(&app, &state, &client, WITH_MASTER).await;
+
+    let sources = WantToHaveService::sources(&state.pool, &client, &state.crypto, &user, id)
+        .await
+        .unwrap();
+
+    let ebay = sources
+        .shop_links
+        .iter()
+        .find(|l| l.shop == "ebay")
+        .unwrap();
+    assert!(ebay.url.contains("Miles%20Davis") || ebay.url.contains("Miles+Davis"));
+    assert!(!ebay.url.contains("(2)") && !ebay.url.contains("%282%29"));
+    assert!(!ebay.url.contains("1355"), "no catalog number in searches");
+    let jpc = sources.shop_links.iter().find(|l| l.shop == "jpc").unwrap();
+    assert_eq!(
+        jpc.url,
+        "https://www.jpc.de/s/Miles%20Davis%20Kind%20of%20Blue"
+    );
+    assert_eq!(
+        sources.shop_links[0].url,
+        "https://www.discogs.com/sell/list?master_id=55&format=Vinyl"
+    );
+}
+
+#[tokio::test]
+async fn sources_without_master_contain_only_the_wanted_release() {
+    let (app, state) = setup_app().await;
+    let (client, stats_hits) = mock_discogs_sources().await;
+    let (user, id) = user_with_item(&app, &state, &client, NO_MASTER).await;
+
+    let sources = WantToHaveService::sources(&state.pool, &client, &state.crypto, &user, id)
+        .await
+        .unwrap();
+
+    assert_eq!(sources.master_id, None);
+    assert_eq!(sources.versions.len(), 1);
+    assert!(sources.versions[0].is_wanted);
+    assert!(sources.versions[0].stats.is_some());
+    assert_eq!(stats_hits.load(Ordering::SeqCst), 1);
+}
+
+#[tokio::test]
+async fn sources_fall_back_to_the_release_when_the_master_is_gone() {
+    let (app, state) = setup_app().await;
+    let (client, _) = mock_discogs_sources().await;
+    let (user, id) = user_with_item(&app, &state, &client, GONE_MASTER).await;
+
+    let sources = WantToHaveService::sources(&state.pool, &client, &state.crypto, &user, id)
+        .await
+        .unwrap();
+
+    assert_eq!(sources.versions.len(), 1);
+    assert_eq!(sources.versions[0].release_id, GONE_MASTER);
+}
+
+#[tokio::test]
+async fn sources_of_a_foreign_item_are_not_found() {
+    let (app, state) = setup_app().await;
+    let (client, _) = mock_discogs_sources().await;
+    let (_, id) = user_with_item(&app, &state, &client, WITH_MASTER).await;
+    let (other_id, _) = create_user(&app).await;
+    let other = user_with_token(&state, other_id).await;
+
+    let err = WantToHaveService::sources(&state.pool, &client, &state.crypto, &other, id)
+        .await
+        .unwrap_err();
+
+    assert!(matches!(err, AppError::NotFound(_)), "got {err:?}");
+}
+
+#[tokio::test]
+async fn sources_require_a_discogs_token() {
+    let (app, state) = setup_app().await;
+    let (client, _) = mock_discogs_sources().await;
+    let (user, id) = user_with_item(&app, &state, &client, WITH_MASTER).await;
+    sqlx::query("UPDATE app_user SET discogs_token = NULL WHERE id = $1")
+        .bind(user.id)
+        .execute(&state.pool)
+        .await
+        .unwrap();
+    let tokenless = user_without_token(&state, user.id).await;
+
+    let err = WantToHaveService::sources(&state.pool, &client, &state.crypto, &tokenless, id)
+        .await
+        .unwrap_err();
+
+    assert!(matches!(err, AppError::BadRequest(_)), "got {err:?}");
+}
+
+/// Reloads the user as stored, i.e. without a token after it was removed.
+async fn user_without_token(state: &AppState, user_id: i64) -> AppUser {
+    sqlx::query_as::<_, AppUser>(
+        "SELECT id, username, password, discogs_username, discogs_token, roon_host, roon_port, roon_zone_id, roon_zone_name, roon_token FROM app_user WHERE id = $1",
+    )
+    .bind(user_id)
+    .fetch_one(&state.pool)
+    .await
+    .unwrap()
+}
+
+#[tokio::test]
+async fn version_stats_accept_the_wanted_release_and_listed_versions() {
+    let (app, state) = setup_app().await;
+    let (client, _) = mock_discogs_sources().await;
+    let (user, id) = user_with_item(&app, &state, &client, WITH_MASTER).await;
+
+    let wanted = WantToHaveService::version_stats(
+        &state.pool,
+        &client,
+        &state.crypto,
+        &user,
+        id,
+        WITH_MASTER,
+    )
+    .await
+    .unwrap();
+    let other =
+        WantToHaveService::version_stats(&state.pool, &client, &state.crypto, &user, id, 107)
+            .await
+            .unwrap();
+
+    assert_eq!(wanted.release_id, WITH_MASTER);
+    assert_eq!(other.release_id, 107);
+    assert_eq!(other.lowest_price, Some(10.7));
+}
+
+#[tokio::test]
+async fn version_stats_reject_releases_outside_the_master() {
+    let (app, state) = setup_app().await;
+    let (client, stats_hits) = mock_discogs_sources().await;
+    let (user, id) = user_with_item(&app, &state, &client, WITH_MASTER).await;
+
+    let err = WantToHaveService::version_stats(&state.pool, &client, &state.crypto, &user, id, 999)
+        .await
+        .unwrap_err();
+
+    assert!(matches!(err, AppError::NotFound(_)), "got {err:?}");
+    assert_eq!(
+        stats_hits.load(Ordering::SeqCst),
+        0,
+        "Discogs was not asked"
+    );
+}
+
+#[tokio::test]
+async fn version_stats_reject_other_releases_when_there_is_no_master() {
+    let (app, state) = setup_app().await;
+    let (client, _) = mock_discogs_sources().await;
+    let (user, id) = user_with_item(&app, &state, &client, NO_MASTER).await;
+
+    let err = WantToHaveService::version_stats(&state.pool, &client, &state.crypto, &user, id, 100)
+        .await
+        .unwrap_err();
+
+    assert!(matches!(err, AppError::NotFound(_)), "got {err:?}");
+}
+
+#[tokio::test]
+async fn sources_endpoints_return_404_for_an_unknown_item() {
+    let (app, _) = setup_app().await;
+    let (_, token) = create_user(&app).await;
+
+    for uri in [
+        "/api/want-to-have/999999999/sources",
+        "/api/want-to-have/999999999/sources/1/stats",
+    ] {
+        let (status, _) = json_request(&app, Method::GET, uri, Some(&token), None).await;
+        assert_eq!(status, StatusCode::NOT_FOUND, "{uri}");
     }
 }

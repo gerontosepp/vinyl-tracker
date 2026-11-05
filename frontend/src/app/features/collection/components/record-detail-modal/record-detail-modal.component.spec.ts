@@ -664,6 +664,28 @@ describe('RecordDetailModalComponent', () => {
       expect((q('detail-want-to-collection') as HTMLButtonElement).disabled).toBe(true);
     });
 
+    it('shows the online sources of a want-to-have entry (#319)', () => {
+      open('wantToHave');
+      fixture.componentRef.setInput('wantToHaveId', 5);
+      fixture.detectChanges();
+
+      expect(q('purchase-sources')).not.toBeNull();
+    });
+
+    it('shows no online sources without a list entry', () => {
+      open('wantToHave');
+
+      expect(q('purchase-sources')).toBeNull();
+    });
+
+    it('shows no online sources for a record from the collection', () => {
+      open('collection');
+      fixture.componentRef.setInput('wantToHaveId', 5);
+      fixture.detectChanges();
+
+      expect(q('purchase-sources')).toBeNull();
+    });
+
     it('plays on Roon without logging a listen', () => {
       open('wantToHave');
 

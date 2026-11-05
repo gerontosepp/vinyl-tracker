@@ -8,10 +8,33 @@
     "items": []
   },
   {
+    "version": "v1.9.0",
+    "rawHeader": "v1.9.0 (2026-11-05)",
+    "date": "2026-11-05",
+    "isCurrent": true,
+    "isUnreleased": false,
+    "items": [
+      {
+        "title": "Bezugsquellen für Want-to-Have (`#319`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "In den Details einer vorgemerkten Platte zeigt der neue, aufklappbare Abschnitt **Bezugsquellen** alle Vinyl-Versionen der Platte (Erstpressung, Reissues, Länder …) mit dem günstigsten Discogs-Preis und der Anzahl Angebote; deine vorgemerkte Version ist hervorgehoben. Dazu gibt es Suchlinks zu Discogs, eBay, Amazon, JPC und HHV. Preise lädst du bei Bedarf pro Version nach, das schont das Discogs-Limit. Auch der KI-Assistent kann die Bezugsquellen abfragen (`get_want_to_have_sources`).",
+        "details": []
+      },
+      {
+        "title": "Want-to-Have per MCP (`#317`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Ein KI-Assistent kann die Want-to-Have-Liste jetzt lesen und pflegen: `get_want_to_have`, `add_to_want_to_have` (Discogs-Release-ID) und `remove_from_want_to_have` (Listen-ID). Ist eine Platte schon im Bestand oder auf der Liste, kommt eine verständliche Meldung statt eines Doppeleintrags. Empfehlungen landen so nicht mehr versehentlich in der Sammlung. Roon-Wiedergabe loggt weiterhin kein Hören.",
+        "details": []
+      }
+    ]
+  },
+  {
     "version": "v1.8.0",
     "rawHeader": "v1.8.0 (2026-11-04)",
     "date": "2026-11-04",
-    "isCurrent": true,
+    "isCurrent": false,
     "isUnreleased": false,
     "items": [
       {

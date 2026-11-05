@@ -14,6 +14,13 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "isUnreleased": true,
     "items": [
       {
+        "title": "Dependency-Update `tower-http` 0.7 (`#330`)",
+        "type": "chore",
+        "typeLabel": "DevOps / Tooling",
+        "summary": "Die HTTP-Middleware-Bibliothek für CORS und Request-Tracing im Backend wurde von 0.6 auf 0.7 aktualisiert. Keine Änderung am Verhalten.",
+        "details": []
+      },
+      {
         "title": "Dependency-Update `lopdf` 0.47 (`#331`)",
         "type": "chore",
         "typeLabel": "DevOps / Tooling",

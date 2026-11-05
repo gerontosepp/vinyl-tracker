@@ -7,6 +7,7 @@ import {
   LucideDisc,
   LucideUser,
   LucideScanLine,
+  LucideBookmark,
 } from '@lucide/angular';
 
 @Component({
@@ -20,6 +21,7 @@ import {
     LucideDisc,
     LucideUser,
     LucideScanLine,
+    LucideBookmark,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   template: `
@@ -49,6 +51,19 @@ import {
         [class]="itemClass(rlaCol.isActive && !scannerService.showScanner())"
       >
         <svg lucideDisc [size]="28" [strokeWidth]="rlaCol.isActive && !scannerService.showScanner() ? 2.5 : 2"></svg>
+      </a>
+
+      <!-- Want-to-Have -->
+      <a
+        routerLink="/want-to-have"
+        data-testid="nav-want-to-have"
+        (click)="scannerService.closeScanner()"
+        routerLinkActive
+        #rlaWant="routerLinkActive"
+        [attr.aria-label]="'nav.wantToHave' | translate"
+        [class]="itemClass(rlaWant.isActive && !scannerService.showScanner())"
+      >
+        <svg lucideBookmark [size]="28" [strokeWidth]="rlaWant.isActive && !scannerService.showScanner() ? 2.5 : 2"></svg>
       </a>
 
       <!-- Scan -->

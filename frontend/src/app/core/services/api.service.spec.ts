@@ -191,3 +191,32 @@ describe('ApiService scanBarcode', () => {
     req.flush({ success: true, message: 'ok' });
   });
 });
+
+describe('ApiService want-to-have', () => {
+  let service: ApiService;
+  let http: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+    service = TestBed.inject(ApiService);
+    http = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => http.verify());
+
+  it('lists, adds, removes and moves entries', () => {
+    service.getWantToHave().subscribe();
+    http.expectOne({ url: '/api/want-to-have', method: 'GET' }).flush([]);
+
+    service.addWantToHave(7).subscribe();
+    const add = http.expectOne({ url: '/api/want-to-have', method: 'POST' });
+    expect(add.request.body).toEqual({ discogs_id: 7 });
+    add.flush({});
+
+    service.removeWantToHave(3).subscribe();
+    http.expectOne({ url: '/api/want-to-have/3', method: 'DELETE' }).flush(null);
+
+    service.wantToHaveToCollection(3).subscribe();
+    http.expectOne({ url: '/api/want-to-have/3/to-collection', method: 'POST' }).flush({ added: 1, removed: 0 });
+  });
+});

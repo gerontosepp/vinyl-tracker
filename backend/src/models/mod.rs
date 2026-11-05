@@ -7,3 +7,4 @@ pub mod roon;
 pub mod scan;
 pub mod storage;
 pub mod user;
+pub mod want_to_have;

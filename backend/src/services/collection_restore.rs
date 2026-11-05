@@ -1,7 +1,10 @@
 use crate::{
     error::AppError,
     models::{
-        collection::{BackupRelease, CollectionBackupRequest, ManualBackup, RestoreResultDto},
+        collection::{
+            BackupRelease, CollectionBackupRequest, ManualBackup, RestoreResultDto,
+            WantToHaveBackup,
+        },
         record::ManualRecordRequest,
     },
     services::{
@@ -84,6 +87,13 @@ impl CollectionRestoreService {
             )));
         }
 
+        if backup.want_to_have.len() > MAX_RESTORE_RELEASES {
+            return Err(AppError::BadRequest(format!(
+                "Backup contains {} Want-to-Have entries; at most {MAX_RESTORE_RELEASES} can be restored at once",
+                backup.want_to_have.len()
+            )));
+        }
+
         if let Some(storage) = &backup.storage {
             StorageBackupService::validate(storage).map_err(|reason| {
                 AppError::BadRequest(format!("Invalid backup storage: {reason}"))
@@ -101,6 +111,15 @@ impl CollectionRestoreService {
         }
 
         let now = Utc::now().naive_utc();
+        for (idx, item) in backup.want_to_have.iter().enumerate() {
+            Self::validate_wanted(item, now).map_err(|reason| {
+                AppError::BadRequest(format!(
+                    "Invalid Want-to-Have entry #{} (Discogs ID {}): {reason}",
+                    idx + 1,
+                    item.discogs_id
+                ))
+            })?;
+        }
         let validated = backup
             .releases
             .iter()
@@ -117,6 +136,121 @@ impl CollectionRestoreService {
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok((backup, validated))
+    }
+
+    /// Validates a Want-to-Have entry and returns the record data plus its creation time.
+    fn validate_wanted(
+        item: &WantToHaveBackup,
+        now: NaiveDateTime,
+    ) -> Result<(ValidatedRelease, NaiveDateTime), String> {
+        if item.discogs_id <= 0 {
+            return Err("Discogs ID must be positive".to_string());
+        }
+        let title = item.title.trim();
+        if title.is_empty() {
+            return Err("title is empty".to_string());
+        }
+        if title.chars().count() > MAX_TEXT_LEN {
+            return Err(format!("title exceeds {MAX_TEXT_LEN} characters"));
+        }
+        let artist = non_empty(item.artist.as_deref());
+        if artist
+            .as_ref()
+            .is_some_and(|a| a.chars().count() > MAX_TEXT_LEN)
+        {
+            return Err(format!("artist exceeds {MAX_TEXT_LEN} characters"));
+        }
+        let format = non_empty(item.format.as_deref()).unwrap_or_else(|| "LP".to_string());
+        if format.chars().count() > MAX_FORMAT_LEN {
+            return Err(format!("format exceeds {MAX_FORMAT_LEN} characters"));
+        }
+        let created_at = match non_empty(item.created_at.as_deref()) {
+            Some(value) => {
+                parse_utc(&value).ok_or_else(|| format!("invalid created_at '{value}'"))?
+            }
+            None => now,
+        };
+        let mut genres: Vec<String> = item
+            .genres
+            .iter()
+            .filter_map(|g| non_empty(Some(g)))
+            .filter(|g| g.chars().count() <= MAX_TEXT_LEN)
+            .collect();
+        genres.sort();
+        genres.dedup();
+
+        let record = ValidatedRelease {
+            discogs_id: item.discogs_id,
+            instance_id: 0,
+            title: title.to_string(),
+            artist,
+            release_year: non_empty(item.year.as_deref())
+                .filter(|y| y.chars().count() <= MAX_TEXT_LEN),
+            thumb_url: non_empty(item.thumb_url.as_deref()).filter(|u| u.len() <= MAX_TEXT_LEN),
+            format,
+            genres,
+            lowest_price: None,
+            median_price: None,
+            added_at: created_at,
+            media_condition: None,
+            sleeve_condition: None,
+            sort_key: None,
+            listens: Vec::new(),
+            manual: None,
+        };
+        Ok((record, created_at))
+    }
+
+    /// Adds the backup's Want-to-Have entries; records the user owns (also from this very
+    /// restore) or already listed are skipped. Returns (added, skipped).
+    async fn restore_want_to_have(
+        tx: &mut Transaction<'_, Postgres>,
+        user_id: i64,
+        backup: &CollectionBackupRequest,
+    ) -> Result<(usize, usize), AppError> {
+        let now = Utc::now().naive_utc();
+        let (mut added, mut skipped) = (0, 0);
+        for item in &backup.want_to_have {
+            let (record, created_at) = Self::validate_wanted(item, now).map_err(|reason| {
+                AppError::BadRequest(format!("Invalid Want-to-Have entry: {reason}"))
+            })?;
+            // Owned records are skipped before anything is written to the shared cache
+            let owned: bool = sqlx::query_scalar(
+                "SELECT EXISTS (SELECT 1 FROM collection_item ci
+                                JOIN record_cache rc ON rc.id = ci.record_id
+                                WHERE ci.user_id = $1 AND rc.discogs_id = $2)",
+            )
+            .bind(user_id)
+            .bind(record.discogs_id)
+            .fetch_one(&mut **tx)
+            .await
+            .map_err(AppError::Database)?;
+            if owned {
+                skipped += 1;
+                continue;
+            }
+            let record_id = Self::upsert_record(tx, &record).await?;
+            let inserted = sqlx::query(
+                "INSERT INTO want_to_have_item (user_id, record_id, created_at)
+                 SELECT $1, $2, $3
+                 WHERE NOT EXISTS (SELECT 1 FROM collection_item
+                                   WHERE user_id = $1 AND record_id = $2)
+                 ON CONFLICT (user_id, record_id) DO NOTHING",
+            )
+            .bind(user_id)
+            .bind(record_id)
+            .bind(created_at)
+            .execute(&mut **tx)
+            .await
+            .map_err(AppError::Database)?
+            .rows_affected();
+            if inserted > 0 {
+                added += 1;
+            } else {
+                skipped += 1;
+            }
+        }
+        Ok((added, skipped))
     }
 
     fn validate_release(
@@ -244,6 +378,8 @@ impl CollectionRestoreService {
             listens_added: 0,
             listens_skipped: 0,
             listen_history_included,
+            want_to_have_added: 0,
+            want_to_have_skipped: 0,
         };
 
         tracing::info!(
@@ -329,6 +465,9 @@ impl CollectionRestoreService {
             }
         }
 
+        (result.want_to_have_added, result.want_to_have_skipped) =
+            Self::restore_want_to_have(&mut tx, user_id, backup).await?;
+
         if let Some(storage) = &backup.storage {
             StorageBackupService::restore(&mut tx, user_id, storage).await?;
         }
@@ -337,12 +476,14 @@ impl CollectionRestoreService {
         StorageService::commit_all(pool, user_id).await?;
 
         tracing::info!(
-            "Collection restore for user {user_id} finished in {} ms: added={}, updated={}, listens_added={}, listens_skipped={}",
+            "Collection restore for user {user_id} finished in {} ms: added={}, updated={}, listens_added={}, listens_skipped={}, want_to_have_added={}, want_to_have_skipped={}",
             started.elapsed().as_millis(),
             result.records_added,
             result.records_updated,
             result.listens_added,
-            result.listens_skipped
+            result.listens_skipped,
+            result.want_to_have_added,
+            result.want_to_have_skipped
         );
 
         Ok(result)
@@ -737,12 +878,12 @@ mod tests {
         ));
         assert!(detail.contains("releases"), "{detail}");
 
-        let body = json!({ "format_version": 6, "releases": [] });
+        let body = json!({ "format_version": 7, "releases": [] });
         let detail = bad_request_detail(CollectionRestoreService::parse_backup(
             &serde_json::to_vec(&body).unwrap(),
         ));
         assert!(
-            detail.contains("Unsupported backup format version 6"),
+            detail.contains("Unsupported backup format version 7"),
             "{detail}"
         );
     }

@@ -153,6 +153,18 @@ With Roon you play an album straight from the record details.
 
 **Play on Roon** then starts the album in the chosen zone.
 
+## Want to have {#want-to-have}
+
+Collect records you want to **listen to** first without adding them to your collection – for example a review from a magazine that you found through label recognition.
+
+- **Save:** In the label inbox (**Add to want-to-have** on the suggested match or an alternative) and, after a scan, on the Discogs matches. If the record is already in your collection or already saved, a hint appears instead (or no button).
+- **List:** The **Want to have** menu entry shows all saved records, newest first. Tap one to open the details with cover, tracklist, format and genres.
+- **Listen:** **Play on Roon** starts the album in the chosen zone. It does **not** count as a listen: plays, history and statistics stay unchanged.
+- **Add to collection** adds the record to your collection (and your Discogs account) and removes it from the list. If that fails it stays saved.
+- **Remove from want-to-have** deletes the entry.
+
+Estimated value, plays, shelf slot, condition and sort string do not exist here – they only appear once the record is in your collection.
+
 ## Settings {#einstellungen}
 
 - **Theme** (light, dark, system) and **language**.
@@ -160,8 +172,8 @@ With Roon you play an album straight from the record details.
 - **Barcode & QR scanner** – see **Scanning**.
 - **Roon integration** – see **Roon**.
 - **Label recognition (OpenRouter)** – API key and model for automatic recognition; the key is stored encrypted and never shown again. The default is Claude Sonnet, Claude Haiku is much cheaper.
-- **Export & back up collection** – CSV table, complete **JSON backup** (with listening history and shelves) or PDF insurance catalog.
-- **Restore backup** – merges a JSON backup into the collection; nothing is deleted, importing several times creates no duplicates.
+- **Export & back up collection** – CSV table, complete **JSON backup** (with listening history, shelves and the Want-to-Have list) or PDF insurance catalog.
+- **Restore backup** – merges a JSON backup into the collection; nothing is deleted, importing several times creates no duplicates. Records already in the collection are not added to the Want-to-Have list again.
 - **Reset all listens** – deletes the entire listening history (with confirmation).
 - **Release notes** – what changed in recent versions.
 

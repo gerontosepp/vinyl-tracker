@@ -87,6 +87,9 @@ export interface RestoreResult {
   listens_added: number;
   listens_skipped: number;
   listen_history_included: boolean;
+  /** Want-to-Have entries added / skipped (owned or already listed); absent in old servers. */
+  want_to_have_added?: number;
+  want_to_have_skipped?: number;
 }
 
 export interface ResetResult {
@@ -564,4 +567,17 @@ export interface LabelPhotoUploadResult {
 export interface LabelPhotoDeleteResult {
   deleted: number;
   pendingCount: number;
+}
+
+/** A record on the Want-to-Have list (#310): known, not owned. */
+export interface WantToHaveItem {
+  id: number;
+  discogs_id: number;
+  title: string;
+  artist: string;
+  year?: string | null;
+  thumb_url?: string | null;
+  format?: string | null;
+  genres: string[];
+  created_at: string;
 }

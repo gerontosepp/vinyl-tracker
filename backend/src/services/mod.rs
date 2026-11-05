@@ -19,3 +19,4 @@ pub mod scan_service;
 pub mod shelf_order;
 pub mod storage;
 pub mod user_service;
+pub mod want_to_have_service;

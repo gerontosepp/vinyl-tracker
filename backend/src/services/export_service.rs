@@ -1,7 +1,7 @@
 use crate::{
     error::AppError,
     models::{
-        collection::{CollectionRelease, ManualAliasBackup, ManualBackup},
+        collection::{CollectionRelease, ManualAliasBackup, ManualBackup, WantToHaveBackup},
         storage::StorageBackup,
     },
     services::image_proxy::ImageProxyService,
@@ -17,8 +17,8 @@ use std::collections::HashMap;
 
 /// Version of the JSON backup format; 2 added `listen_history` per release, 3 the storage
 /// configuration (`storage`), 4 manual records (`manual` per release), 5 the old IDs of manual
-/// records taken over to Discogs (`manual_aliases`).
-pub const BACKUP_FORMAT_VERSION: u32 = 5;
+/// records taken over to Discogs (`manual_aliases`), 6 the Want-to-Have list (`want_to_have`).
+pub const BACKUP_FORMAT_VERSION: u32 = 6;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct CollectionBackupDto<'a> {
@@ -32,6 +32,8 @@ pub struct CollectionBackupDto<'a> {
     pub storage: Option<&'a StorageBackup>,
     #[serde(skip_serializing_if = "<[_]>::is_empty")]
     pub manual_aliases: &'a [ManualAliasBackup],
+    #[serde(skip_serializing_if = "<[_]>::is_empty")]
+    pub want_to_have: &'a [WantToHaveBackup],
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -127,6 +129,7 @@ impl ExportService {
         manual: &HashMap<i64, ManualBackup>,
         manual_aliases: &[ManualAliasBackup],
         storage: Option<&StorageBackup>,
+        want_to_have: &[WantToHaveBackup],
     ) -> Result<Vec<u8>, AppError> {
         let total_value: f64 = releases
             .iter()
@@ -157,6 +160,7 @@ impl ExportService {
                 .collect(),
             storage,
             manual_aliases,
+            want_to_have,
         };
 
         serde_json::to_vec_pretty(&backup)
@@ -1064,12 +1068,17 @@ mod tests {
             &manual,
             &[],
             None,
+            &[],
         )
         .expect("JSON generation");
         let json_val: serde_json::Value =
             serde_json::from_slice(&json_bytes).expect("Valid JSON output");
 
-        assert_eq!(json_val["format_version"], 5);
+        assert_eq!(json_val["format_version"], 6);
+        assert!(
+            json_val.get("want_to_have").is_none(),
+            "empty list is omitted"
+        );
         assert!(json_val.get("storage").is_none(), "no storage configured");
         assert!(
             json_val.get("manual_aliases").is_none(),

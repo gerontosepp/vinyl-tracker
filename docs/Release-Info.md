@@ -11,6 +11,13 @@
 
 ---
 
+## v1.8.0 (2026-11-04)
+
+- **Want-to-Have im Backup (`#313`)**: Das JSON-Backup (`format_version: 6`) enthält jetzt die Want-to-Have-Liste und stellt sie beim Wiederherstellen samt ursprünglichem Zeitpunkt wieder her. Platten, die bereits in der Sammlung oder auf der Liste sind, werden übersprungen. Ältere Backups lassen sich weiterhin einspielen.
+- **Want-to-Have (`#310`)**: Per Label-Erkennung oder Scan gefundene Platten lassen sich in einem neuen Bereich **Want-to-Have** vormerken und dort über Roon anhören, ohne sie in die Sammlung aufzunehmen. Die Details zeigen Cover, Tracklist, Format und Genres, aber keinen Wert, keine Plays, keinen Lagerplatz, keinen Zustand und keine Sortierung; Roon-Wiedergabe wird nicht als Hören geloggt. Mit **In Bestand übernehmen** wandert die Platte in die Sammlung, mit **Aus Want-to-Have entfernen** verschwindet sie. Doppelte Einträge werden verhindert.
+
+---
+
 ## v1.7.0 (2026-10-30)
 
 - **Entwicklungsprozess abgesichert (`#304`)**: Ein Claude-Hook verhindert Änderungen und Commits direkt auf `develop`/`main`, prüft das Branch-Namensschema und verlangt `Closes #<Issue>` beim Anlegen eines PR. Ein neues PR-Template mit Checkliste und der CI-Job „Ticket workflow“ prüfen Branchname, Issue-Verweis und Review-Abschnitt. Kein Einfluss auf die App.

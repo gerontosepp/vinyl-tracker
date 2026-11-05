@@ -3,7 +3,7 @@
 import { ReleaseEntry } from '../models/release-info.model';
 
 // Application version from frontend/package.json – single source for all version badges.
-export const APP_VERSION = '1.7.0';
+export const APP_VERSION = '1.8.0';
 
 export const RELEASE_INFO_DATA: ReleaseEntry[] = [
   {
@@ -15,10 +15,33 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "items": []
   },
   {
+    "version": "v1.8.0",
+    "rawHeader": "v1.8.0 (2026-11-04)",
+    "date": "2026-11-04",
+    "isCurrent": true,
+    "isUnreleased": false,
+    "items": [
+      {
+        "title": "Want-to-Have im Backup (`#313`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Das JSON-Backup (`format_version: 6`) enthält jetzt die Want-to-Have-Liste und stellt sie beim Wiederherstellen samt ursprünglichem Zeitpunkt wieder her. Platten, die bereits in der Sammlung oder auf der Liste sind, werden übersprungen. Ältere Backups lassen sich weiterhin einspielen.",
+        "details": []
+      },
+      {
+        "title": "Want-to-Have (`#310`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Per Label-Erkennung oder Scan gefundene Platten lassen sich in einem neuen Bereich **Want-to-Have** vormerken und dort über Roon anhören, ohne sie in die Sammlung aufzunehmen. Die Details zeigen Cover, Tracklist, Format und Genres, aber keinen Wert, keine Plays, keinen Lagerplatz, keinen Zustand und keine Sortierung; Roon-Wiedergabe wird nicht als Hören geloggt. Mit **In Bestand übernehmen** wandert die Platte in die Sammlung, mit **Aus Want-to-Have entfernen** verschwindet sie. Doppelte Einträge werden verhindert.",
+        "details": []
+      }
+    ]
+  },
+  {
     "version": "v1.7.0",
     "rawHeader": "v1.7.0 (2026-10-30)",
     "date": "2026-10-30",
-    "isCurrent": true,
+    "isCurrent": false,
     "isUnreleased": false,
     "items": [
       {

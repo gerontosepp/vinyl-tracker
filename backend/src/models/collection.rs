@@ -128,6 +128,45 @@ pub struct CollectionBackupRequest {
     /// Old IDs of manual records taken over to Discogs (format version 5)
     #[serde(default)]
     pub manual_aliases: Vec<ManualAliasBackup>,
+    /// Want-to-Have list (format version 6); missing in older backups
+    #[serde(default)]
+    pub want_to_have: Vec<WantToHaveBackup>,
+}
+
+/// Entry of the Want-to-Have list in a backup (#313). Carries the metadata so a restore does
+/// not depend on Discogs.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct WantToHaveBackup {
+    pub discogs_id: i64,
+    pub title: String,
+    #[serde(default)]
+    pub artist: Option<String>,
+    #[serde(default)]
+    pub year: Option<String>,
+    #[serde(default)]
+    pub thumb_url: Option<String>,
+    #[serde(default)]
+    pub format: Option<String>,
+    #[serde(default)]
+    pub genres: Vec<String>,
+    /// RFC 3339, UTC
+    #[serde(default)]
+    pub created_at: Option<String>,
+}
+
+impl From<crate::models::want_to_have::WantToHaveItemDto> for WantToHaveBackup {
+    fn from(item: crate::models::want_to_have::WantToHaveItemDto) -> Self {
+        Self {
+            discogs_id: item.discogs_id,
+            title: item.title,
+            artist: Some(item.artist),
+            year: item.year,
+            thumb_url: item.thumb_url,
+            format: item.format,
+            genres: item.genres,
+            created_at: Some(item.created_at),
+        }
+    }
 }
 
 /// Old negative ID of a manual record taken over to Discogs and the copy it became (#243).
@@ -207,6 +246,8 @@ pub struct RestoreResultDto {
     pub listens_added: usize,
     pub listens_skipped: usize,
     pub listen_history_included: bool,
+    pub want_to_have_added: usize,
+    pub want_to_have_skipped: usize,
 }
 
 /// Parses year filter expressions such as "1970-1979", "1980s", "1975,1976" into individual years.

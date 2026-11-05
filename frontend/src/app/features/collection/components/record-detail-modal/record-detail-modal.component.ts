@@ -62,6 +62,11 @@ export class RecordDetailModalComponent implements OnInit {
   readonly record = input<CollectionRelease | null>(null);
   readonly detail = input<RecordDetailDto | null>(null);
   readonly loading = input<boolean>(false);
+  /**
+   * `wantToHave` (#310) shows a record that is not owned: no listen button, value, plays, shelf,
+   * condition or sort string; instead "add to collection" and "remove".
+   */
+  readonly mode = input<'collection' | 'wantToHave'>('collection');
 
   readonly close = output<void>();
   readonly listenLogged = output<RecordDetailDto>();
@@ -72,6 +77,12 @@ export class RecordDetailModalComponent implements OnInit {
   readonly editManual = output<RecordDetailDto>();
   /** A manual record became a Discogs record (#243). */
   readonly takenOver = output<TakeoverResult>();
+  /** Want-to-Have mode: the user wants to take the record into the collection. */
+  readonly addToCollection = output<void>();
+  /** Want-to-Have mode: the user wants to remove the record from the list. */
+  readonly removeWanted = output<void>();
+  /** Set by the Want-to-Have page while one of its actions is running. */
+  readonly isWantBusy = input<boolean>(false);
 
   readonly isLoggingListen = signal<boolean>(false);
   readonly justListened = signal<boolean>(false);
@@ -131,6 +142,14 @@ export class RecordDetailModalComponent implements OnInit {
   onTakenOver(result: TakeoverResult): void {
     this.takeoverResult.set(result);
     this.takenOver.emit(result);
+  }
+
+  onAddToCollection(): void {
+    if (!this.isWantBusy()) this.addToCollection.emit();
+  }
+
+  onRemoveWanted(): void {
+    if (!this.isWantBusy()) this.removeWanted.emit();
   }
 
   onEditManual(): void {

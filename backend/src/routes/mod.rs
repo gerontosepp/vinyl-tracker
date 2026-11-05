@@ -11,6 +11,7 @@ pub mod scan;
 pub mod storage;
 pub mod timeout;
 pub mod users;
+pub mod want_to_have;
 
 use crate::{error::ProblemDetail, state::AppState};
 use axum::{
@@ -108,6 +109,8 @@ pub fn create_app(state: AppState) -> Router {
         .nest("/api/storage", storage::router())
         // Roon Audio endpoints (nested under /api/roon)
         .nest("/api/roon", roon::router())
+        // Want-to-Have list (nested under /api/want-to-have)
+        .nest("/api/want-to-have", want_to_have::router())
         // API root / ping
         .route("/api/ping", get(|| async { "pong" }))
         .fallback(fallback_handler)

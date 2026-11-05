@@ -135,7 +135,8 @@ jobs:
       run: |
         PG_CONTAINER="test-postgres-rs-${{ github.run_id }}-${{ github.run_attempt }}"
         echo "PG_CONTAINER=$PG_CONTAINER" >> $GITHUB_ENV
-        docker rm -f "$PG_CONTAINER" 2>/dev/null || true
+        # -v: the postgres image declares a VOLUME; without it every run leaves an anonymous volume
+        docker rm -fv "$PG_CONTAINER" 2>/dev/null || true
         docker run -d --name "$PG_CONTAINER" \
           -e POSTGRES_DB=vinyl_tracker \
           -e POSTGRES_USER=vinyl_user \
@@ -219,7 +220,8 @@ jobs:
 
     - name: Stop PostgreSQL Test Container
       if: always()
-      run: docker rm -f "$PG_CONTAINER" || true
+      # -v removes the anonymous data volume of the postgres image, otherwise one stays behind per run
+      run: docker rm -fv "$PG_CONTAINER" || true
 
   frontend-test:
     name: Frontend Tests & Build (Linux)

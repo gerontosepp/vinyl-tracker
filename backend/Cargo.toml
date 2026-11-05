@@ -47,7 +47,9 @@ rand = "0.8"
 
 # HTTP Client, Rate-Limiting & Caching
 base64 = "0.23"
-reqwest = { version = "0.12", default-features = false, features = ["json", "stream", "rustls-tls"] }
+# TLS provider for reqwest (`rustls-no-provider`), installed in src/tls.rs
+rustls = { version = "0.23", default-features = false, features = ["ring", "std"] }
+reqwest = { version = "0.13", default-features = false, features = ["json", "query", "stream", "rustls-no-provider"] }
 bytes = "1"
 governor = "0.10"
 moka = { version = "0.12", features = ["future"] }

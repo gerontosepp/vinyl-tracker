@@ -9,6 +9,7 @@
 
 ## Unreleased
 
+- **Dependency-Update `reqwest` 0.13 (`#328`)**: Die HTTP-Bibliothek, mit der das Backend Discogs, den KI-Assistenten (OpenRouter) und den Bild-Proxy anspricht, wurde von 0.12 auf 0.13 aktualisiert. Die TLS-Verschlüsselung läuft weiter über `ring`. Neu: Die Zertifikate der Gegenstellen werden jetzt über den Zertifikatsspeicher des Systems geprüft statt über mitgelieferte Zertifikate. Das Docker-Image bringt `ca-certificates` mit; wer das Backend ohne unser Image betreibt (z. B. Proxmox/LXC), muss das Paket installiert haben, sonst scheitern Verbindungen zu Discogs und zum KI-Assistenten. Eigene Firmenzertifikate (TLS-inspizierender Proxy) werden dadurch auch erkannt. Sonst keine Änderung am Verhalten der App.
 - **Dependency-Update `jsonwebtoken` 11 (`#329`)**: Die Bibliothek, die deine Anmeldung (Login-Token) prüft, wurde von Version 9 auf 11 aktualisiert. Das Token-Format bleibt unverändert, bestehende Sitzungen bleiben gültig und niemand muss sich neu anmelden. Abgelaufene, manipulierte und anders signierte Tokens werden weiterhin abgelehnt, das ist jetzt per Tests abgesichert.
 - **Dependency-Update `tower-http` 0.7 (`#330`)**: Die HTTP-Middleware-Bibliothek für CORS und Request-Tracing im Backend wurde von 0.6 auf 0.7 aktualisiert. Keine Änderung am Verhalten.
 - **Dependency-Update `lopdf` 0.47 (`#331`)**: Die Test-Bibliothek, mit der die erzeugten QR-Code-PDFs geprüft werden, wurde von 0.44 auf 0.47 aktualisiert. Nur Dev-Dependency, keine Änderung am Verhalten der App.

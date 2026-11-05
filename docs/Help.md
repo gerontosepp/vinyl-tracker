@@ -163,8 +163,9 @@ Hier sammelst du Platten, die du dir erst **anhören** möchtest, ohne sie in di
 - **Anhören:** **Auf Roon abspielen** startet das Album in der gewählten Zone. Das zählt **nicht** als Hören: Plays, Verlauf und Statistik bleiben unverändert.
 - **In Bestand übernehmen** fügt die Platte deiner Sammlung (und deinem Discogs-Konto) hinzu und entfernt sie aus der Liste. Schlägt das fehl, bleibt sie vorgemerkt.
 - **Aus Want-to-Have entfernen** löscht den Eintrag.
+- **Bezugsquellen:** Der aufklappbare Abschnitt in den Details zeigt alle Vinyl-Versionen der Platte (Erstpressung, Reissues, Länder …). Deine vorgemerkte Version ist als **Gesuchte Version** hervorgehoben. Je Version siehst du Label, Katalognummer, Land, Jahr und Format, den günstigsten Discogs-Preis und die Anzahl Angebote; der Link führt zum Discogs-Marktplatz. Die Preise der ersten Versionen erscheinen sofort, bei den übrigen holt **Preis laden** sie nach. Darüber findest du Suchlinks zu Discogs, eBay, Amazon, JPC und HHV. Meldet Discogs sein Abfrage-Limit, warte kurz und tippe auf **Erneut versuchen**. Einzelne Angebote und Verkäufer zeigt Discogs über die Schnittstelle nicht an – dafür öffnest du den Link.
 
-Geschätzter Wert, Plays, Lagerplatz, Zustand und Sortierung gibt es hier nicht – sie entstehen erst, wenn die Platte in der Sammlung liegt.
+Ein Geschätzter Wert, Plays, Lagerplatz, Zustand und Sortierung gibt es hier nicht – sie entstehen erst, wenn die Platte in der Sammlung liegt.
 
 ## Einstellungen {#einstellungen}
 

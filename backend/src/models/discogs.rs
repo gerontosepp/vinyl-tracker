@@ -29,9 +29,17 @@ pub struct DiscogsRelease {
     /// Full-size images of the release; the primary one is the cover.
     #[serde(default)]
     pub images: Option<Vec<DiscogsImage>>,
+    /// Discogs master this release belongs to; absent or 0 if there is none.
+    #[serde(default)]
+    pub master_id: Option<i64>,
 }
 
 impl DiscogsRelease {
+    /// The master ID, `None` for releases without a master (Discogs sends 0 or omits it).
+    pub fn master(&self) -> Option<i64> {
+        self.master_id.filter(|id| *id > 0)
+    }
+
     /// Full-resolution cover: the primary image, else the first one.
     pub fn cover_url(&self) -> Option<String> {
         let images = self.images.as_deref()?;
@@ -103,6 +111,52 @@ impl DiscogsSearchFilter {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DiscogsPriceSuggestion {
+    pub value: f64,
+    pub currency: String,
+}
+
+/// One page of `GET /masters/{id}/versions`.
+#[derive(Debug, Clone, Deserialize)]
+pub struct DiscogsMasterVersionsResponse {
+    pub pagination: DiscogsPagination,
+    #[serde(default)]
+    pub versions: Vec<DiscogsMasterVersion>,
+}
+
+/// A pressing of a master release.
+#[derive(Debug, Clone, Deserialize)]
+pub struct DiscogsMasterVersion {
+    pub id: i64,
+    #[serde(default)]
+    pub title: String,
+    pub format: Option<String>,
+    pub label: Option<String>,
+    pub catno: Option<String>,
+    pub country: Option<String>,
+    pub released: Option<String>,
+    pub thumb: Option<String>,
+}
+
+/// All Vinyl versions of a master as fetched (and cached) by the client.
+#[derive(Debug, Clone)]
+pub struct DiscogsMasterVersions {
+    pub versions: Vec<DiscogsMasterVersion>,
+    /// Number of Vinyl versions Discogs reports for the master.
+    pub total: u32,
+    /// True if `versions` holds only the first pages of `total`.
+    pub truncated: bool,
+}
+
+/// `GET /marketplace/stats/{release_id}`; `lowest_price` is null when nothing is for sale.
+#[derive(Debug, Clone, Deserialize)]
+pub struct DiscogsMarketplaceStats {
+    pub lowest_price: Option<DiscogsMoney>,
+    pub num_for_sale: Option<i32>,
+    pub blocked_from_sale: Option<bool>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct DiscogsMoney {
     pub value: f64,
     pub currency: String,
 }

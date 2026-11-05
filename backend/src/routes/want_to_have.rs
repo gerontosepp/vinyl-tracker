@@ -59,9 +59,42 @@ pub async fn to_collection_handler(
     Ok((StatusCode::OK, Json(result)))
 }
 
+pub async fn sources_handler(
+    State(state): State<AppState>,
+    CurrentUser(user): CurrentUser,
+    Path(id): Path<i64>,
+) -> Result<impl IntoResponse, AppError> {
+    let sources =
+        WantToHaveService::sources(&state.pool, &state.discogs_client, &state.crypto, &user, id)
+            .await?;
+    Ok((StatusCode::OK, Json(sources)))
+}
+
+pub async fn version_stats_handler(
+    State(state): State<AppState>,
+    CurrentUser(user): CurrentUser,
+    Path((id, release_id)): Path<(i64, i64)>,
+) -> Result<impl IntoResponse, AppError> {
+    let stats = WantToHaveService::version_stats(
+        &state.pool,
+        &state.discogs_client,
+        &state.crypto,
+        &user,
+        id,
+        release_id,
+    )
+    .await?;
+    Ok((StatusCode::OK, Json(stats)))
+}
+
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/", get(list_handler).post(add_handler))
         .route("/{id}", delete(remove_handler))
         .route("/{id}/to-collection", post(to_collection_handler))
+        .route("/{id}/sources", get(sources_handler))
+        .route(
+            "/{id}/sources/{release_id}/stats",
+            get(version_stats_handler),
+        )
 }

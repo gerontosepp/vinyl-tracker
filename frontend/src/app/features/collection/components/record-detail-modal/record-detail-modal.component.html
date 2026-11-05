@@ -603,6 +603,11 @@
             </div>
           }
 
+          <!-- Online sources (Want-to-Have only, #319) -->
+          @if (mode() === 'wantToHave' && wantToHaveId() !== null) {
+            <app-purchase-sources [wantToHaveId]="wantToHaveId()!" />
+          }
+
           <!-- Listen History from DB -->
           @if (mode() === 'collection' && (detail()?.listen_history?.length || 0) > 0) {
             <div class="space-y-2">

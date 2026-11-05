@@ -2,8 +2,9 @@ use crate::{
     error::AppError,
     models::discogs::{
         DiscogsAddReleaseResponse, DiscogsCollectionFieldsResponse,
-        DiscogsCollectionFolderResponse, DiscogsPriceSuggestion, DiscogsRelease,
-        DiscogsSearchFilter, DiscogsSearchResponse, DiscogsValueResponse,
+        DiscogsCollectionFolderResponse, DiscogsMarketplaceStats, DiscogsMasterVersions,
+        DiscogsMasterVersionsResponse, DiscogsPriceSuggestion, DiscogsRelease, DiscogsSearchFilter,
+        DiscogsSearchResponse, DiscogsValueResponse,
     },
 };
 use governor::{
@@ -18,6 +19,38 @@ use std::{collections::HashMap, num::NonZeroU32, sync::Arc, time::Duration};
 
 type DirectRateLimiter = RateLimiter<NotKeyed, InMemoryState, DefaultClock, NoOpMiddleware>;
 
+/// Page size and page limit for `/masters/{id}/versions` (at most 300 versions per master).
+const VERSIONS_PER_PAGE: u32 = 100;
+const MAX_VERSION_PAGES: u32 = 3;
+
+/// Currency requested for marketplace figures.
+pub const MARKETPLACE_CURRENCY: &str = "EUR";
+
+/// Maps the error of a shared cache load (`try_get_with` hands it out as `Arc`) back to an
+/// `AppError`, keeping the variants the callers act on (404, 429).
+fn from_shared(err: Arc<AppError>) -> AppError {
+    match err.as_ref() {
+        AppError::NotFound(msg) => AppError::NotFound(msg.clone()),
+        AppError::TooManyRequests(msg) => AppError::TooManyRequests(msg.clone()),
+        other => AppError::Internal(other.to_string()),
+    }
+}
+
+/// Turns a non-success Discogs status into an error: 404 and 429 keep their meaning.
+fn ensure_success(res: reqwest::Response, what: &str) -> Result<reqwest::Response, AppError> {
+    let status = res.status();
+    if status.is_success() {
+        return Ok(res);
+    }
+    Err(match status {
+        reqwest::StatusCode::NOT_FOUND => AppError::NotFound(format!("Discogs {what} not found")),
+        reqwest::StatusCode::TOO_MANY_REQUESTS => {
+            AppError::TooManyRequests("Discogs rate limit reached".to_string())
+        }
+        _ => AppError::Internal(format!("Discogs {what} returned status {status}")),
+    })
+}
+
 #[derive(Clone)]
 pub struct DiscogsClient {
     http: reqwest::Client,
@@ -26,6 +59,8 @@ pub struct DiscogsClient {
     rate_limiter: Arc<DirectRateLimiter>,
     release_cache: Cache<i64, Arc<DiscogsRelease>>,
     price_cache: Cache<i64, Arc<HashMap<String, DiscogsPriceSuggestion>>>,
+    versions_cache: Cache<i64, Arc<DiscogsMasterVersions>>,
+    stats_cache: Cache<i64, Arc<DiscogsMarketplaceStats>>,
 }
 
 impl DiscogsClient {
@@ -53,6 +88,16 @@ impl DiscogsClient {
             .time_to_live(Duration::from_secs(3600)) // 1 hour
             .build();
 
+        let versions_cache = Cache::builder()
+            .max_capacity(1000)
+            .time_to_live(Duration::from_secs(86400)) // 24 hours
+            .build();
+
+        let stats_cache = Cache::builder()
+            .max_capacity(5000)
+            .time_to_live(Duration::from_secs(3600)) // 1 hour
+            .build();
+
         Self {
             http,
             base_url,
@@ -60,6 +105,8 @@ impl DiscogsClient {
             rate_limiter,
             release_cache,
             price_cache,
+            versions_cache,
+            stats_cache,
         }
     }
 
@@ -113,6 +160,11 @@ impl DiscogsClient {
                 return Err(AppError::NotFound(format!(
                     "Discogs release {release_id} not found"
                 )));
+            }
+            if status == reqwest::StatusCode::TOO_MANY_REQUESTS {
+                return Err(AppError::TooManyRequests(
+                    "Discogs rate limit reached".to_string(),
+                ));
             }
             return Err(AppError::Internal(format!(
                 "Discogs API returned status {status}"
@@ -254,6 +306,123 @@ impl DiscogsClient {
             .await;
 
         Ok(suggestions_arc)
+    }
+
+    /// Vinyl versions of a master, oldest first (cached 24 h, concurrent callers share one load).
+    pub async fn get_master_versions(
+        &self,
+        master_id: i64,
+        token: &str,
+    ) -> Result<Arc<DiscogsMasterVersions>, AppError> {
+        self.versions_cache
+            .try_get_with(master_id, self.fetch_master_versions(master_id, token))
+            .await
+            .map_err(from_shared)
+    }
+
+    async fn fetch_master_versions(
+        &self,
+        master_id: i64,
+        token: &str,
+    ) -> Result<Arc<DiscogsMasterVersions>, AppError> {
+        let url = format!("{}/masters/{master_id}/versions", self.base_url);
+        let mut versions = Vec::new();
+        let mut total = 0;
+        let mut truncated = false;
+
+        for page in 1..=MAX_VERSION_PAGES {
+            self.wait_for_rate_limit().await;
+            tracing::info!("Fetching versions of master {master_id} (page {page})");
+            let res = self
+                .http
+                .get(&url)
+                .headers(self.auth_headers(token)?)
+                .query(&[
+                    ("format", "Vinyl"),
+                    ("sort", "released"),
+                    ("sort_order", "asc"),
+                ])
+                .query(&[("page", page), ("per_page", VERSIONS_PER_PAGE)])
+                .send()
+                .await
+                .map_err(|e| AppError::Internal(format!("Discogs versions request error: {e}")))?;
+            let body: DiscogsMasterVersionsResponse = ensure_success(res, "master versions")?
+                .json()
+                .await
+                .map_err(|e| {
+                    AppError::Internal(format!("Failed to parse Discogs versions JSON: {e}"))
+                })?;
+
+            total = body.pagination.items;
+            versions.extend(body.versions);
+            if page >= body.pagination.pages {
+                break;
+            }
+            truncated = page == MAX_VERSION_PAGES;
+        }
+
+        Ok(Arc::new(DiscogsMasterVersions {
+            versions,
+            total,
+            truncated,
+        }))
+    }
+
+    /// Marketplace figures of a release (cached 1 h, concurrent callers share one load).
+    pub async fn get_marketplace_stats(
+        &self,
+        release_id: i64,
+        token: &str,
+    ) -> Result<Arc<DiscogsMarketplaceStats>, AppError> {
+        self.stats_cache
+            .try_get_with(release_id, async {
+                self.wait_for_rate_limit().await;
+                self.fetch_marketplace_stats(release_id, token).await
+            })
+            .await
+            .map_err(from_shared)
+    }
+
+    /// Like [`Self::get_marketplace_stats`], but never waits for the rate limiter: returns `None`
+    /// when the figures are not cached and no request slot is free right now.
+    pub async fn try_get_marketplace_stats_nonblocking(
+        &self,
+        release_id: i64,
+        token: &str,
+    ) -> Result<Option<Arc<DiscogsMarketplaceStats>>, AppError> {
+        if let Some(cached) = self.stats_cache.get(&release_id).await {
+            return Ok(Some(cached));
+        }
+        if self.rate_limiter.check().is_err() {
+            return Ok(None);
+        }
+        // The slot is taken. Load directly: joining a shared load could mean waiting for the
+        // limiter inside another caller's request (a rare duplicate request is the lesser evil).
+        let stats = self.fetch_marketplace_stats(release_id, token).await?;
+        self.stats_cache.insert(release_id, stats.clone()).await;
+        Ok(Some(stats))
+    }
+
+    async fn fetch_marketplace_stats(
+        &self,
+        release_id: i64,
+        token: &str,
+    ) -> Result<Arc<DiscogsMarketplaceStats>, AppError> {
+        let url = format!("{}/marketplace/stats/{release_id}", self.base_url);
+        tracing::info!("Fetching marketplace stats of release {release_id}");
+        let res = self
+            .http
+            .get(&url)
+            .headers(self.auth_headers(token)?)
+            .query(&[("curr_abbr", MARKETPLACE_CURRENCY)])
+            .send()
+            .await
+            .map_err(|e| AppError::Internal(format!("Discogs stats request error: {e}")))?;
+        let stats: DiscogsMarketplaceStats = ensure_success(res, "marketplace stats")?
+            .json()
+            .await
+            .map_err(|e| AppError::Internal(format!("Failed to parse Discogs stats JSON: {e}")))?;
+        Ok(Arc::new(stats))
     }
 
     pub async fn get_collection_value(
@@ -848,5 +1017,283 @@ mod tests {
             res.results[0].label.as_deref(),
             Some(&["Harvest".to_string(), "EMI".to_string()][..])
         );
+    }
+
+    // --- Master versions and marketplace stats (#319) ---
+
+    use axum::extract::{Query, State};
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    async fn client_for(app: Router) -> DiscogsClient {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        tokio::spawn(async move {
+            axum::serve(listener, app).await.unwrap();
+        });
+        DiscogsClient::with_base_url(format!("http://{addr}"), "test/1.0".into())
+    }
+
+    /// Mock of `/masters/{id}/versions` with `pages` pages of 2 versions each; counts requests.
+    fn versions_app(pages: u32, hits: Arc<AtomicUsize>) -> Router {
+        Router::new()
+            .route(
+                "/masters/{id}/versions",
+                get(
+                    move |State(hits): State<Arc<AtomicUsize>>,
+                          Path(id): Path<i64>,
+                          Query(q): Query<HashMap<String, String>>| async move {
+                        hits.fetch_add(1, Ordering::SeqCst);
+                        if id == 404 {
+                            return StatusCode::NOT_FOUND.into_response();
+                        }
+                        if id == 429 {
+                            return StatusCode::TOO_MANY_REQUESTS.into_response();
+                        }
+                        let page: i64 = q["page"].parse().unwrap();
+                        axum::Json(json!({
+                            "pagination": {"page": page, "pages": pages, "per_page": 100, "items": pages * 2},
+                            "versions": [
+                                {"id": page * 10, "title": format!("p{page}a"), "format": "LP",
+                                 "label": q["format"], "catno": q["sort"], "country": "UK",
+                                 "released": "1970", "major_formats": ["Vinyl"]},
+                                {"id": page * 10 + 1, "title": format!("p{page}b")}
+                            ]
+                        }))
+                        .into_response()
+                    },
+                ),
+            )
+            .with_state(hits)
+    }
+
+    #[tokio::test]
+    async fn get_master_versions_should_request_vinyl_sorted_by_release_date() {
+        let client = client_for(versions_app(1, Arc::default())).await;
+
+        let res = client.get_master_versions(7, "t").await.unwrap();
+
+        assert_eq!(res.versions[0].label.as_deref(), Some("Vinyl"));
+        assert_eq!(res.versions[0].catno.as_deref(), Some("released"));
+    }
+
+    #[tokio::test]
+    async fn get_master_versions_should_follow_pages() {
+        let client = client_for(versions_app(2, Arc::default())).await;
+
+        let res = client.get_master_versions(7, "t").await.unwrap();
+
+        let ids: Vec<i64> = res.versions.iter().map(|v| v.id).collect();
+        assert_eq!(ids, vec![10, 11, 20, 21]);
+        assert_eq!(res.total, 4);
+        assert!(!res.truncated);
+    }
+
+    #[tokio::test]
+    async fn get_master_versions_should_stop_at_the_page_limit_and_flag_truncation() {
+        let hits = Arc::new(AtomicUsize::new(0));
+        let client = client_for(versions_app(10, hits.clone())).await;
+
+        let res = client.get_master_versions(7, "t").await.unwrap();
+
+        assert_eq!(hits.load(Ordering::SeqCst), MAX_VERSION_PAGES as usize);
+        assert_eq!(res.versions.len(), 2 * MAX_VERSION_PAGES as usize);
+        assert_eq!(res.total, 20);
+        assert!(res.truncated);
+    }
+
+    #[tokio::test]
+    async fn get_master_versions_should_cache_the_result() {
+        let hits = Arc::new(AtomicUsize::new(0));
+        let client = client_for(versions_app(1, hits.clone())).await;
+
+        client.get_master_versions(7, "t").await.unwrap();
+        client.get_master_versions(7, "t").await.unwrap();
+
+        assert_eq!(hits.load(Ordering::SeqCst), 1);
+    }
+
+    #[tokio::test]
+    async fn get_master_versions_should_load_once_for_concurrent_callers() {
+        let hits = Arc::new(AtomicUsize::new(0));
+        let client = client_for(versions_app(1, hits.clone())).await;
+
+        let (a, b) = tokio::join!(
+            client.get_master_versions(7, "t"),
+            client.get_master_versions(7, "t")
+        );
+
+        assert!(a.is_ok() && b.is_ok());
+        assert_eq!(hits.load(Ordering::SeqCst), 1);
+    }
+
+    #[tokio::test]
+    async fn get_master_versions_should_map_404_to_not_found() {
+        let client = client_for(versions_app(1, Arc::default())).await;
+
+        let err = client.get_master_versions(404, "t").await.unwrap_err();
+
+        assert!(matches!(err, AppError::NotFound(_)), "got {err:?}");
+    }
+
+    #[tokio::test]
+    async fn get_master_versions_should_map_429_to_too_many_requests() {
+        let client = client_for(versions_app(1, Arc::default())).await;
+
+        let err = client.get_master_versions(429, "t").await.unwrap_err();
+
+        assert!(matches!(err, AppError::TooManyRequests(_)), "got {err:?}");
+    }
+
+    /// Mock of `/marketplace/stats/{id}`; counts requests. Release 2 has nothing for sale.
+    fn stats_app(hits: Arc<AtomicUsize>) -> Router {
+        Router::new()
+            .route(
+                "/marketplace/stats/{id}",
+                get(
+                    |State(hits): State<Arc<AtomicUsize>>,
+                     Path(id): Path<i64>,
+                     Query(q): Query<HashMap<String, String>>| async move {
+                        hits.fetch_add(1, Ordering::SeqCst);
+                        match id {
+                            2 => axum::Json(json!({
+                                "lowest_price": null, "num_for_sale": 0, "blocked_from_sale": false
+                            }))
+                            .into_response(),
+                            429 => StatusCode::TOO_MANY_REQUESTS.into_response(),
+                            _ => axum::Json(json!({
+                                "lowest_price": {"value": 12.5, "currency": q["curr_abbr"]},
+                                "num_for_sale": 23,
+                                "blocked_from_sale": false
+                            }))
+                            .into_response(),
+                        }
+                    },
+                ),
+            )
+            .with_state(hits)
+    }
+
+    #[tokio::test]
+    async fn get_marketplace_stats_should_parse_price_and_ask_for_euro() {
+        let client = client_for(stats_app(Arc::default())).await;
+
+        let stats = client.get_marketplace_stats(1, "t").await.unwrap();
+
+        let price = stats.lowest_price.as_ref().unwrap();
+        assert_eq!((price.value, price.currency.as_str()), (12.5, "EUR"));
+        assert_eq!(stats.num_for_sale, Some(23));
+    }
+
+    #[tokio::test]
+    async fn get_marketplace_stats_should_accept_a_null_price() {
+        let client = client_for(stats_app(Arc::default())).await;
+
+        let stats = client.get_marketplace_stats(2, "t").await.unwrap();
+
+        assert!(stats.lowest_price.is_none());
+        assert_eq!(stats.num_for_sale, Some(0));
+    }
+
+    #[tokio::test]
+    async fn get_marketplace_stats_should_cache_the_result() {
+        let hits = Arc::new(AtomicUsize::new(0));
+        let client = client_for(stats_app(hits.clone())).await;
+
+        client.get_marketplace_stats(1, "t").await.unwrap();
+        client.get_marketplace_stats(1, "t").await.unwrap();
+
+        assert_eq!(hits.load(Ordering::SeqCst), 1);
+    }
+
+    #[tokio::test]
+    async fn get_marketplace_stats_should_map_429_to_too_many_requests() {
+        let client = client_for(stats_app(Arc::default())).await;
+
+        let err = client.get_marketplace_stats(429, "t").await.unwrap_err();
+
+        assert!(matches!(err, AppError::TooManyRequests(_)), "got {err:?}");
+    }
+
+    #[tokio::test]
+    async fn nonblocking_stats_should_load_while_a_request_slot_is_free() {
+        let client = client_for(stats_app(Arc::default())).await;
+
+        let stats = client
+            .try_get_marketplace_stats_nonblocking(1, "t")
+            .await
+            .unwrap();
+
+        assert_eq!(stats.unwrap().num_for_sale, Some(23));
+    }
+
+    #[tokio::test]
+    async fn nonblocking_stats_should_cache_what_it_loaded() {
+        let hits = Arc::new(AtomicUsize::new(0));
+        let client = client_for(stats_app(hits.clone())).await;
+
+        client
+            .try_get_marketplace_stats_nonblocking(1, "t")
+            .await
+            .unwrap();
+        client.get_marketplace_stats(1, "t").await.unwrap();
+
+        assert_eq!(hits.load(Ordering::SeqCst), 1);
+    }
+
+    #[tokio::test]
+    async fn get_release_should_map_429_to_too_many_requests() {
+        let app = Router::new().route(
+            "/releases/{id}",
+            get(|| async { StatusCode::TOO_MANY_REQUESTS }),
+        );
+        let client = client_for(app).await;
+
+        let err = client.get_release(1, "t").await.unwrap_err();
+
+        assert!(matches!(err, AppError::TooManyRequests(_)), "got {err:?}");
+    }
+
+    #[tokio::test]
+    async fn nonblocking_stats_should_return_none_instead_of_waiting_when_the_limit_is_used_up() {
+        let hits = Arc::new(AtomicUsize::new(0));
+        let client = client_for(stats_app(hits.clone())).await;
+        while client.rate_limiter.check().is_ok() {}
+
+        let stats = client
+            .try_get_marketplace_stats_nonblocking(1, "t")
+            .await
+            .unwrap();
+
+        assert!(stats.is_none());
+        assert_eq!(hits.load(Ordering::SeqCst), 0, "no request was sent");
+    }
+
+    #[tokio::test]
+    async fn nonblocking_stats_should_serve_cached_figures_when_the_limit_is_used_up() {
+        let client = client_for(stats_app(Arc::default())).await;
+        client.get_marketplace_stats(1, "t").await.unwrap();
+        while client.rate_limiter.check().is_ok() {}
+
+        let stats = client
+            .try_get_marketplace_stats_nonblocking(1, "t")
+            .await
+            .unwrap();
+
+        assert!(stats.is_some());
+    }
+
+    #[test]
+    fn release_master_should_treat_missing_and_zero_as_no_master() {
+        let parse = |json: serde_json::Value| -> Option<i64> {
+            serde_json::from_value::<DiscogsRelease>(json)
+                .unwrap()
+                .master()
+        };
+        let base = json!({"id": 1, "title": "T"});
+        let with = |m: i64| json!({"id": 1, "title": "T", "master_id": m});
+
+        assert_eq!(parse(base), None);
+        assert_eq!(parse(with(0)), None);
+        assert_eq!(parse(with(77)), Some(77));
     }
 }

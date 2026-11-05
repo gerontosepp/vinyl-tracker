@@ -74,6 +74,16 @@ pub struct RemoveFromWantToHaveArgs {
     pub id: i64,
 }
 
+/// Arguments for looking up online sources of a Want-to-Have entry.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub struct GetWantToHaveSourcesArgs {
+    /// The `id` of the list entry (as returned by `get_want_to_have`), not the Discogs ID
+    pub id: i64,
+    /// Optional Discogs release ID of one version from the sources list: returns the
+    /// marketplace figures of just that version instead of the whole overview
+    pub release_id: Option<i64>,
+}
+
 /// Arguments for removing an album from the user's collection.
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct RemoveFromCollectionArgs {
@@ -321,7 +331,9 @@ pub use vinyl_api_types::{
     scan::{ResetResultDto, ScanRequest, ScanResultDto},
     storage::{StorageLayoutDto, StoragePlacementDto},
     user::{LoginRequestDto, UserResponseDto},
-    want_to_have::{AddWantToHaveRequestDto, WantToHaveItemDto},
+    want_to_have::{
+        AddWantToHaveRequestDto, MarketplaceStatsDto, PurchaseSourcesDto, WantToHaveItemDto,
+    },
 };
 
 #[cfg(test)]

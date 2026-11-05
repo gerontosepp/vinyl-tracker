@@ -81,6 +81,7 @@ import { HelpLinkComponent } from '../../shared/components/help-link/help-link.c
         [detail]="detail()"
         [loading]="loadingDetail()"
         [isWantBusy]="busy()"
+        [wantToHaveId]="selected()?.id ?? null"
         (close)="closeDetail()"
         (addToCollection)="addToCollection()"
         (removeWanted)="removeWanted()"

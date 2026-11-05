@@ -7,11 +7,16 @@ use crate::{
     models::{
         collection::SyncResultDto,
         user::AppUser,
-        want_to_have::{WantToHaveItemDto, WantToHaveStatusDto},
+        want_to_have::{
+            MarketplaceStatsDto, PurchaseSourcesDto, WantToHaveItemDto, WantToHaveStatusDto,
+        },
     },
-    services::{collection_sync::CollectionSyncService, crypto_service::CryptoService},
+    services::{
+        collection_sync::CollectionSyncService, crypto_service::CryptoService, purchase_sources,
+    },
 };
 use chrono::{DateTime, NaiveDateTime, Utc};
+use futures_util::future::join_all;
 use sqlx::{PgPool, Row, postgres::PgRow};
 
 pub struct WantToHaveService;
@@ -112,12 +117,7 @@ impl WantToHaveService {
             ));
         }
 
-        let enc_token = user.discogs_token.as_deref().ok_or_else(|| {
-            AppError::BadRequest("User does not have a configured Discogs token".to_string())
-        })?;
-        let token = crypto.decrypt(enc_token).ok_or_else(|| {
-            AppError::Internal("Failed to decrypt user Discogs token".to_string())
-        })?;
+        let token = Self::discogs_token(crypto, user)?;
         let release = discogs_client.get_release(discogs_id, &token).await?;
 
         let mut tx = pool.begin().await.map_err(AppError::Database)?;
@@ -140,6 +140,123 @@ impl WantToHaveService {
         tx.commit().await.map_err(AppError::Database)?;
 
         Self::get(pool, user.id, id).await
+    }
+
+    /// The user's decrypted Discogs token; 400 if none is configured.
+    fn discogs_token(crypto: &CryptoService, user: &AppUser) -> Result<String, AppError> {
+        let enc_token = user.discogs_token.as_deref().ok_or_else(|| {
+            AppError::BadRequest("User does not have a configured Discogs token".to_string())
+        })?;
+        crypto
+            .decrypt(enc_token)
+            .ok_or_else(|| AppError::Internal("Failed to decrypt user Discogs token".to_string()))
+    }
+
+    /// Online sources (#319): all Vinyl versions of the record's master with the wanted one
+    /// first, marketplace figures for the first few of them, and shop search links.
+    pub async fn sources(
+        pool: &PgPool,
+        discogs_client: &DiscogsClient,
+        crypto: &CryptoService,
+        user: &AppUser,
+        id: i64,
+    ) -> Result<PurchaseSourcesDto, AppError> {
+        let item = Self::get(pool, user.id, id).await?;
+        let token = Self::discogs_token(crypto, user)?;
+        let release = discogs_client.get_release(item.discogs_id, &token).await?;
+
+        let master_id = release.master();
+        let master = match master_id {
+            Some(master_id) => match discogs_client.get_master_versions(master_id, &token).await {
+                Ok(versions) => Some(versions),
+                Err(AppError::NotFound(_)) => {
+                    tracing::warn!("Discogs master {master_id} not found, showing release only");
+                    None
+                }
+                Err(err) => return Err(err),
+            },
+            None => None,
+        };
+
+        let (mut versions, total_versions, truncated) =
+            purchase_sources::build_versions(&release, master.as_deref());
+
+        // Marketplace figures for the first versions, without waiting for the rate limiter;
+        // the rest is loaded on demand. A failure here only leaves the figures out.
+        let eager = join_all(
+            versions
+                .iter()
+                .take(purchase_sources::EAGER_STATS)
+                .map(|v| {
+                    discogs_client.try_get_marketplace_stats_nonblocking(v.release_id, &token)
+                }),
+        )
+        .await;
+        for (version, stats) in versions.iter_mut().zip(eager) {
+            match stats {
+                Ok(Some(stats)) => {
+                    version.stats = Some(purchase_sources::stats_dto(version.release_id, &stats));
+                }
+                Ok(None) => {}
+                Err(err) => tracing::warn!(
+                    "Marketplace stats of release {} failed: {err}",
+                    version.release_id
+                ),
+            }
+        }
+
+        let shop_links = purchase_sources::shop_links(
+            &purchase_sources::release_artist(&release),
+            &release.title,
+            versions[0].catno.as_deref(),
+            master_id,
+            release.id,
+        );
+        Ok(PurchaseSourcesDto {
+            discogs_id: item.discogs_id,
+            master_id,
+            currency: crate::clients::discogs::MARKETPLACE_CURRENCY.to_string(),
+            versions,
+            total_versions,
+            truncated,
+            shop_links,
+        })
+    }
+
+    /// Marketplace figures of one version. Only the wanted release and the versions of its
+    /// master are accepted (404 otherwise), so the endpoint cannot be used to query arbitrary
+    /// releases against the shared Discogs limit.
+    pub async fn version_stats(
+        pool: &PgPool,
+        discogs_client: &DiscogsClient,
+        crypto: &CryptoService,
+        user: &AppUser,
+        id: i64,
+        release_id: i64,
+    ) -> Result<MarketplaceStatsDto, AppError> {
+        let item = Self::get(pool, user.id, id).await?;
+        let token = Self::discogs_token(crypto, user)?;
+
+        if release_id != item.discogs_id {
+            let not_a_version = || {
+                AppError::NotFound(format!(
+                    "Release {release_id} is not a version of Want-to-Have item {id}"
+                ))
+            };
+            let release = discogs_client.get_release(item.discogs_id, &token).await?;
+            let master_id = release.master().ok_or_else(not_a_version)?;
+            let versions = discogs_client
+                .get_master_versions(master_id, &token)
+                .await?;
+            if !versions.versions.iter().any(|v| v.id == release_id) {
+                return Err(not_a_version());
+            }
+        }
+
+        let stats = discogs_client
+            .get_marketplace_stats(release_id, &token)
+            .await?;
+        Ok(purchase_sources::stats_dto(release_id, &stats))
     }
 
     async fn get(pool: &PgPool, user_id: i64, id: i64) -> Result<WantToHaveItemDto, AppError> {

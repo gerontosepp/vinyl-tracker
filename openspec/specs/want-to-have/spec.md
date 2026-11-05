@@ -77,3 +77,10 @@ Die PWA MUST im Ergebnis der Label-Erkennung und bei Treffern der Discogs-Suche 
 #### Scenario: Bereits im Bestand
 - **WHEN** ein Suchtreffer bereits im Bestand liegt
 - **THEN** zeigt die Karte „Bereits im Bestand“ statt des Buttons
+
+### Requirement: Zugriff per MCP
+Die Want-to-Have-Liste MUST über die MCP-Tools `get_want_to_have`, `add_to_want_to_have` und `remove_from_want_to_have` les- und pflegbar sein (Details im MCP-Spec, „Want-to-Have per MCP“). Roon-Wiedergabe loggt auch hier kein Hören.
+
+#### Scenario: Vormerken per Assistent
+- **WHEN** ein Assistent `add_to_want_to_have` mit einer Discogs-ID aufruft
+- **THEN** erscheint die Platte in der Want-to-Have-Liste der PWA und nicht in der Sammlung

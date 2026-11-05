@@ -16,6 +16,7 @@ Der Server stellt die MCP-Dienste über Standard Input/Output (Stdio) mit JSON-R
 Der Server stellt spezialisierte Tools für Sammlungsabfragen, Sammlungs-Management, Roon-Wiedergabe, Hardware-Scanning und Benutzerverwaltung bereit:
 - Sammlungsabfragen (`get_user_collection`, `get_record_details`, `get_random_record`, `get_top_records`, `get_unplayed_records`, `get_recent_listens`, `get_genre_breakdown`, `get_collection_value`)
 - Sammlungs-Management (`add_to_collection`, `remove_from_collection`, `update_record_condition`, `refresh_collection_prices`, `sync_collection`)
+- Want-to-Have (`get_want_to_have`, `add_to_want_to_have`, `remove_from_want_to_have`)
 - Wiedergabe & Tracking (`log_record_listen`, `reset_all_listens`, `play_record_on_roon`, `get_roon_zones`, `get_roon_status`)
 - Barcode & Scanning (`scan_barcode`, `delete_scan`, `search_discogs`)
 - Profil (`get_current_user`)
@@ -173,3 +174,22 @@ Der MCP-Server MUST das Tool `take_over_manual_record` (`id`, `release_id`, opti
 #### Scenario: Zusammenführen ohne eindeutiges Ziel
 - **WHEN** `mode: "merge"` ohne `target_instance_id` aufgerufen wird und der Release mehrfach in der Sammlung ist
 - **THEN** liefert das Tool einen Fehler, der die möglichen Exemplar-IDs nennt, und verändert nichts
+
+### Requirement: Want-to-Have per MCP
+Der MCP-Server MUST die Tools `get_want_to_have`, `add_to_want_to_have` (`discogs_id`) und `remove_from_want_to_have` (`id`, die Listen-ID) bereitstellen und dafür die REST-Endpunkte `/api/want-to-have` nutzen. `get_want_to_have` MUST pro Eintrag Listen-ID, Discogs-ID, Titel, Künstler, Jahr, Format, Genres und `created_at` (UTC) liefern. Antwortet das Backend beim Vormerken mit 409 (bereits im Bestand oder vorgemerkt), MUST das Tool einen Fehler mit der verständlichen Meldung des Backends liefern. Die Tools MUST die Sammlung nicht verändern; ein eigenes Tool zum Übernehmen in den Bestand gibt es nicht (dafür `add_to_collection`).
+
+#### Scenario: Liste lesen
+- **WHEN** der Client `get_want_to_have` aufruft
+- **THEN** enthält das Ergebnis die vorgemerkten Platten mit Listen-ID, Discogs-ID, Titel, Künstler und `created_at`
+
+#### Scenario: Platte vormerken
+- **WHEN** der Client `add_to_want_to_have` mit einer unbekannten Discogs-ID aufruft
+- **THEN** meldet das Tool den neuen Eintrag mit Titel, Künstler und Listen-ID
+
+#### Scenario: Duplikat
+- **WHEN** der Client `add_to_want_to_have` für eine Platte aufruft, die schon im Bestand oder auf der Liste ist
+- **THEN** liefert das Tool einen Fehler „Not added to Want-to-Have: …“ mit der Backend-Meldung und legt keinen Eintrag an
+
+#### Scenario: Eintrag entfernen
+- **WHEN** der Client `remove_from_want_to_have` mit einer vorhandenen Listen-ID aufruft
+- **THEN** ist der Eintrag entfernt und die Sammlung unverändert

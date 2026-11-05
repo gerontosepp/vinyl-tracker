@@ -14,6 +14,13 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "isUnreleased": true,
     "items": [
       {
+        "title": "Dependency-Update Verschlüsselung und Passwort-Hashing (`#326`)",
+        "type": "chore",
+        "typeLabel": "DevOps / Tooling",
+        "summary": "Die Bibliotheken für die Verschlüsselung deines Discogs-Tokens (`aes-gcm`, `pbkdf2`, `hmac`, `sha2`), die Zufallszahlen (`rand`) und das Passwort-Hashing (`bcrypt`) wurden auf die aktuellen Hauptversionen gehoben. Das gespeicherte Format ändert sich nicht: Bereits verschlüsselte Tokens und bestehende Passwörter bleiben gültig, niemand muss sich neu anmelden oder das Discogs-Token neu eingeben. Neue Tests mit Daten aus der Zeit vor dem Update sichern das ab.",
+        "details": []
+      },
+      {
         "title": "Dependency-Update `reqwest` 0.13 (`#328`)",
         "type": "chore",
         "typeLabel": "DevOps / Tooling",

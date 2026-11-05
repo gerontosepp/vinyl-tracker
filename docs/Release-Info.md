@@ -9,6 +9,10 @@
 
 ## Unreleased
 
+---
+
+## v1.9.0 (2026-11-05)
+
 - **Bezugsquellen für Want-to-Have (`#319`)**: In den Details einer vorgemerkten Platte zeigt der neue, aufklappbare Abschnitt **Bezugsquellen** alle Vinyl-Versionen der Platte (Erstpressung, Reissues, Länder …) mit dem günstigsten Discogs-Preis und der Anzahl Angebote; deine vorgemerkte Version ist hervorgehoben. Dazu gibt es Suchlinks zu Discogs, eBay, Amazon, JPC und HHV. Preise lädst du bei Bedarf pro Version nach, das schont das Discogs-Limit. Auch der KI-Assistent kann die Bezugsquellen abfragen (`get_want_to_have_sources`).
 - **Want-to-Have per MCP (`#317`)**: Ein KI-Assistent kann die Want-to-Have-Liste jetzt lesen und pflegen: `get_want_to_have`, `add_to_want_to_have` (Discogs-Release-ID) und `remove_from_want_to_have` (Listen-ID). Ist eine Platte schon im Bestand oder auf der Liste, kommt eine verständliche Meldung statt eines Doppeleintrags. Empfehlungen landen so nicht mehr versehentlich in der Sammlung. Roon-Wiedergabe loggt weiterhin kein Hören.
 

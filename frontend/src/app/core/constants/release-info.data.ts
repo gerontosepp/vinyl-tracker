@@ -14,6 +14,13 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "isUnreleased": true,
     "items": [
       {
+        "title": "Dependency-Update `jsonwebtoken` 11 (`#329`)",
+        "type": "chore",
+        "typeLabel": "DevOps / Tooling",
+        "summary": "Die Bibliothek, die deine Anmeldung (Login-Token) prüft, wurde von Version 9 auf 11 aktualisiert. Das Token-Format bleibt unverändert, bestehende Sitzungen bleiben gültig und niemand muss sich neu anmelden. Abgelaufene, manipulierte und anders signierte Tokens werden weiterhin abgelehnt, das ist jetzt per Tests abgesichert.",
+        "details": []
+      },
+      {
         "title": "Dependency-Update `tower-http` 0.7 (`#330`)",
         "type": "chore",
         "typeLabel": "DevOps / Tooling",

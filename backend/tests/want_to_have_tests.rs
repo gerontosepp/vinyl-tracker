@@ -772,7 +772,7 @@ async fn sources_load_marketplace_stats_only_for_the_first_versions() {
 }
 
 #[tokio::test]
-async fn sources_build_shop_links_from_artist_title_and_catno() {
+async fn sources_build_shop_links_from_artist_and_title() {
     let (app, state) = setup_app().await;
     let (client, _) = mock_discogs_sources().await;
     let (user, id) = user_with_item(&app, &state, &client, WITH_MASTER).await;
@@ -788,7 +788,12 @@ async fn sources_build_shop_links_from_artist_title_and_catno() {
         .unwrap();
     assert!(ebay.url.contains("Miles%20Davis") || ebay.url.contains("Miles+Davis"));
     assert!(!ebay.url.contains("(2)") && !ebay.url.contains("%282%29"));
-    assert!(ebay.url.contains("CL"));
+    assert!(!ebay.url.contains("1355"), "no catalog number in searches");
+    let jpc = sources.shop_links.iter().find(|l| l.shop == "jpc").unwrap();
+    assert_eq!(
+        jpc.url,
+        "https://www.jpc.de/s/Miles%20Davis%20Kind%20of%20Blue"
+    );
     assert_eq!(
         sources.shop_links[0].url,
         "https://www.discogs.com/sell/list?master_id=55&format=Vinyl"

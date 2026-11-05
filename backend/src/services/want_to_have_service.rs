@@ -208,7 +208,6 @@ impl WantToHaveService {
         let shop_links = purchase_sources::shop_links(
             &purchase_sources::release_artist(&release),
             &release.title,
-            versions[0].catno.as_deref(),
             master_id,
             release.id,
         );

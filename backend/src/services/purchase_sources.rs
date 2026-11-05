@@ -11,12 +11,16 @@ use url::Url;
 /// Versions (wanted one first) whose marketplace figures are loaded together with the list.
 pub const EAGER_STATS: usize = 5;
 
-/// Shops with a search URL. `{}` is replaced by the URL-encoded search terms.
-const SHOPS: [(&str, &str, &str); 4] = [
-    ("ebay", "eBay", "https://www.ebay.de/sch/i.html?_nkw="),
-    ("amazon", "Amazon", "https://www.amazon.de/s?k="),
-    ("jpc", "JPC", "https://www.jpc.de/s/"),
-    ("hhv", "HHV", "https://www.hhv.de/shop/de/suche?q="),
+/// Shops with a search URL (`key`, `name`, `search URL`, `add "vinyl"`). The search terms are
+/// appended URL-encoded. Record shops (JPC, HHV) get artist and title only: every extra word
+/// narrows their search. General marketplaces (eBay, Amazon) need "vinyl", or they find CDs and
+/// merchandise too. The catalog number is left out everywhere – it belongs to one pressing, the
+/// link is for the record.
+const SHOPS: [(&str, &str, &str, bool); 4] = [
+    ("ebay", "eBay", "https://www.ebay.de/sch/i.html?_nkw=", true),
+    ("amazon", "Amazon", "https://www.amazon.de/s?k=", true),
+    ("jpc", "JPC", "https://www.jpc.de/s/", false),
+    ("hhv", "HHV", "https://www.hhv.de/shop/de/suche?q=", false),
 ];
 
 pub fn marketplace_url(release_id: i64) -> String {
@@ -62,7 +66,6 @@ pub fn release_artist(release: &DiscogsRelease) -> String {
 pub fn shop_links(
     artist: &str,
     title: &str,
-    catno: Option<&str>,
     master_id: Option<i64>,
     release_id: i64,
 ) -> Vec<ShopLinkDto> {
@@ -78,18 +81,13 @@ pub fn shop_links(
         url: discogs_url,
     }];
 
-    let terms = [
-        artist,
-        title,
-        real_catno(catno).as_deref().unwrap_or(""),
-        "vinyl",
-    ]
-    .iter()
-    .map(|t| t.trim())
-    .filter(|t| !t.is_empty())
-    .collect::<Vec<_>>()
-    .join(" ");
-    for (shop, name, base) in SHOPS {
+    for (shop, name, base, add_vinyl) in SHOPS {
+        let terms = [artist, title, if add_vinyl { "vinyl" } else { "" }]
+            .iter()
+            .map(|t| t.trim())
+            .filter(|t| !t.is_empty())
+            .collect::<Vec<_>>()
+            .join(" ");
         if let Some(url) = search_url(base, &terms) {
             links.push(ShopLinkDto {
                 shop: shop.to_string(),
@@ -275,7 +273,7 @@ mod tests {
 
     #[test]
     fn shop_links_should_encode_umlauts_and_ampersands() {
-        let links = shop_links("Sigur Rós & Co", "Ágætis byrjun", None, None, 5);
+        let links = shop_links("Sigur Rós & Co", "Ágætis byrjun", None, 5);
         let ebay = links.iter().find(|l| l.shop == "ebay").unwrap();
         assert!(ebay.url.starts_with("https://www.ebay.de/sch/i.html?_nkw="));
         assert!(ebay.url.contains("%C3%B3"), "umlaut encoded: {}", ebay.url);
@@ -284,24 +282,36 @@ mod tests {
     }
 
     #[test]
-    fn shop_links_should_put_terms_into_the_path_for_path_shops() {
-        let links = shop_links("A", "B", None, None, 5);
-        let jpc = links.iter().find(|l| l.shop == "jpc").unwrap();
-        assert!(jpc.url.starts_with("https://www.jpc.de/s/A%20B%20vinyl"));
+    fn shop_links_should_search_record_shops_for_artist_and_title_only() {
+        // JPC finds nothing for "C'mon Tigre Lumina CT 004LP vinyl", but the plain terms work
+        let links = shop_links("C'mon Tigre", "Lumina", None, 5);
+        let url = |shop: &str| links.iter().find(|l| l.shop == shop).unwrap().url.clone();
+        assert_eq!(url("jpc"), "https://www.jpc.de/s/C'mon%20Tigre%20Lumina");
+        assert!(
+            url("hhv").ends_with("q=C%27mon+Tigre+Lumina"),
+            "{}",
+            url("hhv")
+        );
     }
 
     #[test]
-    fn shop_links_should_include_catno_but_not_none() {
-        let with = shop_links("A", "B", Some("XY 1"), None, 5);
-        let without = shop_links("A", "B", Some("none"), None, 5);
-        let amazon = |l: &[ShopLinkDto]| l.iter().find(|s| s.shop == "amazon").unwrap().url.clone();
-        assert!(amazon(&with).contains("XY"));
-        assert!(!amazon(&without).to_lowercase().contains("none"));
+    fn shop_links_should_add_vinyl_for_the_general_marketplaces() {
+        let links = shop_links("A", "B", None, 5);
+        for shop in ["ebay", "amazon"] {
+            let url = &links.iter().find(|l| l.shop == shop).unwrap().url;
+            assert!(url.to_lowercase().contains("vinyl"), "{shop}: {url}");
+        }
+    }
+
+    #[test]
+    fn shop_links_should_not_put_a_catalog_number_into_any_search() {
+        let links = shop_links("A", "B", None, 5);
+        assert!(links.iter().skip(1).all(|l| !l.url.contains("XY")));
     }
 
     #[test]
     fn shop_links_should_link_discogs_to_the_master_listing_when_there_is_a_master() {
-        let links = shop_links("A", "B", None, Some(7), 5);
+        let links = shop_links("A", "B", Some(7), 5);
         assert_eq!(
             links[0].url,
             "https://www.discogs.com/sell/list?master_id=7&format=Vinyl"
@@ -310,7 +320,7 @@ mod tests {
 
     #[test]
     fn shop_links_should_link_discogs_to_the_release_without_master() {
-        let links = shop_links("A", "B", None, None, 5);
+        let links = shop_links("A", "B", None, 5);
         assert_eq!(links[0].url, "https://www.discogs.com/sell/release/5");
     }
 

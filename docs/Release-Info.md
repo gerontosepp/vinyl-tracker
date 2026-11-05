@@ -9,6 +9,8 @@
 
 ## Unreleased
 
+- **Dependency-Updates (`#324`)**: Patch- und Minor-Updates eingespielt: Angular 22.2.x, Vitest 5.1, Playwright 1.64.1, Tailwind CSS 4.3.4, PostCSS, Lucide-Icons und `tslib` im Frontend sowie die kompatiblen Rust-Crates (u. a. `tokio` 1.54, `rustls-webpki`, `uuid`) in Backend und MCP-Server. Keine Änderung am Verhalten.
+
 ---
 
 ## v1.9.0 (2026-11-05)

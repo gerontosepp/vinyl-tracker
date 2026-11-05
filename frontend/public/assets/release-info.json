@@ -5,7 +5,15 @@
     "tag": "In Entwicklung",
     "isCurrent": false,
     "isUnreleased": true,
-    "items": []
+    "items": [
+      {
+        "title": "Dependency-Updates (`#324`)",
+        "type": "chore",
+        "typeLabel": "DevOps / Tooling",
+        "summary": "Patch- und Minor-Updates eingespielt: Angular 22.2.x, Vitest 5.1, Playwright 1.64.1, Tailwind CSS 4.3.4, PostCSS, Lucide-Icons und `tslib` im Frontend sowie die kompatiblen Rust-Crates (u. a. `tokio` 1.54, `rustls-webpki`, `uuid`) in Backend und MCP-Server. Keine Änderung am Verhalten.",
+        "details": []
+      }
+    ]
   },
   {
     "version": "v1.9.0",

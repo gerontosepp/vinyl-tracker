@@ -24,4 +24,4 @@
 
 - [x] 4.1 `docs/Help.md` + `docs/Help.en.md`, `README.md`, `docs/Release-Info.md` (Unreleased), `docs/arc42.md`, `backend/CLAUDE.md`
 - [x] 4.2 Delta-Specs für `want-to-have` und `mcp` (Haupt-Specs folgen beim Archivieren)
-- [ ] 4.3 Code-Review (`code-review`, effort `high` wegen neuer Endpunkte und MCP-Vertrag), lokalen Docker-Stack aktualisieren, PR mit `Closes #319`
+- [x] 4.3 Code-Review (`code-review`, effort `high` wegen neuer Endpunkte und MCP-Vertrag), lokalen Docker-Stack aktualisieren, PR mit `Closes #319`

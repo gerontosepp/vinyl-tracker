@@ -3,7 +3,7 @@
 import { ReleaseEntry } from '../models/release-info.model';
 
 // Application version from frontend/package.json – single source for all version badges.
-export const APP_VERSION = '1.9.0';
+export const APP_VERSION = '1.9.1';
 
 export const RELEASE_INFO_DATA: ReleaseEntry[] = [
   {
@@ -12,6 +12,14 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "tag": "In Entwicklung",
     "isCurrent": false,
     "isUnreleased": true,
+    "items": []
+  },
+  {
+    "version": "v1.9.1",
+    "rawHeader": "v1.9.1 (2026-11-06)",
+    "date": "2026-11-06",
+    "isCurrent": true,
+    "isUnreleased": false,
     "items": [
       {
         "title": "Dependency-Update Frontend-Werkzeuge `zone.js` 0.16 und `jsdom` 31 (`#332`)",
@@ -82,7 +90,7 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "version": "v1.9.0",
     "rawHeader": "v1.9.0 (2026-11-05)",
     "date": "2026-11-05",
-    "isCurrent": true,
+    "isCurrent": false,
     "isUnreleased": false,
     "items": [
       {

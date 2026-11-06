@@ -8,7 +8,10 @@ use crate::{
         user::AppUser,
     },
     services::{
-        crypto_service::CryptoService, record_genres::replace_genres, storage::StorageService,
+        crypto_service::CryptoService,
+        marketplace::{best_condition, extract_suggested_price},
+        record_genres::replace_genres,
+        storage::StorageService,
     },
 };
 use chrono::{DateTime, Utc};
@@ -297,12 +300,15 @@ impl CollectionSyncService {
         })?;
 
         let rows = sqlx::query(
-            "SELECT DISTINCT rc.id, rc.discogs_id,
+            "SELECT rc.id, rc.discogs_id,
                     rc.lowest_price::float8 as lowest_price,
-                    rc.median_price::float8 as median_price
+                    rc.median_price::float8 as median_price,
+                    COALESCE(array_agg(ci.media_condition::text)
+                             FILTER (WHERE ci.media_condition IS NOT NULL), '{}') as media_conditions
              FROM record_cache rc
              JOIN collection_item ci ON ci.record_id = rc.id
-             WHERE ci.user_id = $1 AND rc.source = 'discogs'",
+             WHERE ci.user_id = $1 AND rc.source = 'discogs'
+             GROUP BY rc.id, rc.discogs_id, rc.lowest_price, rc.median_price",
         )
         .bind(user.id)
         .fetch_all(pool)
@@ -317,6 +323,7 @@ impl CollectionSyncService {
             let discogs_id: i64 = r.get("discogs_id");
             let lowest_price: Option<f64> = r.get("lowest_price");
             let median_price: Option<f64> = r.get("median_price");
+            let media_conditions: Vec<String> = r.get("media_conditions");
 
             if only_missing && lowest_price.is_some() && median_price.is_some() {
                 continue;
@@ -327,15 +334,17 @@ impl CollectionSyncService {
                 .await
             {
                 Ok(suggestions) => {
-                    let vg_plus = suggestions.get("Very Good Plus (VG+)");
-                    let good_plus = suggestions.get("Good Plus (G+)");
-                    let near_mint = suggestions.get("Near Mint (NM or M-)");
-
-                    let median = vg_plus.or(near_mint).or(good_plus).map(|p| p.value);
-                    let lowest = good_plus.or(vg_plus).map(|p| p.value);
+                    // The value follows the best copy of the release (#349).
+                    let condition = best_condition(media_conditions.iter().map(String::as_str));
+                    let median = extract_suggested_price(&suggestions, condition);
+                    let lowest = ["Good Plus (G+)", "Very Good Plus (VG+)"]
+                        .iter()
+                        .filter_map(|c| suggestions.get(*c))
+                        .map(|p| p.value)
+                        .find(|&v| v > 0.0);
 
                     if median.is_some() || lowest.is_some() {
-                        let _ = sqlx::query(
+                        let result = sqlx::query(
                             "UPDATE record_cache
                              SET median_price = COALESCE($1, median_price),
                                  lowest_price = COALESCE($2, lowest_price)
@@ -346,7 +355,15 @@ impl CollectionSyncService {
                         .bind(id)
                         .execute(pool)
                         .await;
-                        updated += 1;
+                        match result {
+                            Ok(_) => updated += 1,
+                            Err(e) => {
+                                tracing::warn!(
+                                    "Failed to store prices for discogs_id {discogs_id}: {e}"
+                                );
+                                failed += 1;
+                            }
+                        }
                     }
                 }
                 Err(e) => {

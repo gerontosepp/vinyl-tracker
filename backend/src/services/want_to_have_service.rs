@@ -47,12 +47,12 @@ impl WantToHaveService {
     /// The user's list, newest first. Records the user owns meanwhile (added by another path)
     /// are left out.
     pub async fn list(pool: &PgPool, user_id: i64) -> Result<Vec<WantToHaveItemDto>, AppError> {
-        let rows = sqlx::query(&format!(
+        let rows = sqlx::query(sqlx::AssertSqlSafe(format!(
             "{ITEM_SELECT} WHERE w.user_id = $1
                AND NOT EXISTS (SELECT 1 FROM collection_item ci
                                WHERE ci.user_id = w.user_id AND ci.record_id = w.record_id)
              ORDER BY w.created_at DESC, w.id DESC"
-        ))
+        )))
         .bind(user_id)
         .fetch_all(pool)
         .await
@@ -259,13 +259,15 @@ impl WantToHaveService {
     }
 
     async fn get(pool: &PgPool, user_id: i64, id: i64) -> Result<WantToHaveItemDto, AppError> {
-        let row = sqlx::query(&format!("{ITEM_SELECT} WHERE w.id = $1 AND w.user_id = $2"))
-            .bind(id)
-            .bind(user_id)
-            .fetch_optional(pool)
-            .await
-            .map_err(AppError::Database)?
-            .ok_or_else(|| AppError::NotFound(format!("Want-to-Have item {id} not found")))?;
+        let row = sqlx::query(sqlx::AssertSqlSafe(format!(
+            "{ITEM_SELECT} WHERE w.id = $1 AND w.user_id = $2"
+        )))
+        .bind(id)
+        .bind(user_id)
+        .fetch_optional(pool)
+        .await
+        .map_err(AppError::Database)?
+        .ok_or_else(|| AppError::NotFound(format!("Want-to-Have item {id} not found")))?;
         Ok(to_dto(&row))
     }
 

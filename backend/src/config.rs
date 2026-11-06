@@ -2,6 +2,27 @@ use crate::auth::client_ip::parse_trusted_proxies;
 use ipnet::IpNet;
 use std::env;
 
+/// Default PostgreSQL host when neither `DATABASE_URL` nor `POSTGRES_HOST` is set. An IPv4 literal
+/// on purpose: `localhost` resolves to `::1` first, and on macOS with Docker Desktop an occasional
+/// connect over `::1` hangs until the acquire timeout (`PoolTimedOut`, issue #340).
+const DEFAULT_DB_HOST: &str = "127.0.0.1";
+
+/// Builds the PostgreSQL URL: `DATABASE_URL` wins, otherwise it is assembled from the `POSTGRES_*`
+/// variables with their defaults. `lookup` reads one variable, so tests do not touch the process
+/// environment.
+fn database_url_from(lookup: impl Fn(&str) -> Option<String>) -> String {
+    if let Some(url) = lookup("DATABASE_URL") {
+        return url;
+    }
+    let get = |key: &str, default: &str| lookup(key).unwrap_or_else(|| default.to_string());
+    let user = get("POSTGRES_USER", "vinyl_user");
+    let pass = get("POSTGRES_PASSWORD", "vinyl_password");
+    let db = get("POSTGRES_DB", "vinyl_tracker");
+    let host = get("POSTGRES_HOST", DEFAULT_DB_HOST);
+    let port = get("POSTGRES_PORT", "5432");
+    format!("postgres://{user}:{pass}@{host}:{port}/{db}")
+}
+
 #[derive(Debug, Clone)]
 pub struct Config {
     pub host: String,
@@ -48,15 +69,7 @@ impl Config {
             .and_then(|p| p.parse::<u16>().ok())
             .unwrap_or(8080);
 
-        let database_url = env::var("DATABASE_URL").unwrap_or_else(|_| {
-            let db_user = env::var("POSTGRES_USER").unwrap_or_else(|_| "vinyl_user".to_string());
-            let db_pass =
-                env::var("POSTGRES_PASSWORD").unwrap_or_else(|_| "vinyl_password".to_string());
-            let db_name = env::var("POSTGRES_DB").unwrap_or_else(|_| "vinyl_tracker".to_string());
-            let db_host = env::var("POSTGRES_HOST").unwrap_or_else(|_| "localhost".to_string());
-            let db_port = env::var("POSTGRES_PORT").unwrap_or_else(|_| "5432".to_string());
-            format!("postgres://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}")
-        });
+        let database_url = database_url_from(|key| env::var(key).ok());
 
         let database_max_connections = env::var("DATABASE_MAX_CONNECTIONS")
             .ok()
@@ -220,6 +233,28 @@ mod tests {
         config.jwt_secret = secret.to_string();
         config.app_env = app_env.to_string();
         config
+    }
+
+    #[test]
+    fn test_database_url_defaults_to_the_ipv4_loopback() {
+        let url = database_url_from(|_| None);
+        assert_eq!(
+            url,
+            "postgres://vinyl_user:vinyl_password@127.0.0.1:5432/vinyl_tracker"
+        );
+    }
+
+    #[test]
+    fn test_database_url_uses_postgres_host_and_prefers_database_url() {
+        let env = |key: &str| match key {
+            "POSTGRES_HOST" => Some("db.internal".to_string()),
+            "POSTGRES_PORT" => Some("6543".to_string()),
+            _ => None,
+        };
+        assert!(database_url_from(env).contains("@db.internal:6543/"));
+
+        let explicit = |key: &str| (key == "DATABASE_URL").then(|| "postgres://x@y/z".to_string());
+        assert_eq!(database_url_from(explicit), "postgres://x@y/z");
     }
 
     #[test]

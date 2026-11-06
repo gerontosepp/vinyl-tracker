@@ -1,8 +1,8 @@
-# Vinyl Tracker v1.9.0
+# Vinyl Tracker v1.9.1
 
 A personal vinyl record tracking application that allows users to scan barcodes, identify records via Discogs, and log listening sessions.
 
-Release history: [Release-Info](docs/Release-Info.md) | Architecture: [arc42](docs/arc42.md) | [ADRs](docs/adr/README.md) | [OpenSpec](openspec/) | [Rust-Migration Lastenheft](docs/rust-migration-lastenheft.md)
+Release history: [Release-Info](docs/Release-Info.md) | Architecture: [arc42](docs/arc42.md) | [ADRs](docs/adr/README.md) | [OpenSpec](openspec/)
 
 ## Architecture
 
@@ -119,7 +119,7 @@ The application requires environment variables for configuration (database crede
     | `VINYL_ENCRYPTION_PASSWORD` / `VINYL_ENCRYPTION_SALT` | insecure built-in dev values | Key material for encrypting Discogs tokens (AES-256-GCM). **Set in production**; changing them makes stored tokens unreadable. |
     | `APP_ENV` (alias `ENVIRONMENT`) | `development` | `production` enables `Secure` cookies by default and rejects the dev `JWT_SECRET`. |
     | `HOST` / `PORT` | `0.0.0.0` / `8080` | Bind address of the backend. |
-    | `DATABASE_URL` | built from `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_HOST` (`localhost`), `POSTGRES_PORT` (`5432`) | PostgreSQL connection. |
+    | `DATABASE_URL` | built from `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_HOST` (`127.0.0.1`), `POSTGRES_PORT` (`5432`) | PostgreSQL connection. The default host is the IPv4 address `127.0.0.1`, not `localhost` (which resolves to `::1` first and can stall connects on macOS with Docker Desktop, #340). With a PostgreSQL that listens only on IPv6 or on a socket, set `POSTGRES_HOST` or `DATABASE_URL` explicitly. |
     | `DATABASE_MAX_CONNECTIONS` / `DATABASE_MIN_CONNECTIONS` | `20` / `5` | Connection pool size. |
     | `DATABASE_ACQUIRE_TIMEOUT_SECS` / `DATABASE_IDLE_TIMEOUT_SECS` | `5` / `600` | Pool timeouts. |
     | `DATABASE_CONNECT_RETRIES` / `DATABASE_CONNECT_RETRY_INTERVAL_SECS` | `15` / `2` | Connection retries at startup. |

@@ -327,17 +327,17 @@ async fn test_genres_are_returned_in_a_fixed_alphabetical_order() {
     // Creating sorts the genres already, so store them directly in an unsorted order
     let pool = &t.state.pool;
     let record_ids = "SELECT id FROM record_cache WHERE id = $1 OR discogs_id = $1";
-    sqlx::query(&format!(
+    sqlx::query(sqlx::AssertSqlSafe(format!(
         "DELETE FROM record_genres WHERE record_id IN ({record_ids})"
-    ))
+    )))
     .bind(id)
     .execute(pool)
     .await
     .unwrap();
     for genre in ["Rock", "Indie", "Folk"] {
-        sqlx::query(&format!(
+        sqlx::query(sqlx::AssertSqlSafe(format!(
             "INSERT INTO record_genres (record_id, genre) SELECT id, $2 FROM ({record_ids}) r"
-        ))
+        )))
         .bind(id)
         .bind(genre)
         .execute(pool)

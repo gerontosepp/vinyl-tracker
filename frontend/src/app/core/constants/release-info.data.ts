@@ -3,7 +3,7 @@
 import { ReleaseEntry } from '../models/release-info.model';
 
 // Application version from frontend/package.json – single source for all version badges.
-export const APP_VERSION = '1.9.0';
+export const APP_VERSION = '1.9.1';
 
 export const RELEASE_INFO_DATA: ReleaseEntry[] = [
   {
@@ -15,10 +15,82 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "items": []
   },
   {
+    "version": "v1.9.1",
+    "rawHeader": "v1.9.1 (2026-11-06)",
+    "date": "2026-11-06",
+    "isCurrent": true,
+    "isUnreleased": false,
+    "items": [
+      {
+        "title": "Dependency-Update Frontend-Werkzeuge `zone.js` 0.16 und `jsdom` 31 (`#332`)",
+        "type": "chore",
+        "typeLabel": "DevOps / Tooling",
+        "summary": "`zone.js` (von Angular für die Änderungserkennung genutzt) wurde von 0.15 auf 0.16 und `jsdom` (simuliert den Browser in den Unit-Tests) von 30 auf 31 aktualisiert. An der App und deinen Daten ändert sich nichts. Alle 585 Frontend-Tests laufen unverändert durch, die Testabdeckung liegt weiter über 94 %. `typescript` bleibt bewusst auf 6.0: Angular 22 gibt TypeScript 7 noch nicht frei. Das Update ist in `#345` vorgemerkt.",
+        "details": []
+      },
+      {
+        "title": "Fix: Verbindung zur Datenbank ohne Konfiguration nutzt `127.0.0.1` (`#340`)",
+        "type": "fix",
+        "typeLabel": "Fix",
+        "summary": "Ist weder `DATABASE_URL` noch `POSTGRES_HOST` gesetzt, verbindet sich das Backend jetzt mit `127.0.0.1` statt mit `localhost`. `localhost` wird zuerst über IPv6 (`::1`) aufgelöst, und ein Verbindungsaufbau dorthin hing unter Docker Desktop auf macOS gelegentlich, bis der Timeout griff. Das ist sehr wahrscheinlich die Ursache eines lokal sporadisch fehlschlagenden Tests. Für den Docker-Betrieb und überall, wo `DATABASE_URL` oder `POSTGRES_HOST` gesetzt ist, ändert sich nichts. Wer das Backend ohne diese Variablen betreibt (z. B. Proxmox/LXC) und eine PostgreSQL hat, die nur auf IPv6 (`::1`) oder einem Socket lauscht, muss `POSTGRES_HOST` jetzt ausdrücklich setzen.",
+        "details": []
+      },
+      {
+        "title": "Dependency-Update Datenbanktreiber `sqlx` 0.9 (`#327`)",
+        "type": "chore",
+        "typeLabel": "DevOps / Tooling",
+        "summary": "Der Treiber für die PostgreSQL-Datenbank wurde von 0.8 auf 0.9 aktualisiert. An deinen Daten ändert sich nichts: Die Datenbank-Migrationen laufen unverändert weiter (die gespeicherten Prüfsummen aller 17 Migrationen bleiben identisch), niemand muss etwas tun. Die neue Version verlangt, dass jede dynamisch zusammengesetzte Abfrage ausdrücklich als sicher bestätigt wird; alle 12 betroffenen Stellen wurden einzeln geprüft: Nutzereingaben fließen nur über Platzhalter in die Abfragen.",
+        "details": []
+      },
+      {
+        "title": "Dependency-Update Verschlüsselung und Passwort-Hashing (`#326`)",
+        "type": "chore",
+        "typeLabel": "DevOps / Tooling",
+        "summary": "Die Bibliotheken für die Verschlüsselung deines Discogs-Tokens (`aes-gcm`, `pbkdf2`, `hmac`, `sha2`), die Zufallszahlen (`rand`) und das Passwort-Hashing (`bcrypt`) wurden auf die aktuellen Hauptversionen gehoben. Das gespeicherte Format ändert sich nicht: Bereits verschlüsselte Tokens und bestehende Passwörter bleiben gültig, niemand muss sich neu anmelden oder das Discogs-Token neu eingeben. Neue Tests mit Daten aus der Zeit vor dem Update sichern das ab.",
+        "details": []
+      },
+      {
+        "title": "Dependency-Update `reqwest` 0.13 (`#328`)",
+        "type": "chore",
+        "typeLabel": "DevOps / Tooling",
+        "summary": "Die HTTP-Bibliothek, mit der das Backend Discogs, den KI-Assistenten (OpenRouter) und den Bild-Proxy anspricht, wurde von 0.12 auf 0.13 aktualisiert. Die TLS-Verschlüsselung läuft weiter über `ring`. Neu: Die Zertifikate der Gegenstellen werden jetzt über den Zertifikatsspeicher des Systems geprüft statt über mitgelieferte Zertifikate. Das Docker-Image bringt `ca-certificates` mit; wer das Backend ohne unser Image betreibt (z. B. Proxmox/LXC), muss das Paket installiert haben, sonst scheitern Verbindungen zu Discogs und zum KI-Assistenten. Eigene Firmenzertifikate (TLS-inspizierender Proxy) werden dadurch auch erkannt. Sonst keine Änderung am Verhalten der App.",
+        "details": []
+      },
+      {
+        "title": "Dependency-Update `jsonwebtoken` 11 (`#329`)",
+        "type": "chore",
+        "typeLabel": "DevOps / Tooling",
+        "summary": "Die Bibliothek, die deine Anmeldung (Login-Token) prüft, wurde von Version 9 auf 11 aktualisiert. Das Token-Format bleibt unverändert, bestehende Sitzungen bleiben gültig und niemand muss sich neu anmelden. Abgelaufene, manipulierte und anders signierte Tokens werden weiterhin abgelehnt, das ist jetzt per Tests abgesichert.",
+        "details": []
+      },
+      {
+        "title": "Dependency-Update `tower-http` 0.7 (`#330`)",
+        "type": "chore",
+        "typeLabel": "DevOps / Tooling",
+        "summary": "Die HTTP-Middleware-Bibliothek für CORS und Request-Tracing im Backend wurde von 0.6 auf 0.7 aktualisiert. Keine Änderung am Verhalten.",
+        "details": []
+      },
+      {
+        "title": "Dependency-Update `lopdf` 0.47 (`#331`)",
+        "type": "chore",
+        "typeLabel": "DevOps / Tooling",
+        "summary": "Die Test-Bibliothek, mit der die erzeugten QR-Code-PDFs geprüft werden, wurde von 0.44 auf 0.47 aktualisiert. Nur Dev-Dependency, keine Änderung am Verhalten der App.",
+        "details": []
+      },
+      {
+        "title": "Dependency-Updates (`#324`)",
+        "type": "chore",
+        "typeLabel": "DevOps / Tooling",
+        "summary": "Patch- und Minor-Updates eingespielt: Angular 22.2.x, Vitest 5.1, Playwright 1.64.1, Tailwind CSS 4.3.4, PostCSS, Lucide-Icons und `tslib` im Frontend sowie die kompatiblen Rust-Crates (u. a. `tokio` 1.54, `rustls-webpki`, `uuid`) in Backend und MCP-Server. Keine Änderung am Verhalten.",
+        "details": []
+      }
+    ]
+  },
+  {
     "version": "v1.9.0",
     "rawHeader": "v1.9.0 (2026-11-05)",
     "date": "2026-11-05",
-    "isCurrent": true,
+    "isCurrent": false,
     "isUnreleased": false,
     "items": [
       {

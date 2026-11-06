@@ -59,7 +59,7 @@ impl RecordService {
             .and_then(|enc| crypto.decrypt(enc));
 
         // 1. Look up existing local record (incl. the automatic sort key of its stored artist)
-        let record_row = sqlx::query(&format!(
+        let record_row = sqlx::query(sqlx::AssertSqlSafe(format!(
             "SELECT id, discogs_id, title, artist, release_year, thumb_url, format, source,
                     label, catno, country, barcode, notes,
                     lowest_price::float8 as lowest_price,
@@ -68,7 +68,7 @@ impl RecordService {
              FROM record_cache rc
              WHERE (id = $1 OR discogs_id = $1) AND {OWN_RECORD_SQL}
              LIMIT 1"
-        ))
+        )))
         .bind(id_param)
         .bind(user.id)
         .fetch_optional(pool)
@@ -400,10 +400,10 @@ impl RecordService {
             .and_then(|enc| crypto.decrypt(enc));
 
         // 1. Find or create record in record_cache
-        let record_row = sqlx::query(&format!(
+        let record_row = sqlx::query(sqlx::AssertSqlSafe(format!(
             "SELECT id, discogs_id FROM record_cache rc
              WHERE (id = $1 OR discogs_id = $1) AND {OWN_RECORD_SQL} LIMIT 1"
-        ))
+        )))
         .bind(id_param)
         .bind(user.id)
         .fetch_optional(pool)
@@ -495,12 +495,12 @@ impl RecordService {
             .and_then(|enc| crypto.decrypt(enc));
 
         // 1. Locate record
-        let record_row = sqlx::query(&format!(
+        let record_row = sqlx::query(sqlx::AssertSqlSafe(format!(
             "SELECT id, discogs_id, source, median_price::float8 as median_price
              FROM record_cache rc
              WHERE (id = $1 OR discogs_id = $1) AND {OWN_RECORD_SQL}
              LIMIT 1"
-        ))
+        )))
         .bind(id_param)
         .bind(user.id)
         .fetch_optional(pool)

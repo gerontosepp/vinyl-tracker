@@ -1,6 +1,6 @@
 [package]
 name = "backend-rs"
-version = "1.9.0"
+version = "1.9.1"
 edition = "2024"
 
 [workspace]
@@ -13,10 +13,10 @@ vinyl-api-types = { path = "crates/vinyl-api-types" }
 tokio = { version = "1", features = ["full"] }
 axum = "0.8"
 tower = { version = "0.5", features = ["util"] }
-tower-http = { version = "0.6", features = ["trace", "cors"] }
+tower-http = { version = "0.7", features = ["trace", "cors"] }
 
 # Database & Migrations (sqlx::migrate, see build.rs)
-sqlx = { version = "0.8", features = ["runtime-tokio", "tls-rustls", "postgres", "chrono", "uuid", "json", "migrate"] }
+sqlx = { version = "0.9", features = ["runtime-tokio", "tls-rustls", "postgres", "chrono", "uuid", "json", "migrate"] }
 
 # Serialization & Datetime
 serde = { version = "1.0", features = ["derive"] }
@@ -33,18 +33,23 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 dotenvy = "0.15"
 
 # Security, Auth & Crypto
-bcrypt = "0.17"
-jsonwebtoken = "9"
-pbkdf2 = { version = "0.12", default-features = false, features = ["hmac"] }
-sha2 = { version = "0.10", default-features = false }
-hmac = "0.12"
-aes-gcm = "0.10"
+bcrypt = "0.19"
+# Only HS256 is used. v10+ requires an explicit crypto backend: `rust_crypto` is pure Rust (no C
+# toolchain in the multi-arch Docker builds, unlike `aws_lc_rs`) but compiles all algorithms in,
+# including `rsa` (RUSTSEC-2023-0071, unreachable here; it was already in Cargo.lock via sqlx).
+jsonwebtoken = { version = "11", default-features = false, features = ["rust_crypto"] }
+pbkdf2 = { version = "0.13", default-features = false, features = ["hmac"] }
+sha2 = { version = "0.11", default-features = false }
+hmac = "0.13"
+aes-gcm = "0.11"
 hex = "0.4"
-rand = "0.8"
+rand = "0.10"
 
 # HTTP Client, Rate-Limiting & Caching
 base64 = "0.23"
-reqwest = { version = "0.12", default-features = false, features = ["json", "stream", "rustls-tls"] }
+# TLS provider for reqwest (`rustls-no-provider`), installed in src/tls.rs
+rustls = { version = "0.23", default-features = false, features = ["ring", "std"] }
+reqwest = { version = "0.13", default-features = false, features = ["json", "query", "stream", "rustls-no-provider"] }
 bytes = "1"
 governor = "0.10"
 moka = { version = "0.12", features = ["future"] }
@@ -61,7 +66,7 @@ tokio-tungstenite = "0.30.0"
 
 [dev-dependencies]
 http-body-util = "0.1"
-lopdf = "0.44"
+lopdf = "0.47"
 
 [profile.test]
 debug = 1

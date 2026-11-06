@@ -129,7 +129,7 @@ pub struct OpenRouterClient {
 
 impl OpenRouterClient {
     pub fn new(base_url: String) -> Self {
-        let http = reqwest::Client::builder()
+        let http = crate::tls::http_client_builder()
             .timeout(REQUEST_TIMEOUT)
             .build()
             .expect("Failed to build HTTP client");

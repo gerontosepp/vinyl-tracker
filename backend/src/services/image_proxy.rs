@@ -21,7 +21,7 @@ impl ImageProxyService {
             .filter(|s| !s.is_empty())
             .collect();
 
-        let http = reqwest::Client::builder()
+        let http = crate::tls::http_client_builder()
             .timeout(Duration::from_secs(10))
             .build()
             .expect("Failed to build ImageProxy HTTP client");

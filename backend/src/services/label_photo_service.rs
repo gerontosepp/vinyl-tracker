@@ -103,13 +103,13 @@ impl LabelPhotoService {
         status: Option<LabelPhotoStatus>,
         limit: i64,
     ) -> Result<LabelPhotosDto, AppError> {
-        let rows = sqlx::query(&format!(
+        let rows = sqlx::query(sqlx::AssertSqlSafe(format!(
             "SELECT {DTO_COLUMNS}
              FROM label_photo
              WHERE user_id = $1 AND ($2::text IS NULL OR status = $2)
              ORDER BY created_at, id
              LIMIT $3"
-        ))
+        )))
         .bind(user_id)
         .bind(status.map(LabelPhotoStatus::as_str))
         .bind(limit)
@@ -183,14 +183,14 @@ impl LabelPhotoService {
         status: LabelPhotoStatus,
         discogs_id: Option<i64>,
     ) -> Result<LabelPhotoDto, AppError> {
-        let row = sqlx::query(&format!(
+        let row = sqlx::query(sqlx::AssertSqlSafe(format!(
             "UPDATE label_photo
              SET status = $3,
                  discogs_id = $4,
                  processed_at = CASE WHEN $3 = 'pending' THEN NULL ELSE NOW() AT TIME ZONE 'UTC' END
              WHERE id = $1 AND user_id = $2
              RETURNING {DTO_COLUMNS}"
-        ))
+        )))
         .bind(id)
         .bind(user_id)
         .bind(status.as_str())
@@ -274,13 +274,13 @@ impl LabelPhotoService {
             }
             Some(_) => {}
         }
-        let row = sqlx::query(&format!(
+        let row = sqlx::query(sqlx::AssertSqlSafe(format!(
             "UPDATE label_photo
              SET identify_state = 'queued', identify_error = NULL
              WHERE id = $1 AND user_id = $2 AND status = 'pending'
                AND (identify_state IS NULL OR identify_state IN ('done', 'error'))
              RETURNING {DTO_COLUMNS}"
-        ))
+        )))
         .bind(id)
         .bind(user_id)
         .fetch_optional(pool)

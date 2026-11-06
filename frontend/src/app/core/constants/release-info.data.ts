@@ -14,6 +14,13 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "isUnreleased": true,
     "items": [
       {
+        "title": "Dependency-Update Frontend-Werkzeuge `zone.js` 0.16 und `jsdom` 31 (`#332`)",
+        "type": "chore",
+        "typeLabel": "DevOps / Tooling",
+        "summary": "`zone.js` (von Angular für die Änderungserkennung genutzt) wurde von 0.15 auf 0.16 und `jsdom` (simuliert den Browser in den Unit-Tests) von 30 auf 31 aktualisiert. An der App und deinen Daten ändert sich nichts. Alle 585 Frontend-Tests laufen unverändert durch, die Testabdeckung liegt weiter über 94 %. `typescript` bleibt bewusst auf 6.0: Angular 22 gibt TypeScript 7 noch nicht frei. Das Update ist in `#345` vorgemerkt.",
+        "details": []
+      },
+      {
         "title": "Fix: Verbindung zur Datenbank ohne Konfiguration nutzt `127.0.0.1` (`#340`)",
         "type": "fix",
         "typeLabel": "Fix",

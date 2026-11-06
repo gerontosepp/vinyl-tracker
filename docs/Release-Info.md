@@ -9,6 +9,8 @@
 
 ## Unreleased
 
+- **Fix: „Wert“ passt nach dem Preis-Refresh zum Zustand der Platte (`#349`)**: Der Preis-Refresh nahm bisher für jede Platte fest den Preisvorschlag für VG+ (sonst NM oder G+), unabhängig vom Zustand, den du eingetragen hast. Jetzt gilt wie schon beim Laden und beim Ändern des Zustands der Discogs-Preisvorschlag für den Medium-Zustand der Platte (z. B. NM). Besitzt du eine Platte mehrfach in verschiedenen Zuständen, bestimmt das beste Exemplar den Wert. Hinweis: Discogs liefert über die API keinen Durchschnitts-Angebotspreis und keine Verkaufshistorie, der Preisvorschlag pro Zustand ist der nächste verfügbare Wert. Nach dem nächsten **Preise aktualisieren** gelten die neuen Werte.
+
 ---
 
 ## v1.9.1 (2026-11-06)

@@ -16,6 +16,9 @@ import { firstValueFrom } from 'rxjs';
 import { HelpLinkComponent } from '../help-link/help-link.component';
 import { ManualRecordFormComponent, ManualRecordPrefill } from '../manual-record-form/manual-record-form.component';
 
+/** How long a scanned record ("Jetzt aufgelegt!") stays visible before the scan screen resets (#351). */
+export const SCAN_RESULT_DISPLAY_MS = 30_000;
+
 @Component({
   selector: 'app-barcode-scanner',
   standalone: true,
@@ -401,6 +404,7 @@ export class BarcodeScannerComponent implements AfterViewInit, OnDestroy {
 
   private scanner: Html5QrcodeScanner | null = null;
   private timerId: any = null;
+  private resultResetTimerId: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
     void this.wantList.ensureLoaded();
@@ -424,6 +428,7 @@ export class BarcodeScannerComponent implements AfterViewInit, OnDestroy {
     if (this.timerId) {
       clearTimeout(this.timerId);
     }
+    this.clearResultResetTimer();
     this.cleanupScanner();
   }
 
@@ -475,6 +480,9 @@ export class BarcodeScannerComponent implements AfterViewInit, OnDestroy {
     const user = this.authService.user();
     if (!user) return;
 
+    // A new scan replaces the displayed record, so its countdown no longer applies
+    this.clearResultResetTimer();
+
     const normalizedCode = this.scannerService.normalizeScannedCode(barcode);
     this.manualQuery.set(normalizedCode);
     this.lastCode.set(normalizedCode);
@@ -521,6 +529,10 @@ export class BarcodeScannerComponent implements AfterViewInit, OnDestroy {
     this.scanResult.set(apiResult);
     if (apiResult.success) {
       this.scannerService.notifyScanLogged();
+      // A logged listen needs no decision: show the record for a while, then scan on (#351)
+      if (!apiResult.discogsMatches?.length) {
+        this.resultResetTimerId = setTimeout(() => this.handleReset(), SCAN_RESULT_DISPLAY_MS);
+      }
     }
     if (apiResult.discogsMatches && apiResult.discogsMatches.length > 0) {
       this.selectedMatchId.set(apiResult.discogsMatches[0].id);
@@ -600,7 +612,15 @@ export class BarcodeScannerComponent implements AfterViewInit, OnDestroy {
     }
   }
 
+  private clearResultResetTimer(): void {
+    if (this.resultResetTimerId !== null) {
+      clearTimeout(this.resultResetTimerId);
+      this.resultResetTimerId = null;
+    }
+  }
+
   handleReset(): void {
+    this.clearResultResetTimer();
     this.scanResult.set(null);
     this.selectedMatchId.set(null);
     this.addSuccessMessage.set(null);
@@ -610,7 +630,9 @@ export class BarcodeScannerComponent implements AfterViewInit, OnDestroy {
     this.isSearchingManual.set(false);
     this.isScanning.set(true);
     if (this.scannerService.scannerMode() !== 'hardware') {
-      setTimeout(() => this.startScanner(), 100);
+      // Tracked, so leaving the screen right after an automatic reset cancels it
+      if (this.timerId) clearTimeout(this.timerId);
+      this.timerId = setTimeout(() => this.startScanner(), 100);
     }
   }
 }

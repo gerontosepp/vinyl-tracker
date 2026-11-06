@@ -30,6 +30,8 @@ Use **Scan** in the navigation to log that you are playing a record – or to ad
 - **QR code** from printed Vinyl Tracker labels or scan lists: logs the listen directly.
 - **Manual input:** type the barcode if the camera cannot read it.
 
+After a listen is logged, the record („Jetzt aufgelegt!“) stays visible for **30 seconds**, then the normal scan screen returns. **Nächste Platte scannen** continues right away.
+
 ### Identify mode {#identify-modus}
 
 The **Identify mode** switch at the top of the scan page tells you which record you are holding – without logging a listen. If the scanned record is in your collection, the same detail view opens as when you click the cover in the collection (shelf slot, condition, price). After closing it the scanner is immediately ready for the next record. If the record is not in your collection, everything works as usual: Discogs matches, adding it or creating it manually. The switch is remembered.

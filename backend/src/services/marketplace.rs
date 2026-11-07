@@ -54,6 +54,19 @@ pub fn validate_goldmine_condition(input: &str) -> Result<&'static str, AppError
     })
 }
 
+/// The best (highest-graded) of several media conditions, e.g. of multiple copies of one release.
+/// Unknown strings are ignored.
+pub fn best_condition<'a>(conditions: impl IntoIterator<Item = &'a str>) -> Option<&'static str> {
+    let present: Vec<&'static str> = conditions
+        .into_iter()
+        .filter_map(normalize_goldmine_condition)
+        .collect();
+    // GOLDMINE_CONDITIONS is ordered best to worst.
+    GOLDMINE_CONDITIONS
+        .into_iter()
+        .find(|g| present.contains(g))
+}
+
 pub fn extract_suggested_price(
     suggestions: &HashMap<String, DiscogsPriceSuggestion>,
     condition: Option<&str>,
@@ -128,6 +141,28 @@ mod tests {
         assert!(validate_goldmine_condition("Mint (M)").is_ok());
         assert!(validate_goldmine_condition("VG+").is_ok());
         assert!(validate_goldmine_condition("fantasy_grade").is_err());
+    }
+
+    #[test]
+    fn best_condition_should_pick_the_highest_grade() {
+        assert_eq!(
+            best_condition(["VG", "NM", "G+"]),
+            Some("Near Mint (NM or M-)")
+        );
+    }
+
+    #[test]
+    fn best_condition_should_ignore_unknown_values() {
+        assert_eq!(
+            best_condition(["fantasy", "Very Good (VG)"]),
+            Some("Very Good (VG)")
+        );
+    }
+
+    #[test]
+    fn best_condition_should_return_none_without_a_known_condition() {
+        assert_eq!(best_condition(Vec::<&str>::new()), None);
+        assert_eq!(best_condition(["fantasy"]), None);
     }
 
     #[test]

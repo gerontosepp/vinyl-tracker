@@ -42,6 +42,17 @@ Der Scanner MUST einen Identify Mode anbieten, den der Nutzer im Scanner ein- un
 - **WHEN** der Identify Mode aktiv ist und die Platte nicht im Bestand ist
 - **THEN** zeigt der Scanner wie sonst die Discogs-Treffer bzw. „nicht gefunden“
 
+### Requirement: Anzeige nach erfasstem Hören
+Nach einem Scan, der ein Hör-Ereignis erfasst hat, MUST der Scanner die gescannte Platte 30 Sekunden anzeigen und danach wieder den normalen Scan-Bildschirm zeigen. Ein weiterer Scan in dieser Zeit MUST die Anzeige ersetzen und die 30 Sekunden neu starten; „Nächste Platte scannen“ MUST sofort zurücksetzen. Ergebnisse, bei denen der Nutzer entscheiden muss (Discogs-Treffer) oder die einen Fehler zeigen, MUST stehen bleiben.
+
+#### Scenario: Platte nach 30 Sekunden ausblenden
+- **WHEN** ein Scan ein Hör-Ereignis erfasst hat und 30 Sekunden vergangen sind
+- **THEN** zeigt der Scanner wieder den normalen Scan-Bildschirm
+
+#### Scenario: Neuer Scan startet die Zeit neu
+- **WHEN** innerhalb der 30 Sekunden eine weitere Platte gescannt wird
+- **THEN** wird die neue Platte angezeigt und die 30 Sekunden beginnen neu
+
 ### Requirement: Scan-Endpunkt ohne Hör-Ereignis
 `POST /api/scan` MUST das optionale Feld `identify` (Standard `false`) akzeptieren. Mit `identify: true` MUST die Auflösung (Barcode, QR, manuelle Platten) unverändert sein, aber kein Hör-Ereignis entstehen.
 

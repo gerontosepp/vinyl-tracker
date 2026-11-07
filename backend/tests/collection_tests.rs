@@ -1357,6 +1357,56 @@ async fn test_collection_sync_service_full_workflow() {
     .unwrap();
     assert_eq!(price_res.updated_count, 1);
 
+    // The value follows the copy's condition (#349): NM -> 55.00, not the fixed VG+ price
+    let median_nm: Option<f64> = sqlx::query_scalar(
+        "SELECT median_price::float8 FROM record_cache WHERE discogs_id = 98765",
+    )
+    .fetch_one(&state.pool)
+    .await
+    .unwrap();
+    assert_eq!(median_nm, Some(55.00));
+
+    // With several copies the best one counts: VG+ beats the second copy in Good (G)
+    sqlx::query("UPDATE collection_item SET media_condition = 'Very Good Plus (VG+)' WHERE user_id = $1 AND instance_id = 555")
+        .bind(user_id)
+        .execute(&state.pool)
+        .await
+        .unwrap();
+    sqlx::query(
+        "INSERT INTO collection_item (user_id, record_id, instance_id, added_at, media_condition)
+         SELECT $1, record_id, 556, NOW(), 'Good (G)' FROM collection_item WHERE user_id = $1 AND instance_id = 555",
+    )
+    .bind(user_id)
+    .execute(&state.pool)
+    .await
+    .unwrap();
+    CollectionSyncService::refresh_collection_prices(
+        &state.pool,
+        &mock_client,
+        &state.crypto,
+        &user_with_token,
+        false,
+    )
+    .await
+    .unwrap();
+    let median_best: Option<f64> = sqlx::query_scalar(
+        "SELECT median_price::float8 FROM record_cache WHERE discogs_id = 98765",
+    )
+    .fetch_one(&state.pool)
+    .await
+    .unwrap();
+    assert_eq!(median_best, Some(35.00));
+    sqlx::query("DELETE FROM collection_item WHERE user_id = $1 AND instance_id = 556")
+        .bind(user_id)
+        .execute(&state.pool)
+        .await
+        .unwrap();
+    sqlx::query("UPDATE collection_item SET media_condition = 'Near Mint (NM or M-)' WHERE user_id = $1 AND instance_id = 555")
+        .bind(user_id)
+        .execute(&state.pool)
+        .await
+        .unwrap();
+
     // 6. Test add_release_and_sync
     let add_res = CollectionSyncService::add_release_and_sync(
         &state.pool,

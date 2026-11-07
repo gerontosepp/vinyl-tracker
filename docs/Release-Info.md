@@ -11,6 +11,13 @@
 
 ---
 
+## v1.9.2 (2026-11-07)
+
+- **Fix: Gescannte Platte verschwindet nach 30 Sekunden (`#351`)**: Wenn ein Barcode-Scan ein Hören erfasst hatte, blieb die Platte („Jetzt aufgelegt!“) auf dem Scan-Bildschirm stehen, bis du die Seite neu geladen oder „Nächste Platte scannen“ geklickt hast. Jetzt wird sie 30 Sekunden angezeigt, danach erscheint wieder der normale Scan-Bildschirm. Scannst du in dieser Zeit die nächste Platte, ersetzt sie die Anzeige und die 30 Sekunden beginnen neu. Treffer, bei denen du etwas auswählen musst, und Fehlermeldungen bleiben stehen.
+- **Fix: „Wert“ passt nach dem Preis-Refresh zum Zustand der Platte (`#349`)**: Der Preis-Refresh nahm bisher für jede Platte fest den Preisvorschlag für VG+ (sonst NM oder G+), unabhängig vom Zustand, den du eingetragen hast. Jetzt gilt wie schon beim Laden und beim Ändern des Zustands der Discogs-Preisvorschlag für den Medium-Zustand der Platte (z. B. NM). Besitzt du eine Platte mehrfach in verschiedenen Zuständen, bestimmt das beste Exemplar den Wert. Hinweis: Discogs liefert über die API keinen Durchschnitts-Angebotspreis und keine Verkaufshistorie, der Preisvorschlag pro Zustand ist der nächste verfügbare Wert. Nach dem nächsten **Preise aktualisieren** gelten die neuen Werte.
+
+---
+
 ## v1.9.1 (2026-11-06)
 
 - **Dependency-Update Frontend-Werkzeuge `zone.js` 0.16 und `jsdom` 31 (`#332`)**: `zone.js` (von Angular für die Änderungserkennung genutzt) wurde von 0.15 auf 0.16 und `jsdom` (simuliert den Browser in den Unit-Tests) von 30 auf 31 aktualisiert. An der App und deinen Daten ändert sich nichts. Alle 585 Frontend-Tests laufen unverändert durch, die Testabdeckung liegt weiter über 94 %. `typescript` bleibt bewusst auf 6.0: Angular 22 gibt TypeScript 7 noch nicht frei. Das Update ist in `#345` vorgemerkt.

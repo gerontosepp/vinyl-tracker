@@ -1,6 +1,6 @@
 import type { Mock, MockedObject } from "vitest";
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BarcodeScannerComponent } from './barcode-scanner.component';
+import { BarcodeScannerComponent, SCAN_RESULT_DISPLAY_MS } from './barcode-scanner.component';
 import { AuthService } from '../../../core/services/auth.service';
 import { ApiService } from '../../../core/services/api.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -219,6 +219,85 @@ describe('BarcodeScannerComponent', () => {
     expect(component.addSuccessMessage()).toBeNull();
     expect(component.addErrorMessage()).toBeNull();
     expect(component.isScanning()).toBe(true);
+  });
+
+  describe('auto reset after a logged listen (#351)', () => {
+    const logged: ScanResult = {
+      success: true,
+      message: 'Now playing: Abbey Road',
+      record: { discogsId: 100, title: 'Abbey Road', artist: 'The Beatles', thumbUrl: 'http://thumb.jpg' },
+    };
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+      component.scannerService.setScannerMode('hardware');
+      apiServiceMock.scanBarcode.mockReturnValue(of(logged));
+    });
+
+    it('keeps the record visible before 30 seconds have passed', async () => {
+      await component.executeBarcodeScan('075678645624');
+      await vi.advanceTimersByTimeAsync(SCAN_RESULT_DISPLAY_MS - 1);
+
+      expect(component.scanResult()).toEqual(logged);
+    });
+
+    it('shows the normal scan screen again after 30 seconds', async () => {
+      await component.executeBarcodeScan('075678645624');
+      await vi.advanceTimersByTimeAsync(SCAN_RESULT_DISPLAY_MS);
+
+      expect(component.scanResult()).toBeNull();
+      expect(component.isScanning()).toBe(true);
+    });
+
+    it('restarts the countdown when another record is scanned', async () => {
+      await component.executeBarcodeScan('075678645624');
+      await vi.advanceTimersByTimeAsync(SCAN_RESULT_DISPLAY_MS - 5_000);
+      await component.executeBarcodeScan('075678645624');
+      await vi.advanceTimersByTimeAsync(SCAN_RESULT_DISPLAY_MS - 1);
+
+      expect(component.scanResult()).toEqual(logged);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(component.scanResult()).toBeNull();
+    });
+
+    it('cancels the countdown when the user resets manually', async () => {
+      await component.executeBarcodeScan('075678645624');
+      expect(vi.getTimerCount()).toBe(1);
+
+      component.handleReset();
+
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it('does not start the camera on a destroyed screen after an automatic reset', async () => {
+      component.scannerService.setScannerMode('camera');
+      await component.executeBarcodeScan('075678645624');
+      await vi.advanceTimersByTimeAsync(SCAN_RESULT_DISPLAY_MS);
+      fixture.destroy();
+
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it('leaves no timer behind when the screen is destroyed', async () => {
+      await component.executeBarcodeScan('075678645624');
+      fixture.destroy();
+
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it('keeps results that need a decision on screen', async () => {
+      const notFound: ScanResult = {
+        success: false,
+        message: 'Found on Discogs',
+        discogsMatches: [{ id: 501, title: 'Dark Side', year: '1973', thumbUrl: '', format: ['Vinyl'], country: 'UK' }],
+      };
+      apiServiceMock.scanBarcode.mockReturnValue(of(notFound));
+
+      await component.executeBarcodeScan('075678645624');
+      await vi.advanceTimersByTimeAsync(SCAN_RESULT_DISPLAY_MS * 2);
+
+      expect(component.scanResult()).toEqual(notFound);
+    });
   });
 
   it('should display hardware scanner status when scannerMode is hardware', () => {

@@ -30,6 +30,8 @@ Ein Klick auf ein Cover öffnet dieselbe Detailansicht wie in der Sammlung.
 - **QR-Code** von gedruckten Vinyl-Tracker-Etiketten oder Scan-Listen: erfasst das Hören direkt.
 - **Manuelle Eingabe:** Barcode abtippen, falls die Kamera ihn nicht liest.
 
+Nach einem erfassten Hören bleibt die Platte („Jetzt aufgelegt!“) **30 Sekunden** sichtbar, danach erscheint wieder der normale Scan-Bildschirm. Mit **Nächste Platte scannen** geht es sofort weiter.
+
 ### Identify-Modus {#identify-modus}
 
 Mit dem Schalter **Identify-Modus** oben auf der Scan-Seite erfährst du, welche Platte du in der Hand hältst – ohne sie als gehört zu erfassen. Ist die gescannte Platte in deiner Sammlung, öffnet sich dieselbe Detailansicht wie beim Klick auf das Cover in der Sammlung (Regalplatz, Zustand, Preis). Nach dem Schließen ist der Scanner sofort bereit für die nächste Platte. Ist die Platte nicht in der Sammlung, läuft alles wie sonst: Discogs-Treffer, Übernahme oder manuell anlegen. Der Schalter wird gemerkt.

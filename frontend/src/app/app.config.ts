@@ -2,7 +2,6 @@ import {
   ApplicationConfig,
   provideZoneChangeDetection,
   isDevMode,
-  LOCALE_ID,
   inject,
   provideAppInitializer,
 } from '@angular/core';
@@ -14,7 +13,6 @@ import localeEn from '@angular/common/locales/en';
 import { routes } from './app.routes';
 import { provideServiceWorker } from '@angular/service-worker';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
-import { LanguageService } from './core/services/language.service';
 import { ThemeService } from './core/services/theme.service';
 import { AppUpdateService } from './core/services/app-update.service';
 
@@ -33,11 +31,6 @@ export const appConfig: ApplicationConfig = {
       inject(AppUpdateService).init();
     }),
     provideHttpClient(withXhr(), withInterceptors([authInterceptor])),
-    {
-      provide: LOCALE_ID,
-      useFactory: (languageService: LanguageService) => languageService.language(),
-      deps: [LanguageService],
-    },
     provideServiceWorker('ngsw-worker.js', {
       enabled: !isDevMode(),
       registrationStrategy: 'registerWhenStable:30000',

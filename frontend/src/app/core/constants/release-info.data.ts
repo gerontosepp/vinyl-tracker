@@ -14,6 +14,13 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "isUnreleased": true,
     "items": [
       {
+        "title": "Fix: Beträge und Zahlen folgen dem Sprachwechsel",
+        "type": "fix",
+        "typeLabel": "Fix",
+        "summary": "Nach dem Umschalten zwischen Deutsch und Englisch blieben Zahlen- und Preisformate bis zum Neuladen in der alten Locale (z. B. `1.234,50 €` statt `€1,234.50`). Preise in der Sammlung und im Detail, der Sammlungswert und die Min-/Max-Werte auf dem Dashboard nutzen jetzt sofort das Format der gewählten Sprache.",
+        "details": []
+      },
+      {
         "title": "Fix: Zwei Pressungen desselben Albums in „Meistgespielt“ getrennt anzeigen",
         "type": "fix",
         "typeLabel": "Fix",

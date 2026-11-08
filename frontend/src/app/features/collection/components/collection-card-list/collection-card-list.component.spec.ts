@@ -1,12 +1,21 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CollectionCardListComponent } from './collection-card-list.component';
 import { ApiService } from '../../../../core/services/api.service';
+import { LanguageService } from '../../../../core/services/language.service';
+import { registerLocaleData } from '@angular/common';
+import localeDe from '@angular/common/locales/de';
+import localeEn from '@angular/common/locales/en';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 
 describe('CollectionCardListComponent', () => {
   let component: CollectionCardListComponent;
   let fixture: ComponentFixture<CollectionCardListComponent>;
   let mockApiService: any;
+
+  beforeAll(() => {
+    registerLocaleData(localeDe);
+    registerLocaleData(localeEn);
+  });
 
   beforeEach(async () => {
     mockApiService = {
@@ -114,5 +123,25 @@ describe('CollectionCardListComponent', () => {
     const slots: HTMLElement[] = Array.from(fixture.nativeElement.querySelectorAll('[data-testid="card-storage"]'));
     expect(slots.length).toBe(1);
     expect(slots[0].textContent).toContain('Kallax-1 · 3');
+  });
+
+  it('formats the estimated value in the active language', () => {
+    const language = TestBed.inject(LanguageService);
+    const initialLanguage = language.language();
+    const release: any = {
+      id: 8,
+      basic_information: { title: 'Kind of Blue', artists: [], formats: [], median_price: 1234.5 },
+    };
+    fixture.componentRef.setInput('releases', [release]);
+
+    language.setLanguage('de');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('1.234,50');
+
+    language.setLanguage('en');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('1,234.50');
+
+    language.setLanguage(initialLanguage);
   });
 });

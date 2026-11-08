@@ -12,6 +12,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
 import { ScannerService } from '../../core/services/scanner.service';
+import { LanguageService } from '../../core/services/language.service';
 import { AppResumeService } from '../../core/services/app-resume.service';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import {
@@ -148,15 +149,15 @@ import { TooltipDirective } from '../../shared/directives/tooltip.directive';
                 @if (collectionValue(); as val) {
                   <div class="text-2xl font-black text-slate-900 dark:text-slate-100">
                     @if (val.median) {
-                      {{ val.median.value | number: '1.2-2' }} {{ getCurrencySymbol(val.median.currency) }}
+                      {{ val.median.value | currency: currencyCode(val.median.currency) : 'symbol' : '1.2-2' : languageService.locale() }}
                     } @else {
                       N/A
                     }
                   </div>
                   @if (val.minimum && val.maximum) {
                     <div class="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-2">
-                      Min: {{ val.minimum.value | number: '1.0-0' }} {{ getCurrencySymbol(val.minimum.currency) }} / Max:
-                      {{ val.maximum.value | number: '1.0-0' }} {{ getCurrencySymbol(val.maximum.currency) }}
+                      Min: {{ val.minimum.value | currency: currencyCode(val.minimum.currency) : 'symbol' : '1.0-0' : languageService.locale() }} / Max:
+                      {{ val.maximum.value | currency: currencyCode(val.maximum.currency) : 'symbol' : '1.0-0' : languageService.locale() }}
                     </div>
                   }
                 } @else {
@@ -224,6 +225,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   readonly apiService = inject(ApiService);
   readonly toastService = inject(ToastService);
   readonly scannerService = inject(ScannerService);
+  readonly languageService = inject(LanguageService);
   private readonly router = inject(Router);
 
   /** Back from the background, listens may have been logged on another device. */
@@ -478,11 +480,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return `conic-gradient(${segments.join(', ')})`;
   }
 
-  getCurrencySymbol(currency?: string): string {
-    if (currency === 'USD' || currency === '$') {
-      return '$';
-    }
-    return '€';
+  /** ISO currency code for CurrencyPipe; the API may send the symbol `$` instead of `USD`. */
+  currencyCode(currency?: string): string {
+    return currency === 'USD' || currency === '$' ? 'USD' : 'EUR';
   }
 
   getGenreColor(idx: number): string {

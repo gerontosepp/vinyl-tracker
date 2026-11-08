@@ -32,6 +32,14 @@ describe('LanguageService', () => {
     expect(service.translate('nav.home')).toBe('Start');
   });
 
+  it('maps the active language to the locale used for formatting', () => {
+    service.setLanguage('de');
+    expect(service.locale()).toBe('de-DE');
+
+    service.setLanguage('en');
+    expect(service.locale()).toBe('en-US');
+  });
+
   it('should interpolate variables in translation keys', () => {
     service.setLanguage('de');
     const result = service.translate('collection.printSelected', { count: 5 });

@@ -243,7 +243,7 @@ export class CollectionComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (data) => {
           this.releases.set(data.releases);
-          const loadedTime = new Intl.DateTimeFormat('de-DE', {
+          const loadedTime = new Intl.DateTimeFormat(this.languageService.locale(), {
             hour: '2-digit',
             minute: '2-digit',
           }).format(new Date());

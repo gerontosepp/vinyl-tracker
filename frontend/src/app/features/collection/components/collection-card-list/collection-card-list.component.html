@@ -71,7 +71,7 @@
                   class="px-1 py-px rounded font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50 shrink-0"
                   [appTooltip]="'collection.estimatedValueTooltip' | translate"
                 >
-                  {{ release.basic_information.median_price | currency: 'EUR' : 'symbol' : '1.2-2' }}
+                  {{ release.basic_information.median_price | currency: 'EUR' : 'symbol' : '1.2-2' : languageService.locale() }}
                 </span>
               }
             </span>

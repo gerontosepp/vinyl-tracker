@@ -255,3 +255,14 @@ Das Hinzufügen einer Platte aus Want-to-Have MUST denselben Pfad wie das Hinzuf
 #### Scenario: Übernommene Platte
 - **WHEN** ein Want-to-Have-Eintrag in den Bestand übernommen wird
 - **THEN** erscheint die Platte in der Sammlung ohne Plays und ohne Lagerplatz
+
+### Requirement: Detailansicht der geöffneten Platte
+Die Detailansicht einer Platte (`GET /api/records/{id}`) MUST ausschließlich Daten der zuletzt geöffneten Platte zeigen. Trifft die Antwort einer früher geöffneten Platte verspätet ein, MUST sie verworfen werden; das Schließen der Ansicht MUST die laufende Anfrage beenden. Das MUST auch für Antworten auf Änderungen (Hören, Zustand, Sortier-String) gelten. Eine offene Löschbestätigung MUST beim Wechsel der angezeigten Platte schließen.
+
+#### Scenario: Schneller Wechsel zwischen zwei Platten
+- **WHEN** der Nutzer Platte A öffnet, die Ansicht schließt und Platte B öffnet, bevor die Details von A geladen sind
+- **THEN** zeigt die Detailansicht die Daten von B, und Zustandsänderung, Sortier-String sowie Entfernen betreffen B
+
+#### Scenario: Verspätete Änderung einer anderen Platte
+- **WHEN** der Nutzer bei Platte A den Zustand ändert, die Ansicht schließt und Platte B öffnet, bevor die Antwort eintrifft
+- **THEN** bleibt die Ansicht von B unverändert, und nur die Zeile von A in der Liste zeigt den neuen Zustand

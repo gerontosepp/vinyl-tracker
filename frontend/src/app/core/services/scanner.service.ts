@@ -106,6 +106,8 @@ export class ScannerService {
 
   closeScanner(): void {
     this.showScanner.set(false);
+    // A scan the screen never got to handle must not be replayed on the next open
+    this.scanTrigger.set(null);
   }
 
   toggleScanner(): void {
@@ -118,6 +120,18 @@ export class ScannerService {
 
   clearLastScannedCode(): void {
     this.lastScannedCode.set(null);
+  }
+
+  /**
+   * Returns a pending scan once and clears it. The scanner screen is re-created when it is
+   * closed and opened again; a leftover trigger must not log the last record a second time.
+   */
+  consumeScanTrigger(): { code: string; timestamp: number } | null {
+    const trigger = this.scanTrigger();
+    if (trigger) {
+      this.scanTrigger.set(null);
+    }
+    return trigger;
   }
 
   initKeyboardListener(): void {

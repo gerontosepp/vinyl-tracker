@@ -409,7 +409,8 @@ export class BarcodeScannerComponent implements AfterViewInit, OnDestroy {
   constructor() {
     void this.wantList.ensureLoaded();
     effect(() => {
-      const trigger = this.scannerService.scanTrigger();
+      // Consume the trigger: creating the scanner again (close/open) must not replay the last scan
+      const trigger = this.scannerService.consumeScanTrigger();
       if (trigger && trigger.code) {
         this.cleanupScanner();
         this.isScanning.set(false);

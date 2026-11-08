@@ -59,3 +59,10 @@ Nach einem Scan, der ein Hör-Ereignis erfasst hat, MUST der Scanner die gescann
 #### Scenario: Scan mit identify
 - **WHEN** ein Client `POST /api/scan` mit `identify: true` für eine Platte im Bestand aufruft
 - **THEN** liefert die Antwort die Platte und die Zahl der Hör-Ereignisse bleibt gleich
+
+### Requirement: Ein Scan wird genau einmal verarbeitet
+Ein ausgelöster Scan-Auftrag MUST nach seiner Verarbeitung verbraucht sein. Wird der Scanner-Bildschirm geschlossen und erneut geöffnet, MUST der zuletzt gescannte Code nicht erneut verarbeitet werden und kein weiteres Hör-Ereignis entstehen.
+
+#### Scenario: Scanner schließen und erneut öffnen
+- **WHEN** ein Scan ein Hör-Ereignis erfasst hat und der Nutzer den Scanner schließt und wieder öffnet
+- **THEN** zeigt der Scanner den normalen Scan-Bildschirm, und der Play-Count der Platte steigt nicht erneut

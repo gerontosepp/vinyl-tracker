@@ -9,6 +9,7 @@
 
 ## Unreleased
 
+- **Fix: Scanner verarbeitet beim erneuten Öffnen nicht noch einmal den letzten Scan**: Nach einem Scan blieb der Auftrag im Scanner-Dienst gespeichert. Wurde der Scanner geschlossen und wieder geöffnet, lief der letzte Code erneut durch und erzeugte ein zweites Hör-Ereignis (Play-Count und Statistiken zählten doppelt). Jetzt wird jeder Scan-Auftrag genau einmal verarbeitet.
 - **Fix: Detailansicht zeigt bei schnellem Wechsel immer die geöffnete Platte**: Wurde eine Platte geöffnet, die Ansicht geschlossen und sofort eine andere Platte geöffnet, konnte die verspätete Antwort der ersten Platte die Ansicht der zweiten überschreiben. Zustand ändern, Sortier-String speichern oder „Aus Sammlung entfernen“ hätten dann die falsche Platte getroffen. Jetzt wird die laufende Anfrage beim Schließen beendet, verspätete Antworten (auch auf Zustands- und Sortier-Änderungen) werden verworfen, und eine offene Löschbestätigung gehört immer zur angezeigten Platte.
 
 ---

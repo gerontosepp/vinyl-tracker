@@ -202,7 +202,7 @@
                 {{
                   detail()?.median_price != null
                     ? ($safeNavigationMigration(detail()?.median_price)
-                      | currency: 'EUR' : 'symbol' : '1.2-2')
+                      | currency: 'EUR' : 'symbol' : '1.2-2' : languageService.locale())
                     : '—'
                 }}
               </div>

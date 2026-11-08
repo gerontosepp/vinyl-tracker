@@ -1,6 +1,7 @@
 import { Component, input, output, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ApiService } from '../../../../core/services/api.service';
+import { LanguageService } from '../../../../core/services/language.service';
 import { FormatBadgeComponent } from '../format-badge/format-badge.component';
 import { ManualBadgeComponent } from '../manual-badge/manual-badge.component';
 import { StorageSlotPipe } from '../../../../core/pipes/storage-slot.pipe';
@@ -26,6 +27,7 @@ import { TooltipDirective } from '../../../../shared/directives/tooltip.directiv
 })
 export class CollectionCardListComponent {
   readonly apiService = inject(ApiService);
+  readonly languageService = inject(LanguageService);
 
   readonly releases = input<CollectionRelease[]>([]);
   readonly selectedItems = input<Map<number, QrCodeItem>>(new Map());

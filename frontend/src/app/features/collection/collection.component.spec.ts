@@ -5,6 +5,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
 import { of, Subject } from 'rxjs';
 import { AppResumeService } from '../../core/services/app-resume.service';
+import { LanguageService } from '../../core/services/language.service';
 import { signal, NO_ERRORS_SCHEMA } from '@angular/core';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { CollectionRelease } from '../../core/types';
@@ -60,6 +61,26 @@ describe('CollectionComponent', () => {
 
     expect(loadData).toHaveBeenCalledTimes(1);
     expect(loadShelves).toHaveBeenCalledTimes(1);
+  });
+
+  it('formats the load timestamp in the active language', () => {
+    mockAuthService.user = signal({ id: 1 });
+    const language = TestBed.inject(LanguageService);
+    const initialLanguage = language.language();
+    language.setLanguage('en');
+    const format = vi.spyOn(Intl, 'DateTimeFormat').mockImplementation(function () {
+      return { format: () => '10:00' } as unknown as Intl.DateTimeFormat;
+    } as any);
+
+    try {
+      component.loadData();
+
+      expect(format).toHaveBeenCalledWith('en-US', expect.anything());
+      expect(component.loadStatus()).toContain('10:00');
+    } finally {
+      format.mockRestore();
+      language.setLanguage(initialLanguage);
+    }
   });
 
   it('takes the search from the URL, e.g. from the dashboard top artists', async () => {

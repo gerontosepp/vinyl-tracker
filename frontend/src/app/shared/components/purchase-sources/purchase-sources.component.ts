@@ -247,7 +247,7 @@ export class PurchaseSourcesComponent {
   }
 
   price(value: number, currency: string | null): string {
-    const locale = this.language.language() === 'de' ? 'de-DE' : 'en-GB';
+    const locale = this.language.locale();
     return new Intl.NumberFormat(locale, { style: 'currency', currency: currency ?? this.sources()?.currency ?? 'EUR' }).format(value);
   }
 

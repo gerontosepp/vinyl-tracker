@@ -1077,6 +1077,9 @@ export class LanguageService {
 
   readonly currentTranslations = computed(() => TRANSLATIONS[this.language()]);
 
+  /** BCP-47 locale for formatting dates, numbers and prices in the active language. */
+  readonly locale = computed(() => (this.language() === 'de' ? 'de-DE' : 'en-US'));
+
   constructor() {
     effect(() => {
       const currentLang = this.language();

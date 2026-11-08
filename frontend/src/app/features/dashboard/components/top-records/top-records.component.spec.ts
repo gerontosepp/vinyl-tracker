@@ -165,4 +165,37 @@ describe('TopRecordsComponent', () => {
     buttons[0].click();
     expect(opened).toHaveBeenCalledWith(expect.objectContaining({ discogsId: 4711, title: 'Album 1' }));
   });
+
+  it('renders two rows of the same title and artist without duplicated keys', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    try {
+      const pressing = (discogsId: number, count: number) => ({
+        discogsId,
+        recordTitle: 'Greatest Hits',
+        title: 'Greatest Hits',
+        artist: 'Queen',
+        count,
+        thumbUrl: '',
+      });
+      const counts = () =>
+        Array.from(fixture.nativeElement.querySelectorAll('[data-testid="top-record-open"]')).map((button) => {
+          const row = (button as HTMLElement).closest('.group') as HTMLElement;
+          return row.querySelector('.text-indigo-700 > span')?.textContent?.trim();
+        });
+
+      fixture.componentRef.setInput('data', [pressing(11, 5), pressing(12, 3)]);
+      fixture.detectChanges();
+
+      // Angular reports colliding track keys with NG0955 in dev mode
+      expect(warn).not.toHaveBeenCalledWith(expect.stringContaining('duplicated keys'));
+      expect(counts()).toEqual(['5', '3']);
+
+      // A later reconcile (another period or a new listen) must not reuse the rows wrongly
+      fixture.componentRef.setInput('data', [pressing(11, 7), pressing(12, 3), pressing(13, 1)]);
+      fixture.detectChanges();
+      expect(counts()).toEqual(['7', '3', '1']);
+    } finally {
+      warn.mockRestore();
+    }
+  });
 });

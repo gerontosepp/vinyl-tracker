@@ -14,6 +14,13 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "isUnreleased": true,
     "items": [
       {
+        "title": "Fix: Zwei Pressungen desselben Albums in „Meistgespielt“ getrennt anzeigen",
+        "type": "fix",
+        "typeLabel": "Fix",
+        "summary": "Hatten zwei Platten denselben Titel und Interpreten (z. B. Erstpressung und Reissue), verwendete die Rangliste denselben internen Schlüssel für beide Zeilen. Jetzt hat jeder Eintrag einen eindeutigen Schlüssel und beide Pressungen erscheinen als eigene Zeilen.",
+        "details": []
+      },
+      {
         "title": "Fix: Scanner verarbeitet beim erneuten Öffnen nicht noch einmal den letzten Scan",
         "type": "fix",
         "typeLabel": "Fix",

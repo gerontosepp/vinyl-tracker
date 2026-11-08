@@ -325,6 +325,37 @@ describe('BarcodeScannerComponent', () => {
     expect(component.isScanning()).toBe(false);
   });
 
+  it('does not process the last scan again when the scanner is created again', async () => {
+    vi.useFakeTimers();
+    const scannerService = component.scannerService;
+    scannerService.setScannerMode('hardware');
+    apiServiceMock.scanBarcode.mockReturnValue(of({ success: true, message: 'Scan OK' } as ScanResult));
+
+    scannerService.scanTrigger.set({ code: '075678645624', timestamp: Date.now() });
+    fixture.detectChanges();
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(apiServiceMock.scanBarcode).toHaveBeenCalledTimes(1);
+    expect(scannerService.scanTrigger()).toBeNull();
+
+    // Closing and opening the scanner creates the component again
+    fixture.destroy();
+    const reopened = TestBed.createComponent(BarcodeScannerComponent);
+    reopened.detectChanges();
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(apiServiceMock.scanBarcode).toHaveBeenCalledTimes(1);
+
+    // The re-created scanner still handles the next real scan
+    scannerService.scanTrigger.set({ code: '075678645625', timestamp: Date.now() });
+    reopened.detectChanges();
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(apiServiceMock.scanBarcode).toHaveBeenCalledTimes(2);
+    expect(apiServiceMock.scanBarcode).toHaveBeenLastCalledWith('075678645625', false);
+    reopened.destroy();
+  });
+
   describe('identify mode', () => {
     const found: ScanResult = {
       success: true,

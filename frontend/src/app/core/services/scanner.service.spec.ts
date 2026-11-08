@@ -48,6 +48,14 @@ describe('ScannerService', () => {
     expect(service.showScanner()).toBe(false);
   });
 
+  it('drops a pending scan when the scanner is closed', () => {
+    service.scanTrigger.set({ code: '075678645624', timestamp: 1 });
+
+    service.closeScanner();
+
+    expect(service.scanTrigger()).toBeNull();
+  });
+
   it('should toggleScanner correctly', () => {
     expect(service.showScanner()).toBe(false);
     service.toggleScanner();
@@ -117,6 +125,14 @@ describe('ScannerService', () => {
     expect(lastCode?.type).toBe('1d');
     expect(service.showScanner()).toBe(true);
     expect(service.scanTrigger()?.code).toBe(barcode);
+  });
+
+  it('hands out a pending scan trigger only once', () => {
+    service.scanTrigger.set({ code: '075678645624', timestamp: 1 });
+
+    expect(service.consumeScanTrigger()?.code).toBe('075678645624');
+    expect(service.scanTrigger()).toBeNull();
+    expect(service.consumeScanTrigger()).toBeNull();
   });
 
   it('should warn when a keystroke burst outside inputs is dropped', () => {

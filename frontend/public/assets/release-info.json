@@ -7,6 +7,13 @@
     "isUnreleased": true,
     "items": [
       {
+        "title": "Fix: Scanner verarbeitet beim erneuten Öffnen nicht noch einmal den letzten Scan",
+        "type": "fix",
+        "typeLabel": "Fix",
+        "summary": "Nach einem Scan blieb der Auftrag im Scanner-Dienst gespeichert. Wurde der Scanner geschlossen und wieder geöffnet, lief der letzte Code erneut durch und erzeugte ein zweites Hör-Ereignis (Play-Count und Statistiken zählten doppelt). Jetzt wird jeder Scan-Auftrag genau einmal verarbeitet.",
+        "details": []
+      },
+      {
         "title": "Fix: Detailansicht zeigt bei schnellem Wechsel immer die geöffnete Platte",
         "type": "fix",
         "typeLabel": "Fix",

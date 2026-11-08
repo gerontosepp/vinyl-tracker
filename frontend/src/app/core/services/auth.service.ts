@@ -1,4 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService } from './api.service';
 import { ToastService } from './toast.service';
 import { User } from '../types';
@@ -15,7 +16,10 @@ export class AuthService {
   private readonly toastService = inject(ToastService);
 
   readonly user = signal<User | null>(null);
-  readonly isLoading = signal<boolean>(true);
+  /** Runs while a login/register/update request is in flight; gates the form buttons. */
+  readonly isLoading = signal<boolean>(false);
+  /** True until the start-up session check has settled; the auth guard waits for it. */
+  readonly isCheckingSession = signal<boolean>(true);
   readonly isSyncing = signal<boolean>(false);
 
   private syncPromise: Promise<void> | null = null;
@@ -25,26 +29,35 @@ export class AuthService {
   }
 
   private checkCurrentUser(): void {
-    const token = localStorage.getItem(AUTH_TOKEN_KEY);
-    if (!token) {
-      this.user.set(null);
-      this.isLoading.set(false);
-      return;
-    }
+    const hadToken = localStorage.getItem(AUTH_TOKEN_KEY) !== null;
+    // The backend authenticates via HttpOnly cookie too, so the check runs even without a
+    // stored Bearer token; a 401 only means that there is no session.
+    const loadSession = () => firstValueFrom(this.apiService.getUser(true));
 
-    firstValueFrom(this.apiService.getUser())
+    loadSession()
+      .catch((error) => {
+        // The backend prefers a Bearer token over the cookie. When a stale token was dropped
+        // by the interceptor, retry once so a valid cookie session still signs the user in.
+        if (hadToken && localStorage.getItem(AUTH_TOKEN_KEY) === null) {
+          return loadSession();
+        }
+        throw error;
+      })
       .then((u) => {
         if (u?.token) {
           localStorage.setItem(AUTH_TOKEN_KEY, u.token);
         }
         this.user.set(u);
       })
-      .catch(() => {
+      .catch((error) => {
         this.user.set(null);
-        localStorage.removeItem(AUTH_TOKEN_KEY);
+        // A network outage or server error must not discard a token that may still be valid
+        if (error instanceof HttpErrorResponse && (error.status === 401 || error.status === 403)) {
+          localStorage.removeItem(AUTH_TOKEN_KEY);
+        }
       })
       .finally(() => {
-        this.isLoading.set(false);
+        this.isCheckingSession.set(false);
       });
   }
 

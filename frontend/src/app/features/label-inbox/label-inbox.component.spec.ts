@@ -1,6 +1,6 @@
 import type { MockedObject } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { NO_ERRORS_SCHEMA } from '@angular/core';
+import { NO_ERRORS_SCHEMA, signal } from '@angular/core';
 import { registerLocaleData } from '@angular/common';
 import localeDe from '@angular/common/locales/de';
 import { provideHttpClient } from '@angular/common/http';
@@ -8,6 +8,7 @@ import { HttpTestingController, TestRequest, provideHttpClientTesting } from '@a
 import { IDENTIFY_POLL_MS, LabelInboxComponent } from './label-inbox.component';
 import { ToastService } from '../../core/services/toast.service';
 import { LanguageService } from '../../core/services/language.service';
+import { AuthService } from '../../core/services/auth.service';
 import { LayoutComponent } from '../../shared/components/layout/layout.component';
 import { LabelCandidate, LabelPhoto } from '../../core/types';
 import { provideRouter } from '@angular/router';
@@ -65,7 +66,10 @@ describe('LabelInboxComponent', () => {
     TestBed.configureTestingModule({
       imports: [LabelInboxComponent],
       providers: [
-        provideRouter([]),provideHttpClient(), provideHttpClientTesting(), { provide: ToastService, useValue: toast }],
+        provideRouter([]),provideHttpClient(), provideHttpClientTesting(), { provide: ToastService, useValue: toast },
+        // The real AuthService would check the session through HTTP on construction
+        { provide: AuthService, useValue: { user: signal({ id: 1 }) } },
+      ],
     });
     // The layout (navigation, menus) is not part of this test
     TestBed.overrideComponent(LabelInboxComponent, {

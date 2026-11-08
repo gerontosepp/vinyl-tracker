@@ -1,9 +1,10 @@
 import type { MockedObject } from "vitest";
 import { TestBed } from '@angular/core/testing';
-import { HttpClient, provideHttpClient, withInterceptors, withXhr } from '@angular/common/http';
+import { HttpClient, HttpContext, provideHttpClient, withInterceptors, withXhr } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Router } from '@angular/router';
 import { authInterceptor, resetSessionExpiryThrottle } from './auth.interceptor';
+import { SILENT_AUTH_CHECK } from './auth-context';
 import { AuthService } from '../services/auth.service';
 import { ToastService } from '../services/toast.service';
 import { LanguageService } from '../services/language.service';
@@ -150,5 +151,33 @@ describe('authInterceptor', () => {
 
     expect(mockRouter.navigate).toHaveBeenCalledTimes(1);
     expect(mockToastService.showToast).toHaveBeenCalledTimes(1);
+  });
+
+  it('treats a 401 of the silent start-up check as signed out without toast or redirect', () => {
+    const errorLog = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    localStorage.setItem('vinyl_auth_token', 'stale-token');
+    const context = new HttpContext().set(SILENT_AUTH_CHECK, true);
+
+    httpClient.get('/api/users/me', { context }).subscribe({ error: () => { } });
+    httpMock.expectOne('/api/users/me').flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
+
+    expect(localStorage.getItem('vinyl_auth_token')).toBeNull();
+    expect(mockAuthService.clearSession).toHaveBeenCalled();
+    expect(mockToastService.showToast).not.toHaveBeenCalled();
+    expect(mockRouter.navigate).not.toHaveBeenCalled();
+    expect(errorLog).not.toHaveBeenCalled();
+    errorLog.mockRestore();
+  });
+
+  it('does not consume the session-expiry throttle for the silent start-up check', () => {
+    const context = new HttpContext().set(SILENT_AUTH_CHECK, true);
+    httpClient.get('/api/users/me', { context }).subscribe({ error: () => { } });
+    httpMock.expectOne('/api/users/me').flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
+
+    httpClient.get('/api/collection').subscribe({ error: () => { } });
+    httpMock.expectOne('/api/collection').flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
+
+    expect(mockToastService.showToast).toHaveBeenCalledTimes(1);
+    expect(mockRouter.navigate).toHaveBeenCalledTimes(1);
   });
 });

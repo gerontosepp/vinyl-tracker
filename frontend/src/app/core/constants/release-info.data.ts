@@ -14,6 +14,13 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "isUnreleased": true,
     "items": [
       {
+        "title": "Fix: Anmeldung über die Cookie-Session wird auch ohne localStorage-Token erkannt",
+        "type": "fix",
+        "typeLabel": "Fix",
+        "summary": "Die App prüfte die Sitzung beim Start nur, wenn ein Token im localStorage lag. Ging der localStorage verloren (z. B. durch iOS-PWA-Speicherbereinigung), blieb eine gültige HttpOnly-Cookie-Session ungenutzt und die Anmeldeseite erschien. Jetzt wird die Sitzung immer über `GET /users/me` geprüft; ein erwartetes 401 dieses Start-Checks erzeugt keinen „Sitzung abgelaufen“-Hinweis und keine Weiterleitung.",
+        "details": []
+      },
+      {
         "title": "Fix: Beträge und Zahlen folgen dem Sprachwechsel",
         "type": "fix",
         "typeLabel": "Fix",

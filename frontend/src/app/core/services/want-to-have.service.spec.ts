@@ -25,7 +25,13 @@ describe('WantToHaveService', () => {
   beforeEach(() => {
     toast = { showToast: vi.fn() };
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting(), { provide: ToastService, useValue: toast }],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: ToastService, useValue: toast },
+        // The real service would check the session through HTTP on construction
+        { provide: AuthService, useValue: { user: signal(null) } },
+      ],
     });
     TestBed.inject(LanguageService).setLanguage('de');
     service = TestBed.inject(WantToHaveService);

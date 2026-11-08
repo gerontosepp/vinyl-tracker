@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams, HttpResourceRef, httpResource } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpParams, HttpResourceRef, httpResource } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { SILENT_AUTH_CHECK } from '../interceptors/auth-context';
 import {
   ScanResult,
   ListenEvent,
@@ -434,8 +435,11 @@ export class ApiService {
     return this.http.get<StorageSequence>(`${this.baseUrl}/storage/sequence`, { params: { media } });
   }
 
-  getUser(): Observable<User> {
-    return this.http.get<User>(`${this.baseUrl}/users/me`);
+  /** `silent` marks the startup session check: a 401 just means "not signed in". */
+  getUser(silent = false): Observable<User> {
+    return this.http.get<User>(`${this.baseUrl}/users/me`, {
+      context: new HttpContext().set(SILENT_AUTH_CHECK, silent),
+    });
   }
 
   getProxiedImageUrl(originalUrl: string): string {

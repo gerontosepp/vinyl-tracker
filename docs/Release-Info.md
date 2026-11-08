@@ -9,6 +9,8 @@
 
 ## Unreleased
 
+- **Fix: Detailansicht zeigt bei schnellem Wechsel immer die geöffnete Platte**: Wurde eine Platte geöffnet, die Ansicht geschlossen und sofort eine andere Platte geöffnet, konnte die verspätete Antwort der ersten Platte die Ansicht der zweiten überschreiben. Zustand ändern, Sortier-String speichern oder „Aus Sammlung entfernen“ hätten dann die falsche Platte getroffen. Jetzt wird die laufende Anfrage beim Schließen beendet, verspätete Antworten (auch auf Zustands- und Sortier-Änderungen) werden verworfen, und eine offene Löschbestätigung gehört immer zur angezeigten Platte.
+
 ---
 
 ## v1.9.2 (2026-11-07)

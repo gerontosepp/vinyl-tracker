@@ -404,6 +404,16 @@ describe('RecordDetailModalComponent', () => {
       expect(component.showDeleteConfirm()).toBe(false);
     });
 
+    it('does not carry the delete confirmation over to the next record', () => {
+      component.promptDelete();
+      expect(component.showDeleteConfirm()).toBe(true);
+
+      fixture.componentRef.setInput('record', { id: 999, instance_id: 111 } as any);
+      fixture.detectChanges();
+
+      expect(component.showDeleteConfirm()).toBe(false);
+    });
+
     it('should call apiService.removeReleaseFromCollection and emit recordRemoved on confirmDelete', () => {
       vi.spyOn(component.recordRemoved, 'emit').mockReturnValue(undefined);
 

@@ -12,7 +12,15 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "tag": "In Entwicklung",
     "isCurrent": false,
     "isUnreleased": true,
-    "items": []
+    "items": [
+      {
+        "title": "Fix: Detailansicht zeigt bei schnellem Wechsel immer die geöffnete Platte",
+        "type": "fix",
+        "typeLabel": "Fix",
+        "summary": "Wurde eine Platte geöffnet, die Ansicht geschlossen und sofort eine andere Platte geöffnet, konnte die verspätete Antwort der ersten Platte die Ansicht der zweiten überschreiben. Zustand ändern, Sortier-String speichern oder „Aus Sammlung entfernen“ hätten dann die falsche Platte getroffen. Jetzt wird die laufende Anfrage beim Schließen beendet, verspätete Antworten (auch auf Zustands- und Sortier-Änderungen) werden verworfen, und eine offene Löschbestätigung gehört immer zur angezeigten Platte.",
+        "details": []
+      }
+    ]
   },
   {
     "version": "v1.9.2",

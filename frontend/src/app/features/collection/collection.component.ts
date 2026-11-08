@@ -139,6 +139,7 @@ export class CollectionComponent implements OnInit, OnDestroy {
   });
 
   private sub: Subscription | null = null;
+  private detailSub: Subscription | null = null;
   private searchTimer: any = null;
   private yearsTimer: any = null;
 
@@ -158,6 +159,7 @@ export class CollectionComponent implements OnInit, OnDestroy {
     if (this.sub) {
       this.sub.unsubscribe();
     }
+    this.detailSub?.unsubscribe();
     if (this.searchTimer) {
       clearTimeout(this.searchTimer);
     }
@@ -478,12 +480,20 @@ export class CollectionComponent implements OnInit, OnDestroy {
   }
 
   openDetail(release: CollectionRelease): void {
+    this.detailSub?.unsubscribe();
     this.selectedRecord.set(release);
     this.recordDetail.set(null);
     this.loadingDetail.set(true);
 
-    this.apiService.getRecordDetails(release.id, release.instance_id).subscribe({
+    // A detail response may arrive after another record was opened (or the modal was closed).
+    const stillSelected = () => {
+      const selected = this.selectedRecord();
+      return selected?.id === release.id && selected?.instance_id === release.instance_id;
+    };
+
+    this.detailSub = this.apiService.getRecordDetails(release.id, release.instance_id).subscribe({
       next: (detail) => {
+        if (!stillSelected()) return;
         this.recordDetail.set(detail);
         this.loadingDetail.set(false);
         if (detail.lowest_price != null || detail.median_price != null) {
@@ -505,6 +515,7 @@ export class CollectionComponent implements OnInit, OnDestroy {
         }
       },
       error: (err) => {
+        if (!stillSelected()) return;
         console.error(err);
         this.toastService.showToast(getErrorMessage(err, 'Fehler beim Laden der Details'), 'error');
         this.loadingDetail.set(false);
@@ -513,13 +524,17 @@ export class CollectionComponent implements OnInit, OnDestroy {
   }
 
   closeDetail(): void {
+    this.detailSub?.unsubscribe();
+    this.detailSub = null;
     this.selectedRecord.set(null);
     this.recordDetail.set(null);
     this.loadingDetail.set(false);
   }
 
   onListenLogged(updated: RecordDetailDto): void {
-    this.recordDetail.set(updated);
+    if (this.showsRecord(updated)) {
+      this.recordDetail.set(updated);
+    }
     this.releases.update((list) =>
       list.map((r) =>
         r.id === updated.discogs_id || (updated.id != null && r.id === updated.id)
@@ -531,26 +546,30 @@ export class CollectionComponent implements OnInit, OnDestroy {
 
   /** A changed sort string moves the record in the artist order and on the shelf. */
   onSortKeyUpdated(updated: RecordDetailDto): void {
-    this.recordDetail.set(updated);
+    if (this.showsRecord(updated)) {
+      this.recordDetail.set(updated);
+    }
     this.loadData();
   }
 
   onConditionUpdated(updated: RecordDetailDto): void {
-    this.recordDetail.set(updated);
-    if (this.selectedRecord()) {
-      this.selectedRecord.update((rec) =>
-        rec
-          ? {
-              ...rec,
-              media_condition: updated.media_condition,
-              sleeve_condition: updated.sleeve_condition,
-              basic_information: {
-                ...rec.basic_information,
-                median_price: updated.median_price != null ? updated.median_price : rec.basic_information?.median_price,
-              },
-            }
-          : null
-      );
+    if (this.showsRecord(updated)) {
+      this.recordDetail.set(updated);
+      if (this.selectedRecord()) {
+        this.selectedRecord.update((rec) =>
+          rec
+            ? {
+                ...rec,
+                media_condition: updated.media_condition,
+                sleeve_condition: updated.sleeve_condition,
+                basic_information: {
+                  ...rec.basic_information,
+                  median_price: updated.median_price != null ? updated.median_price : rec.basic_information?.median_price,
+                },
+              }
+            : null
+        );
+      }
     }
     this.releases.update((list) =>
       list.map((r) =>
@@ -570,7 +589,10 @@ export class CollectionComponent implements OnInit, OnDestroy {
   }
 
   onRecordRemoved(releaseId: number): void {
-    this.closeDetail();
+    const shown = this.selectedRecord();
+    if (shown && (shown.id === releaseId || shown.basic_information?.id === releaseId)) {
+      this.closeDetail();
+    }
     this.selectedItems.update((map) => {
       const next = new Map(map);
       next.delete(releaseId);
@@ -578,6 +600,19 @@ export class CollectionComponent implements OnInit, OnDestroy {
     });
     this.releases.update((list) => list.filter((r) => r.id !== releaseId));
     this.totalItems.update((total) => Math.max(0, total - 1));
+  }
+
+  /**
+   * Whether a (late) answer belongs to the record currently shown. A response for another
+   * record must not overwrite the modal opened in the meantime.
+   */
+  private showsRecord(updated: RecordDetailDto): boolean {
+    const selected = this.selectedRecord();
+    if (!selected) return false;
+    if (selected.instance_id != null && updated.instance_id != null && selected.instance_id !== updated.instance_id) {
+      return false;
+    }
+    return selected.id === updated.discogs_id || selected.id === updated.id;
   }
 
   private toSelectionItem(release: CollectionRelease): QrCodeItem {

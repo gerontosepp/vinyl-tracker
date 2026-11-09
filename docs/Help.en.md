@@ -30,7 +30,7 @@ Use **Scan** in the navigation to log that you are playing a record – or to ad
 - **QR code** from printed Vinyl Tracker labels or scan lists: logs the listen directly.
 - **Manual input:** type the barcode if the camera cannot read it.
 
-After a listen is logged, the record („Jetzt aufgelegt!“) stays visible for **30 seconds**, then the normal scan screen returns. **Nächste Platte scannen** continues right away.
+After a listen is logged, the record („Jetzt aufgelegt!“) stays visible – **30 seconds** by default, configurable under **Settings → Barcode & QR scanner** (5–120 seconds). Then the normal scan screen returns. **Nächste Platte scannen** continues right away.
 
 ### Identify mode {#identify-modus}
 

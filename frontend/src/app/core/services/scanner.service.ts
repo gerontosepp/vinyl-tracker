@@ -1,10 +1,28 @@
-import { Injectable, signal, inject } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
 import { Router, NavigationStart } from '@angular/router';
 import { filter } from 'rxjs';
 import { LanguageService } from './language.service';
 import { ToastService } from './toast.service';
 
 export type ScannerMode = 'hardware' | 'camera' | 'hybrid';
+
+/** Default time a logged listen stays on the scan screen before it resets (#351, #366). */
+export const SCAN_RESULT_DISPLAY_DEFAULT_SECONDS = 30;
+export const SCAN_RESULT_DISPLAY_MIN_SECONDS = 5;
+export const SCAN_RESULT_DISPLAY_MAX_SECONDS = 120;
+
+const SCAN_RESULT_DISPLAY_STORAGE_KEY = 'scanner_result_display_seconds';
+
+/** Rounds to whole seconds and keeps the value inside the supported range. */
+export function clampResultDisplaySeconds(value: number): number {
+  if (!Number.isFinite(value)) {
+    return SCAN_RESULT_DISPLAY_DEFAULT_SECONDS;
+  }
+  return Math.min(
+    SCAN_RESULT_DISPLAY_MAX_SECONDS,
+    Math.max(SCAN_RESULT_DISPLAY_MIN_SECONDS, Math.round(value)),
+  );
+}
 
 export interface ScannedCodeEvent {
   code: string;
@@ -28,6 +46,9 @@ export class ScannerService {
   readonly soundFeedback = signal<boolean>(this.getInitialSoundFeedback());
   /** Identify mode (#294): a scan shows the record instead of logging a listen. */
   readonly identifyMode = signal<boolean>(this.getInitialIdentifyMode());
+  /** How long a logged listen stays visible before the scan screen resets (#366). */
+  readonly resultDisplaySeconds = signal<number>(this.getInitialResultDisplaySeconds());
+  readonly resultDisplayMs = computed(() => this.resultDisplaySeconds() * 1000);
 
   // Captured scan events
   readonly lastScannedCode = signal<ScannedCodeEvent | null>(null);
@@ -90,6 +111,27 @@ export class ScannerService {
     this.identifyMode.set(enabled);
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('scanner_identify', enabled ? 'true' : 'false');
+    }
+  }
+
+  private getInitialResultDisplaySeconds(): number {
+    if (typeof localStorage !== 'undefined') {
+      const stored = localStorage.getItem(SCAN_RESULT_DISPLAY_STORAGE_KEY);
+      if (stored !== null && stored.trim() !== '') {
+        const saved = Number(stored);
+        if (Number.isFinite(saved)) {
+          return clampResultDisplaySeconds(saved);
+        }
+      }
+    }
+    return SCAN_RESULT_DISPLAY_DEFAULT_SECONDS;
+  }
+
+  setResultDisplaySeconds(seconds: number): void {
+    const normalized = clampResultDisplaySeconds(seconds);
+    this.resultDisplaySeconds.set(normalized);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(SCAN_RESULT_DISPLAY_STORAGE_KEY, String(normalized));
     }
   }
 

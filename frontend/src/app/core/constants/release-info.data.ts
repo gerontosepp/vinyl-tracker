@@ -14,6 +14,13 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "isUnreleased": true,
     "items": [
       {
+        "title": "Feature: Anzeigedauer nach dem Scannen einstellbar (`#366`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Wie lange die gescannte Platte („Jetzt aufgelegt!“) nach einem Listen-Event sichtbar bleibt, lässt sich jetzt unter **Einstellungen → Barcode & QR Scanner** zwischen 5 und 120 Sekunden einstellen (Standard 30). Die Einstellung gilt pro Gerät für Hardware-, Kamera- und manuelle Scans.",
+        "details": []
+      },
+      {
         "title": "Fix: Anmeldung über die Cookie-Session wird auch ohne localStorage-Token erkannt",
         "type": "fix",
         "typeLabel": "Fix",

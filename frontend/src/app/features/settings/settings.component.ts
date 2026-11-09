@@ -531,6 +531,34 @@ interface PendingRestore {
                 </p>
               </div>
 
+              <!-- Result Display Duration (#366) -->
+              <div>
+                <label
+                  for="scanner-result-display"
+                  class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2"
+                >
+                  {{ 'settings.scannerResultDisplay' | translate }}
+                </label>
+                <div class="flex items-center gap-3">
+                  <input
+                    id="scanner-result-display"
+                    data-testid="scanner-result-display"
+                    type="number"
+                    min="5"
+                    max="120"
+                    step="1"
+                    inputmode="numeric"
+                    [value]="scannerService.resultDisplaySeconds()"
+                    (change)="onResultDisplaySecondsChange($event)"
+                    class="w-28 border border-slate-200 dark:border-slate-600 rounded-xl py-2.5 px-4 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-slate-100 shadow-sm font-semibold focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all"
+                  />
+                  <span class="text-sm font-semibold text-slate-500 dark:text-slate-400">s</span>
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1.5 font-medium">
+                  {{ 'settings.scannerResultDisplayDesc' | translate }}
+                </p>
+              </div>
+
               <!-- Sound Feedback Toggle -->
               <div class="border-t border-slate-100 dark:border-slate-700/50 pt-4 flex items-center justify-between">
                 <div>
@@ -716,6 +744,13 @@ export class SettingsComponent {
 
   constructor() {
     this.loadRoonStatus();
+  }
+
+  /** Commits the display duration on blur/Enter and reflects the clamped value (#366). */
+  onResultDisplaySecondsChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.scannerService.setResultDisplaySeconds(input.valueAsNumber);
+    input.value = String(this.scannerService.resultDisplaySeconds());
   }
 
   loadRoonStatus(): void {

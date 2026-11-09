@@ -9,6 +9,8 @@
 
 ## Unreleased
 
+- **Feature: Anzeigedauer nach dem Scannen einstellbar (`#366`)**: Wie lange die gescannte Platte („Jetzt aufgelegt!“) nach einem Listen-Event sichtbar bleibt, lässt sich jetzt unter **Einstellungen → Barcode & QR Scanner** zwischen 5 und 120 Sekunden einstellen (Standard 30). Die Einstellung gilt pro Gerät für Hardware-, Kamera- und manuelle Scans.
+
 - **Fix: Anmeldung über die Cookie-Session wird auch ohne localStorage-Token erkannt**: Die App prüfte die Sitzung beim Start nur, wenn ein Token im localStorage lag. Ging der localStorage verloren (z. B. durch iOS-PWA-Speicherbereinigung), blieb eine gültige HttpOnly-Cookie-Session ungenutzt und die Anmeldeseite erschien. Jetzt wird die Sitzung immer über `GET /users/me` geprüft; ein erwartetes 401 dieses Start-Checks erzeugt keinen „Sitzung abgelaufen“-Hinweis und keine Weiterleitung.
 - **Fix: Beträge und Zahlen folgen dem Sprachwechsel**: Nach dem Umschalten zwischen Deutsch und Englisch blieben Zahlen- und Preisformate bis zum Neuladen in der alten Locale (z. B. `1.234,50 €` statt `€1,234.50`). Preise in der Sammlung und im Detail, der Sammlungswert und die Min-/Max-Werte auf dem Dashboard nutzen jetzt sofort das Format der gewählten Sprache.
 - **Fix: Zwei Pressungen desselben Albums in „Meistgespielt“ getrennt anzeigen**: Hatten zwei Platten denselben Titel und Interpreten (z. B. Erstpressung und Reissue), verwendete die Rangliste denselben internen Schlüssel für beide Zeilen. Jetzt hat jeder Eintrag einen eindeutigen Schlüssel und beide Pressungen erscheinen als eigene Zeilen.

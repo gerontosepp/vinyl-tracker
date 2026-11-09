@@ -1,14 +1,16 @@
 import type { Mock, MockedObject } from "vitest";
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BarcodeScannerComponent, SCAN_RESULT_DISPLAY_MS } from './barcode-scanner.component';
+import { BarcodeScannerComponent } from './barcode-scanner.component';
 import { AuthService } from '../../../core/services/auth.service';
 import { ApiService } from '../../../core/services/api.service';
 import { ToastService } from '../../../core/services/toast.service';
-import { ScannerService } from '../../../core/services/scanner.service';
+import { ScannerService, SCAN_RESULT_DISPLAY_DEFAULT_SECONDS } from '../../../core/services/scanner.service';
 import { Observable, of, throwError } from 'rxjs';
 import { signal } from '@angular/core';
 import { User, ScanResult, SyncResult } from '../../../core/types';
 import { provideRouter } from '@angular/router';
+
+const SCAN_RESULT_DISPLAY_MS = SCAN_RESULT_DISPLAY_DEFAULT_SECONDS * 1000;
 
 describe('BarcodeScannerComponent', () => {
   afterEach(() => {
@@ -30,6 +32,7 @@ describe('BarcodeScannerComponent', () => {
   };
 
   beforeEach(async () => {
+    localStorage.clear();
     apiServiceMock = {
       scanBarcode: vi.fn().mockName("ApiService.scanBarcode"),
       addReleaseToCollection: vi.fn().mockName("ApiService.addReleaseToCollection"),
@@ -245,6 +248,18 @@ describe('BarcodeScannerComponent', () => {
       await component.executeBarcodeScan('075678645624');
       await vi.advanceTimersByTimeAsync(SCAN_RESULT_DISPLAY_MS);
 
+      expect(component.scanResult()).toBeNull();
+      expect(component.isScanning()).toBe(true);
+    });
+
+    it('uses the display duration configured in the settings (#366)', async () => {
+      component.scannerService.setResultDisplaySeconds(5);
+      await component.executeBarcodeScan('075678645624');
+
+      await vi.advanceTimersByTimeAsync(4_999);
+      expect(component.scanResult()).toEqual(logged);
+
+      await vi.advanceTimersByTimeAsync(1);
       expect(component.scanResult()).toBeNull();
       expect(component.isScanning()).toBe(true);
     });

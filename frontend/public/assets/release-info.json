@@ -5,6 +5,14 @@
     "tag": "In Entwicklung",
     "isCurrent": false,
     "isUnreleased": true,
+    "items": []
+  },
+  {
+    "version": "v1.10.0",
+    "rawHeader": "v1.10.0 (2026-11-10)",
+    "date": "2026-11-10",
+    "isCurrent": true,
+    "isUnreleased": false,
     "items": [
       {
         "title": "Feature: Anzeigedauer nach dem Scannen einstellbar (`#366`)",
@@ -54,7 +62,7 @@
     "version": "v1.9.2",
     "rawHeader": "v1.9.2 (2026-11-07)",
     "date": "2026-11-07",
-    "isCurrent": true,
+    "isCurrent": false,
     "isUnreleased": false,
     "items": [
       {

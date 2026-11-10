@@ -264,7 +264,7 @@ checksum = "beea02de84f7d4c090ccf9a2bddcd0595105b35c2ed0c9a0ed66aca4b79559bd"
 
 [[package]]
 name = "backend-rs"
-version = "1.9.2"
+version = "1.10.0"
 dependencies = [
  "aes-gcm",
  "anyhow",
@@ -3759,7 +3759,7 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
 name = "vinyl-api-types"
-version = "1.9.2"
+version = "1.10.0"
 dependencies = [
  "schemars",
  "serde",

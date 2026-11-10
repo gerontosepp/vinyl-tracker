@@ -3,7 +3,7 @@
 import { ReleaseEntry } from '../models/release-info.model';
 
 // Application version from frontend/package.json – single source for all version badges.
-export const APP_VERSION = '1.9.2';
+export const APP_VERSION = '1.10.0';
 
 export const RELEASE_INFO_DATA: ReleaseEntry[] = [
   {
@@ -12,6 +12,14 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "tag": "In Entwicklung",
     "isCurrent": false,
     "isUnreleased": true,
+    "items": []
+  },
+  {
+    "version": "v1.10.0",
+    "rawHeader": "v1.10.0 (2026-11-10)",
+    "date": "2026-11-10",
+    "isCurrent": true,
+    "isUnreleased": false,
     "items": [
       {
         "title": "Feature: Anzeigedauer nach dem Scannen einstellbar (`#366`)",
@@ -61,7 +69,7 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "version": "v1.9.2",
     "rawHeader": "v1.9.2 (2026-11-07)",
     "date": "2026-11-07",
-    "isCurrent": true,
+    "isCurrent": false,
     "isUnreleased": false,
     "items": [
       {

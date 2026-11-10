@@ -11,6 +11,18 @@
 
 ---
 
+## v1.10.0 (2026-11-10)
+
+- **Feature: Anzeigedauer nach dem Scannen einstellbar (`#366`)**: Wie lange die gescannte Platte („Jetzt aufgelegt!“) nach einem Listen-Event sichtbar bleibt, lässt sich jetzt unter **Einstellungen → Barcode & QR Scanner** zwischen 5 und 120 Sekunden einstellen (Standard 30). Die Einstellung gilt pro Gerät für Hardware-, Kamera- und manuelle Scans.
+
+- **Fix: Anmeldung über die Cookie-Session wird auch ohne localStorage-Token erkannt**: Die App prüfte die Sitzung beim Start nur, wenn ein Token im localStorage lag. Ging der localStorage verloren (z. B. durch iOS-PWA-Speicherbereinigung), blieb eine gültige HttpOnly-Cookie-Session ungenutzt und die Anmeldeseite erschien. Jetzt wird die Sitzung immer über `GET /users/me` geprüft; ein erwartetes 401 dieses Start-Checks erzeugt keinen „Sitzung abgelaufen“-Hinweis und keine Weiterleitung.
+- **Fix: Beträge und Zahlen folgen dem Sprachwechsel**: Nach dem Umschalten zwischen Deutsch und Englisch blieben Zahlen- und Preisformate bis zum Neuladen in der alten Locale (z. B. `1.234,50 €` statt `€1,234.50`). Preise in der Sammlung und im Detail, der Sammlungswert und die Min-/Max-Werte auf dem Dashboard nutzen jetzt sofort das Format der gewählten Sprache.
+- **Fix: Zwei Pressungen desselben Albums in „Meistgespielt“ getrennt anzeigen**: Hatten zwei Platten denselben Titel und Interpreten (z. B. Erstpressung und Reissue), verwendete die Rangliste denselben internen Schlüssel für beide Zeilen. Jetzt hat jeder Eintrag einen eindeutigen Schlüssel und beide Pressungen erscheinen als eigene Zeilen.
+- **Fix: Scanner verarbeitet beim erneuten Öffnen nicht noch einmal den letzten Scan**: Nach einem Scan blieb der Auftrag im Scanner-Dienst gespeichert. Wurde der Scanner geschlossen und wieder geöffnet, lief der letzte Code erneut durch und erzeugte ein zweites Hör-Ereignis (Play-Count und Statistiken zählten doppelt). Jetzt wird jeder Scan-Auftrag genau einmal verarbeitet.
+- **Fix: Detailansicht zeigt bei schnellem Wechsel immer die geöffnete Platte**: Wurde eine Platte geöffnet, die Ansicht geschlossen und sofort eine andere Platte geöffnet, konnte die verspätete Antwort der ersten Platte die Ansicht der zweiten überschreiben. Zustand ändern, Sortier-String speichern oder „Aus Sammlung entfernen“ hätten dann die falsche Platte getroffen. Jetzt wird die laufende Anfrage beim Schließen beendet, verspätete Antworten (auch auf Zustands- und Sortier-Änderungen) werden verworfen, und eine offene Löschbestätigung gehört immer zur angezeigten Platte.
+
+---
+
 ## v1.9.2 (2026-11-07)
 
 - **Fix: Gescannte Platte verschwindet nach 30 Sekunden (`#351`)**: Wenn ein Barcode-Scan ein Hören erfasst hatte, blieb die Platte („Jetzt aufgelegt!“) auf dem Scan-Bildschirm stehen, bis du die Seite neu geladen oder „Nächste Platte scannen“ geklickt hast. Jetzt wird sie 30 Sekunden angezeigt, danach erscheint wieder der normale Scan-Bildschirm. Scannst du in dieser Zeit die nächste Platte, ersetzt sie die Anzeige und die 30 Sekunden beginnen neu. Treffer, bei denen du etwas auswählen musst, und Fehlermeldungen bleiben stehen.

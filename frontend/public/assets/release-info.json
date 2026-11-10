@@ -8,10 +8,61 @@
     "items": []
   },
   {
+    "version": "v1.10.0",
+    "rawHeader": "v1.10.0 (2026-11-10)",
+    "date": "2026-11-10",
+    "isCurrent": true,
+    "isUnreleased": false,
+    "items": [
+      {
+        "title": "Feature: Anzeigedauer nach dem Scannen einstellbar (`#366`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Wie lange die gescannte Platte („Jetzt aufgelegt!“) nach einem Listen-Event sichtbar bleibt, lässt sich jetzt unter **Einstellungen → Barcode & QR Scanner** zwischen 5 und 120 Sekunden einstellen (Standard 30). Die Einstellung gilt pro Gerät für Hardware-, Kamera- und manuelle Scans.",
+        "details": []
+      },
+      {
+        "title": "Fix: Anmeldung über die Cookie-Session wird auch ohne localStorage-Token erkannt",
+        "type": "fix",
+        "typeLabel": "Fix",
+        "summary": "Die App prüfte die Sitzung beim Start nur, wenn ein Token im localStorage lag. Ging der localStorage verloren (z. B. durch iOS-PWA-Speicherbereinigung), blieb eine gültige HttpOnly-Cookie-Session ungenutzt und die Anmeldeseite erschien. Jetzt wird die Sitzung immer über `GET /users/me` geprüft; ein erwartetes 401 dieses Start-Checks erzeugt keinen „Sitzung abgelaufen“-Hinweis und keine Weiterleitung.",
+        "details": []
+      },
+      {
+        "title": "Fix: Beträge und Zahlen folgen dem Sprachwechsel",
+        "type": "fix",
+        "typeLabel": "Fix",
+        "summary": "Nach dem Umschalten zwischen Deutsch und Englisch blieben Zahlen- und Preisformate bis zum Neuladen in der alten Locale (z. B. `1.234,50 €` statt `€1,234.50`). Preise in der Sammlung und im Detail, der Sammlungswert und die Min-/Max-Werte auf dem Dashboard nutzen jetzt sofort das Format der gewählten Sprache.",
+        "details": []
+      },
+      {
+        "title": "Fix: Zwei Pressungen desselben Albums in „Meistgespielt“ getrennt anzeigen",
+        "type": "fix",
+        "typeLabel": "Fix",
+        "summary": "Hatten zwei Platten denselben Titel und Interpreten (z. B. Erstpressung und Reissue), verwendete die Rangliste denselben internen Schlüssel für beide Zeilen. Jetzt hat jeder Eintrag einen eindeutigen Schlüssel und beide Pressungen erscheinen als eigene Zeilen.",
+        "details": []
+      },
+      {
+        "title": "Fix: Scanner verarbeitet beim erneuten Öffnen nicht noch einmal den letzten Scan",
+        "type": "fix",
+        "typeLabel": "Fix",
+        "summary": "Nach einem Scan blieb der Auftrag im Scanner-Dienst gespeichert. Wurde der Scanner geschlossen und wieder geöffnet, lief der letzte Code erneut durch und erzeugte ein zweites Hör-Ereignis (Play-Count und Statistiken zählten doppelt). Jetzt wird jeder Scan-Auftrag genau einmal verarbeitet.",
+        "details": []
+      },
+      {
+        "title": "Fix: Detailansicht zeigt bei schnellem Wechsel immer die geöffnete Platte",
+        "type": "fix",
+        "typeLabel": "Fix",
+        "summary": "Wurde eine Platte geöffnet, die Ansicht geschlossen und sofort eine andere Platte geöffnet, konnte die verspätete Antwort der ersten Platte die Ansicht der zweiten überschreiben. Zustand ändern, Sortier-String speichern oder „Aus Sammlung entfernen“ hätten dann die falsche Platte getroffen. Jetzt wird die laufende Anfrage beim Schließen beendet, verspätete Antworten (auch auf Zustands- und Sortier-Änderungen) werden verworfen, und eine offene Löschbestätigung gehört immer zur angezeigten Platte.",
+        "details": []
+      }
+    ]
+  },
+  {
     "version": "v1.9.2",
     "rawHeader": "v1.9.2 (2026-11-07)",
     "date": "2026-11-07",
-    "isCurrent": true,
+    "isCurrent": false,
     "isUnreleased": false,
     "items": [
       {

@@ -30,7 +30,7 @@ Ein Klick auf ein Cover öffnet dieselbe Detailansicht wie in der Sammlung.
 - **QR-Code** von gedruckten Vinyl-Tracker-Etiketten oder Scan-Listen: erfasst das Hören direkt.
 - **Manuelle Eingabe:** Barcode abtippen, falls die Kamera ihn nicht liest.
 
-Nach einem erfassten Hören bleibt die Platte („Jetzt aufgelegt!“) **30 Sekunden** sichtbar, danach erscheint wieder der normale Scan-Bildschirm. Mit **Nächste Platte scannen** geht es sofort weiter.
+Nach einem erfassten Hören bleibt die Platte („Jetzt aufgelegt!“) sichtbar – standardmäßig **30 Sekunden**, einstellbar unter **Einstellungen → Barcode & QR Scanner** (5–120 Sekunden). Danach erscheint wieder der normale Scan-Bildschirm. Mit **Nächste Platte scannen** geht es sofort weiter.
 
 ### Identify-Modus {#identify-modus}
 

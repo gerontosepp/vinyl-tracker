@@ -5,6 +5,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
 import { of, Subject } from 'rxjs';
 import { AppResumeService } from '../../core/services/app-resume.service';
+import { LanguageService } from '../../core/services/language.service';
 import { signal, NO_ERRORS_SCHEMA } from '@angular/core';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { CollectionRelease } from '../../core/types';
@@ -60,6 +61,26 @@ describe('CollectionComponent', () => {
 
     expect(loadData).toHaveBeenCalledTimes(1);
     expect(loadShelves).toHaveBeenCalledTimes(1);
+  });
+
+  it('formats the load timestamp in the active language', () => {
+    mockAuthService.user = signal({ id: 1 });
+    const language = TestBed.inject(LanguageService);
+    const initialLanguage = language.language();
+    language.setLanguage('en');
+    const format = vi.spyOn(Intl, 'DateTimeFormat').mockImplementation(function () {
+      return { format: () => '10:00' } as unknown as Intl.DateTimeFormat;
+    } as any);
+
+    try {
+      component.loadData();
+
+      expect(format).toHaveBeenCalledWith('en-US', expect.anything());
+      expect(component.loadStatus()).toContain('10:00');
+    } finally {
+      format.mockRestore();
+      language.setLanguage(initialLanguage);
+    }
   });
 
   it('takes the search from the URL, e.g. from the dashboard top artists', async () => {
@@ -173,6 +194,36 @@ describe('CollectionComponent', () => {
       expect(mockApiService.getRecordDetails).toHaveBeenCalledWith(1001, 556);
       expect(component.recordDetail()?.instance_id).toBe(556);
       expect(component.loadingDetail()).toBe(false);
+    });
+
+    it('ignores a detail response that arrives after the modal was closed', () => {
+      const pending = new Subject<any>();
+      mockApiService.getRecordDetails = vi.fn().mockReturnValue(pending.asObservable());
+
+      component.openDetail({ id: 1001, instance_id: 556, basic_information: { id: 1001, title: 'Posen', artists: [] } } as any);
+      component.closeDetail();
+      pending.next({ discogs_id: 1001, instance_id: 556, title: 'Posen' });
+
+      expect(component.recordDetail()).toBeNull();
+      expect(component.loadingDetail()).toBe(false);
+    });
+
+    it('keeps the details of the record opened last when answers arrive out of order', () => {
+      const first = new Subject<any>();
+      const second = new Subject<any>();
+      mockApiService.getRecordDetails = vi.fn()
+        .mockReturnValueOnce(first.asObservable())
+        .mockReturnValueOnce(second.asObservable());
+
+      component.openDetail({ id: 1001, instance_id: 556, basic_information: { id: 1001, title: 'Posen', artists: [] } } as any);
+      component.openDetail({ id: 2002, instance_id: 777, basic_information: { id: 2002, title: 'Help!', artists: [] } } as any);
+
+      second.next({ discogs_id: 2002, instance_id: 777, title: 'Help!' });
+      first.next({ discogs_id: 1001, instance_id: 556, title: 'Posen' });
+
+      expect(component.selectedRecord()?.id).toBe(2002);
+      expect(component.recordDetail()?.discogs_id).toBe(2002);
+      expect(component.recordDetail()?.title).toBe('Help!');
     });
 
     it('shows a taken-over record under its Discogs IDs and reloads the list', () => {
@@ -485,11 +536,41 @@ describe('CollectionComponent', () => {
         formats: [],
         labels: [],
       };
+      component.selectedRecord.set(component.releases()[0]);
 
       component.onListenLogged(updatedDetail);
 
       expect(component.recordDetail()).toEqual(updatedDetail);
       expect(component.releases()[0].listen_count).toBe(3);
+    });
+
+    it('updates only the list row for a record that is no longer shown', () => {
+      const release = (id: number, instanceId: number) =>
+        ({
+          id,
+          instance_id: instanceId,
+          date_added: '',
+          rating: 0,
+          listen_count: 2,
+          basic_information: { id, title: `Album ${id}`, year: 2020, thumb: '', cover_image: '', artists: [] },
+        }) as CollectionRelease;
+      component.releases.set([release(100, 1), release(200, 2)]);
+      component.selectedRecord.set(component.releases()[1]);
+
+      component.onListenLogged({
+        id: 1,
+        discogs_id: 100,
+        genres: [],
+        in_collection: true,
+        listen_count: 3,
+        tracklist: [],
+        formats: [],
+        labels: [],
+      });
+
+      expect(component.recordDetail()).toBeNull();
+      expect(component.releases()[0].listen_count).toBe(3);
+      expect(component.releases()[1].listen_count).toBe(2);
     });
   });
 
@@ -582,10 +663,23 @@ describe('CollectionComponent', () => {
     it('shows the updated detail and reloads the collection in the new order', () => {
       const loadData = vi.spyOn(component, 'loadData').mockImplementation(() => undefined);
       const updated = { discogs_id: 100, sort_key: 'Paul, Les', in_collection: true, genres: [], listen_count: 0, tracklist: [], formats: [], labels: [] } as any;
+      component.selectedRecord.set({ id: 100, instance_id: 1, basic_information: { id: 100, title: 'Test Album', artists: [] } } as any);
 
       component.onSortKeyUpdated(updated);
 
       expect(component.recordDetail()).toEqual(updated);
+      expect(loadData).toHaveBeenCalled();
+    });
+
+    it('ignores the detail of another record but still reloads the list', () => {
+      const loadData = vi.spyOn(component, 'loadData').mockImplementation(() => undefined);
+      const shown = { discogs_id: 200, in_collection: true, genres: [], listen_count: 0, tracklist: [], formats: [], labels: [] } as any;
+      component.recordDetail.set(shown);
+      component.selectedRecord.set({ id: 200, instance_id: 2, basic_information: { id: 200, title: 'Other', artists: [] } } as any);
+
+      component.onSortKeyUpdated({ discogs_id: 100, sort_key: 'Paul, Les' } as any);
+
+      expect(component.recordDetail()).toEqual(shown);
       expect(loadData).toHaveBeenCalled();
     });
   });
@@ -636,6 +730,20 @@ describe('CollectionComponent', () => {
       expect(component.releases()[0].basic_information.median_price).toBe(32.50);
       expect(component.selectedRecord()?.media_condition).toBe('Mint (M)');
     });
+
+    it('does not apply a late condition update to another record shown meanwhile', () => {
+      const shown = { discogs_id: 200, in_collection: true, genres: [], listen_count: 0, tracklist: [], formats: [], labels: [] } as any;
+      const shownRelease = { id: 200, instance_id: 2, basic_information: { id: 200, title: 'Other', artists: [] } } as any;
+      component.releases.set([{ id: 100, media_condition: 'Very Good (VG)', basic_information: { id: 100, median_price: 10 } } as any, shownRelease]);
+      component.selectedRecord.set(shownRelease);
+      component.recordDetail.set(shown);
+
+      component.onConditionUpdated({ discogs_id: 100, media_condition: 'Mint (M)', median_price: 32.5 } as any);
+
+      expect(component.recordDetail()).toEqual(shown);
+      expect(component.selectedRecord()?.media_condition).toBeUndefined();
+      expect(component.releases()[0].media_condition).toBe('Mint (M)');
+    });
   });
 
   describe('onRecordRemoved', () => {
@@ -655,6 +763,18 @@ describe('CollectionComponent', () => {
       expect(component.releases()[0].id).toBe(102);
       expect(component.totalItems()).toBe(1);
       expect(component.selectedItems().has(101)).toBe(false);
+    });
+
+    it('keeps another record open when a late removal of the previous one succeeds', () => {
+      const release1 = { id: 101, instance_id: 1, basic_information: { id: 101, title: 'Album 1' } } as any;
+      const release2 = { id: 102, instance_id: 2, basic_information: { id: 102, title: 'Album 2' } } as any;
+      component.releases.set([release1, release2]);
+      component.selectedRecord.set(release2);
+
+      component.onRecordRemoved(101);
+
+      expect(component.selectedRecord()?.id).toBe(102);
+      expect(component.releases().map((r) => r.id)).toEqual([102]);
     });
   });
 });

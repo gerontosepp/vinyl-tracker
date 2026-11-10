@@ -30,4 +30,12 @@ export async function mockUnhandledApi(page: Page): Promise<void> {
       }),
     })
   );
+  // Start-up session check of a spec without a session: the app expects a silent 401
+  await page.route('**/api/users/me', (route) =>
+    route.fulfill({
+      status: 401,
+      contentType: 'application/problem+json',
+      body: JSON.stringify({ title: 'Unauthorized', status: 401, detail: 'No session' }),
+    })
+  );
 }

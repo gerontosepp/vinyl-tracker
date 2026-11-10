@@ -71,7 +71,7 @@ import { LucideChevronDown, LucideChevronUp } from '@lucide/angular';
 
       <div class="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2">
         @if (tab() === 'records') {
-        @for (record of visibleData(); track record.title + record.artist || $index; let idx = $index) {
+        @for (record of visibleData(); track record.discogsId ? record.discogsId : 'i' + $index; let idx = $index) {
           <div
             class="group relative flex items-center gap-3 p-2 sm:px-3 sm:py-2 rounded-xl border border-slate-100/80 dark:border-slate-700/60 bg-white/60 dark:bg-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-all duration-200 overflow-hidden shadow-xs hover:shadow-sm"
           >

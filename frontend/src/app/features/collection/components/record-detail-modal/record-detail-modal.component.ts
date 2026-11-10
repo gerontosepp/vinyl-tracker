@@ -94,7 +94,11 @@ export class RecordDetailModalComponent implements OnInit {
   readonly isUpdatingCondition = signal<boolean>(false);
   readonly isSavingSortKey = signal<boolean>(false);
   readonly isRemoving = signal<boolean>(false);
-  readonly showDeleteConfirm = signal<boolean>(false);
+  /** Delete confirmation; closes whenever another record is shown. */
+  readonly showDeleteConfirm = linkedSignal<CollectionRelease | null, boolean>({
+    source: () => this.record(),
+    computation: () => false,
+  });
   /** Lightbox state; closes whenever another record is shown. */
   readonly showCover = linkedSignal<CollectionRelease | null, boolean>({
     source: () => this.record(),

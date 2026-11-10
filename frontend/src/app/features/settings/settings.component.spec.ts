@@ -54,6 +54,7 @@ describe('SettingsComponent', () => {
   };
 
   beforeEach(async () => {
+    localStorage.clear();
     mockAuthService = {
       user: signal({
         id: 1,
@@ -190,6 +191,26 @@ describe('SettingsComponent', () => {
 
     component.scannerService.setSoundFeedback(false);
     expect(component.scannerService.soundFeedback()).toBe(false);
+  });
+
+  it('configures the scan result display duration (#366)', () => {
+    const input: HTMLInputElement = fixture.nativeElement.querySelector('[data-testid="scanner-result-display"]');
+    expect(input).not.toBeNull();
+    expect(input.value).toBe('30');
+
+    input.value = '90';
+    input.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    expect(component.scannerService.resultDisplaySeconds()).toBe(90);
+    expect(input.value).toBe('90');
+
+    input.value = '500';
+    input.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    expect(component.scannerService.resultDisplaySeconds()).toBe(120);
+    expect(input.value).toBe('120');
   });
 
   it('should display and clear scanner test result', () => {

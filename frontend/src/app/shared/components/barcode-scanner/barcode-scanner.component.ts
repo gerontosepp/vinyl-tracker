@@ -16,9 +16,6 @@ import { firstValueFrom } from 'rxjs';
 import { HelpLinkComponent } from '../help-link/help-link.component';
 import { ManualRecordFormComponent, ManualRecordPrefill } from '../manual-record-form/manual-record-form.component';
 
-/** How long a scanned record ("Jetzt aufgelegt!") stays visible before the scan screen resets (#351). */
-export const SCAN_RESULT_DISPLAY_MS = 30_000;
-
 @Component({
   selector: 'app-barcode-scanner',
   standalone: true,
@@ -409,7 +406,8 @@ export class BarcodeScannerComponent implements AfterViewInit, OnDestroy {
   constructor() {
     void this.wantList.ensureLoaded();
     effect(() => {
-      const trigger = this.scannerService.scanTrigger();
+      // Consume the trigger: creating the scanner again (close/open) must not replay the last scan
+      const trigger = this.scannerService.consumeScanTrigger();
       if (trigger && trigger.code) {
         this.cleanupScanner();
         this.isScanning.set(false);
@@ -531,7 +529,7 @@ export class BarcodeScannerComponent implements AfterViewInit, OnDestroy {
       this.scannerService.notifyScanLogged();
       // A logged listen needs no decision: show the record for a while, then scan on (#351)
       if (!apiResult.discogsMatches?.length) {
-        this.resultResetTimerId = setTimeout(() => this.handleReset(), SCAN_RESULT_DISPLAY_MS);
+        this.resultResetTimerId = setTimeout(() => this.handleReset(), this.scannerService.resultDisplayMs());
       }
     }
     if (apiResult.discogsMatches && apiResult.discogsMatches.length > 0) {

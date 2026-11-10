@@ -5,6 +5,7 @@ import { tap } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 import { ToastService } from '../services/toast.service';
 import { LanguageService } from '../services/language.service';
+import { SILENT_AUTH_CHECK } from './auth-context';
 
 const AUTH_TOKEN_KEY = 'vinyl_auth_token';
 
@@ -30,6 +31,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const injector = inject(Injector);
   const token = localStorage.getItem(AUTH_TOKEN_KEY);
   const startTime = Date.now();
+  const silentAuthCheck = req.context.get(SILENT_AUTH_CHECK);
 
   let authReq = req;
   if (token && !req.headers.has('Authorization')) {
@@ -51,9 +53,14 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       error: (error) => {
         const duration = Date.now() - startTime;
         if (error instanceof HttpErrorResponse) {
-          console.error(
-            `[API Error] ${req.method} ${req.url} - Status: ${error.status} - Time: ${duration}ms - Error: ${error.message}`
-          );
+          const expectedAnonymous =
+            silentAuthCheck && (error.status === 401 || error.status === 403);
+
+          if (!expectedAnonymous) {
+            console.error(
+              `[API Error] ${req.method} ${req.url} - Status: ${error.status} - Time: ${duration}ms - Error: ${error.message}`
+            );
+          }
 
           if ((error.status === 401 || error.status === 403) && !isPublicAuthEndpoint(req.url)) {
             localStorage.removeItem(AUTH_TOKEN_KEY);
@@ -63,6 +70,9 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
             } catch {
               // Ignore DI resolution issues in isolated tests
             }
+
+            // The startup check without a session is expected: no toast, no redirect
+            if (expectedAnonymous) return;
 
             if (!isHandlingSessionExpiry) {
               isHandlingSessionExpiry = true;

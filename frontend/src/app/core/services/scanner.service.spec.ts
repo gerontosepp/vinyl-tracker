@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { ScannerService } from './scanner.service';
+import { ScannerService, SCAN_RESULT_DISPLAY_DEFAULT_SECONDS, SCAN_RESULT_DISPLAY_MAX_SECONDS, SCAN_RESULT_DISPLAY_MIN_SECONDS, clampResultDisplaySeconds } from './scanner.service';
 import { ToastService } from './toast.service';
 
 describe('ScannerService', () => {
@@ -46,6 +46,14 @@ describe('ScannerService', () => {
     expect(service.showScanner()).toBe(true);
     service.closeScanner();
     expect(service.showScanner()).toBe(false);
+  });
+
+  it('drops a pending scan when the scanner is closed', () => {
+    service.scanTrigger.set({ code: '075678645624', timestamp: 1 });
+
+    service.closeScanner();
+
+    expect(service.scanTrigger()).toBeNull();
   });
 
   it('should toggleScanner correctly', () => {
@@ -97,6 +105,61 @@ describe('ScannerService', () => {
     expect(localStorage.getItem('scanner_identify')).toBe('false');
   });
 
+  describe('result display duration (#366)', () => {
+    it('defaults to 30 seconds', () => {
+      expect(service.resultDisplaySeconds()).toBe(SCAN_RESULT_DISPLAY_DEFAULT_SECONDS);
+      expect(service.resultDisplayMs()).toBe(30_000);
+    });
+
+    it('persists the chosen duration to localStorage', () => {
+      service.setResultDisplaySeconds(45);
+
+      expect(service.resultDisplaySeconds()).toBe(45);
+      expect(service.resultDisplayMs()).toBe(45_000);
+      expect(localStorage.getItem('scanner_result_display_seconds')).toBe('45');
+    });
+
+    it('loads the saved duration on startup', () => {
+      localStorage.setItem('scanner_result_display_seconds', '60');
+
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [ScannerService, { provide: Router, useValue: mockRouter }],
+      });
+      const reloaded = TestBed.inject(ScannerService);
+
+      expect(reloaded.resultDisplaySeconds()).toBe(60);
+    });
+
+    it('falls back to the default for an invalid stored value', () => {
+      localStorage.setItem('scanner_result_display_seconds', 'abc');
+
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [ScannerService, { provide: Router, useValue: mockRouter }],
+      });
+      const reloaded = TestBed.inject(ScannerService);
+
+      expect(reloaded.resultDisplaySeconds()).toBe(SCAN_RESULT_DISPLAY_DEFAULT_SECONDS);
+    });
+
+    it('clamps to the supported range and rounds to whole seconds', () => {
+      expect(clampResultDisplaySeconds(1)).toBe(SCAN_RESULT_DISPLAY_MIN_SECONDS);
+      expect(clampResultDisplaySeconds(500)).toBe(SCAN_RESULT_DISPLAY_MAX_SECONDS);
+      expect(clampResultDisplaySeconds(12.6)).toBe(13);
+      expect(clampResultDisplaySeconds(Number.NaN)).toBe(SCAN_RESULT_DISPLAY_DEFAULT_SECONDS);
+    });
+
+    it('clamps values passed to the setter', () => {
+      service.setResultDisplaySeconds(1);
+      expect(service.resultDisplaySeconds()).toBe(SCAN_RESULT_DISPLAY_MIN_SECONDS);
+
+      service.setResultDisplaySeconds(500);
+      expect(service.resultDisplaySeconds()).toBe(SCAN_RESULT_DISPLAY_MAX_SECONDS);
+      expect(localStorage.getItem('scanner_result_display_seconds')).toBe('120');
+    });
+  });
+
   it('should capture fast HID scanner burst as a 1D barcode scan', () => {
     service.setScannerMode('hardware');
     const barcode = '075678645624';
@@ -117,6 +180,14 @@ describe('ScannerService', () => {
     expect(lastCode?.type).toBe('1d');
     expect(service.showScanner()).toBe(true);
     expect(service.scanTrigger()?.code).toBe(barcode);
+  });
+
+  it('hands out a pending scan trigger only once', () => {
+    service.scanTrigger.set({ code: '075678645624', timestamp: 1 });
+
+    expect(service.consumeScanTrigger()?.code).toBe('075678645624');
+    expect(service.scanTrigger()).toBeNull();
+    expect(service.consumeScanTrigger()).toBeNull();
   });
 
   it('should warn when a keystroke burst outside inputs is dropped', () => {

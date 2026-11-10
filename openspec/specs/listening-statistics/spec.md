@@ -48,3 +48,10 @@ Ein Klick auf einen Interpreten MUST die Sammlung mit der Suche nach dem Interpr
 #### Scenario: Klick auf Interpret
 - **WHEN** der Nutzer auf „Miles Davis“ klickt
 - **THEN** öffnet sich `/collection?search=Miles%20Davis` mit der Suche „Miles Davis“ im Suchfeld und den passenden Platten
+
+### Requirement: Eindeutige Zeilen in der Rangliste
+Die Rangliste „Meistgespielte Alben“ MUST Releases mit gleichem Titel und Interpreten (z. B. zwei Pressungen desselben Albums) als getrennte Zeilen anzeigen.
+
+#### Scenario: Zwei Pressungen desselben Albums
+- **WHEN** der Nutzer zwei Pressungen von „Greatest Hits“ desselben Interpreten gehört hat
+- **THEN** zeigt die Rangliste beide Releases als eigene Zeilen mit ihren jeweiligen Hördurchgängen

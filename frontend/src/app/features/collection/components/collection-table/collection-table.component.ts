@@ -1,6 +1,7 @@
 import { Component, input, output, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ApiService } from '../../../../core/services/api.service';
+import { LanguageService } from '../../../../core/services/language.service';
 import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
 import { LocalizedDatePipe } from '../../../../core/pipes/localized-date.pipe';
 import { StorageSlotPipe } from '../../../../core/pipes/storage-slot.pipe';
@@ -32,6 +33,7 @@ import { TooltipDirective } from '../../../../shared/directives/tooltip.directiv
 })
 export class CollectionTableComponent {
   readonly apiService = inject(ApiService);
+  readonly languageService = inject(LanguageService);
 
   readonly releases = input<CollectionRelease[]>([]);
   readonly selectedItems = input<Map<number, QrCodeItem>>(new Map());

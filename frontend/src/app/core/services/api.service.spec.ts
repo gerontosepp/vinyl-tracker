@@ -3,6 +3,7 @@ import { ApplicationRef } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApiService } from './api.service';
+import { SILENT_AUTH_CHECK } from '../interceptors/auth-context';
 
 describe('ApiService label photos', () => {
   let service: ApiService;
@@ -226,5 +227,17 @@ describe('ApiService want-to-have', () => {
 
     service.getWantToHaveVersionStats(3, 42).subscribe();
     http.expectOne({ url: '/api/want-to-have/3/sources/42/stats', method: 'GET' }).flush({});
+  });
+
+  it('marks the start-up session check as silent', () => {
+    service.getUser(true).subscribe();
+    const req = http.expectOne({ url: '/api/users/me', method: 'GET' });
+    expect(req.request.context.get(SILENT_AUTH_CHECK)).toBe(true);
+    req.flush({ id: 1, username: 'user' });
+
+    service.getUser().subscribe();
+    const normal = http.expectOne({ url: '/api/users/me', method: 'GET' });
+    expect(normal.request.context.get(SILENT_AUTH_CHECK)).toBe(false);
+    normal.flush({ id: 1, username: 'user' });
   });
 });

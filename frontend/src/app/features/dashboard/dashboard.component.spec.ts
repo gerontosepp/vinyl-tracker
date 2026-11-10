@@ -7,6 +7,8 @@ import { ScannerService } from '../../core/services/scanner.service';
 import { AppResumeService } from '../../core/services/app-resume.service';
 import { LanguageService } from '../../core/services/language.service';
 import { signal, NO_ERRORS_SCHEMA } from '@angular/core';
+import { registerLocaleData } from '@angular/common';
+import localeDe from '@angular/common/locales/de';
 import { of, throwError, Subject } from 'rxjs';
 import { Router, provideRouter } from '@angular/router';
 import { AnalyticsTopRecord, CollectionValueResponse, GenreBreakdownItem, ListenEvent } from '../../core/types';
@@ -55,6 +57,8 @@ describe('DashboardComponent', () => {
     { name: 'Jazz', value: 5 },
   ];
 
+  beforeAll(() => registerLocaleData(localeDe));
+
   beforeEach(async () => {
     mockAuthService = {
       user: signal({
@@ -87,6 +91,7 @@ describe('DashboardComponent', () => {
 
     mockLanguageService = {
       language: signal('en'),
+      locale: signal('en-US'),
       translate: vi.fn().mockName('translate').mockImplementation((key: string) => {
         const dict: Record<string, string> = {
           'dashboard.all': 'All',
@@ -290,15 +295,15 @@ describe('DashboardComponent', () => {
     expect(component.getGenreColor(10)).toBe(component.GENRE_COLORS[5]);
   });
 
-  it('should return correct currency symbols with Euro default', () => {
-    expect(component.getCurrencySymbol('EUR')).toBe('€');
-    expect(component.getCurrencySymbol('€')).toBe('€');
-    expect(component.getCurrencySymbol('USD')).toBe('$');
-    expect(component.getCurrencySymbol('$')).toBe('$');
-    expect(component.getCurrencySymbol(undefined)).toBe('€');
+  it('should return correct currency codes with Euro default', () => {
+    expect(component.currencyCode('EUR')).toBe('EUR');
+    expect(component.currencyCode('€')).toBe('EUR');
+    expect(component.currencyCode('USD')).toBe('USD');
+    expect(component.currencyCode('$')).toBe('USD');
+    expect(component.currencyCode(undefined)).toBe('EUR');
   });
 
-  it('should render collection value with Euro symbol in median and min/max subtext', () => {
+  it('should render the collection value in the active locale', () => {
     component.collectionValue.set({
       minimum: { currency: 'EUR', value: 6405 },
       median: { currency: 'EUR', value: 11973.16 },
@@ -307,12 +312,18 @@ describe('DashboardComponent', () => {
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
-    const text = compiled.textContent || '';
-    expect(text).toContain('€');
+    let text = compiled.textContent || '';
+    expect(text).toContain('€11,973.16');
     expect(text).toContain('Min:');
     expect(text).toContain('Max:');
-    expect(text).toContain('6,405 €');
-    expect(text).toContain('23,112 €');
+    expect(text).toContain('€6,405');
+    expect(text).toContain('€23,112');
+
+    mockLanguageService.locale.set('de-DE');
+    fixture.detectChanges();
+    text = compiled.textContent || '';
+    expect(text).toContain('11.973,16');
+    expect(text).toContain('23.112');
   });
 
   describe('record detail view', () => {

@@ -8,7 +8,7 @@ export const authGuard: CanActivateFn = () => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
-  if (!authService.isLoading()) {
+  if (!authService.isCheckingSession()) {
     if (authService.user()) {
       return true;
     }
@@ -16,8 +16,8 @@ export const authGuard: CanActivateFn = () => {
     return false;
   }
 
-  return toObservable(authService.isLoading).pipe(
-    filter((loading) => !loading),
+  return toObservable(authService.isCheckingSession).pipe(
+    filter((checking) => !checking),
     take(1),
     map(() => {
       if (authService.user()) {

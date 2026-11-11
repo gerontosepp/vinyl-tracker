@@ -3,7 +3,7 @@
 import { ReleaseEntry } from '../models/release-info.model';
 
 // Application version from frontend/package.json – single source for all version badges.
-export const APP_VERSION = '1.10.0';
+export const APP_VERSION = '1.11.0';
 
 export const RELEASE_INFO_DATA: ReleaseEntry[] = [
   {
@@ -15,10 +15,26 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "items": []
   },
   {
+    "version": "v1.11.0",
+    "rawHeader": "v1.11.0 (2026-11-11)",
+    "date": "2026-11-11",
+    "isCurrent": true,
+    "isUnreleased": false,
+    "items": [
+      {
+        "title": "Feature: Neue Navigation mit Rail, Befehlspalette und einheitlichem Menü (`#371`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Die Navigation kommt jetzt aus einer einzigen Konfiguration, sodass Seitenleiste, untere Leiste (Handy) und Befehlspalette immer dieselben Ziele in derselben Reihenfolge zeigen: Start, Sammlung, Regale, Want-to-Have, Scannen, Label-Inbox, Einstellungen – Hilfe sitzt fest am unteren Rand. **⌘B** klappt die Leiste ein und aus, **⌘K** öffnet die Befehlspalette zum Springen und für globale Aktionen. Scannen ist ein normaler Menüpunkt (mobil weiterhin der schwebende Knopf); das Sortieren einer Regal-Reihe bleibt dem Handy vorbehalten. Die Sammlung nutzt außerdem eine durchgehende Scroll-Fläche mit feststehender Werkzeugleiste, und Regale sind direkt über `/collection?view=shelves` verlinkbar.",
+        "details": []
+      }
+    ]
+  },
+  {
     "version": "v1.10.0",
     "rawHeader": "v1.10.0 (2026-11-10)",
     "date": "2026-11-10",
-    "isCurrent": true,
+    "isCurrent": false,
     "isUnreleased": false,
     "items": [
       {

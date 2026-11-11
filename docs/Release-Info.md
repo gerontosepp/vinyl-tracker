@@ -11,6 +11,12 @@
 
 ---
 
+## v1.11.0 (2026-11-11)
+
+- **Feature: Neue Navigation mit Rail, Befehlspalette und einheitlichem Menü (`#371`)**: Die Navigation kommt jetzt aus einer einzigen Konfiguration, sodass Seitenleiste, untere Leiste (Handy) und Befehlspalette immer dieselben Ziele in derselben Reihenfolge zeigen: Start, Sammlung, Regale, Want-to-Have, Scannen, Label-Inbox, Einstellungen – Hilfe sitzt fest am unteren Rand. **⌘B** klappt die Leiste ein und aus, **⌘K** öffnet die Befehlspalette zum Springen und für globale Aktionen. Scannen ist ein normaler Menüpunkt (mobil weiterhin der schwebende Knopf); das Sortieren einer Regal-Reihe bleibt dem Handy vorbehalten. Die Sammlung nutzt außerdem eine durchgehende Scroll-Fläche mit feststehender Werkzeugleiste, und Regale sind direkt über `/collection?view=shelves` verlinkbar.
+
+---
+
 ## v1.10.0 (2026-11-10)
 
 - **Feature: Anzeigedauer nach dem Scannen einstellbar (`#366`)**: Wie lange die gescannte Platte („Jetzt aufgelegt!“) nach einem Listen-Event sichtbar bleibt, lässt sich jetzt unter **Einstellungen → Barcode & QR Scanner** zwischen 5 und 120 Sekunden einstellen (Standard 30). Die Einstellung gilt pro Gerät für Hardware-, Kamera- und manuelle Scans.

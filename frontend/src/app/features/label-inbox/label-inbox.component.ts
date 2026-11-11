@@ -40,7 +40,7 @@ export const IDENTIFY_POLL_MS = 5000;
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <app-layout [fullWidth]="false">
+    <app-layout width="narrow">
       <div class="space-y-5">
         <div class="flex flex-wrap items-start justify-between gap-3">
           <div class="min-w-0">

@@ -1,4 +1,4 @@
-<app-layout [fullWidth]="true">
+<app-layout>
   <ng-template #viewSwitch>
     <div
       class="inline-flex items-center p-1 bg-slate-200/70 dark:bg-slate-900/60 rounded-xl border border-slate-200/80 dark:border-slate-700 text-xs font-bold"
@@ -27,21 +27,24 @@
   </ng-template>
 
   <div
-    class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm flex flex-col h-[calc(100vh-6rem)] md:h-[calc(100vh-5rem)] transition-colors border border-slate-200/50 dark:border-slate-600 overflow-hidden"
+    class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm flex flex-col transition-colors border border-slate-200/50 dark:border-slate-600"
   >
     @if (view() === 'shelves') {
-      <div class="px-4 py-3 md:p-6 border-b border-slate-100 dark:border-slate-600 flex items-center gap-3">
+      <div
+        class="sticky top-16 z-20 px-4 py-3 md:p-6 border-b border-slate-100 dark:border-slate-600 flex flex-wrap items-center gap-3 bg-white/95 dark:bg-slate-800/95 backdrop-blur rounded-t-2xl"
+      >
         <h1 class="text-xl md:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
           {{ 'collection.title' | translate }}
         </h1>
         <ng-container [ngTemplateOutlet]="viewSwitch" />
       </div>
-      <div class="flex-1 overflow-y-auto p-2 md:p-6 bg-slate-50/30 dark:bg-slate-900/20">
+      <div class="p-2 md:p-6 bg-slate-50/30 dark:bg-slate-900/20">
         <app-shelf-view (filterSelected)="openStorageFilter($event)" />
       </div>
     } @else {
     <!-- Header, Actions, Controls & Pagination Toolbar -->
     <app-collection-toolbar
+      class="contents"
       [search]="search()"
       [sort]="sort()"
       [sortOrder]="sortOrder()"
@@ -89,7 +92,7 @@
     </app-collection-toolbar>
 
     <!-- List Content -->
-    <div class="flex-1 overflow-y-auto p-2 md:p-6 bg-slate-50/30 dark:bg-slate-900/20 relative">
+    <div class="p-2 md:p-6 bg-slate-50/30 dark:bg-slate-900/20 relative overflow-x-auto">
       @if (loading()) {
         <!-- Skeleton: compact rows on mobile (like the list), tiles from md -->
         <div

@@ -9,11 +9,11 @@ const loginViaUi = async (page: import('@playwright/test').Page) => {
   await expect(page).toHaveURL('/');
 };
 
-const openSettingsViaProfile = async (page: import('@playwright/test').Page) => {
-  const profileNavItem = page.locator('aside').getByText('Profile', { exact: true });
+const openSettings = async (page: import('@playwright/test').Page) => {
+  const profileNavItem = page.locator('aside').getByTestId('nav-settings');
   await expect(profileNavItem).toBeVisible();
   await profileNavItem.click();
-  await expect(page).toHaveURL('/profile');
+  await expect(page).toHaveURL('/settings');
 };
 
 test.describe('Settings Sync', () => {
@@ -77,7 +77,7 @@ test.describe('Settings Sync', () => {
     });
 
     await loginViaUi(page);
-    await openSettingsViaProfile(page);
+    await openSettings(page);
 
     const syncButton = page.getByRole('button', { name: 'Force Sync Collection' });
     await syncButton.click();
@@ -95,7 +95,7 @@ test.describe('Settings Sync', () => {
     });
 
     await loginViaUi(page);
-    await openSettingsViaProfile(page);
+    await openSettings(page);
 
     await page.getByRole('button', { name: 'Force Sync Collection' }).click();
 

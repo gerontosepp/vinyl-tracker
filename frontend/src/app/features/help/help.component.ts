@@ -48,7 +48,7 @@ export interface HelpSection {
     .help-content strong { font-weight: 700; }
   `,
   template: `
-    <app-layout [fullWidth]="false">
+    <app-layout width="narrow">
       <div class="space-y-5">
         <div class="flex flex-wrap items-end justify-between gap-3">
           <div>

@@ -4,13 +4,16 @@ import { provideRouter, Router } from '@angular/router';
 import { TopMenuBarComponent } from './top-menu-bar.component';
 import { AuthService } from '../../../../core/services/auth.service';
 import { LanguageService } from '../../../../core/services/language.service';
+import { NavigationUiService } from '../../../../core/services/navigation-ui.service';
 import { ScannerService } from '../../../../core/services/scanner.service';
+import { ThemeService } from '../../../../core/services/theme.service';
 import { APP_VERSION } from '../../../../core/constants/release-info.data';
 
 describe('TopMenuBarComponent', () => {
   let fixture: ComponentFixture<TopMenuBarComponent>;
   let component: TopMenuBarComponent;
   const language = signal<'de' | 'en'>('de');
+  const isDark = signal(false);
   const mockAuthService = {
     user: signal<{ username: string } | null>({ username: 'opolm' }),
     logout: vi.fn().mockResolvedValue(undefined),
@@ -20,17 +23,24 @@ describe('TopMenuBarComponent', () => {
     setLanguage: vi.fn((lang: 'de' | 'en') => language.set(lang)),
     translate: (key: string) => key,
   };
+  const mockUi = { openPalette: vi.fn().mockName('openPalette') };
+  const mockTheme = { isDark, toggle: vi.fn().mockName('toggleTheme') };
 
   beforeEach(async () => {
     language.set('de');
+    isDark.set(false);
     mockAuthService.user.set({ username: 'opolm' });
+    mockUi.openPalette.mockClear();
+    mockTheme.toggle.mockClear();
     await TestBed.configureTestingModule({
       imports: [TopMenuBarComponent],
       providers: [
         provideRouter([]),
         { provide: AuthService, useValue: mockAuthService },
         { provide: LanguageService, useValue: mockLanguageService },
+        { provide: NavigationUiService, useValue: mockUi },
         { provide: ScannerService, useValue: { closeScanner: vi.fn() } },
+        { provide: ThemeService, useValue: mockTheme },
       ],
     }).compileComponents();
 
@@ -79,6 +89,36 @@ describe('TopMenuBarComponent', () => {
     expect(mockLanguageService.setLanguage).toHaveBeenCalledWith('en');
     component.toggleLanguage();
     expect(mockLanguageService.setLanguage).toHaveBeenLastCalledWith('de');
+  });
+
+  it('opens the command palette from the header search field', () => {
+    const trigger: HTMLButtonElement = fixture.nativeElement.querySelector(
+      '[data-testid="palette-trigger"]',
+    );
+    expect(trigger.textContent).toContain('⌘K');
+    trigger.click();
+
+    expect(mockUi.openPalette).toHaveBeenCalled();
+
+    const mobile: HTMLButtonElement = fixture.nativeElement.querySelector(
+      '[data-testid="palette-trigger-mobile"]',
+    );
+    mobile.click();
+    expect(mockUi.openPalette).toHaveBeenCalledTimes(2);
+  });
+
+  it('toggles the theme and reflects the current scheme', () => {
+    const toggle: HTMLButtonElement = fixture.nativeElement.querySelector(
+      '[data-testid="theme-toggle"]',
+    );
+    expect(toggle.querySelector('svg[lucideMoon], svg')).toBeTruthy();
+
+    toggle.click();
+    expect(mockTheme.toggle).toHaveBeenCalled();
+
+    isDark.set(true);
+    fixture.detectChanges();
+    expect(toggle.getAttribute('aria-label')).toBe('nav.toggleTheme');
   });
 
   it('navigates to the login after logout', async () => {

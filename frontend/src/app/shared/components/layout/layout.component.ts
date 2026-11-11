@@ -1,20 +1,36 @@
-import { Component, inject, input, ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { Router } from '@angular/router';
+import { LucideScanLine } from '@lucide/angular';
 import { SidebarComponent } from './sidebar/sidebar.component';
 import { BottomNavComponent } from './bottom-nav/bottom-nav.component';
 import { TopMenuBarComponent } from './top-menu-bar/top-menu-bar.component';
+import { CommandPaletteComponent } from './command-palette/command-palette.component';
 import { AuthService } from '../../../core/services/auth.service';
+import { NavigationUiService } from '../../../core/services/navigation-ui.service';
 import { ScannerService } from '../../../core/services/scanner.service';
+import { TranslatePipe } from '../../../core/pipes/translate.pipe';
 
+/**
+ * App shell: fixed top bar, collapsible rail on desktop, bottom bar + scan button on phones.
+ * Pages only provide content; the shell owns navigation, shortcuts (⌘K, ⌘B) and the palette.
+ */
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [SidebarComponent, BottomNavComponent, TopMenuBarComponent],
+  imports: [
+    SidebarComponent,
+    BottomNavComponent,
+    TopMenuBarComponent,
+    CommandPaletteComponent,
+    LucideScanLine,
+    TranslatePipe,
+  ],
   changeDetection: ChangeDetectionStrategy.Eager,
+  host: {
+    '(document:keydown)': 'onKeydown($event)',
+  },
   template: `
-    <div
-      class="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col md:flex-row transition-colors text-slate-900 dark:text-slate-50"
-    >
+    <div class="min-h-dvh bg-slate-50 dark:bg-slate-900 transition-colors text-slate-900 dark:text-slate-50">
       <!-- Top Global Menu Bar -->
       <app-top-menu-bar />
 
@@ -22,23 +38,29 @@ import { ScannerService } from '../../../core/services/scanner.service';
       <app-sidebar (scanClick)="handleScan()" />
 
       <!-- Main Content Area -->
-      <!-- pt-16 accounts for TopMenuBar, pb-24 accounts for BottomNav on mobile. Sidebar handles md margin-left. -->
-      <main
-        class="flex-1 w-full pt-16 pb-24 md:pb-0 md:ml-24 min-h-screen transition-all duration-300"
-      >
-        <div
-          [class]="
-            fullWidth()
-              ? 'w-full p-3 sm:p-4 md:p-6'
-              : 'max-w-7xl mx-auto p-4 sm:p-6 md:p-8 lg:p-10'
-          "
-        >
+      <main class="min-h-dvh pt-16 pb-24 md:pb-0 transition-[padding] duration-200" [class]="mainPadding()">
+        <div [class]="contentClass()">
           <ng-content></ng-content>
         </div>
       </main>
 
       <!-- Mobile Bottom Nav -->
-      <app-bottom-nav (scanClick)="handleScan()" />
+      <app-bottom-nav />
+
+      <!-- Scan is the primary action on phones, mirrored by the rail CTA on desktop -->
+      <button
+        type="button"
+        (click)="handleScan()"
+        data-testid="scan-fab"
+        [attr.aria-label]="'nav.scan' | translate"
+        [attr.aria-pressed]="scannerService.showScanner()"
+        class="md:hidden fixed left-1/2 -translate-x-1/2 bottom-[calc(env(safe-area-inset-bottom)+16px)] z-[52] flex h-14 w-14 items-center justify-center rounded-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/30 transition-colors cursor-pointer"
+      >
+        <svg lucideScanLine [size]="24" [strokeWidth]="2.4"></svg>
+      </button>
+
+      <!-- Keyboard palette (⌘K) -->
+      <app-command-palette (scan)="handleScan()" />
 
       <!-- Sync Global Toast Notification -->
       @if (authService.isSyncing()) {
@@ -55,10 +77,23 @@ import { ScannerService } from '../../../core/services/scanner.service';
   `,
 })
 export class LayoutComponent {
-  readonly fullWidth = input<boolean>(true);
+  /** `wide` uses the full workspace width, `narrow` suits reading pages like help and settings. */
+  readonly width = input<'wide' | 'narrow'>('wide');
+
   readonly authService = inject(AuthService);
-  private readonly scannerService = inject(ScannerService);
+  readonly scannerService = inject(ScannerService);
+  readonly ui = inject(NavigationUiService);
   private readonly router = inject(Router);
+
+  readonly mainPadding = computed(() =>
+    this.ui.railExpanded() ? 'md:pl-[232px]' : 'md:pl-[88px]',
+  );
+
+  readonly contentClass = computed(() =>
+    this.width() === 'narrow'
+      ? 'mx-auto w-full max-w-4xl p-4 sm:p-6 md:p-8'
+      : 'mx-auto w-full max-w-[1560px] p-4 sm:p-6 md:p-8',
+  );
 
   handleScan(): void {
     if (this.scannerService.showScanner()) {
@@ -70,6 +105,29 @@ export class LayoutComponent {
       if (currentUrl !== '/' && currentUrl !== '/#') {
         this.router.navigate(['/']);
       }
+    }
+  }
+
+  onKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Escape') {
+      this.ui.closePalette();
+      this.ui.closeMore();
+      return;
+    }
+
+    if (!(event.metaKey || event.ctrlKey)) {
+      return;
+    }
+
+    switch (event.key.toLowerCase()) {
+      case 'k':
+        event.preventDefault();
+        this.ui.togglePalette();
+        break;
+      case 'b':
+        event.preventDefault();
+        this.ui.toggleRail();
+        break;
     }
   }
 }

@@ -1,0 +1,693 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Layout-Vorschläge · Vinyl Tracker</title>
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      .hero {
+        padding: 34px 0 10px;
+      }
+
+      .hero h1 {
+        margin: 0;
+        font-size: clamp(28px, 4vw, 40px);
+        letter-spacing: -0.045em;
+        line-height: 1.05;
+        max-width: 22ch;
+      }
+
+      .hero p {
+        margin: 12px 0 0;
+        max-width: 68ch;
+        font-size: 14px;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .hero-meta {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 16px;
+      }
+
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 16px;
+        margin-top: 26px;
+      }
+
+      .card {
+        display: flex;
+        flex-direction: column;
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border);
+        background: var(--surface);
+        box-shadow: var(--shadow-md);
+        overflow: hidden;
+      }
+
+      .card-body {
+        padding: 16px 18px 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        flex: 1;
+      }
+
+      .card h2 {
+        margin: 0;
+        font-size: 18px;
+        letter-spacing: -0.02em;
+      }
+
+      .card .tagline {
+        margin: 0;
+        font-size: 12.5px;
+        color: var(--muted);
+        font-weight: 500;
+      }
+
+      .card ul {
+        margin: 0;
+        padding-left: 16px;
+        font-size: 12.5px;
+        color: var(--muted);
+        line-height: 1.55;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+
+      .card ul b {
+        color: var(--text);
+        font-weight: 700;
+      }
+
+      .card-foot {
+        margin-top: auto;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding-top: 6px;
+      }
+
+      .preview {
+        height: 168px;
+        padding: 14px;
+        overflow: hidden;
+        background:
+          radial-gradient(120% 120% at 0% 0%, var(--accent-soft), transparent 60%),
+          var(--surface-2);
+        border-bottom: 1px solid var(--border);
+      }
+
+      .wire {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        border-radius: 10px;
+        padding: 8px;
+        overflow: hidden;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-sm);
+      }
+
+      .wire-top {
+        height: 12px;
+        border-radius: 4px;
+        background: var(--surface-3);
+      }
+
+      .wire-main {
+        display: flex;
+        gap: 6px;
+        flex: 1;
+        min-height: 0;
+      }
+
+      .wire-rail {
+        width: 22px;
+        border-radius: 6px;
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        align-items: center;
+        padding: 5px 0;
+      }
+
+      .wire-rail i {
+        width: 8px;
+        height: 8px;
+        border-radius: 2px;
+        background: var(--surface-3);
+      }
+
+      .wire-rail i:first-child {
+        background: var(--accent);
+      }
+
+      .wire-side {
+        width: 62px;
+        border-radius: 6px;
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: 6px;
+      }
+
+      .wire-side i {
+        height: 6px;
+        border-radius: 2px;
+        background: var(--surface-3);
+      }
+
+      .wire-side i:first-child {
+        background: var(--accent);
+        width: 70%;
+      }
+
+      .wire-canvas {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        min-width: 0;
+      }
+
+      .wire-head {
+        height: 14px;
+        width: 46%;
+        border-radius: 3px;
+        background: var(--surface-3);
+      }
+
+      .wire-row {
+        flex: 1;
+        display: flex;
+        gap: 5px;
+        align-items: center;
+      }
+
+      .wire-row i {
+        width: 14px;
+        height: 14px;
+        border-radius: 3px;
+        background: var(--surface-3);
+      }
+
+      .wire-row span {
+        flex: 1;
+        height: 6px;
+        border-radius: 3px;
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+      }
+
+      .wire-panes {
+        flex: 1;
+        display: flex;
+        gap: 6px;
+        min-width: 0;
+      }
+
+      .wire-list {
+        flex: 1.15;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: var(--surface-2);
+        padding: 5px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .wire-list i {
+        height: 9px;
+        border-radius: 2px;
+        background: var(--surface-3);
+      }
+
+      .wire-list i:first-child {
+        background: var(--accent-soft);
+        border: 1px solid var(--accent-border);
+      }
+
+      .wire-detail {
+        flex: 1;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        padding: 5px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .wire-cover {
+        aspect-ratio: 1;
+        width: 62%;
+        border-radius: 4px;
+        margin-bottom: 3px;
+        background: linear-gradient(135deg, var(--accent), #78350f);
+      }
+
+      .wire-detail i {
+        height: 5px;
+        border-radius: 2px;
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+      }
+
+      .wire-wall {
+        flex: 1;
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 5px;
+        align-content: start;
+        min-height: 0;
+        overflow: hidden;
+      }
+
+      .wire-wall i {
+        aspect-ratio: 1;
+        border-radius: 3px;
+        background: linear-gradient(135deg, var(--court-a, #d97706), var(--court-b, #78350f));
+      }
+
+      .wire-wall i:nth-child(2n) {
+        --court-a: #0ea5e9;
+        --court-b: #0c4a6e;
+      }
+
+      .wire-wall i:nth-child(3n) {
+        --court-a: #22c55e;
+        --court-b: #064e3b;
+      }
+
+      .wire-wall i:nth-child(5n) {
+        --court-a: #a855f7;
+        --court-b: #3b0764;
+      }
+
+      table.compare {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 12px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        background: var(--surface);
+        box-shadow: var(--shadow-sm);
+      }
+
+      .compare th,
+      .compare td {
+        padding: 11px 14px;
+        text-align: left;
+        font-size: 12.5px;
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+      }
+
+      .compare th {
+        font-size: 10px;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        color: var(--muted-2);
+        background: var(--surface-2);
+        font-weight: 800;
+      }
+
+      .compare tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .compare td b {
+        font-weight: 800;
+      }
+
+      .section {
+        margin-top: 40px;
+      }
+
+      .section > h2 {
+        margin: 0;
+        font-size: 20px;
+        letter-spacing: -0.03em;
+      }
+
+      .section > p {
+        margin: 6px 0 0;
+        font-size: 12.5px;
+        color: var(--muted);
+        max-width: 76ch;
+      }
+
+      .phases {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 14px;
+        margin-top: 16px;
+      }
+
+      .phase {
+        padding: 14px 16px;
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border);
+        background: var(--surface);
+        box-shadow: var(--shadow-sm);
+      }
+
+      .phase-no {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: var(--accent-soft);
+        color: var(--accent-text);
+        border: 1px solid var(--accent-border);
+        font-size: 11px;
+        font-weight: 800;
+      }
+
+      .phase h3 {
+        margin: 10px 0 4px;
+        font-size: 13.5px;
+      }
+
+      .phase p {
+        margin: 0;
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .phase .out {
+        margin-top: 8px;
+        font-size: 11.5px;
+        color: var(--accent-text);
+        font-weight: 700;
+      }
+
+      .checklist {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 10px 22px;
+        margin: 14px 0 0;
+        padding: 0;
+        list-style: none;
+        font-size: 12.5px;
+        color: var(--muted);
+      }
+
+      .checklist li {
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+      }
+
+      .checklist li::before {
+        content: '→';
+        color: var(--accent-text);
+        font-weight: 800;
+      }
+
+      footer {
+        margin-top: 44px;
+        padding: 16px 0 30px;
+        border-top: 1px solid var(--border);
+        font-size: 11.5px;
+        color: var(--muted-2);
+      }
+
+      @media (max-width: 860px) {
+        .hero {
+          padding-top: 22px;
+        }
+
+        .compare th:nth-child(4),
+        .compare td:nth-child(4) {
+          display: none;
+        }
+      }
+
+      @media (max-width: 560px) {
+        .topbar .pill {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <svg class="sr-only" aria-hidden="true">
+      <symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
+      <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+    </svg>
+
+    <div class="shell">
+      <header class="topbar">
+        <a class="brand" href="index.html"><span class="brand-mark"></span> Vinyl<em>Tracker</em></a>
+        <span class="pill" style="margin-left: 6px">Layout-Exploration</span>
+        <div class="topbar-spacer"></div>
+        <button class="icon-btn" data-theme-toggle title="Dark Mode"><svg width="17" height="17"><use href="#i-moon" /></svg></button>
+      </header>
+
+      <main class="main" style="max-width: 1180px">
+        <section class="hero">
+          <h1>Drei Wege zu einem aufgeräumteren Frontend</h1>
+          <p>
+            Statische, klickbare Mockups zum Ist-Stand von Vinyl Tracker (Angular 22, Tailwind 4, Amber/Stone-Tokens).
+            Kein Produktionscode, keine Änderung an <code>frontend/</code> – nur HTML/CSS/JS zum Vergleichen.
+            Alle drei zeigen dieselbe Sammlungs-Ansicht, damit Unterschiede in Navigation, Dichte und Detail-Führung direkt sichtbar werden.
+          </p>
+          <div class="hero-meta">
+            <span class="pill">⌘B Rail umschalten (A)</span>
+            <span class="pill">⌘K Befehlspalette (A)</span>
+            <span class="pill">Zeile klicken → Detail (B)</span>
+            <span class="pill">Dichte S/M/L (C)</span>
+            <span class="pill">Dark Mode oben rechts</span>
+          </div>
+        </section>
+
+        <section class="cards" aria-label="Varianten">
+          <article class="card">
+            <div class="preview">
+              <div class="wire">
+                <div class="wire-top"></div>
+                <div class="wire-main">
+                  <div class="wire-rail"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+                  <div class="wire-canvas">
+                    <div class="wire-head"></div>
+                    <div class="wire-row"><i></i><span></span></div>
+                    <div class="wire-row"><i></i><span></span></div>
+                    <div class="wire-row"><i></i><span></span></div>
+                    <div class="wire-row"><i></i><span></span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div style="display: flex; align-items: center; gap: 8px">
+                <h2>Variante A – Rail 2.0</h2>
+                <span class="tag">Evolution</span>
+              </div>
+              <p class="tagline">Gleiche Optik, aufgeräumte Struktur. Kleinster Eingriff, schnellster Nutzen.</p>
+              <ul>
+                <li><b>Eine Nav-Quelle</b> für Rail, Bottom-Nav und Palette</li>
+                <li><b>Scannen</b> als Menüpunkt zwischen Want-to-Have und Label-Inbox</li>
+                <li>Ein Scroll-Container, sticky Page-Header</li>
+                <li>Rail per ⌘B aufklappbar, Befehlspalette ⌘K</li>
+              </ul>
+              <div class="card-foot">
+                <a class="btn btn-primary" href="variant-a.html">Mockup öffnen <svg width="15" height="15"><use href="#i-arrow" /></svg></a>
+                <span class="tiny muted">~2–3 Tage · Risiko niedrig</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="preview">
+              <div class="wire">
+                <div class="wire-top"></div>
+                <div class="wire-main">
+                  <div class="wire-side"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+                  <div class="wire-panes">
+                    <div class="wire-list"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+                    <div class="wire-detail">
+                      <div class="wire-cover"></div>
+                      <i></i><i></i><i></i><i></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div style="display: flex; align-items: center; gap: 8px">
+                <h2>Variante B – Konsole</h2>
+                <span class="tag">Produktivität</span>
+              </div>
+              <p class="tagline">Für große Sammlungen: Labels in der Sidebar, Liste und Detail nebeneinander.</p>
+              <ul>
+                <li><b>Sidebar mit Gruppen</b> skaliert auf 10+ Ziele</li>
+                <li><b>Split-View</b> statt Modal + Deep-Link pro Album</li>
+                <li>Filter im Popover, aktive Filter als Chip-Band</li>
+                <li>Tastatur: <b>j/k</b>, Enter, <b>s</b> scannen, ⌘K</li>
+              </ul>
+              <div class="card-foot">
+                <a class="btn btn-primary" href="variant-b.html">Mockup öffnen <svg width="15" height="15"><use href="#i-arrow" /></svg></a>
+                <span class="tiny muted">~6–8 Tage · Risiko mittel</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="preview">
+              <div class="wire">
+                <div class="wire-top"></div>
+                <div class="wire-canvas" style="margin-top: 4px">
+                  <div class="wire-head" style="width: 32%"></div>
+                  <div class="wire-wall"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+                </div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div style="display: flex; align-items: center; gap: 8px">
+                <h2>Variante C – Sleeve-first</h2>
+                <span class="tag">Marke</span>
+              </div>
+              <p class="tagline">Cover als Hauptinformation. Die Sammlung fühlt sich wieder nach Sammlung an.</p>
+              <ul>
+                <li><b>Cover-Wand</b> mit Dichte S / M / L</li>
+                <li>Aktionen beim Hover, mobil als Long-Press-Sheet</li>
+                <li>Detail als <b>eigene Seite</b> mit großem Cover</li>
+                <li>Dashboard als „Magazin" mit Hör-Timeline</li>
+              </ul>
+              <div class="card-foot">
+                <a class="btn btn-primary" href="variant-c.html">Mockup öffnen <svg width="15" height="15"><use href="#i-arrow" /></svg></a>
+                <span class="tiny muted">~4–5 Tage · Risiko mittel</span>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <section class="section">
+          <h2>Vergleich</h2>
+          <p>Die Aufwände sind Netto-Umsetzung inkl. Tests, ohne Design-Iterationen.</p>
+          <table class="compare">
+            <thead>
+              <tr>
+                <th>Kriterium</th>
+                <th>A · Rail 2.0</th>
+                <th>B · Konsole</th>
+                <th>C · Sleeve-first</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><b>Löst</b></td>
+                <td>Inkonsistente Navigation, verschachtelte Scrolls, tote Breitenlogik</td>
+                <td>Skalierung, Deep-Links, Klickstrecke bei vielen Filtern</td>
+                <td>Visuelle Identität, „Vinyl-Gefühl", Sammlung als Erlebnis</td>
+              </tr>
+              <tr>
+                <td><b>Ändert</b></td>
+                <td>Shell + Nav-Konfiguration</td>
+                <td>Shell + Collection-Ansicht + Detail-Routing</td>
+                <td>Collection-Ansicht + Detailseite + Dashboard</td>
+              </tr>
+              <tr>
+                <td><b>Risiko</b></td>
+                <td>Niedrig – bestehende Tests bleiben gültig</td>
+                <td>Mittel – neue Routen, Modal-Ablösung, E2E-Anpassung</td>
+                <td>Mittel – Artwork-Verfügbarkeit, Performance, Kontrast</td>
+              </tr>
+              <tr>
+                <td><b>Passt zu</b></td>
+                <td>Schnelle Verbesserung ohne Redesign-Diskussion</td>
+                <td>Sammlungen ab ~300 Platten, Desktop-Nutzung</td>
+                <td>Präsentation, Wiederverkauf, „zeig mir meine Platten"</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section class="section">
+          <h2>Empfehlung: B als Zielbild, A als Einstieg, C als Phase 3</h2>
+          <p>
+            Jede Phase ist einzeln auslieferbar. Nach Phase 1 sind alle Ziele auf allen Geräten erreichbar –
+            das ist der größte Einzelgewinn. Phase 2 und 3 bauen darauf auf, ohne die Shell erneut anzufassen.
+          </p>
+          <div class="phases">
+            <div class="phase">
+              <span class="phase-no">1</span>
+              <h3>Fundament</h3>
+              <p>
+                Nav-Konfiguration als Single Source of Truth, Scan als Menüpunkt (mobil FAB), ein Scroll-Container,
+                sticky Page-Header, Inhaltsbreite und Dichte-Token.
+              </p>
+              <div class="out">Alle Ziele überall erreichbar · kein Layout-Springen</div>
+            </div>
+            <div class="phase">
+              <span class="phase-no">2</span>
+              <h3>Arbeiten</h3>
+              <p>
+                Split-View und Detail-Route, Filter-Sheet mit Chip-Band, Command-Palette, Tastatur-Shortcuts.
+              </p>
+              <div class="out">Deep-Links · weniger Klicks · große Sammlungen</div>
+            </div>
+            <div class="phase">
+              <span class="phase-no">3</span>
+              <h3>Erleben</h3>
+              <p>
+                Cover-Wand als dritte Ansicht, Dashboard-Hero mit letzter Platte und Hör-Timeline.
+              </p>
+              <div class="out">Markenprofil · Sammlung als Erlebnis</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <h2>Leitplanken für die Umsetzung</h2>
+          <ul class="checklist">
+            <li>Farb- und Typo-System bleibt (Amber als Vinyl-Akzent, Stone im Dark Mode)</li>
+            <li>Hilfe-Anker (<code>app-help-link</code>) bleiben, damit die Doku weiter verlinkt</li>
+            <li>Höhen über <code>dvh</code> und <code>env(safe-area-inset-*)</code>, keine <code>calc(100vh - 6rem)</code>-Ketten</li>
+            <li>45–48 px Touch-Ziele und sichtbare Fokus-Ringe beibehalten</li>
+            <li><code>prefers-reduced-motion</code> respektieren (Mockups tun es bereits)</li>
+            <li>Z-Index- und Radius-Token statt gestreuter <code>z-50</code>/<code>rounded-2xl</code></li>
+          </ul>
+        </section>
+
+        <footer>
+          Mockups: <code>docs/design/</code> · keine App-Abhängigkeiten, kein Build nötig · Theme-Wahl wird lokal gespeichert.
+        </footer>
+      </main>
+    </div>
+
+    <script>
+      const root = document.documentElement;
+      const stored = localStorage.getItem('vt-mockup-theme');
+      if (stored === 'dark' || (!stored && matchMedia('(prefers-color-scheme: dark)').matches)) {
+        root.classList.add('dark');
+      }
+      document.querySelectorAll('[data-theme-toggle]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          root.classList.toggle('dark');
+          localStorage.setItem('vt-mockup-theme', root.classList.contains('dark') ? 'dark' : 'light');
+        });
+      });
+    </script>
+  </body>
+</html>

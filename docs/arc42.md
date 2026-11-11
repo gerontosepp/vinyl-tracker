@@ -277,6 +277,7 @@ Architectural decisions in Vinyl Tracker are maintained as formal **Architecture
 | [ADR-0022](adr/0022-label-erkennung-in-der-app-ueber-openrouter.md) | 2026-10-23 | In-app label photo identification via OpenRouter (vision model with read-only Discogs tools) | `Accepted` |
 | [ADR-0023](adr/0023-manuelle-platten-mit-negativen-lokalen-ids.md) | 2026-10-24 | Manual records without a Discogs entry with negative local IDs | `Accepted` |
 | [ADR-0024](adr/0024-tls-provider-ring-fuer-reqwest.md) | 2026-11-05 | `ring` as the TLS provider for `reqwest` 0.13 (system trust store, `ca-certificates` required at runtime) | `Accepted` |
+| [ADR-0025](adr/0025-einheitliche-navigations-konfiguration.md) | 2026-11-11 | One navigation configuration for rail, bottom nav and command palette | `Accepted` |
 
 ## 10. Quality Requirements
 

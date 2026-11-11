@@ -54,10 +54,10 @@ Während der Sortier-Screen sichtbar ist, MUST der Modus eine Screen Wake Lock a
 - **THEN** stimmt die Reihenfolge mit der Regal-Übersicht überein und jedes Exemplar trägt seinen Lagerplatz
 
 ### Requirement: Sortier-Modus über die untere Leiste starten
-Die untere Navigationsleiste der Mobil-Ansicht MUST einen Eintrag „Sortieren“ mit Regal-Icon enthalten, der den Sortier-Modus öffnet; er MUST in Größe und Stil den übrigen Einträgen entsprechen. Ohne Regale MUST der Sortier-Modus einen Hinweis zeigen, zuerst ein Regal anzulegen. Der Start-Screen MUST ein Regal (vorbelegt mit dem ersten in Regal-Reihenfolge) und ein Startfach als Zeile und Spalte innerhalb des Regal-Rasters abfragen. Zeile und Spalte MUST sich zusätzlich mit Plus- und Minus-Buttons um jeweils eins verstellen lassen, sodass die Wahl ohne Bildschirmtastatur möglich ist (z. B. wenn ein verbundener Bluetooth-Scanner sie auf dem Handy ausblendet); die Eingabe per Tastatur MUST möglich bleiben.
+Die untere Navigation der Mobil-Ansicht MUST im „Mehr“-Sheet einen Eintrag „Sammlung sortieren“ mit Regal-Icon enthalten, der den Sortier-Modus öffnet; er MUST in Größe und Stil den übrigen Einträgen entsprechen und MUST weder in der Desktop-Seitenleiste noch in der Befehlspalette erscheinen. Ohne Regale MUST der Sortier-Modus einen Hinweis zeigen, zuerst ein Regal anzulegen. Der Start-Screen MUST ein Regal (vorbelegt mit dem ersten in Regal-Reihenfolge) und ein Startfach als Zeile und Spalte innerhalb des Regal-Rasters abfragen. Zeile und Spalte MUST sich zusätzlich mit Plus- und Minus-Buttons um jeweils eins verstellen lassen, sodass die Wahl ohne Bildschirmtastatur möglich ist (z. B. wenn ein verbundener Bluetooth-Scanner sie auf dem Handy ausblendet); die Eingabe per Tastatur MUST möglich bleiben.
 
 #### Scenario: Einstieg über die untere Leiste
-- **WHEN** der Nutzer am Handy in der unteren Leiste auf „Sortieren“ tippt
+- **WHEN** der Nutzer am Handy in der unteren Leiste auf „Mehr“ und dort auf „Sammlung sortieren“ tippt
 - **THEN** öffnet sich der Start-Screen des Sortier-Modus
 
 #### Scenario: Ohne Regale

@@ -92,7 +92,9 @@ describe('SettingsComponent', () => {
 
     mockThemeService = {
       theme: signal('dark'),
+      isDark: signal(true),
       setTheme: vi.fn().mockName('setTheme'),
+      toggle: vi.fn().mockName('toggleTheme'),
     };
 
     mockLanguageService = {

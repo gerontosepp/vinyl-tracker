@@ -12,6 +12,14 @@ Vinyl Tracker verwaltet deine Platten und CDs auf Basis deiner **Discogs-Sammlun
 
 Tipp: Fast jedes Symbol erklärt sich, wenn du mit der Maus darauf zeigst oder es auf dem Handy länger gedrückt hältst. Das **?**-Symbol auf einer Seite springt direkt zum passenden Abschnitt dieser Hilfe.
 
+## Navigation {#navigation}
+
+Am Desktop liegt die Navigation in der linken Leiste: **Start**, **Sammlung**, **Regale**, **Want-to-Have**, **Scannen**, **Label-Inbox** und **Einstellungen**. **Hilfe** (diese Seite) sitzt ganz unten am Rand der Leiste.
+
+- **⌘B** (Strg+B unter Windows/Linux) klappt die Leiste ein und aus – eingeklappt bleiben nur die Symbole sichtbar.
+- **⌘K** öffnet die Befehlspalette: Seiten und Aktionen suchen, mit den Pfeiltasten wählen und mit Enter springen. **Esc** schließt sie wieder.
+- Auf dem Handy ersetzt eine Leiste am unteren Rand die Seitenleiste; **Mehr** öffnet die übrigen Ziele. Der Scan-Knopf schwebt darüber.
+
 ## Dashboard {#dashboard}
 
 Die Startseite zeigt deine Hörgewohnheiten für einen wählbaren Zeitraum (heute, 7 Tage, 30 Tage, eigener Zeitraum):
@@ -24,7 +32,7 @@ Ein Klick auf ein Cover öffnet dieselbe Detailansicht wie in der Sammlung.
 
 ## Scannen {#scannen}
 
-Über **Scan** in der Navigation erfasst du, dass du eine Platte hörst – oder fügst eine neue hinzu.
+Über **Scannen** in der Navigation erfasst du, dass du eine Platte hörst – oder fügst eine neue hinzu.
 
 - **Barcode** (EAN/UPC auf dem Cover): Ist die Platte in deiner Sammlung, wird das Hören sofort erfasst. Sonst sucht Vinyl Tracker sie bei Discogs, zeigt die passenden Pressungen und fügt die gewählte deiner Discogs-Sammlung hinzu.
 - **QR-Code** von gedruckten Vinyl-Tracker-Etiketten oder Scan-Listen: erfasst das Hören direkt.

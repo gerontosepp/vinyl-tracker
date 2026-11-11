@@ -1,6 +1,6 @@
-import { Component, OnInit, OnDestroy, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, computed, ChangeDetectionStrategy, DestroyRef } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { LayoutComponent } from '../../shared/components/layout/layout.component';
@@ -58,6 +58,8 @@ export class CollectionComponent implements OnInit, OnDestroy {
   readonly toastService = inject(ToastService);
   readonly languageService = inject(LanguageService);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
 
   /** Back from the background, records may have changed on another device. */
   private readonly resumeSub = inject(AppResumeService)
@@ -150,6 +152,13 @@ export class CollectionComponent implements OnInit, OnDestroy {
       this.search.set(search);
       this.debouncedSearch.set(search);
     }
+
+    // The shelf view is a navigation destination (/collection?view=shelves), so it also has to
+    // follow query changes while the component is already open.
+    this.route.queryParamMap
+      ?.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((params) => this.applyView(params.get('view')));
+
     this.loadGenres();
     this.loadShelves();
     this.loadData();
@@ -170,6 +179,19 @@ export class CollectionComponent implements OnInit, OnDestroy {
 
   /** Back in the list, slots may have changed (shelves edited or redistributed). */
   switchView(view: 'list' | 'shelves'): void {
+    if (this.view() === view) return;
+    this.applyView(view);
+    // Keep the URL and the navigation entry (Regale) in sync.
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { view: view === 'shelves' ? 'shelves' : null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
+
+  private applyView(value: string | null): void {
+    const view: 'list' | 'shelves' = value === 'shelves' ? 'shelves' : 'list';
     if (this.view() === view) return;
     this.view.set(view);
     if (view === 'list') {

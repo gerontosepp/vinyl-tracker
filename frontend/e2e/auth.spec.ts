@@ -100,10 +100,10 @@ test.describe('Authentication', () => {
     await page.getByRole('button', { name: 'Login' }).click();
     await expect(page).toHaveURL('/');
 
-    const profileNavItem = page.locator('aside').getByText('Profile', { exact: true });
+    const profileNavItem = page.locator('aside').getByTestId('nav-settings');
     await expect(profileNavItem).toBeVisible();
     await profileNavItem.click();
-    await expect(page).toHaveURL('/profile');
+    await expect(page).toHaveURL('/settings');
     await page.locator('main').getByRole('button', { name: 'Sign Out' }).click();
     await expect(page).toHaveURL('/login');
   });

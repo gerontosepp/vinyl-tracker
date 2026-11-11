@@ -19,7 +19,7 @@ import { HelpLinkComponent } from '../../shared/components/help-link/help-link.c
   imports: [LayoutComponent, TranslatePipe, RecordDetailModalComponent, HelpLinkComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <app-layout [fullWidth]="false">
+    <app-layout width="narrow">
       <div class="space-y-5">
         <div>
           <h1 class="text-2xl font-bold tracking-tight flex items-center gap-1">

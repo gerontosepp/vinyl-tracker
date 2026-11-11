@@ -12,7 +12,15 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "tag": "In Entwicklung",
     "isCurrent": false,
     "isUnreleased": true,
-    "items": []
+    "items": [
+      {
+        "title": "Feature: Neue Navigation mit Rail, Befehlspalette und einheitlichem Menü (`#371`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Die Navigation kommt jetzt aus einer einzigen Konfiguration, sodass Seitenleiste, untere Leiste (Handy) und Befehlspalette immer dieselben Ziele in derselben Reihenfolge zeigen: Start, Sammlung, Regale, Want-to-Have, Scannen, Label-Inbox, Einstellungen – Hilfe sitzt fest am unteren Rand. **⌘B** klappt die Leiste ein und aus, **⌘K** öffnet die Befehlspalette zum Springen und für globale Aktionen. Scannen ist ein normaler Menüpunkt (mobil weiterhin der schwebende Knopf); das Sortieren einer Regal-Reihe bleibt dem Handy vorbehalten. Die Sammlung nutzt außerdem eine durchgehende Scroll-Fläche mit feststehender Werkzeugleiste, und Regale sind direkt über `/collection?view=shelves` verlinkbar.",
+        "details": []
+      }
+    ]
   },
   {
     "version": "v1.10.0",

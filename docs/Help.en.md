@@ -12,6 +12,14 @@ Vinyl Tracker manages your records and CDs based on your **Discogs collection** 
 
 Tip: Almost every icon explains itself when you hover over it with the mouse or long-press it on your phone. The **?** icon on a page jumps straight to the matching section of this help.
 
+## Navigation {#navigation}
+
+On desktop the navigation lives in the left rail: **Home**, **Collection**, **Shelves**, **Want-to-have**, **Scan**, **Label inbox** and **Settings**. **Help** (this page) sits at the very bottom of the rail.
+
+- **⌘B** (Ctrl+B on Windows/Linux) collapses and expands the rail – collapsed it only shows the icons.
+- **⌘K** opens the command palette: search for pages and actions, pick with the arrow keys and press Enter to jump. **Esc** closes it.
+- On the phone a bar at the bottom replaces the rail; **More** opens the remaining destinations. The scan button floats above it.
+
 ## Dashboard {#dashboard}
 
 The home page shows your listening habits for a selectable period (today, 7 days, 30 days, custom range):

@@ -9,6 +9,8 @@
 
 ## Unreleased
 
+- **MCP-Server: schnellere und schlankere Antworten**: Lehnt das Backend ein abgelaufenes Token ab (401), loggt sich der Server einmal neu ein und wiederholt den Aufruf; parallele Aufrufe teilen sich einen Login. `get_user_collection` und `get_unplayed_records` liefern kompaktes JSON ohne Cover-Thumbnail und ohne das `notes`-Array (rund ein Drittel weniger Nutzlast), und die Ressource `vinyl://collection/summary` holt ihre fünf Kennzahlen parallel statt nacheinander.
+
 ---
 
 ## v1.11.0 (2026-11-11)

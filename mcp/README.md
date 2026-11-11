@@ -55,6 +55,8 @@ Der Server implementiert **Option 1 (REST-Client)**: Er kommuniziert direkt übe
 | `check_manual_record` | Sucht den Discogs-Release einer manuellen Platte (Barcode, Katalognummer + Label, Künstler + Titel); markiert bereits vorhandene Exemplare, ändert nichts | `id` (int, negativ) |
 | `take_over_manual_record` | Macht eine manuelle Platte nach **Bestätigung des Nutzers** zur Discogs-Platte – als neues Exemplar oder zusammengeführt mit einem vorhandenen; Hör-Historie und Regalplatz bleiben, alte QR-Etiketten funktionieren weiter | `id` (int), `release_id` (int), `mode` (`new_copy` oder `merge`, optional), `target_instance_id` (int, optional) |
 
+> **Schlanke Antworten:** `get_user_collection` und `get_unplayed_records` liefern kompaktes JSON ohne Cover-Thumbnail (`basic_information.thumb`) und ohne das Discogs-`notes`-Array, das nur die Goldmine-Zustände wiederholt. Für reine Zählwerte genügt `per_page=1` (Feld `pagination.items`) oder die Ressource `vinyl://collection/summary`.
+
 ---
 
 ## 📦 Bereitgestellte MCP-Ressourcen
@@ -126,6 +128,8 @@ Der Server liest Konfigurationswerte aus Umgebungsvariablen oder einer optionale
 | `VINYL_AUTH_TOKEN` | Alternativ: direkter JWT Bearer Token | *(optional)* |
 
 > **Hinweis zur Authentifizierung:** Wenn `VINYL_USERNAME` und `VINYL_PASSWORD` konfiguriert sind, führt der MCP-Server beim Start automatisch einen Login gegen `/api/users/login` durch, speichert das Session-Token im Speicher und erneuert es bei Bedarf.
+>
+> Antwortet das Backend auf eine Anfrage mit `401`, loggt sich der Server einmal neu ein und wiederholt die Anfrage. Parallele Tool-Aufrufe teilen sich dabei denselben Login.
 
 ---
 

@@ -7,6 +7,13 @@
     "isUnreleased": true,
     "items": [
       {
+        "title": "Scan-Widget auf jeder Seite (`#380`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Nach einem Scan, der ein Hören erfasst, bleibt die aktuelle Ansicht offen und die Platte erscheint unten rechts als Widget mit Cover, Titel und Künstler. Es blendet sich nach der eingestellten Anzeigedauer aus, pausiert bei Hover/Fokus/Touch, lässt sich per X schließen und öffnet per Klick die Detailansicht. Auf dem Scanner-Bildschirm bleibt die bisherige Karte; Identify Mode und Discogs-Treffer verhalten sich unverändert.",
+        "details": []
+      },
+      {
         "title": "Aufgeräumte Sammlungs-Toolbar (`#378`)",
         "type": "feat",
         "typeLabel": "Feature",

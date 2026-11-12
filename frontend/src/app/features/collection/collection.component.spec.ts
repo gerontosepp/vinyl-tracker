@@ -6,6 +6,7 @@ import { ToastService } from '../../core/services/toast.service';
 import { of, Subject } from 'rxjs';
 import { AppResumeService } from '../../core/services/app-resume.service';
 import { LanguageService } from '../../core/services/language.service';
+import { ScannerService } from '../../core/services/scanner.service';
 import { signal, NO_ERRORS_SCHEMA } from '@angular/core';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { CollectionRelease } from '../../core/types';
@@ -224,6 +225,18 @@ describe('CollectionComponent', () => {
       expect(component.selectedRecord()?.id).toBe(2002);
       expect(component.recordDetail()?.discogs_id).toBe(2002);
       expect(component.recordDetail()?.title).toBe('Help!');
+    });
+
+    it('opens the record requested by the scan widget', () => {
+      mockAuthService.user = signal({ id: 1 });
+      const scanner = TestBed.inject(ScannerService);
+      mockApiService.getRecordDetails = vi.fn().mockReturnValue(of({ discogs_id: 77 }));
+      scanner.requestRecordDetail({ discogsId: 77, title: 'Blue', artist: 'Joni Mitchell', thumbUrl: '' });
+
+      fixture.detectChanges();
+
+      expect(component.selectedRecord()?.id).toBe(77);
+      expect(mockApiService.getRecordDetails).toHaveBeenCalledWith(77, undefined);
     });
 
     it('shows a taken-over record under its Discogs IDs and reloads the list', () => {

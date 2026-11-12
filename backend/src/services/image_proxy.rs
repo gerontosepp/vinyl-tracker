@@ -147,10 +147,7 @@ impl ImageProxyService {
                 }
                 // Unique Local Addresses (fc00::/7) and Link-Local (fe80::/10)
                 let segments = ipv6.segments();
-                if (segments[0] & 0xfe00) == 0xfc00 || (segments[0] & 0xffc0) == 0xfe80 {
-                    return false;
-                }
-                true
+                !((segments[0] & 0xfe00) == 0xfc00 || (segments[0] & 0xffc0) == 0xfe80)
             }
         }
     }

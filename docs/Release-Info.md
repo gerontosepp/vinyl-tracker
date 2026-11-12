@@ -9,6 +9,8 @@
 
 ## Unreleased
 
+- **Aufgeräumte Sammlungs-Toolbar (`#378`)**: Suche, Kategorie, Filter, Sortierung und Blättern passen auf dem Desktop in eine Zeile; auf dem Handy bleibt die Leiste kompakt. Jahr, Quelle, Lagerplatz, Genre und Hörstatus liegen gebündelt im **Filter-Popover** (mit Anzahl aktiver Filter und Zurücksetzen), aktive Filter bleiben als entfernbare Chips sichtbar. Die separate Schaltfläche „Seite auswählen“ entfällt zugunsten der Checkbox in der Tabellenkopfzeile, der Discogs-Status wandert in die Popover-Fußzeile (Fehler bleiben als roter Punkt sichtbar), und der Sortiername kommt ohne „(aufsteigend)“ aus – die Richtung zeigt der Pfeil.
+
 - **MCP-Server: schnellere und schlankere Antworten**: Lehnt das Backend ein abgelaufenes Token ab (401), loggt sich der Server einmal neu ein und wiederholt den Aufruf; parallele Aufrufe teilen sich einen Login. `get_user_collection` und `get_unplayed_records` liefern kompaktes JSON ohne Cover-Thumbnail und ohne das `notes`-Array (rund ein Drittel weniger Nutzlast), und die Ressource `vinyl://collection/summary` holt ihre fünf Kennzahlen parallel statt nacheinander.
 
 ---

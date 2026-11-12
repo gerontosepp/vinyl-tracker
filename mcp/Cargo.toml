@@ -2,6 +2,7 @@
 name = "vinyl-mcp-server"
 version = "1.12.0"
 edition = "2024"
+rust-version = "1.100"
 
 [dependencies]
 base64 = "0.23"

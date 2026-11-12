@@ -1,0 +1,7 @@
+# Pinned Rust toolchain for local development, CI and the Docker build.
+# Bump deliberately: update the version here, in the three workflows (ci.yml, release.yml)
+# and the `rust-version` fields of the Cargo manifests, then run ./scripts/check-toolchain.sh.
+[toolchain]
+channel = "1.100.0"
+profile = "minimal"
+components = ["rustfmt", "clippy"]

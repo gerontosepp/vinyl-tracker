@@ -270,6 +270,8 @@ cargo test --manifest-path backend/Cargo.toml
 cargo clippy --manifest-path backend/Cargo.toml -- -D warnings
 ```
 
+**Rust toolchain:** The repository pins Rust **1.100.0** in `rust-toolchain.toml`, so `rustup` installs and uses it automatically for every Cargo command. CI and the Docker build use the same version. When bumping it, update the pin, the `toolchain:` inputs in `.github/workflows/` and the `rust-version` fields in the Cargo manifests, then run `./scripts/check-toolchain.sh`.
+
 **Run Backend Locally in Development Mode:**
 ```bash
 cd backend

@@ -52,6 +52,16 @@ jobs:
         # The MCP server shares the API types crate with the backend.
         echo "mcp=$(match '^(mcp/|backend/crates/|\.github/)')" >> "$GITHUB_OUTPUT"
 
+  # Cheap guard against toolchain drift: the pin in rust-toolchain.toml, the workflows and the
+  # `rust-version` fields in the Cargo manifests must agree.
+  toolchain-consistency:
+    name: Toolchain consistency
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - name: Check pinned Rust toolchain
+      run: ./scripts/check-toolchain.sh
+
   # Keeps pull requests on the ticket-workflow track (.claude/skills/ticket-workflow): branch name,
   # issue reference and review section. Release, archive and Dependabot pull requests are exempt.
   workflow-check:
@@ -112,7 +122,7 @@ jobs:
     - name: Set up Rust toolchain
       uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master (no release tags)
       with:
-        toolchain: stable
+        toolchain: 1.100.0
         components: clippy, rustfmt, llvm-tools-preview
 
     - name: Install cargo-llvm-cov
@@ -293,7 +303,7 @@ jobs:
     - name: Set up Rust toolchain
       uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master (no release tags)
       with:
-        toolchain: stable
+        toolchain: 1.100.0
         components: clippy, rustfmt
 
     - name: Rust Cache

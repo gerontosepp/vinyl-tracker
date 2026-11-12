@@ -4,6 +4,7 @@
 FROM --platform=$BUILDPLATFORM tonistiigi/xx:1.6.1 AS xx
 
 # Stage 1: Chef base on the native host builder platform (eliminates QEMU crashes and runs at native speed)
+# The Rust version is pinned in rust-toolchain.toml (repo root); cargo-chef installs that toolchain.
 FROM --platform=$BUILDPLATFORM lukemathwalker/cargo-chef:latest-rust-bookworm AS chef
 COPY --from=xx / /
 RUN apt-get update && apt-get install -y --no-install-recommends \

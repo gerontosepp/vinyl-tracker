@@ -1,4 +1,4 @@
-import { Component, input, output, signal, computed, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, input, output, signal, computed, inject, ChangeDetectionStrategy, HostListener } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
@@ -7,8 +7,6 @@ import { RecordSource, StorageShelfOption } from '../../../../core/types';
 import { parseStorageFilter } from '../../../../core/utils/storage-filter';
 import {
   LucidePrinter,
-  LucideCheckSquare,
-  LucideSquare,
   LucideArrowUp,
   LucideArrowDown,
   LucideSearch,
@@ -25,16 +23,6 @@ import {
 } from '@lucide/angular';
 import { TooltipDirective } from '../../../../shared/directives/tooltip.directive';
 
-const FILTERS_OPEN_KEY = 'collection.filtersOpen';
-
-function readFiltersOpen(): boolean {
-  try {
-    return localStorage.getItem(FILTERS_OPEN_KEY) === 'true';
-  } catch {
-    return false;
-  }
-}
-
 @Component({
   selector: 'app-collection-toolbar',
   standalone: true,
@@ -43,8 +31,6 @@ function readFiltersOpen(): boolean {
     FormsModule,
     TranslatePipe,
     LucidePrinter,
-    LucideCheckSquare,
-    LucideSquare,
     LucideArrowUp,
     LucideArrowDown,
     LucideSearch,
@@ -72,7 +58,6 @@ export class CollectionToolbarComponent {
   readonly perPage = input<number>(50);
   readonly totalPages = input<number>(1);
   readonly selectedCount = input<number>(0);
-  readonly isAllPageSelected = input<boolean>(false);
   readonly showPlayedOnly = input<boolean>(false);
   readonly notPlayedSince = input<string>('');
   readonly unplayedOnly = input<boolean>(false);
@@ -95,7 +80,6 @@ export class CollectionToolbarComponent {
   readonly perPageChange = output<number>();
   readonly prevPage = output<void>();
   readonly nextPage = output<void>();
-  readonly toggleSelectAllPage = output<void>();
   readonly toggleShowPlayedOnly = output<void>();
   readonly notPlayedSinceChange = output<string>();
   readonly toggleUnplayedOnly = output<void>();
@@ -111,17 +95,12 @@ export class CollectionToolbarComponent {
 
   private readonly languageService = inject(LanguageService);
 
-  readonly isGenreDropdownOpen = signal<boolean>(false);
-  readonly isNotPlayedPopoverOpen = signal<boolean>(false);
+  readonly isFilterPopoverOpen = signal<boolean>(false);
   readonly genreSearchTerm = signal<string>('');
-  /** Phone only: filters, sorting and page size are collapsed so just the search stays visible. */
-  readonly filtersOpen = signal<boolean>(readFiltersOpen());
 
-  readonly collapsibleClass = computed(() => (this.filtersOpen() ? '' : 'max-md:hidden'));
-
+  /** Filters that live inside the popover (category and search stay outside). */
   readonly activeFilterCount = computed(
     () =>
-      (this.category() !== 'all' ? 1 : 0) +
       this.selectedGenres().length +
       (this.years().trim() ? 1 : 0) +
       (this.storageFilter() ? 1 : 0) +
@@ -129,6 +108,17 @@ export class CollectionToolbarComponent {
       (this.showPlayedOnly() ? 1 : 0) +
       (this.unplayedOnly() || this.notPlayedSince().trim() ? 1 : 0),
   );
+
+  readonly hasLoadError = computed(() => /error|fehler/i.test(this.loadStatus()));
+
+  /** "1–50 von 661" label for the pager. */
+  readonly rangeLabel = computed(() => {
+    const total = this.totalItems();
+    if (total <= 0) return '';
+    const from = (this.page() - 1) * this.perPage() + 1;
+    const to = Math.min(this.page() * this.perPage(), total);
+    return this.languageService.translate('collection.rangeOf', { from, to, total });
+  });
 
   readonly filteredGenres = computed(() => {
     const list = this.availableGenres();
@@ -154,13 +144,28 @@ export class CollectionToolbarComponent {
     return Array.from({ length: shelf.compartments }, (_, i) => i + 1);
   }
 
-  toggleFilters(): void {
-    this.filtersOpen.update((open) => !open);
-    try {
-      localStorage.setItem(FILTERS_OPEN_KEY, String(this.filtersOpen()));
-    } catch {
-      // Storage unavailable: the state just isn't remembered
+  toggleFilterPopover(): void {
+    this.isFilterPopoverOpen.update((open) => !open);
+  }
+
+  closeFilterPopover(): void {
+    this.isFilterPopoverOpen.set(false);
+  }
+
+  /** Closes the popover on any click outside of it (the sticky bar blocks a full-page overlay). */
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (!this.isFilterPopoverOpen()) return;
+    const target = event.target as HTMLElement | null;
+    if (target?.closest('[data-testid="filters-toggle"]') || target?.closest('[data-testid="filter-popover"]')) {
+      return;
     }
+    this.closeFilterPopover();
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscapeKey(): void {
+    this.closeFilterPopover();
   }
 
   onSearchInput(value: string): void {
@@ -173,14 +178,6 @@ export class CollectionToolbarComponent {
 
   onPerPageSelect(value: any): void {
     this.perPageChange.emit(Number(value));
-  }
-
-  toggleGenreDropdown(): void {
-    this.isGenreDropdownOpen.update((open) => !open);
-  }
-
-  closeGenreDropdown(): void {
-    this.isGenreDropdownOpen.set(false);
   }
 
   isGenreSelected(name: string): boolean {
@@ -208,14 +205,6 @@ export class CollectionToolbarComponent {
     this.yearsChange.emit('');
   }
 
-  toggleNotPlayedPopover(): void {
-    this.isNotPlayedPopoverOpen.update((open) => !open);
-  }
-
-  closeNotPlayedPopover(): void {
-    this.isNotPlayedPopoverOpen.set(false);
-  }
-
   onNotPlayedSinceSelect(value: string): void {
     this.notPlayedSinceChange.emit(value);
   }
@@ -224,7 +213,18 @@ export class CollectionToolbarComponent {
     this.toggleUnplayedOnly.emit();
   }
 
-  onClearNotPlayed(): void {
-    this.clearNotPlayedFilters.emit();
+  /** Clears all play-status filters inside the popover. */
+  clearPlayStatusFilters(): void {
+    if (this.showPlayedOnly()) this.toggleShowPlayedOnly.emit();
+    if (this.unplayedOnly() || this.notPlayedSince().trim()) this.clearNotPlayedFilters.emit();
+  }
+
+  /** Clears every filter inside the popover, leaving search and category untouched. */
+  resetFilters(): void {
+    if (this.selectedGenres().length > 0) this.genresChange.emit([]);
+    if (this.years().trim()) this.yearsChange.emit('');
+    if (this.source()) this.sourceChange.emit('');
+    if (this.storageFilter()) this.storageFilterChange.emit('');
+    this.clearPlayStatusFilters();
   }
 }

@@ -9,7 +9,7 @@
     <ng-content select="[viewSwitch]" />
   </div>
 
-  <div class="flex gap-2.5 w-full md:w-auto items-center">
+  <div class="flex gap-2.5 w-full md:w-auto items-center justify-between md:justify-end">
     <button
       type="button"
       (click)="addManual.emit()"
@@ -19,240 +19,213 @@
       <svg lucidePlus [size]="18"></svg>
       {{ 'collection.addManual' | translate }}
     </button>
-  </div>
 
-  <div class="hidden md:flex gap-2.5 w-full md:w-auto items-center">
-    <button
-      type="button"
-      (click)="printRequested.emit()"
-      data-testid="print-button"
-      class="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md hover:-translate-y-0.5"
-    >
-      <svg lucidePrinter [size]="18"></svg>
-      @if (selectedCount() > 0) {
-        {{ 'collection.printSelected' | translate: { count: selectedCount() } }}
-      } @else {
-        {{ 'collection.print' | translate }}
-      }
-    </button>
-    @if (selectedCount() > 0) {
+    <div class="hidden md:flex gap-2.5 items-center">
       <button
         type="button"
-        (click)="clearSelection.emit()"
-        class="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-600 shadow-sm hover:shadow"
-        data-testid="clear-selection"
+        (click)="printRequested.emit()"
+        data-testid="print-button"
+        class="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md hover:-translate-y-0.5"
       >
-        <svg lucideX [size]="16" class="text-slate-500 dark:text-slate-400"></svg>
-        <span>{{ 'collection.clearSelection' | translate }}</span>
+        <svg lucidePrinter [size]="18"></svg>
+        @if (selectedCount() > 0) {
+          {{ 'collection.printSelected' | translate: { count: selectedCount() } }}
+        } @else {
+          {{ 'collection.print' | translate }}
+        }
       </button>
-    }
+      @if (selectedCount() > 0) {
+        <button
+          type="button"
+          (click)="clearSelection.emit()"
+          class="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-600 shadow-sm hover:shadow"
+          data-testid="clear-selection"
+        >
+          <svg lucideX [size]="16" class="text-slate-500 dark:text-slate-400"></svg>
+          <span>{{ 'collection.clearSelection' | translate }}</span>
+        </button>
+      }
+    </div>
   </div>
 </div>
 
 <!-- Controls & Pagination Top -->
 <div
-  class="sticky top-0 z-20 p-3 sm:p-4 md:px-6 bg-slate-50/80 dark:bg-slate-900/70 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-600 text-sm transition-colors shadow-sm"
+  class="sticky top-0 z-20 px-3 sm:px-4 md:px-6 py-2.5 bg-slate-50/80 dark:bg-slate-900/70 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-600 text-sm transition-colors shadow-sm"
 >
-  <div class="flex flex-wrap items-center justify-between gap-3">
-    <!-- Left Group: Search & Filter Toggles -->
-    <div class="flex flex-wrap items-center gap-2.5 sm:gap-3 flex-1 min-w-0">
-      <!-- Search Bar -->
-      <div class="relative group flex-1 min-w-[160px] max-w-xs shrink-0">
-        <svg
-          lucideSearch
-          [size]="16"
-          class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 group-focus-within:text-indigo-500 transition-colors"
-        ></svg>
-        <input
-          type="text"
-          [placeholder]="'collection.searchPlaceholder' | translate"
-          [ngModel]="search()"
-          (ngModelChange)="onSearchInput($event)"
-          class="pl-9 pr-8 py-1.5 border border-slate-200 dark:border-slate-600 rounded-xl bg-white/70 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all duration-300 backdrop-blur-sm shadow-sm text-xs sm:text-sm"
-        />
-        @if (search()) {
-          <button
-            (click)="clearSearch.emit()"
-            class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-1 cursor-pointer"
-          >
-            <svg lucideX [size]="14"></svg>
-          </button>
-        }
-      </div>
-
-      <!-- Phone: compact pager while the filters are collapsed, and the filter toggle -->
-      <div class="md:hidden flex items-center gap-1.5 shrink-0">
-        @if (!filtersOpen() && totalPages() > 1) {
-          <div class="flex items-center gap-1" data-testid="compact-pager">
-            <button
-              type="button"
-              [disabled]="page() <= 1"
-              (click)="prevPage.emit()"
-              [attr.aria-label]="'collection.prevPage' | translate"
-              class="p-1 px-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-transparent text-slate-600 dark:text-slate-300 disabled:opacity-40 shadow-sm cursor-pointer text-xs"
-            >
-              &lt;
-            </button>
-            <span class="text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap text-xs">{{ page() }}/{{ totalPages() }}</span>
-            <button
-              type="button"
-              [disabled]="page() >= totalPages()"
-              (click)="nextPage.emit()"
-              [attr.aria-label]="'collection.nextPage' | translate"
-              class="p-1 px-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-transparent text-slate-600 dark:text-slate-300 disabled:opacity-40 shadow-sm cursor-pointer text-xs"
-            >
-              &gt;
-            </button>
-          </div>
-        }
+  <div class="flex flex-wrap items-center gap-2 sm:gap-2.5">
+    <!-- Search Bar -->
+    <div class="relative group flex-1 min-w-[150px] max-w-xs">
+      <svg
+        lucideSearch
+        [size]="16"
+        class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 group-focus-within:text-indigo-500 transition-colors"
+      ></svg>
+      <input
+        type="text"
+        [placeholder]="'collection.searchPlaceholder' | translate"
+        [ngModel]="search()"
+        (ngModelChange)="onSearchInput($event)"
+        class="pl-9 pr-8 py-1.5 border border-slate-200 dark:border-slate-600 rounded-xl bg-white/70 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all duration-300 backdrop-blur-sm shadow-sm text-xs sm:text-sm"
+      />
+      @if (search()) {
         <button
           type="button"
-          data-testid="filters-toggle"
-          (click)="toggleFilters()"
-          [attr.aria-expanded]="filtersOpen()"
-          [attr.aria-label]="(filtersOpen() ? 'collection.hideFilters' : 'collection.showFilters') | translate"
-          [class]="
-            'relative p-2 rounded-xl border shadow-sm cursor-pointer transition-colors ' +
-            (filtersOpen()
-              ? 'bg-indigo-600 border-indigo-600 text-white'
-              : 'bg-white/70 dark:bg-slate-800/70 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300')
-          "
+          (click)="clearSearch.emit()"
+          class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-1 cursor-pointer"
+          [attr.aria-label]="'collection.clearSearch' | translate"
         >
-          <svg lucideSlidersHorizontal [size]="16"></svg>
-          @if (activeFilterCount() > 0) {
-            <span
-              data-testid="filters-count"
-              class="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-indigo-500 text-white text-[10px] font-bold flex items-center justify-center"
-            >
-              {{ activeFilterCount() }}
-            </span>
-          }
+          <svg lucideX [size]="14"></svg>
         </button>
-      </div>
+      }
+    </div>
 
-      <!-- Category Segmented Control (Alle / Platten / CDs) -->
-      <div
-        [class]="collapsibleClass()"
-        class="inline-flex items-center p-0.5 rounded-xl bg-slate-200/70 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs font-semibold shrink-0 shadow-inner"
-        role="group"
-        aria-label="Kategorie Filter"
+    <!-- Category Segmented Control (Alle / Platten / CDs) -->
+    <div
+      data-testid="category-filter"
+      class="inline-flex items-center p-0.5 rounded-xl bg-slate-200/70 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs font-semibold shrink-0 shadow-inner"
+      role="group"
+      [attr.aria-label]="'collection.categoryFilter' | translate"
+    >
+      <button
+        type="button"
+        (click)="categoryChange.emit('all')"
+        [attr.aria-pressed]="category() === 'all'"
+        [class]="
+          'flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer ' +
+          (category() === 'all'
+            ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm font-bold'
+            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200')
+        "
       >
-        <button
-          type="button"
-          (click)="categoryChange.emit('all')"
-          [class]="
-            'flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer ' +
-            (category() === 'all'
-              ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm font-bold'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200')
-          "
-        >
-          <span>{{ 'collection.categoryAll' | translate }}</span>
-          @if (category() === 'all') {
-            <span
-              class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-600 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-500 shadow-xs"
-            >
-              {{ totalItems() }}
-            </span>
-          }
-        </button>
-
-        <button
-          type="button"
-          (click)="categoryChange.emit('vinyl')"
-          [class]="
-            'flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer ' +
-            (category() === 'vinyl'
-              ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm font-bold'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200')
-          "
-        >
-          <svg lucideDisc [size]="14" class="text-slate-700 dark:text-slate-300"></svg>
-          <span>{{ 'collection.categoryVinyl' | translate }}</span>
-          @if (category() === 'vinyl') {
-            <span
-              class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-600 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-500 shadow-xs"
-            >
-              {{ totalItems() }}
-            </span>
-          }
-        </button>
-
-        <button
-          type="button"
-          (click)="categoryChange.emit('cd')"
-          [class]="
-            'flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer ' +
-            (category() === 'cd'
-              ? 'bg-white dark:bg-slate-700 text-cyan-700 dark:text-cyan-300 shadow-sm font-bold'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200')
-          "
-        >
-          <svg lucideDiscAlbum [size]="14" class="text-cyan-600 dark:text-cyan-400"></svg>
-          <span>{{ 'collection.categoryCd' | translate }}</span>
-          @if (category() === 'cd') {
-            <span
-              class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-cyan-100 dark:bg-cyan-900/60 text-cyan-800 dark:text-cyan-200 border border-cyan-200 dark:border-cyan-700 shadow-xs"
-            >
-              {{ totalItems() }}
-            </span>
-          }
-        </button>
-      </div>
-
-      <!-- Genre Filter Popover Button -->
-      <div class="relative shrink-0" [class]="collapsibleClass()">
-        <button
-          type="button"
-          (click)="toggleGenreDropdown()"
-          [class]="
-            'flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer shadow-sm ' +
-            (selectedGenres().length > 0
-              ? 'bg-indigo-50 dark:bg-indigo-900/40 border-indigo-300 dark:border-indigo-600 text-indigo-700 dark:text-indigo-300 font-bold'
-              : 'bg-white/70 dark:bg-slate-800/70 border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800')
-          "
-        >
-          <svg lucideTag [size]="15" class="text-indigo-500 dark:text-indigo-400"></svg>
-          <span>{{ 'collection.genreFilter' | translate }}</span>
-          @if (selectedGenres().length > 0) {
-            <span
-              class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-600 text-white shadow-xs"
-            >
-              {{ selectedGenres().length }}
-            </span>
-          }
-          <svg
-            lucideChevronDown
-            [size]="14"
-            [class]="'transition-transform duration-200 ' + (isGenreDropdownOpen() ? 'rotate-180' : '')"
-          ></svg>
-        </button>
-
-        <!-- Dropdown Menu -->
-        @if (isGenreDropdownOpen()) {
-          <div class="fixed inset-0 z-30" (click)="closeGenreDropdown()"></div>
-          <div
-            class="absolute left-0 top-full mt-2 w-72 sm:w-80 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 z-40 p-3 flex flex-col gap-2.5 animate-in fade-in slide-in-from-top-2 duration-150"
+        <span>{{ 'collection.categoryAll' | translate }}</span>
+        @if (category() === 'all') {
+          <span
+            class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-600 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-500 shadow-xs"
           >
-            <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-700">
-              <span class="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
-                {{ 'collection.genreFilter' | translate }}
-                @if (selectedGenres().length > 0) {
-                  <span class="text-indigo-600 dark:text-indigo-400">({{ selectedGenres().length }})</span>
-                }
-              </span>
-              @if (selectedGenres().length > 0) {
+            {{ totalItems() }}
+          </span>
+        }
+      </button>
+
+      <button
+        type="button"
+        (click)="categoryChange.emit('vinyl')"
+        [attr.aria-pressed]="category() === 'vinyl'"
+        [class]="
+          'flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer ' +
+          (category() === 'vinyl'
+            ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm font-bold'
+            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200')
+        "
+      >
+        <svg lucideDisc [size]="14" class="text-slate-700 dark:text-slate-300"></svg>
+        <span>{{ 'collection.categoryVinyl' | translate }}</span>
+        @if (category() === 'vinyl') {
+          <span
+            class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-600 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-500 shadow-xs"
+          >
+            {{ totalItems() }}
+          </span>
+        }
+      </button>
+
+      <button
+        type="button"
+        (click)="categoryChange.emit('cd')"
+        [attr.aria-pressed]="category() === 'cd'"
+        [class]="
+          'flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer ' +
+          (category() === 'cd'
+            ? 'bg-white dark:bg-slate-700 text-cyan-700 dark:text-cyan-300 shadow-sm font-bold'
+            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200')
+        "
+      >
+        <svg lucideDiscAlbum [size]="14" class="text-cyan-600 dark:text-cyan-400"></svg>
+        <span>{{ 'collection.categoryCd' | translate }}</span>
+        @if (category() === 'cd') {
+          <span
+            class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-cyan-100 dark:bg-cyan-900/60 text-cyan-800 dark:text-cyan-200 border border-cyan-200 dark:border-cyan-700 shadow-xs"
+          >
+            {{ totalItems() }}
+          </span>
+        }
+      </button>
+    </div>
+
+    <!-- Filter Popover: Genre, Jahr, Quelle, Lagerplatz & Hörstatus -->
+    <div class="relative shrink-0 ml-auto sm:ml-0">
+      <button
+        type="button"
+        data-testid="filters-toggle"
+        (click)="toggleFilterPopover()"
+        [attr.aria-expanded]="isFilterPopoverOpen()"
+        aria-haspopup="dialog"
+        [class]="
+          'flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer shadow-sm ' +
+          (activeFilterCount() > 0
+            ? 'bg-indigo-50 dark:bg-indigo-900/40 border-indigo-300 dark:border-indigo-600 text-indigo-700 dark:text-indigo-300'
+            : 'bg-white/70 dark:bg-slate-800/70 border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800')
+        "
+      >
+        <svg lucideSlidersHorizontal [size]="15"></svg>
+        <span>{{ 'collection.filters' | translate }}</span>
+        @if (activeFilterCount() > 0) {
+          <span
+            data-testid="filters-count"
+            class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-600 text-white shadow-xs"
+          >
+            {{ activeFilterCount() }}
+          </span>
+        }
+        <svg
+          lucideChevronDown
+          [size]="14"
+          [class]="'transition-transform duration-200 ' + (isFilterPopoverOpen() ? 'rotate-180' : '')"
+        ></svg>
+      </button>
+
+      @if (isFilterPopoverOpen()) {
+        <div class="fixed inset-0 z-30" (click)="closeFilterPopover()"></div>
+        <div
+          data-testid="filter-popover"
+          role="dialog"
+          [attr.aria-label]="'collection.filters' | translate"
+          class="absolute right-0 xl:left-0 xl:right-auto top-full mt-2 w-80 max-w-[calc(100vw-1.5rem)] max-h-[calc(100dvh-18rem)] overflow-y-auto overscroll-contain bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 z-40 p-3 flex flex-col gap-3 animate-in fade-in slide-in-from-top-2 duration-150"
+        >
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+              {{ 'collection.filters' | translate }}
+            </span>
+            <div class="flex items-center gap-3">
+              @if (activeFilterCount() > 0) {
                 <button
                   type="button"
-                  (click)="clearGenres()"
+                  (click)="resetFilters()"
                   class="text-xs text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium cursor-pointer"
                 >
-                  {{ 'collection.clearGenres' | translate }}
+                  {{ 'collection.resetFilters' | translate }}
                 </button>
               }
+              <button
+                type="button"
+                (click)="closeFilterPopover()"
+                class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                [attr.aria-label]="'common.close' | translate"
+              >
+                <svg lucideX [size]="14"></svg>
+              </button>
             </div>
+          </div>
 
-            <!-- Search input inside dropdown -->
+          <!-- Genre -->
+          <section class="flex flex-col gap-1.5">
+            <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              {{ 'collection.genreFilter' | translate }}
+              @if (selectedGenres().length > 0) {
+                <span class="text-indigo-600 dark:text-indigo-400">({{ selectedGenres().length }})</span>
+              }
+            </span>
             <div class="relative">
               <svg lucideSearch [size]="14" class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"></svg>
               <input
@@ -263,9 +236,7 @@
                 class="w-full pl-8 pr-3 py-1 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder-slate-400 outline-none focus:ring-1 focus:ring-indigo-500"
               />
             </div>
-
-            <!-- Scrollable Genre List -->
-            <div class="max-h-56 overflow-y-auto space-y-0.5 pr-1">
+            <div class="max-h-40 overflow-y-auto space-y-0.5 pr-1">
               @for (genre of filteredGenres(); track genre.name) {
                 <label
                   (click)="toggleGenre(genre.name)"
@@ -295,323 +266,289 @@
                   </span>
                 </label>
               } @empty {
-                <div class="text-center py-4 text-xs text-slate-400 dark:text-slate-500">
-                  Keine Genres gefunden
+                <div class="text-center py-3 text-xs text-slate-400 dark:text-slate-500">
+                  {{ 'collection.noGenres' | translate }}
                 </div>
               }
             </div>
-          </div>
-        }
-      </div>
+          </section>
 
-      <!-- Year Filter Input -->
-      <div
-        [class]="collapsibleClass()"
-        class="relative group min-w-[130px] max-w-[160px] shrink-0"
-        [appTooltip]="'collection.yearsTooltip' | translate"
-      >
-        <svg
-          lucideCalendar
-          [size]="15"
-          class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 group-focus-within:text-indigo-500 transition-colors"
-        ></svg>
-        <input
-          type="text"
-          [placeholder]="'collection.yearPlaceholder' | translate"
-          [ngModel]="years()"
-          (ngModelChange)="onYearsInput($event)"
-          class="pl-8 pr-7 py-1.5 border border-slate-200 dark:border-slate-600 rounded-xl bg-white/70 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 w-full text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all duration-300 backdrop-blur-sm shadow-sm"
-        />
-        @if (years()) {
-          <button
-            type="button"
-            (click)="clearYears()"
-            class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-1 cursor-pointer"
-            [appTooltip]="'collection.clearYears' | translate"
-          >
-            <svg lucideX [size]="14"></svg>
-          </button>
-        }
-      </div>
+          <div class="h-px bg-slate-100 dark:bg-slate-700"></div>
 
-      <!-- Source Filter: Discogs releases or manual records -->
-      <div class="relative group min-w-[120px] max-w-[160px] shrink-0" [class]="collapsibleClass()">
-        <svg
-          lucideDatabase
-          [size]="15"
-          class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none"
-        ></svg>
-        <select
-          [ngModel]="source()"
-          (ngModelChange)="sourceChange.emit($event)"
-          [attr.aria-label]="'collection.source' | translate"
-          data-testid="source-filter"
-          class="pl-8 pr-6 py-1.5 border border-slate-200 dark:border-slate-600 rounded-xl bg-white/70 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100 w-full text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 shadow-sm cursor-pointer"
-        >
-          <option value="">{{ 'collection.sourceAll' | translate }}</option>
-          <option value="discogs">{{ 'collection.sourceDiscogs' | translate }}</option>
-          <option value="manual">{{ 'collection.sourceManual' | translate }}</option>
-        </select>
-      </div>
+          <!-- Jahr -->
+          <section class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-slate-700 dark:text-slate-300" for="toolbar-years">
+              {{ 'collection.yearFilter' | translate }}
+            </label>
+            <div class="relative">
+              <svg
+                lucideCalendar
+                [size]="14"
+                class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none"
+              ></svg>
+              <input
+                id="toolbar-years"
+                type="text"
+                [placeholder]="'collection.yearPlaceholder' | translate"
+                [ngModel]="years()"
+                (ngModelChange)="onYearsInput($event)"
+                class="pl-8 pr-7 py-1.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 w-full text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              />
+              @if (years()) {
+                <button
+                  type="button"
+                  (click)="clearYears()"
+                  class="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-0.5 cursor-pointer"
+                  [attr.aria-label]="'collection.clearYears' | translate"
+                >
+                  <svg lucideX [size]="14"></svg>
+                </button>
+              }
+            </div>
+          </section>
 
-      <!-- Storage Filter (only with configured shelves) -->
-      @if (storageShelves().length > 0) {
-        <div class="relative group min-w-[130px] max-w-[190px] shrink-0" [class]="collapsibleClass()">
-          <svg
-            lucideArchive
-            [size]="15"
-            class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none"
-          ></svg>
-          <select
-            [ngModel]="storageFilter()"
-            (ngModelChange)="storageFilterChange.emit($event)"
-            [attr.aria-label]="'storage.filter' | translate"
-            data-testid="storage-filter"
-            class="pl-8 pr-6 py-1.5 border border-slate-200 dark:border-slate-600 rounded-xl bg-white/70 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100 w-full text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 shadow-sm cursor-pointer"
-          >
-            <option value="">{{ 'storage.filterAll' | translate }}</option>
-            @for (shelf of storageShelves(); track shelf.id) {
-              <optgroup [label]="shelf.name">
-                <option [value]="'' + shelf.id">{{ shelf.name }} · {{ 'storage.filterWholeShelf' | translate }}</option>
-                @for (n of compartmentNumbers(shelf); track n) {
-                  <option [value]="shelf.id + ':' + n">{{ shelf.name }} · {{ 'storage.compartment' | translate: { number: n } }}</option>
+          <!-- Quelle -->
+          <section class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-slate-700 dark:text-slate-300" for="toolbar-source">
+              {{ 'collection.source' | translate }}
+            </label>
+            <select
+              id="toolbar-source"
+              [ngModel]="source()"
+              (ngModelChange)="sourceChange.emit($event)"
+              data-testid="source-filter"
+              class="px-2.5 py-1.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 w-full text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+            >
+              <option value="">{{ 'collection.sourceAll' | translate }}</option>
+              <option value="discogs">{{ 'collection.sourceDiscogs' | translate }}</option>
+              <option value="manual">{{ 'collection.sourceManual' | translate }}</option>
+            </select>
+          </section>
+
+          <!-- Lagerplatz -->
+          @if (storageShelves().length > 0) {
+            <section class="flex flex-col gap-1.5">
+              <label class="text-xs font-semibold text-slate-700 dark:text-slate-300" for="toolbar-storage">
+                {{ 'storage.filter' | translate }}
+              </label>
+              <select
+                id="toolbar-storage"
+                [ngModel]="storageFilter()"
+                (ngModelChange)="storageFilterChange.emit($event)"
+                data-testid="storage-filter"
+                class="px-2.5 py-1.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 w-full text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+              >
+                <option value="">{{ 'storage.filterAll' | translate }}</option>
+                @for (shelf of storageShelves(); track shelf.id) {
+                  <optgroup [label]="shelf.name">
+                    <option [value]="'' + shelf.id">{{ shelf.name }} · {{ 'storage.filterWholeShelf' | translate }}</option>
+                    @for (n of compartmentNumbers(shelf); track n) {
+                      <option [value]="shelf.id + ':' + n">{{ shelf.name }} · {{ 'storage.compartment' | translate: { number: n } }}</option>
+                    }
+                  </optgroup>
                 }
-              </optgroup>
-            }
-            <option value="unplaced">{{ 'storage.unplaced' | translate }}</option>
-          </select>
-        </div>
-      }
-
-      <!-- Filter Toggles -->
-      <div class="flex items-center gap-2 shrink-0" [class]="collapsibleClass()">
-        <button
-          (click)="toggleSelectAllPage.emit()"
-          class="hidden md:flex items-center gap-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium transition-colors cursor-pointer px-2 py-1.5 rounded-lg hover:bg-white dark:hover:bg-slate-800"
-        >
-          @if (isAllPageSelected()) {
-            <svg lucideCheckSquare class="text-indigo-600 dark:text-indigo-400" [size]="18"></svg>
-          } @else {
-            <svg lucideSquare [size]="18"></svg>
+                <option value="unplaced">{{ 'storage.unplaced' | translate }}</option>
+              </select>
+            </section>
           }
-          <span class="whitespace-nowrap">{{ 'collection.selectPage' | translate }}</span>
-        </button>
 
-        <button
-          (click)="toggleShowPlayedOnly.emit()"
-          [class]="
-            'flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all duration-200 cursor-pointer ' +
-            (showPlayedOnly()
-              ? 'bg-indigo-50 dark:bg-indigo-900/40 border-indigo-200 dark:border-indigo-800/50 text-indigo-800 dark:text-indigo-300'
-              : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm')
-          "
-        >
-          <span class="font-semibold whitespace-nowrap">{{ 'collection.playedOnly' | translate }}</span>
-          @if (showPlayedOnly()) {
-            <span
-              class="text-[10px] font-bold bg-indigo-200 dark:bg-indigo-800 text-indigo-800 dark:text-indigo-200 px-1.5 py-0.5 rounded-full"
-              >ON</span
+          <div class="h-px bg-slate-100 dark:bg-slate-700"></div>
+
+          <!-- Hörstatus -->
+          <section class="flex flex-col gap-1">
+            <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              {{ 'collection.playStatus' | translate }}
+            </span>
+
+            <label
+              (click)="toggleShowPlayedOnly.emit()"
+              class="flex items-center justify-between px-1.5 py-1.5 rounded-lg text-xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-colors select-none"
             >
-          }
-        </button>
-
-        <!-- Nicht Gespielt Popover / Filter -->
-        <div class="relative">
-          <button
-            type="button"
-            (click)="toggleNotPlayedPopover()"
-            [class]="
-              'flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all duration-200 cursor-pointer ' +
-              (unplayedOnly() || (notPlayedSince() && notPlayedSince().trim().length > 0)
-                ? 'bg-indigo-50 dark:bg-indigo-900/40 border-indigo-200 dark:border-indigo-800/50 text-indigo-800 dark:text-indigo-300'
-                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm')
-            "
-          >
-            <svg lucideCalendar [size]="14"></svg>
-            <span class="font-semibold whitespace-nowrap">{{ 'collection.notPlayed' | translate }}</span>
-            @if (unplayedOnly()) {
-              <span
-                class="text-[10px] font-bold bg-indigo-200 dark:bg-indigo-800 text-indigo-800 dark:text-indigo-200 px-1.5 py-0.5 rounded-full"
-                >0 Plays</span
-              >
-            } @else if (notPlayedSince() && notPlayedSince().trim().length > 0) {
-              <span
-                class="text-[10px] font-bold bg-indigo-200 dark:bg-indigo-800 text-indigo-800 dark:text-indigo-200 px-1.5 py-0.5 rounded-full"
-                >{{ notPlayedSince() }}</span
-              >
-            }
-            <svg
-              lucideChevronDown
-              [size]="14"
-              [class]="'transition-transform duration-200 ' + (isNotPlayedPopoverOpen() ? 'rotate-180' : '')"
-            ></svg>
-          </button>
-
-          <!-- Dropdown Popover -->
-          @if (isNotPlayedPopoverOpen()) {
-            <div class="fixed inset-0 z-30" (click)="closeNotPlayedPopover()"></div>
-            <div
-              class="absolute left-0 top-full mt-2 w-72 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 z-40 p-3 flex flex-col gap-3 animate-in fade-in slide-in-from-top-2 duration-150"
-            >
-              <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-700">
-                <span class="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
-                  {{ 'collection.notPlayed' | translate }}
+              <div class="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  [checked]="showPlayedOnly()"
+                  (click)="$event.stopPropagation()"
+                  (change)="toggleShowPlayedOnly.emit()"
+                  class="rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 dark:border-slate-600 dark:bg-slate-900 cursor-pointer"
+                />
+                <span
+                  [class]="showPlayedOnly() ? 'font-semibold text-indigo-600 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-300'"
+                >
+                  {{ 'collection.playedOnly' | translate }}
                 </span>
-                @if (unplayedOnly() || (notPlayedSince() && notPlayedSince().trim().length > 0)) {
+              </div>
+            </label>
+
+            <label
+              (click)="onToggleUnplayedOnly()"
+              class="flex items-center justify-between px-1.5 py-1.5 rounded-lg text-xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-colors select-none"
+            >
+              <div class="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  [checked]="unplayedOnly()"
+                  (click)="$event.stopPropagation()"
+                  (change)="onToggleUnplayedOnly()"
+                  class="rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 dark:border-slate-600 dark:bg-slate-900 cursor-pointer"
+                />
+                <span
+                  [class]="unplayedOnly() ? 'font-semibold text-indigo-600 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-300'"
+                >
+                  {{ 'collection.unplayedOnly' | translate }}
+                </span>
+              </div>
+            </label>
+
+            <div class="px-1.5 pt-1 space-y-1">
+              <label class="block text-xs font-medium text-slate-700 dark:text-slate-300" for="toolbar-not-played-since">
+                {{ 'collection.notPlayedSince' | translate }}
+              </label>
+              <div class="flex items-center gap-2">
+                <input
+                  id="toolbar-not-played-since"
+                  type="date"
+                  [ngModel]="notPlayedSince()"
+                  (ngModelChange)="onNotPlayedSinceSelect($event)"
+                  class="w-full px-2.5 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+                />
+                @if (notPlayedSince() && notPlayedSince().trim().length > 0) {
                   <button
                     type="button"
-                    (click)="onClearNotPlayed()"
-                    class="text-xs text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium cursor-pointer"
+                    (click)="onNotPlayedSinceSelect('')"
+                    class="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                    [attr.aria-label]="'collection.resetDate' | translate"
                   >
-                    {{ 'collection.clearNotPlayed' | translate }}
+                    <svg lucideX [size]="14"></svg>
                   </button>
                 }
               </div>
+            </div>
 
-              <!-- Option 1: Noch nie gespielt toggle -->
-              <label
-                (click)="onToggleUnplayedOnly()"
-                class="flex items-center justify-between px-2.5 py-2 rounded-lg text-xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-colors select-none"
+            @if (showPlayedOnly() || unplayedOnly() || (notPlayedSince() && notPlayedSince().trim().length > 0)) {
+              <button
+                type="button"
+                (click)="clearPlayStatusFilters()"
+                class="self-start mt-1 text-xs text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium cursor-pointer"
               >
-                <div class="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    [checked]="unplayedOnly()"
-                    (click)="$event.stopPropagation()"
-                    (change)="onToggleUnplayedOnly()"
-                    class="rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 dark:border-slate-600 dark:bg-slate-900 cursor-pointer"
-                  />
-                  <span [class]="unplayedOnly() ? 'font-semibold text-indigo-600 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-300'">
-                    {{ 'collection.unplayedOnly' | translate }}
-                  </span>
-                </div>
-              </label>
+                {{ 'collection.clearPlayStatus' | translate }}
+              </button>
+            }
+          </section>
 
-              <!-- Option 2: Nicht gespielt seit <Datum> -->
-              <div class="space-y-1.5 px-2.5">
-                <label class="block text-xs font-medium text-slate-700 dark:text-slate-300">
-                  {{ 'collection.notPlayedSince' | translate }}
-                </label>
-                <div class="flex items-center gap-2">
-                  <input
-                    type="date"
-                    [ngModel]="notPlayedSince()"
-                    (ngModelChange)="onNotPlayedSinceSelect($event)"
-                    class="w-full px-2.5 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
-                  />
-                  @if (notPlayedSince() && notPlayedSince().trim().length > 0) {
-                    <button
-                      type="button"
-                      (click)="onNotPlayedSinceSelect('')"
-                      class="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
-                      [appTooltip]="'collection.resetDate' | translate"
-                    >
-                      <svg lucideX [size]="14"></svg>
-                    </button>
-                  }
-                </div>
-              </div>
+          @if (loadStatus()) {
+            <div
+              class="flex items-center gap-1.5 pt-2 border-t border-slate-100 dark:border-slate-700 text-[11px] font-medium text-slate-500 dark:text-slate-400"
+              role="status"
+              aria-live="polite"
+            >
+              <span
+                [class]="
+                  'h-1.5 w-1.5 rounded-full shrink-0 ' +
+                  (hasLoadError() ? 'bg-red-500 dark:bg-red-400' : 'bg-emerald-500 dark:bg-emerald-400')
+                "
+              ></span>
+              <span class="truncate">Discogs: {{ loadStatus() }}</span>
             </div>
           }
         </div>
-      </div>
+      }
     </div>
 
-    <!-- Right Group: Sort & Pagination in one fluid line -->
-    <div class="flex items-center gap-2.5 sm:gap-3 shrink-0" [class]="collapsibleClass()">
-      <!-- Sort Controls -->
-      <div class="flex items-center gap-1.5 shrink-0">
-        <span class="text-slate-500 dark:text-slate-400 font-medium hidden md:inline text-xs sm:text-sm">
-          {{ 'collection.sortBy' | translate }}
-        </span>
-        <select
-          [ngModel]="sort()"
-          (ngModelChange)="onSortSelect($event)"
-          class="border border-slate-200 dark:border-slate-600 rounded-xl py-1.5 px-2 bg-white/70 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100 shadow-sm font-medium focus:ring-2 focus:ring-indigo-500/50 outline-none backdrop-blur-sm cursor-pointer hover:bg-white dark:hover:bg-slate-800 transition-all duration-200 text-xs sm:text-sm"
-        >
-          <option value="artist">{{ 'collection.sortArtistYear' | translate }}</option>
-          <option value="year">{{ 'collection.sortYearArtist' | translate }}</option>
-          <option value="format">{{ 'collection.sortFormatArtistYear' | translate }}</option>
-          <option value="listens">{{ 'collection.sortListensArtistYear' | translate }}</option>
-        </select>
+    <!-- Spacer: pushes sorting and pagination to the right on wide screens -->
+    <div class="hidden xl:block flex-1"></div>
+
+    <!-- Sort Controls -->
+    <div class="flex items-center gap-1.5 shrink-0">
+      <select
+        [ngModel]="sort()"
+        (ngModelChange)="onSortSelect($event)"
+        [attr.aria-label]="'collection.sortBy' | translate"
+        class="border border-slate-200 dark:border-slate-600 rounded-xl py-1.5 px-2 bg-white/70 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100 shadow-sm font-medium focus:ring-2 focus:ring-indigo-500/50 outline-none backdrop-blur-sm cursor-pointer hover:bg-white dark:hover:bg-slate-800 transition-all duration-200 text-xs sm:text-sm max-w-[11rem] sm:max-w-none truncate"
+      >
+        <option value="artist">{{ 'collection.sortArtistYear' | translate }}</option>
+        <option value="year">{{ 'collection.sortYearArtist' | translate }}</option>
+        <option value="format">{{ 'collection.sortFormatArtistYear' | translate }}</option>
+        <option value="listens">{{ 'collection.sortListensArtistYear' | translate }}</option>
+      </select>
+      <button
+        (click)="sortOrderToggle.emit()"
+        class="p-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 shadow-sm transition-colors cursor-pointer shrink-0"
+        [appTooltip]="(sortOrder() === 'asc' ? 'collection.sortAscending' : 'collection.sortDescending') | translate"
+        [attr.aria-label]="(sortOrder() === 'asc' ? 'collection.sortAscending' : 'collection.sortDescending') | translate"
+      >
+        @if (sortOrder() === 'asc') {
+          <svg lucideArrowUp [size]="16"></svg>
+        } @else {
+          <svg lucideArrowDown [size]="16"></svg>
+        }
+      </button>
+    </div>
+
+    <!-- Discogs sync errors stay visible; the full status lives in the filter popover -->
+    @if (hasLoadError() && !loading()) {
+      <span
+        class="inline-flex items-center gap-1.5 text-xs font-medium text-red-600 dark:text-red-400 shrink-0"
+        role="status"
+        aria-live="polite"
+        [appTooltip]="'collection.discogsStatus' | translate: { status: loadStatus() }"
+      >
+        <span class="h-2 w-2 rounded-full bg-red-500 dark:bg-red-400"></span>
+        <span class="hidden lg:inline">Discogs</span>
+      </span>
+    }
+
+    <div class="hidden sm:block h-5 w-px bg-slate-200 dark:bg-slate-700 shrink-0"></div>
+
+    <!-- Pagination Controls -->
+    <div class="flex items-center gap-2 shrink-0 ml-auto xl:ml-0" data-testid="pager">
+      <span class="hidden lg:inline text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap text-xs">
+        {{ rangeLabel() }}
+      </span>
+      <select
+        [ngModel]="perPage()"
+        (ngModelChange)="onPerPageSelect($event)"
+        [attr.aria-label]="'collection.perPageLabel' | translate"
+        class="hidden sm:block border border-slate-200 dark:border-slate-600 rounded-xl py-1.5 px-2 bg-white/70 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100 shadow-sm font-medium focus:ring-2 focus:ring-indigo-500/50 outline-none backdrop-blur-sm cursor-pointer hover:bg-white dark:hover:bg-slate-800 transition-all duration-200 text-xs sm:text-sm"
+      >
+        <option [value]="20">{{ 'collection.perPage' | translate: { count: 20 } }}</option>
+        <option [value]="30">{{ 'collection.perPage' | translate: { count: 30 } }}</option>
+        <option [value]="40">{{ 'collection.perPage' | translate: { count: 40 } }}</option>
+        <option [value]="50">{{ 'collection.perPage' | translate: { count: 50 } }}</option>
+        <option [value]="100">{{ 'collection.maxPerPage' | translate }}</option>
+      </select>
+      <span
+        class="text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap text-xs sm:text-sm"
+        [attr.aria-label]="'collection.pageOf' | translate: { page: page(), total: totalPages() }"
+      >
+        {{ page() }} / {{ totalPages() }}
+      </span>
+      <div class="flex gap-1 shrink-0">
         <button
-          (click)="sortOrderToggle.emit()"
-          class="p-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 shadow-sm transition-colors cursor-pointer shrink-0"
-          [appTooltip]="(sortOrder() === 'asc' ? 'collection.sortAscending' : 'collection.sortDescending') | translate"
+          [disabled]="page() <= 1"
+          (click)="prevPage.emit()"
+          [attr.aria-label]="'collection.prevPage' | translate"
+          class="p-1 px-2 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-white dark:hover:bg-slate-700 bg-transparent text-slate-600 dark:text-slate-300 disabled:opacity-40 transition-colors shadow-sm cursor-pointer text-xs sm:text-sm"
         >
-          @if (sortOrder() === 'asc') {
-            <svg lucideArrowUp [size]="16"></svg>
-          } @else {
-            <svg lucideArrowDown [size]="16"></svg>
-          }
+          &lt;
         </button>
-      </div>
-
-      <div class="hidden xl:block h-5 w-px bg-slate-200 dark:bg-slate-700 shrink-0"></div>
-
-      <!-- Discogs Status -->
-      @if (!loading() && loadStatus()) {
-        <div
-          class="hidden 2xl:inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400 truncate max-w-[14rem]"
-          role="status"
-          aria-live="polite"
-          [appTooltip]="'collection.discogsStatus' | translate: { status: loadStatus() }"
+        <button
+          [disabled]="page() >= totalPages()"
+          (click)="nextPage.emit()"
+          [attr.aria-label]="'collection.nextPage' | translate"
+          class="p-1 px-2 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-white dark:hover:bg-slate-700 bg-transparent text-slate-600 dark:text-slate-300 disabled:opacity-40 transition-colors shadow-sm cursor-pointer text-xs sm:text-sm"
         >
-          <span
-            [class]="
-              'h-2 w-2 rounded-full shrink-0 ' +
-              (loadStatus().includes('Error')
-                ? 'bg-red-500 dark:bg-red-400'
-                : 'bg-emerald-500 dark:emerald-400')
-            "
-          ></span>
-          <span class="truncate">Discogs: {{ loadStatus() }}</span>
-        </div>
-      }
-
-      <div class="h-5 w-px bg-slate-200 dark:bg-slate-700 shrink-0"></div>
-
-      <!-- Pagination Controls -->
-      <div class="flex items-center gap-2 sm:gap-2.5 shrink-0">
-        <select
-          [ngModel]="perPage()"
-          (ngModelChange)="onPerPageSelect($event)"
-          class="border border-slate-200 dark:border-slate-600 rounded-xl py-1.5 px-2 bg-white/70 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100 shadow-sm font-medium focus:ring-2 focus:ring-indigo-500/50 outline-none backdrop-blur-sm cursor-pointer hover:bg-white dark:hover:bg-slate-800 transition-all duration-200 text-xs sm:text-sm"
-        >
-          <option [value]="20">{{ 'collection.perPage' | translate: { count: 20 } }}</option>
-          <option [value]="30">{{ 'collection.perPage' | translate: { count: 30 } }}</option>
-          <option [value]="40">{{ 'collection.perPage' | translate: { count: 40 } }}</option>
-          <option [value]="50">{{ 'collection.perPage' | translate: { count: 50 } }}</option>
-          <option [value]="100">{{ 'collection.maxPerPage' | translate }}</option>
-        </select>
-        <span class="text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap text-xs sm:text-sm">
-          {{ 'collection.pageOf' | translate: { page: page(), total: totalPages() } }}
-        </span>
-        <div class="flex gap-1 shrink-0">
-          <button
-            [disabled]="page() <= 1"
-            (click)="prevPage.emit()"
-            class="p-1 px-2 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-white dark:hover:bg-slate-700 bg-transparent text-slate-600 dark:text-slate-300 disabled:opacity-40 transition-colors shadow-sm cursor-pointer text-xs sm:text-sm"
-          >
-            &lt;
-          </button>
-          <button
-            [disabled]="page() >= totalPages()"
-            (click)="nextPage.emit()"
-            class="p-1 px-2 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-white dark:hover:bg-slate-700 bg-transparent text-slate-600 dark:text-slate-300 disabled:opacity-40 transition-colors shadow-sm cursor-pointer text-xs sm:text-sm"
-          >
-            &gt;
-          </button>
-        </div>
+          &gt;
+        </button>
       </div>
     </div>
   </div>
 
   <!-- Active Filter Badges Bar -->
-  @if (selectedGenres().length > 0 || (years() && years().trim().length > 0) || unplayedOnly() || (notPlayedSince() && notPlayedSince().trim().length > 0) || storageFilter() || source()) {
+  @if (selectedGenres().length > 0 || (years() && years().trim().length > 0) || showPlayedOnly() || unplayedOnly() || (notPlayedSince() && notPlayedSince().trim().length > 0) || storageFilter() || source()) {
     <div class="flex flex-wrap items-center gap-2 pt-2.5 mt-2 border-t border-slate-200/50 dark:border-slate-700/60 text-xs">
       <span class="text-slate-400 dark:text-slate-500 text-[11px] font-semibold uppercase tracking-wider mr-1">
-        Aktive Filter:
+        {{ 'collection.activeFilters' | translate }}:
       </span>
       @for (g of selectedGenres(); track g) {
         <span
@@ -623,6 +560,7 @@
             type="button"
             (click)="toggleGenre(g)"
             class="text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-100 p-0.5 rounded-full cursor-pointer transition-colors"
+            [attr.aria-label]="'collection.removeFilter' | translate: { filter: g }"
           >
             <svg lucideX [size]="12"></svg>
           </button>
@@ -638,6 +576,23 @@
             type="button"
             (click)="clearYears()"
             class="text-amber-500 hover:text-amber-800 dark:hover:text-amber-100 p-0.5 rounded-full cursor-pointer transition-colors"
+            [attr.aria-label]="'collection.clearYears' | translate"
+          >
+            <svg lucideX [size]="12"></svg>
+          </button>
+        </span>
+      }
+      @if (showPlayedOnly()) {
+        <span
+          class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800/60 text-xs font-medium shadow-xs"
+        >
+          <svg lucideDisc [size]="12" class="text-sky-500"></svg>
+          <span>{{ 'collection.playedOnly' | translate }}</span>
+          <button
+            type="button"
+            (click)="toggleShowPlayedOnly.emit()"
+            class="text-sky-400 hover:text-sky-700 dark:hover:text-sky-100 p-0.5 rounded-full cursor-pointer transition-colors"
+            [attr.aria-label]="'collection.removeFilter' | translate: { filter: ('collection.playedOnly' | translate) }"
           >
             <svg lucideX [size]="12"></svg>
           </button>
@@ -653,6 +608,7 @@
             type="button"
             (click)="onToggleUnplayedOnly()"
             class="text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-100 p-0.5 rounded-full cursor-pointer transition-colors"
+            [attr.aria-label]="'collection.removeFilter' | translate: { filter: ('collection.unplayedOnly' | translate) }"
           >
             <svg lucideX [size]="12"></svg>
           </button>
@@ -668,6 +624,7 @@
             type="button"
             (click)="onNotPlayedSinceSelect('')"
             class="text-violet-400 hover:text-violet-700 dark:hover:text-violet-100 p-0.5 rounded-full cursor-pointer transition-colors"
+            [attr.aria-label]="'collection.resetDate' | translate"
           >
             <svg lucideX [size]="12"></svg>
           </button>
@@ -684,6 +641,7 @@
             type="button"
             (click)="storageFilterChange.emit('')"
             class="text-emerald-500 hover:text-emerald-800 dark:hover:text-emerald-100 p-0.5 rounded-full cursor-pointer transition-colors"
+            [attr.aria-label]="'collection.removeFilter' | translate: { filter: storageFilterLabel() }"
           >
             <svg lucideX [size]="12"></svg>
           </button>

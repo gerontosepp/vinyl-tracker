@@ -1,6 +1,6 @@
 # Hilfe
 
-Diese Datei ist die Quelle der Hilfeseite in der App (`/help`). Jeder Abschnitt beginnt mit `## Titel {#anker}`; der Anker wird für Sprungmarken und die Kontext-Hilfe (?-Symbol) verwendet. Erlaubt sind Absätze, Listen, `###`-Zwischenüberschriften, **fett**, *kursiv*, `Code` und Links. Nach Änderungen erzeugt `node scripts/sync-help.js` die Daten für das Frontend (der Claude-Hook macht das automatisch). Die englische Fassung steht in `docs/Help.en.md`.
+Diese Datei ist die Quelle der Hilfeseite in der App (`/help`). Jeder Abschnitt beginnt mit `## Titel {#anker}`; der Anker wird für Sprungmarken und die Kontext-Hilfe (?-Symbol) verwendet. Erlaubt sind Absätze, Listen, `###`-Zwischenüberschriften, **fett**, *kursiv*, `Code` und Links. Nach Änderungen erzeugt `node scripts/sync-help.js` die Daten für das Frontend (der Hook in `.claude/settings.json` macht das automatisch). Die englische Fassung steht in `docs/Help.en.md`.
 
 ## Erste Schritte {#erste-schritte}
 
@@ -80,9 +80,9 @@ Hast du unter **Einstellungen → Label-Erkennung (OpenRouter)** einen API-Key h
 
 Das Modell kann nur bei Discogs suchen und nie selbst etwas ändern. Jedes erkannte Foto kostet über OpenRouter meist wenige Cent und wird an OpenRouter und den Modellanbieter übertragen.
 
-### Erkennung über Claude
+### Erkennung über einen KI-Assistenten
 
-Ohne API-Key erkennt Claude die Platten mit deinem Claude-Abo: In Claude Desktop oder Claude Code den Prompt `process_label_inbox` des Vinyl-Tracker-MCP-Servers starten (siehe **Claude & MCP**).
+Ohne API-Key erkennt ein MCP-fähiger KI-Assistent die Platten mit dem Modellzugang deines Clients: den Prompt `process_label_inbox` des Vinyl-Tracker-MCP-Servers starten (siehe **KI-Assistenten & MCP**). Der Assistent braucht Bild-Eingabe.
 
 ### Inbox aufräumen
 
@@ -191,9 +191,9 @@ Ein Geschätzter Wert, Plays, Lagerplatz, Zustand und Sortierung gibt es hier ni
 - **Alle Hördurchgänge zurücksetzen** – löscht die gesamte Hör-Historie (mit Rückfrage).
 - **Versionshinweise** – was sich in den letzten Versionen geändert hat.
 
-## Claude & MCP {#claude-mcp}
+## KI-Assistenten & MCP {#ai-assistants-mcp}
 
-Der Vinyl-Tracker-**MCP-Server** verbindet Claude Desktop, Claude Code und andere KI-Assistenten mit deiner Sammlung. Claude kann dann z. B. Platten suchen und hinzufügen, Hören erfassen, Statistiken auswerten, Roon steuern oder die Label-Inbox abarbeiten.
+Der Vinyl-Tracker-**MCP-Server** verbindet MCP-fähige KI-Assistenten mit deiner Sammlung. Der Assistent kann dann z. B. Platten suchen und hinzufügen, Hören erfassen, Statistiken auswerten, Roon steuern oder die Label-Inbox abarbeiten.
 
 Den Server gibt es als fertiges Programm für Linux, macOS und Windows auf der Release-Seite des Projekts. Die Einrichtung (Pfad zum Programm, Backend-Adresse, Benutzername und Passwort) steht in `mcp/README.md`.
 

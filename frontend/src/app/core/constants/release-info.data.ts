@@ -12,7 +12,15 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "tag": "In Entwicklung",
     "isCurrent": false,
     "isUnreleased": true,
-    "items": []
+    "items": [
+      {
+        "title": "Dokumentation: KI-Assistenten statt Claude in Hilfe und UI-Texten",
+        "type": "docs",
+        "typeLabel": "Docs",
+        "summary": "Hilfe-Seite (`/help`), MCP-Dokumentation und die Hinweise zur Label-Inbox sprechen jetzt von MCP-fähigen KI-Assistenten statt von Claude. Genannt werden die Voraussetzungen (Bild-Eingabe, Modellzugang des Clients); die konkreten OpenRouter-Modellnamen bleiben unverändert. Keine funktionale Änderung.",
+        "details": []
+      }
+    ]
   },
   {
     "version": "v1.12.0",

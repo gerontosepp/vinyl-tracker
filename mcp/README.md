@@ -1,6 +1,6 @@
 # Vinyl Tracker MCP Server 🎵 (Rust)
 
-Ein hochperformanter **Model Context Protocol (MCP) Server** in Rust, der die Dienste des **Vinyl Tracker Backends** vollständig für KI-Assistenten (Antigravity IDE, Claude Desktop, Cursor etc.) bereitstellt.
+Ein hochperformanter **Model Context Protocol (MCP) Server** in Rust, der die Dienste des **Vinyl Tracker Backends** vollständig für MCP-fähige KI-Assistenten bereitstellt.
 
 Der Server implementiert **Option 1 (REST-Client)**: Er kommuniziert direkt über die REST-API mit dem Vinyl Tracker Backend (Rust/Axum). Dadurch werden alle zentralen Validierungs-, Synchronisations- (Discogs API) und Caching-Mechanismen des Backends wiederverwendet.
 
@@ -135,6 +135,8 @@ Der Server liest Konfigurationswerte aus Umgebungsvariablen oder einer optionale
 
 ## 🔌 Einbindung in KI-Tools
 
+Jeder MCP-Client mit stdio-Transport kann den Server einbinden. Die folgenden Abschnitte zeigen Beispiele.
+
 ### 1. Antigravity IDE
 Füge den Server in deine globale oder Workspace-spezifische MCP-Konfiguration ein (z. B. `~/.gemini/antigravity-ide/mcp_config.json` oder `~/.gemini/config/mcp_config.json`):
 
@@ -153,8 +155,8 @@ Füge den Server in deine globale oder Workspace-spezifische MCP-Konfiguration e
 }
 ```
 
-### 2. Claude Desktop
-Bearbeite die Datei `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) bzw. `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+### 2. MCP-Clients mit JSON-Konfiguration
+Viele Clients lesen eine JSON-Datei mit `mcpServers`. Bei Claude Desktop liegt sie unter `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) bzw. `%APPDATA%\Claude\claude_desktop_config.json` (Windows); andere Clients nutzen einen eigenen Pfad (siehe deren Dokumentation):
 
 ```json
 {

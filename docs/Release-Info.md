@@ -9,6 +9,10 @@
 
 ## Unreleased
 
+---
+
+## v1.12.0 (2026-11-12)
+
 - **Scan-Widget auf jeder Seite (`#380`)**: Nach einem Scan, der ein Hören erfasst, bleibt die aktuelle Ansicht offen und die Platte erscheint unten rechts als Widget mit Cover, Titel und Künstler. Es blendet sich nach der eingestellten Anzeigedauer aus, pausiert bei Hover/Fokus/Touch, lässt sich per X schließen und öffnet per Klick die Detailansicht. Auf dem Scanner-Bildschirm bleibt die bisherige Karte; Identify Mode und Discogs-Treffer verhalten sich unverändert.
 
 - **Aufgeräumte Sammlungs-Toolbar (`#378`)**: Suche, Kategorie, Filter, Sortierung und Blättern passen auf dem Desktop in eine Zeile; auf dem Handy bleibt die Leiste kompakt. Jahr, Quelle, Lagerplatz, Genre und Hörstatus liegen gebündelt im **Filter-Popover** (mit Anzahl aktiver Filter und Zurücksetzen), aktive Filter bleiben als entfernbare Chips sichtbar. Die separate Schaltfläche „Seite auswählen“ entfällt zugunsten der Checkbox in der Tabellenkopfzeile, der Discogs-Status wandert in die Popover-Fußzeile (Fehler bleiben als roter Punkt sichtbar), und der Sortiername kommt ohne „(aufsteigend)“ aus – die Richtung zeigt der Pfeil.

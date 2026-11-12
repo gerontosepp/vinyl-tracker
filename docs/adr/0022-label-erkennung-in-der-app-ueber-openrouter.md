@@ -21,7 +21,7 @@ Die Erkennung per Label-Foto (ADR-0021) funktioniert zuverlässig, verlangt aber
 ## Betrachtete Optionen
 
 * **Option 1: Anthropic Messages API direkt** – ein Anbieter, ein Key, aber auf Claude-Modelle festgelegt.
-* **Option 2: OpenRouter (gewählt)** – OpenAI-kompatible Chat-Completions-API mit Bild-Input und Tool-Calling vor vielen Anbietern; Modell per Einstellung wählbar (Standard `anthropic/claude-sonnet-5.5`, günstig z. B. `anthropic/claude-haiku-5.5`).
+* **Option 2: OpenRouter (gewählt)** – OpenAI-kompatible Chat-Completions-API mit Bild-Input und Tool-Calling vor vielen Anbietern; Modell per Einstellung wählbar (Bild-Eingabe und Tool-Calling nötig, günstigere Modelle sind möglich).
 * **Option 3: Weiter nur MCP** – keine Kosten, aber kein Komfortgewinn.
 
 ## Entscheidung

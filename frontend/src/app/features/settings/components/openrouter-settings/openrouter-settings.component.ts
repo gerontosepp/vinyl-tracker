@@ -6,9 +6,6 @@ import { ToastService } from '../../../../core/services/toast.service';
 import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
 import { getErrorMessage } from '../../../../core/utils/error';
 
-/** Cheaper model suggested next to the default one. */
-export const BUDGET_OPENROUTER_MODEL = 'anthropic/claude-haiku-5.5';
-
 /**
  * OpenRouter API key and model for the automatic label photo identification. The key is
  * write-only: the backend stores it encrypted and only reports whether one is configured.
@@ -78,7 +75,7 @@ export const BUDGET_OPENROUTER_MODEL = 'anthropic/claude-haiku-5.5';
               [class]="inputClass"
             />
             <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              {{ 'settings.openRouterModelHint' | translate: { model: budgetModel } }}
+              {{ 'settings.openRouterModelHint' | translate }}
             </p>
           </div>
           <p class="text-xs text-slate-500 dark:text-slate-400">{{ 'settings.openRouterPrivacy' | translate }}</p>
@@ -113,7 +110,6 @@ export class OpenRouterSettingsComponent {
   private readonly toastService = inject(ToastService);
   private readonly languageService = inject(LanguageService);
 
-  readonly budgetModel = BUDGET_OPENROUTER_MODEL;
   readonly inputClass =
     'w-full text-sm rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500';
 

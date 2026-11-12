@@ -9,7 +9,7 @@
 
 ## Unreleased
 
-- **Dokumentation: KI-Assistenten statt Claude in Hilfe und UI-Texten**: Hilfe-Seite (`/help`), MCP-Dokumentation und die Hinweise zur Label-Inbox sprechen jetzt von MCP-fähigen KI-Assistenten statt von Claude. Genannt werden die Voraussetzungen (Bild-Eingabe, Modellzugang des Clients); die konkreten OpenRouter-Modellnamen bleiben unverändert. Keine funktionale Änderung.
+- **Dokumentation: KI-Assistenten statt Claude in Hilfe und UI-Texten**: Hilfe-Seite (`/help`), MCP-Dokumentation und die Hinweise zur Label-Inbox sprechen jetzt von MCP-fähigen KI-Assistenten statt von Claude. Konkrete Modellnamen sind aus Doku und UI entfernt; die Einstellungen nennen nur noch die Anforderung (Bild-Eingabe, Tool-Calling). Im Modellfeld bleibt der technische Standard als Vorschlag stehen. Keine funktionale Änderung.
 
 ---
 
@@ -119,7 +119,7 @@
 ## v1.3.0 (2026-10-24)
 
 - **Fix: Fotos in der Label-Inbox wieder sichtbar (`#238`)**: Einen Tag nach der Anmeldung zeigte die Label-Inbox statt der Fotos nur noch schwarze Flächen – das Bild wurde ohne Anmeldedaten geladen, sobald das Anmelde-Cookie abgelaufen war. Die Fotos werden jetzt wie alle anderen Daten mit dem Login-Token geladen.
-- **Plattenerkennung direkt in der App (`#235`)**: Mit einem eigenen [OpenRouter](https://openrouter.ai)-API-Key (Einstellungen → **Label-Erkennung**) erkennt die App fotografierte Labels selbst. Nach dem Foto schlägt die Label-Inbox die passende Pressung mit Cover, Katalognummer, Sicherheit, Begründung und Alternativen vor; **Hinzufügen** übernimmt sie in die Sammlung und zeigt den Regalplatz, **Nur abschließen** markiert das Foto. Das Modell ist wählbar (Standard Claude Sonnet, günstiger Claude Haiku) und kann nur suchen, nie selbst etwas ändern. Ohne Key bleibt der Weg über den MCP-Prompt.
+- **Plattenerkennung direkt in der App (`#235`)**: Mit einem eigenen [OpenRouter](https://openrouter.ai)-API-Key (Einstellungen → **Label-Erkennung**) erkennt die App fotografierte Labels selbst. Nach dem Foto schlägt die Label-Inbox die passende Pressung mit Cover, Katalognummer, Sicherheit, Begründung und Alternativen vor; **Hinzufügen** übernimmt sie in die Sammlung und zeigt den Regalplatz, **Nur abschließen** markiert das Foto. Das Modell ist frei wählbar (Bild-Eingabe und Tool-Calling nötig) und kann nur suchen, nie selbst etwas ändern. Ohne Key bleibt der Weg über den MCP-Prompt.
 ---
 
 ## v1.2.1 (2026-10-23)

@@ -16,6 +16,44 @@ use std::sync::Arc;
 /// but far fewer image tokens than the stored 1568 px.
 const LABEL_PHOTO_MAX_EDGE_PX: u32 = 1024;
 
+/// Serializes one page of the collection for a text client: compact instead of pretty-printed and
+/// without fields that only make sense in the app. The cover thumbnail URL (`basic_information.thumb`)
+/// and the Discogs `notes` array (a copy of the condition fields) made up roughly a third of the
+/// payload without adding information an agent can use.
+fn collection_page_json(collection: &CollectionResponse) -> Result<String, String> {
+    let mut value = serde_json::to_value(collection)
+        .map_err(|e| format!("Failed to serialize collection: {}", e))?;
+
+    if let Some(releases) = value.get_mut("releases").and_then(|r| r.as_array_mut()) {
+        for release in releases {
+            let Some(fields) = release.as_object_mut() else {
+                continue;
+            };
+            fields.remove("notes");
+            if let Some(basic) = fields
+                .get_mut("basic_information")
+                .and_then(|b| b.as_object_mut())
+            {
+                basic.remove("thumb");
+                remove_empty_array(basic, "styles");
+            }
+        }
+    }
+
+    serde_json::to_string(&value).map_err(|e| format!("Failed to serialize collection: {}", e))
+}
+
+/// Drops array fields the backend sent empty, e.g. `"styles":[]`.
+fn remove_empty_array(fields: &mut serde_json::Map<String, serde_json::Value>, key: &str) {
+    if fields
+        .get(key)
+        .and_then(|v| v.as_array())
+        .is_some_and(Vec::is_empty)
+    {
+        fields.remove(key);
+    }
+}
+
 /// Steps shared by the label identification prompts: read the label, search Discogs in a
 /// structured way, verify candidates and only act after the user confirmed.
 /// Shared reading steps (`vinyl_api_types::label_photo::LABEL_READING_STEPS`) plus the
@@ -59,8 +97,7 @@ impl VinylMcpServer {
         Parameters(args): Parameters<GetCollectionArgs>,
     ) -> Result<String, String> {
         let resp = self.client.get_collection(&args).await?;
-        serde_json::to_string_pretty(&resp)
-            .map_err(|e| format!("Failed to serialize collection response: {}", e))
+        collection_page_json(&resp)
     }
 
     /// Triggers a synchronization of the vinyl collection with the user's connected Discogs account.
@@ -128,7 +165,7 @@ impl VinylMcpServer {
         if items.is_empty() {
             return Ok("The Want-to-Have list is empty.".to_string());
         }
-        serde_json::to_string_pretty(&items)
+        serde_json::to_string(&items)
             .map_err(|e| format!("Failed to serialize Want-to-Have list: {}", e))
     }
 
@@ -179,12 +216,12 @@ impl VinylMcpServer {
                     .client
                     .get_want_to_have_version_stats(args.id, release_id)
                     .await?;
-                serde_json::to_string_pretty(&stats)
+                serde_json::to_string(&stats)
                     .map_err(|e| format!("Failed to serialize version stats: {}", e))
             }
             None => {
                 let sources = self.client.get_want_to_have_sources(args.id).await?;
-                serde_json::to_string_pretty(&sources)
+                serde_json::to_string(&sources)
                     .map_err(|e| format!("Failed to serialize sources: {}", e))
             }
         }
@@ -200,7 +237,7 @@ impl VinylMcpServer {
         Parameters(args): Parameters<ScanBarcodeArgs>,
     ) -> Result<String, String> {
         let result = self.client.scan_barcode(&args.barcode).await?;
-        serde_json::to_string_pretty(&result)
+        serde_json::to_string(&result)
             .map_err(|e| format!("Failed to serialize scan result: {}", e))
     }
 
@@ -214,7 +251,7 @@ impl VinylMcpServer {
         Parameters(args): Parameters<LogRecordListenArgs>,
     ) -> Result<String, String> {
         let details = self.client.log_record_listen(args.id).await?;
-        serde_json::to_string_pretty(&details)
+        serde_json::to_string(&details)
             .map_err(|e| format!("Failed to serialize record details: {}", e))
     }
 
@@ -256,7 +293,7 @@ impl VinylMcpServer {
             .client
             .get_recent_listens(args.from.as_deref(), args.to.as_deref())
             .await?;
-        serde_json::to_string_pretty(&listens)
+        serde_json::to_string(&listens)
             .map_err(|e| format!("Failed to serialize recent listens: {}", e))
     }
 
@@ -273,8 +310,7 @@ impl VinylMcpServer {
             .client
             .get_top_records(args.from.as_deref(), args.to.as_deref())
             .await?;
-        serde_json::to_string_pretty(&top)
-            .map_err(|e| format!("Failed to serialize top records: {}", e))
+        serde_json::to_string(&top).map_err(|e| format!("Failed to serialize top records: {}", e))
     }
 
     /// Get the most played artists, optionally filtered by date range.
@@ -290,8 +326,7 @@ impl VinylMcpServer {
             .client
             .get_top_artists(args.from.as_deref(), args.to.as_deref())
             .await?;
-        serde_json::to_string_pretty(&top)
-            .map_err(|e| format!("Failed to serialize top artists: {}", e))
+        serde_json::to_string(&top).map_err(|e| format!("Failed to serialize top artists: {}", e))
     }
 
     /// Get estimated collection value from Discogs.
@@ -301,7 +336,7 @@ impl VinylMcpServer {
     )]
     async fn get_collection_value(&self) -> Result<String, String> {
         let val = self.client.get_collection_value().await?;
-        serde_json::to_string_pretty(&val)
+        serde_json::to_string(&val)
             .map_err(|e| format!("Failed to serialize collection value: {}", e))
     }
 
@@ -312,7 +347,7 @@ impl VinylMcpServer {
     )]
     async fn get_genre_breakdown(&self) -> Result<String, String> {
         let genres = self.client.get_genre_breakdown().await?;
-        serde_json::to_string_pretty(&genres)
+        serde_json::to_string(&genres)
             .map_err(|e| format!("Failed to serialize genre breakdown: {}", e))
     }
 
@@ -323,8 +358,7 @@ impl VinylMcpServer {
     )]
     async fn get_current_user(&self) -> Result<String, String> {
         let user = self.client.get_current_user().await?;
-        serde_json::to_string_pretty(&user)
-            .map_err(|e| format!("Failed to serialize user profile: {}", e))
+        serde_json::to_string(&user).map_err(|e| format!("Failed to serialize user profile: {}", e))
     }
     /// Pick a random record recommendation from the user's vinyl collection.
     #[tool(
@@ -337,7 +371,7 @@ impl VinylMcpServer {
     ) -> Result<String, String> {
         let release = self.client.get_random_record(&args).await?;
         match release {
-            Some(r) => serde_json::to_string_pretty(&r)
+            Some(r) => serde_json::to_string(&r)
                 .map_err(|e| format!("Failed to serialize random record: {}", e)),
             None => Ok("No record found matching the criteria.".to_string()),
         }
@@ -353,8 +387,7 @@ impl VinylMcpServer {
         Parameters(args): Parameters<GetUnplayedRecordsArgs>,
     ) -> Result<String, String> {
         let resp = self.client.get_unplayed_records(&args).await?;
-        serde_json::to_string_pretty(&resp)
-            .map_err(|e| format!("Failed to serialize unplayed records: {}", e))
+        collection_page_json(&resp)
     }
 
     /// Retrieve comprehensive album details including tracklist, formats, labels, and listen history.
@@ -367,7 +400,7 @@ impl VinylMcpServer {
         Parameters(args): Parameters<GetRecordDetailsArgs>,
     ) -> Result<String, String> {
         let details = self.client.get_record_details(args.id).await?;
-        serde_json::to_string_pretty(&details)
+        serde_json::to_string(&details)
             .map_err(|e| format!("Failed to serialize record details: {}", e))
     }
 
@@ -381,7 +414,7 @@ impl VinylMcpServer {
         Parameters(args): Parameters<SearchDiscogsArgs>,
     ) -> Result<String, String> {
         let resp = self.client.search_discogs(&args).await?;
-        serde_json::to_string_pretty(&resp)
+        serde_json::to_string(&resp)
             .map_err(|e| format!("Failed to serialize Discogs search results: {}", e))
     }
 
@@ -392,8 +425,7 @@ impl VinylMcpServer {
     )]
     async fn get_roon_zones(&self) -> Result<String, String> {
         let zones = self.client.get_roon_zones().await?;
-        serde_json::to_string_pretty(&zones)
-            .map_err(|e| format!("Failed to serialize Roon zones: {}", e))
+        serde_json::to_string(&zones).map_err(|e| format!("Failed to serialize Roon zones: {}", e))
     }
 
     /// Play an album/record on Roon via Roon Core integration.
@@ -423,7 +455,7 @@ impl VinylMcpServer {
     ) -> Result<String, String> {
         let id = args.id;
         let details = self.client.update_record_condition(id, &args).await?;
-        serde_json::to_string_pretty(&details)
+        serde_json::to_string(&details)
             .map_err(|e| format!("Failed to serialize updated record details: {}", e))
     }
 
@@ -440,7 +472,7 @@ impl VinylMcpServer {
             .client
             .refresh_collection_prices(args.only_missing)
             .await?;
-        serde_json::to_string_pretty(&result)
+        serde_json::to_string(&result)
             .map_err(|e| format!("Failed to serialize price refresh result: {}", e))
     }
 
@@ -451,7 +483,7 @@ impl VinylMcpServer {
     )]
     async fn get_roon_status(&self) -> Result<String, String> {
         let status = self.client.get_roon_status().await?;
-        serde_json::to_string_pretty(&status)
+        serde_json::to_string(&status)
             .map_err(|e| format!("Failed to serialize Roon status: {}", e))
     }
 
@@ -465,7 +497,7 @@ impl VinylMcpServer {
         Parameters(args): Parameters<GetRecordPlacementArgs>,
     ) -> Result<String, String> {
         match self.client.get_record_placement(args.discogs_id).await? {
-            Some(placement) => serde_json::to_string_pretty(&placement)
+            Some(placement) => serde_json::to_string(&placement)
                 .map_err(|e| format!("Failed to serialize placement: {}", e)),
             None => Ok(format!(
                 "No shelf is configured for the medium of release {}.",
@@ -481,7 +513,7 @@ impl VinylMcpServer {
     )]
     async fn get_storage_layout(&self) -> Result<String, String> {
         let layout = self.client.get_storage_layout().await?;
-        serde_json::to_string_pretty(&layout)
+        serde_json::to_string(&layout)
             .map_err(|e| format!("Failed to serialize storage layout: {}", e))
     }
 
@@ -584,7 +616,7 @@ impl VinylMcpServer {
             label_photo_id: None,
         };
         let created = self.client.create_manual_record(&request).await?;
-        serde_json::to_string_pretty(&created)
+        serde_json::to_string(&created)
             .map_err(|e| format!("Failed to serialize manual record: {}", e))
     }
 
@@ -604,7 +636,7 @@ impl VinylMcpServer {
                 args.id
             ));
         }
-        serde_json::to_string_pretty(&candidates)
+        serde_json::to_string(&candidates)
             .map_err(|e| format!("Failed to serialize candidates: {}", e))
     }
 
@@ -628,7 +660,7 @@ impl VinylMcpServer {
                 },
             )
             .await?;
-        serde_json::to_string_pretty(&result)
+        serde_json::to_string(&result)
             .map_err(|e| format!("Failed to serialize takeover result: {}", e))
     }
 
@@ -804,52 +836,47 @@ impl ServerHandler for VinylMcpServer {
         let uri = request.uri.as_str();
         match uri {
             "vinyl://collection/summary" => {
-                let collection_resp = self
-                    .client
-                    .get_collection(&crate::models::GetCollectionArgs {
-                        page: Some(1),
-                        per_page: Some(1),
-                        ..Default::default()
-                    })
-                    .await
-                    .map_err(|e| rmcp::ErrorData::internal_error(e, None))?;
+                // Five independent counts: run them concurrently so the resource is one round trip
+                // instead of five sequential ones.
+                let total_args = crate::models::GetCollectionArgs {
+                    page: Some(1),
+                    per_page: Some(1),
+                    ..Default::default()
+                };
+                let vinyl_args = crate::models::GetCollectionArgs {
+                    page: Some(1),
+                    per_page: Some(1),
+                    category: Some("vinyl".to_string()),
+                    ..Default::default()
+                };
+                let cd_args = crate::models::GetCollectionArgs {
+                    page: Some(1),
+                    per_page: Some(1),
+                    category: Some("cd".to_string()),
+                    ..Default::default()
+                };
+                let unplayed_args = crate::models::GetUnplayedRecordsArgs {
+                    page: Some(1),
+                    per_page: Some(1),
+                };
 
-                let vinyl_resp = self
-                    .client
-                    .get_collection(&crate::models::GetCollectionArgs {
-                        page: Some(1),
-                        per_page: Some(1),
-                        category: Some("vinyl".to_string()),
-                        ..Default::default()
-                    })
-                    .await
-                    .map_err(|e| rmcp::ErrorData::internal_error(e, None))?;
+                let (collection_resp, vinyl_resp, cd_resp, unplayed_resp, genre_breakdown) = tokio::join!(
+                    self.client.get_collection(&total_args),
+                    self.client.get_collection(&vinyl_args),
+                    self.client.get_collection(&cd_args),
+                    self.client.get_unplayed_records(&unplayed_args),
+                    self.client.get_genre_breakdown(),
+                );
 
-                let cd_resp = self
-                    .client
-                    .get_collection(&crate::models::GetCollectionArgs {
-                        page: Some(1),
-                        per_page: Some(1),
-                        category: Some("cd".to_string()),
-                        ..Default::default()
-                    })
-                    .await
-                    .map_err(|e| rmcp::ErrorData::internal_error(e, None))?;
-
-                let unplayed_resp = self
-                    .client
-                    .get_unplayed_records(&crate::models::GetUnplayedRecordsArgs {
-                        page: Some(1),
-                        per_page: Some(1),
-                    })
-                    .await
-                    .map_err(|e| rmcp::ErrorData::internal_error(e, None))?;
-
-                let genre_breakdown = self
-                    .client
-                    .get_genre_breakdown()
-                    .await
-                    .map_err(|e| rmcp::ErrorData::internal_error(e, None))?;
+                let collection_resp =
+                    collection_resp.map_err(|e| rmcp::ErrorData::internal_error(e, None))?;
+                let vinyl_resp =
+                    vinyl_resp.map_err(|e| rmcp::ErrorData::internal_error(e, None))?;
+                let cd_resp = cd_resp.map_err(|e| rmcp::ErrorData::internal_error(e, None))?;
+                let unplayed_resp =
+                    unplayed_resp.map_err(|e| rmcp::ErrorData::internal_error(e, None))?;
+                let genre_breakdown =
+                    genre_breakdown.map_err(|e| rmcp::ErrorData::internal_error(e, None))?;
 
                 let summary_resource = crate::models::CollectionSummaryResource {
                     total_records: i64::from(collection_resp.pagination.items),
@@ -859,7 +886,7 @@ impl ServerHandler for VinylMcpServer {
                     top_genres: genre_breakdown,
                 };
 
-                let text = serde_json::to_string_pretty(&summary_resource)
+                let text = serde_json::to_string(&summary_resource)
                     .map_err(|e| rmcp::ErrorData::internal_error(e.to_string(), None))?;
 
                 let content = rmcp::model::ResourceContents::text(text, uri)
@@ -874,7 +901,7 @@ impl ServerHandler for VinylMcpServer {
                     .await
                     .map_err(|e| rmcp::ErrorData::internal_error(e, None))?;
 
-                let text = serde_json::to_string_pretty(&val_resp)
+                let text = serde_json::to_string(&val_resp)
                     .map_err(|e| rmcp::ErrorData::internal_error(e.to_string(), None))?;
 
                 let content = rmcp::model::ResourceContents::text(text, uri)
@@ -902,7 +929,7 @@ impl ServerHandler for VinylMcpServer {
                     "recent_listens": recent_5,
                 });
 
-                let text = serde_json::to_string_pretty(&stats_json)
+                let text = serde_json::to_string(&stats_json)
                     .map_err(|e| rmcp::ErrorData::internal_error(e.to_string(), None))?;
 
                 let content = rmcp::model::ResourceContents::text(text, uri)

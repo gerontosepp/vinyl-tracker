@@ -7,15 +7,17 @@ use crate::models::*;
 use axum::{
     Json, Router,
     extract::{Path, Query},
-    http::StatusCode,
+    http::{HeaderMap, StatusCode},
     response::IntoResponse,
     routing::{delete, get, patch, post},
 };
 use rmcp::handler::server::wrapper::Parameters;
 use std::collections::HashMap;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use vinyl_api_types::{
     analytics::CollectionValueData,
-    collection::BasicInformation,
+    collection::{BasicInformation, CollectionNote},
     discogs::{DiscogsArtist, DiscogsPagination, DiscogsSearchResult},
     record::{CandidateMatch, RecordSource},
     scan::{DiscogsMatchDto, TrackedRecordDto},
@@ -100,7 +102,7 @@ fn collection_release(storage: Option<StorageSlotDto>) -> CollectionRelease {
                 id: None,
             }],
             year: Some(1959),
-            thumb_url: None,
+            thumb_url: Some("https://i.discogs.com/kind-of-blue.jpg".to_string()),
             cover_image: None,
             tracklist: None,
             formats: None,
@@ -114,7 +116,10 @@ fn collection_release(storage: Option<StorageSlotDto>) -> CollectionRelease {
         media_condition: None,
         sleeve_condition: None,
         last_played_at: None,
-        notes: None,
+        notes: Some(vec![CollectionNote {
+            field_id: Some(1),
+            value: Some("Near Mint (NM or M-)".to_string()),
+        }]),
         sort_key: None,
         storage,
     }
@@ -469,6 +474,20 @@ async fn mock_backend() -> VinylMcpServer {
                     && query.get("compartment").map(String::as_str) == Some("2");
                 Json(CollectionResponse {
                     releases: vec![collection_release(filtered.then(|| slot(2)))],
+                    pagination: DiscogsPagination {
+                        page: 1,
+                        pages: 1,
+                        per_page: 50,
+                        items: 1,
+                    },
+                })
+            }),
+        )
+        .route(
+            "/api/collection/unplayed",
+            get(|| async {
+                Json(CollectionResponse {
+                    releases: vec![collection_release(None)],
                     pagination: DiscogsPagination {
                         page: 1,
                         pages: 1,
@@ -1116,4 +1135,166 @@ fn test_get_want_to_have_sources_args_make_release_id_optional() {
     let args: GetWantToHaveSourcesArgs =
         serde_json::from_value(serde_json::json!({"id": 5})).expect("release_id is optional");
     assert_eq!(args.release_id, None);
+}
+
+#[tokio::test]
+async fn test_collection_page_drops_app_only_fields_and_whitespace() {
+    let server = mock_backend().await;
+    let output = server
+        .get_user_collection(Parameters(GetCollectionArgs::default()))
+        .await
+        .expect("collection must succeed");
+
+    let json: serde_json::Value = serde_json::from_str(&output).unwrap();
+    let release = &json["releases"][0];
+    assert!(
+        release.get("notes").is_none(),
+        "condition notes are dropped: {output}"
+    );
+    assert!(
+        release["basic_information"].get("thumb").is_none(),
+        "cover thumbnail URL is dropped: {output}"
+    );
+    assert!(
+        release["basic_information"].get("styles").is_none(),
+        "empty arrays are dropped: {output}"
+    );
+    assert!(
+        release["basic_information"]["title"].is_string(),
+        "the rest of the release survives"
+    );
+    assert!(
+        !output.contains('\n'),
+        "compact JSON has no pretty-printing whitespace"
+    );
+}
+
+#[tokio::test]
+async fn test_unplayed_collection_page_is_trimmed_too() {
+    let server = mock_backend().await;
+    let output = server
+        .get_unplayed_records(Parameters(GetUnplayedRecordsArgs {
+            page: None,
+            per_page: None,
+        }))
+        .await
+        .expect("unplayed records must succeed");
+
+    let json: serde_json::Value = serde_json::from_str(&output).unwrap();
+    assert!(json["releases"][0].get("notes").is_none(), "{output}");
+    assert!(!output.contains('\n'), "{output}");
+}
+
+/// Login endpoint plus a collection endpoint that only accepts the freshly issued token.
+async fn auth_mock_backend(logins: Arc<AtomicUsize>) -> (VinylMcpServer, Arc<AtomicUsize>) {
+    let app = Router::new()
+        .route(
+            "/api/users/login",
+            post({
+                let logins = logins.clone();
+                move || {
+                    logins.fetch_add(1, Ordering::SeqCst);
+                    async move {
+                        Json(serde_json::json!({
+                            "id": 1,
+                            "username": "opolm",
+                            "token": "fresh-token"
+                        }))
+                    }
+                }
+            }),
+        )
+        .route(
+            "/api/collection",
+            get(|headers: HeaderMap| async move {
+                let authorized = headers
+                    .get(axum::http::header::AUTHORIZATION)
+                    .and_then(|v| v.to_str().ok())
+                    == Some("Bearer fresh-token");
+                if authorized {
+                    Json(CollectionResponse {
+                        releases: vec![collection_release(None)],
+                        pagination: DiscogsPagination {
+                            page: 1,
+                            pages: 1,
+                            per_page: 50,
+                            items: 1,
+                        },
+                    })
+                    .into_response()
+                } else {
+                    (
+                        StatusCode::UNAUTHORIZED,
+                        Json(serde_json::json!({"detail": "Invalid token"})),
+                    )
+                        .into_response()
+                }
+            }),
+        )
+        .route(
+            "/api/collection/unplayed",
+            get(|| async {
+                Json(CollectionResponse {
+                    releases: vec![collection_release(None)],
+                    pagination: DiscogsPagination {
+                        page: 1,
+                        pages: 1,
+                        per_page: 50,
+                        items: 1,
+                    },
+                })
+            }),
+        );
+
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let base_url = format!("http://{}", listener.local_addr().unwrap());
+    tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+
+    let client = VinylApiClient::new(
+        base_url,
+        Some("expired-token".to_string()),
+        Some("opolm".to_string()),
+        Some("secret".to_string()),
+    );
+    (VinylMcpServer::new(client), logins)
+}
+
+#[tokio::test]
+async fn test_rejected_token_is_refreshed_and_the_call_retried() {
+    let logins = Arc::new(AtomicUsize::new(0));
+    let (server, logins) = auth_mock_backend(logins).await;
+
+    let output = server
+        .get_user_collection(Parameters(GetCollectionArgs::default()))
+        .await
+        .expect("the retried call must succeed");
+
+    assert!(output.contains("Kind of Blue"), "{output}");
+    assert_eq!(
+        logins.load(Ordering::SeqCst),
+        1,
+        "exactly one re-login for one expired token"
+    );
+}
+
+#[tokio::test]
+async fn test_parallel_calls_share_one_login() {
+    let logins = Arc::new(AtomicUsize::new(0));
+    let (server, logins) = auth_mock_backend(logins).await;
+
+    let (a, b, c) = tokio::join!(
+        server.get_user_collection(Parameters(GetCollectionArgs::default())),
+        server.get_user_collection(Parameters(GetCollectionArgs::default())),
+        server.get_user_collection(Parameters(GetCollectionArgs::default())),
+    );
+
+    assert!(
+        a.is_ok() && b.is_ok() && c.is_ok(),
+        "all calls must succeed"
+    );
+    assert_eq!(
+        logins.load(Ordering::SeqCst),
+        1,
+        "concurrent 401s must not trigger parallel logins"
+    );
 }

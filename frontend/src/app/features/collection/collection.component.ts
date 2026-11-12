@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, signal, computed, ChangeDetectionStrategy, DestroyRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, effect, inject, signal, computed, ChangeDetectionStrategy, DestroyRef } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -15,6 +15,7 @@ import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
 import { LanguageService } from '../../core/services/language.service';
 import { AppResumeService } from '../../core/services/app-resume.service';
+import { ScannerService } from '../../core/services/scanner.service';
 import {
   CollectionRelease,
   QrCodeItem,
@@ -32,6 +33,7 @@ import { getFormatType, FormatType } from './utils/format-type.util';
 import { Subscription } from 'rxjs';
 import { HelpLinkComponent } from '../../shared/components/help-link/help-link.component';
 import { ManualRecordFormComponent } from '../../shared/components/manual-record-form/manual-record-form.component';
+import { toCollectionRelease } from './components/record-detail-modal/record-ref';
 
 @Component({
   selector: 'app-collection',
@@ -60,6 +62,15 @@ export class CollectionComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly scannerService = inject(ScannerService);
+
+  /** The scan widget asks for a record's details; consume the request once on this page. */
+  private readonly pendingDetailEffect = effect(() => {
+    const ref = this.scannerService.consumePendingRecordDetail();
+    if (ref) {
+      this.openDetail(toCollectionRelease(ref));
+    }
+  });
 
   /** Back from the background, records may have changed on another device. */
   private readonly resumeSub = inject(AppResumeService)
@@ -513,7 +524,7 @@ export class CollectionComponent implements OnInit, OnDestroy {
       return selected?.id === release.id && selected?.instance_id === release.instance_id;
     };
 
-    this.detailSub = this.apiService.getRecordDetails(release.id, release.instance_id).subscribe({
+    this.detailSub = this.apiService.getRecordDetails(release.id, release.instance_id || undefined).subscribe({
       next: (detail) => {
         if (!stillSelected()) return;
         this.recordDetail.set(detail);

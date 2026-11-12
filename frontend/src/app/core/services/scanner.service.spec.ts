@@ -1,7 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
+import { of, Subject } from 'rxjs';
 import { ScannerService, SCAN_RESULT_DISPLAY_DEFAULT_SECONDS, SCAN_RESULT_DISPLAY_MAX_SECONDS, SCAN_RESULT_DISPLAY_MIN_SECONDS, clampResultDisplaySeconds } from './scanner.service';
 import { ToastService } from './toast.service';
+import { ApiService } from './api.service';
+
+const loggedRecord = { discogsId: 42, title: 'Kind of Blue', artist: 'Miles Davis', thumbUrl: '' };
 
 describe('ScannerService', () => {
   afterEach(() => {
@@ -10,6 +14,7 @@ describe('ScannerService', () => {
 
   let service: ScannerService;
   let mockRouter: any;
+  let mockApiService: any;
 
   beforeEach(() => {
     localStorage.clear();
@@ -22,11 +27,15 @@ describe('ScannerService', () => {
       url: '/',
       navigate: vi.fn().mockName('navigate').mockResolvedValue(true),
     };
+    mockApiService = {
+      scanBarcode: vi.fn().mockName('scanBarcode').mockReturnValue(of({ success: true, message: 'logged', record: loggedRecord })),
+    };
 
     TestBed.configureTestingModule({
       providers: [
         ScannerService,
         { provide: Router, useValue: mockRouter },
+        { provide: ApiService, useValue: mockApiService },
       ],
     });
     service = TestBed.inject(ScannerService);
@@ -178,8 +187,6 @@ describe('ScannerService', () => {
     expect(lastCode).toBeTruthy();
     expect(lastCode?.code).toBe(barcode);
     expect(lastCode?.type).toBe('1d');
-    expect(service.showScanner()).toBe(true);
-    expect(service.scanTrigger()?.code).toBe(barcode);
   });
 
   it('hands out a pending scan trigger only once', () => {
@@ -311,14 +318,94 @@ describe('ScannerService', () => {
     expect(service.lastScannedCode()?.code).toBe('075678645624');
   });
 
-  it('should navigate to home if on another page when scan is received', async () => {
-    vi.useFakeTimers();
+  it('logs a scan on the current page and shows the widget instead of navigating', async () => {
     mockRouter.url = '/collection';
     service.processHardwareScan('075678645624');
-    await vi.advanceTimersByTimeAsync(0);
 
+    await vi.waitFor(() => expect(service.nowPlaying()?.discogsId).toBe(42));
+    expect(mockRouter.navigate).not.toHaveBeenCalled();
+    expect(service.showScanner()).toBe(false);
+    expect(service.scanLogged()).toBe(1);
+  });
+
+  it('opens the scanner when a pressing must be chosen', async () => {
+    mockApiService.scanBarcode.mockReturnValue(
+      of({
+        success: false,
+        message: 'choose',
+        discogsMatches: [{ id: 7, title: 'Blue', year: '1959' }],
+      }),
+    );
+    mockRouter.url = '/collection';
+    service.processHardwareScan('075678645624');
+
+    await vi.waitFor(() => expect(service.showScanner()).toBe(true));
     expect(mockRouter.navigate).toHaveBeenCalledWith(['/']);
-    expect(service.showScanner()).toBe(true);
+    expect(service.scanTrigger()?.code).toBe('075678645624');
+    expect(service.nowPlaying()).toBeNull();
+  });
+
+  it('opens the scanner in identify mode without a widget', async () => {
+    service.setIdentifyMode(true);
+    mockRouter.url = '/collection';
+    service.processHardwareScan('075678645624');
+
+    await vi.waitFor(() => expect(service.showScanner()).toBe(true));
+    expect(service.nowPlaying()).toBeNull();
+    expect(mockApiService.scanBarcode).toHaveBeenCalledWith('075678645624', true);
+  });
+
+  it('reports a failed scan without matches as a toast and stays put', async () => {
+    mockApiService.scanBarcode.mockReturnValue(of({ success: false, message: 'Netzwerkfehler' }));
+    const toast = TestBed.inject(ToastService);
+    const shown = vi.spyOn(toast, 'showToast');
+    mockRouter.url = '/collection';
+    service.processHardwareScan('075678645624');
+
+    await vi.waitFor(() => expect(shown).toHaveBeenCalledWith('Netzwerkfehler', 'error'));
+    expect(mockRouter.navigate).not.toHaveBeenCalled();
+    expect(service.showScanner()).toBe(false);
+  });
+
+  it('lets the scanner screen handle a scan while it is open', () => {
+    service.openScanner();
+    service.processHardwareScan('075678645624');
+
+    expect(service.scanTrigger()?.code).toBe('075678645624');
+    expect(mockApiService.scanBarcode).not.toHaveBeenCalled();
+  });
+
+  it('consumes a record detail request only once', () => {
+    service.requestRecordDetail(loggedRecord);
+
+    expect(service.nowPlaying()).toBeNull();
+    expect(service.consumePendingRecordDetail()).toEqual(loggedRecord);
+    expect(service.consumePendingRecordDetail()).toBeNull();
+  });
+
+  it('dismisses a visible widget when the scanner opens', () => {
+    service.nowPlaying.set(loggedRecord);
+
+    service.openScanner();
+
+    expect(service.nowPlaying()).toBeNull();
+  });
+
+  it('ignores a slower response of an earlier scan', async () => {
+    const first = new Subject<any>();
+    const second = new Subject<any>();
+    mockApiService.scanBarcode
+      .mockReturnValueOnce(first.asObservable())
+      .mockReturnValueOnce(second.asObservable());
+
+    service.processHardwareScan('111111111111');
+    service.processHardwareScan('222222222222');
+
+    second.next({ success: true, message: '', record: { ...loggedRecord, discogsId: 2 } });
+    first.next({ success: true, message: '', record: { ...loggedRecord, discogsId: 1 } });
+
+    await vi.waitFor(() => expect(service.nowPlaying()?.discogsId).toBe(2));
+    expect(service.scanLogged()).toBe(1);
   });
 
   it('should play beep sound without error when soundFeedback is enabled', () => {

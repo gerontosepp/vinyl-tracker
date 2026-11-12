@@ -8,10 +8,40 @@
     "items": []
   },
   {
+    "version": "v1.12.0",
+    "rawHeader": "v1.12.0 (2026-11-12)",
+    "date": "2026-11-12",
+    "isCurrent": true,
+    "isUnreleased": false,
+    "items": [
+      {
+        "title": "Scan-Widget auf jeder Seite (`#380`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Nach einem Scan, der ein Hören erfasst, bleibt die aktuelle Ansicht offen und die Platte erscheint unten rechts als Widget mit Cover, Titel und Künstler. Es blendet sich nach der eingestellten Anzeigedauer aus, pausiert bei Hover/Fokus/Touch, lässt sich per X schließen und öffnet per Klick die Detailansicht. Auf dem Scanner-Bildschirm bleibt die bisherige Karte; Identify Mode und Discogs-Treffer verhalten sich unverändert.",
+        "details": []
+      },
+      {
+        "title": "Aufgeräumte Sammlungs-Toolbar (`#378`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Suche, Kategorie, Filter, Sortierung und Blättern passen auf dem Desktop in eine Zeile; auf dem Handy bleibt die Leiste kompakt. Jahr, Quelle, Lagerplatz, Genre und Hörstatus liegen gebündelt im **Filter-Popover** (mit Anzahl aktiver Filter und Zurücksetzen), aktive Filter bleiben als entfernbare Chips sichtbar. Die separate Schaltfläche „Seite auswählen“ entfällt zugunsten der Checkbox in der Tabellenkopfzeile, der Discogs-Status wandert in die Popover-Fußzeile (Fehler bleiben als roter Punkt sichtbar), und der Sortiername kommt ohne „(aufsteigend)“ aus – die Richtung zeigt der Pfeil.",
+        "details": []
+      },
+      {
+        "title": "MCP-Server: schnellere und schlankere Antworten",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Lehnt das Backend ein abgelaufenes Token ab (401), loggt sich der Server einmal neu ein und wiederholt den Aufruf; parallele Aufrufe teilen sich einen Login. `get_user_collection` und `get_unplayed_records` liefern kompaktes JSON ohne Cover-Thumbnail und ohne das `notes`-Array (rund ein Drittel weniger Nutzlast), und die Ressource `vinyl://collection/summary` holt ihre fünf Kennzahlen parallel statt nacheinander.",
+        "details": []
+      }
+    ]
+  },
+  {
     "version": "v1.11.0",
     "rawHeader": "v1.11.0 (2026-11-11)",
     "date": "2026-11-11",
-    "isCurrent": true,
+    "isCurrent": false,
     "isUnreleased": false,
     "items": [
       {

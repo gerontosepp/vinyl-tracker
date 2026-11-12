@@ -528,7 +528,7 @@ export interface LabelReading {
 }
 
 /**
- * A label photo waiting to be identified (automatically via OpenRouter or by Claude via MCP).
+ * A label photo waiting to be identified (automatically via OpenRouter or by an AI assistant via MCP).
  * `identifyState` 'done' without `suggestion` means no Discogs match; `identifyError` then holds
  * the hint.
  */

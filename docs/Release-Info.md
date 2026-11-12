@@ -9,6 +9,8 @@
 
 ## Unreleased
 
+- **Dokumentation: KI-Assistenten statt Claude in Hilfe und UI-Texten**: Hilfe-Seite (`/help`), MCP-Dokumentation und die Hinweise zur Label-Inbox sprechen jetzt von MCP-fähigen KI-Assistenten statt von Claude. Genannt werden die Voraussetzungen (Bild-Eingabe, Modellzugang des Clients); die konkreten OpenRouter-Modellnamen bleiben unverändert. Keine funktionale Änderung.
+
 ---
 
 ## v1.12.0 (2026-11-12)

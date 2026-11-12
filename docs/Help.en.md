@@ -1,6 +1,6 @@
 # Help
 
-This file is the source of the in-app help page (`/help`, English). Each section starts with `## Title {#anchor}`; the anchors must match `docs/Help.md`, because the context help (? icon) links to them. Allowed: paragraphs, lists, `###` subheadings, **bold**, *italic*, `code` and links. After editing, `node scripts/sync-help.js` regenerates the frontend data (the Claude hook does this automatically).
+This file is the source of the in-app help page (`/help`, English). Each section starts with `## Title {#anchor}`; the anchors must match `docs/Help.md`, because the context help (? icon) links to them. Allowed: paragraphs, lists, `###` subheadings, **bold**, *italic*, `code` and links. After editing, `node scripts/sync-help.js` regenerates the frontend data (the hook in `.claude/settings.json` does this automatically).
 
 ## Getting started {#erste-schritte}
 
@@ -79,9 +79,9 @@ If you added an API key under **Settings → Label recognition (OpenRouter)**, t
 
 The model can only search Discogs and never changes anything itself. Every recognized photo usually costs a few cents via OpenRouter and is sent to OpenRouter and the model provider.
 
-### Recognition via Claude
+### Recognition via an AI assistant
 
-Without an API key, Claude recognizes the records with your Claude subscription: in Claude Desktop or Claude Code, start the prompt `process_label_inbox` of the Vinyl Tracker MCP server (see **Claude & MCP**).
+Without an API key, an MCP-capable AI assistant recognizes the records with the model access of your client: start the prompt `process_label_inbox` of the Vinyl Tracker MCP server (see **AI assistants & MCP**). The assistant needs image input.
 
 ### Cleaning up the inbox
 
@@ -190,9 +190,9 @@ An estimated value, plays, shelf slot, condition and sort string do not exist he
 - **Reset all listens** – deletes the entire listening history (with confirmation).
 - **Release notes** – what changed in recent versions.
 
-## Claude & MCP {#claude-mcp}
+## AI assistants & MCP {#ai-assistants-mcp}
 
-The Vinyl Tracker **MCP server** connects Claude Desktop, Claude Code and other AI assistants to your collection. Claude can then e.g. search and add records, log listens, analyze statistics, control Roon or work through the label inbox.
+The Vinyl Tracker **MCP server** connects MCP-capable AI assistants to your collection. The assistant can then e.g. search and add records, log listens, analyze statistics, control Roon or work through the label inbox.
 
 The server is available as a ready-made program for Linux, macOS and Windows on the project's releases page. The setup (program path, backend address, username and password) is described in `mcp/README.md`.
 

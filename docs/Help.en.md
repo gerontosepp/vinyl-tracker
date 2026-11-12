@@ -184,7 +184,7 @@ An estimated value, plays, shelf slot, condition and sort string do not exist he
 - **Discogs** – username and token.
 - **Barcode & QR scanner** – see **Scanning**.
 - **Roon integration** – see **Roon**.
-- **Label recognition (OpenRouter)** – API key and model for automatic recognition; the key is stored encrypted and never shown again. The default is Claude Sonnet, Claude Haiku is much cheaper.
+- **Label recognition (OpenRouter)** – API key and model for automatic recognition; the key is stored encrypted and never shown again. Choose a model with image input and tool calling; cheaper models are available in the OpenRouter catalog.
 - **Export & back up collection** – CSV table, complete **JSON backup** (with listening history, shelves and the Want-to-Have list) or PDF insurance catalog.
 - **Restore backup** – merges a JSON backup into the collection; nothing is deleted, importing several times creates no duplicates. Records already in the collection are not added to the Want-to-Have list again.
 - **Reset all listens** – deletes the entire listening history (with confirmation).

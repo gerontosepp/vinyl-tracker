@@ -1,8 +1,10 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { Router, NavigationStart } from '@angular/router';
-import { filter } from 'rxjs';
+import { filter, firstValueFrom } from 'rxjs';
 import { LanguageService } from './language.service';
 import { ToastService } from './toast.service';
+import { ApiService } from './api.service';
+import { ScanResult, TrackedRecord } from '../types';
 
 export type ScannerMode = 'hardware' | 'camera' | 'hybrid';
 
@@ -37,6 +39,7 @@ export class ScannerService {
   private readonly router = inject(Router, { optional: true });
   private readonly toastService = inject(ToastService);
   private readonly languageService = inject(LanguageService);
+  private readonly apiService = inject(ApiService);
 
   readonly showScanner = signal<boolean>(false);
   readonly scanLogged = signal<number>(0);
@@ -54,10 +57,17 @@ export class ScannerService {
   readonly lastScannedCode = signal<ScannedCodeEvent | null>(null);
   readonly scanTrigger = signal<{ code: string; timestamp: number } | null>(null);
 
+  /** Listen just logged outside the scanner screen; shown by the global scan widget. */
+  readonly nowPlaying = signal<TrackedRecord | null>(null);
+  /** Record the user opened from the widget; the collection page consumes it. */
+  readonly pendingRecordDetail = signal<TrackedRecord | null>(null);
+
   // Keyboard wedge buffer for HID scanner
   private keyBuffer: { char: string; time: number }[] = [];
   private bufferTimeoutId: any = null;
   private isListenerAttached = false;
+  /** Bumped for every new scan so a slower, older background response cannot win. */
+  private scanRequestId = 0;
 
   // Keystrokes seen since the last Enter, including those the buffer dropped
   // (slow gaps, "Unidentified" keys). Used to tell a failed scan from no input.
@@ -143,6 +153,9 @@ export class ScannerService {
   }
 
   openScanner(): void {
+    // The scanner screen shows its own result card; a visible widget would duplicate it.
+    this.scanRequestId++;
+    this.nowPlaying.set(null);
     this.showScanner.set(true);
   }
 
@@ -158,6 +171,29 @@ export class ScannerService {
 
   notifyScanLogged(): void {
     this.scanLogged.update((n) => n + 1);
+  }
+
+  /** Hides the scan widget without changing the last scanned record. */
+  dismissNowPlaying(): void {
+    this.nowPlaying.set(null);
+  }
+
+  /** Asks the collection page to open the record behind the scan widget. */
+  requestRecordDetail(record: TrackedRecord): void {
+    this.pendingRecordDetail.set(record);
+    this.nowPlaying.set(null);
+  }
+
+  /**
+   * Returns the record requested from the widget once and clears it, so a later visit to the
+   * collection does not open the same record again.
+   */
+  consumePendingRecordDetail(): TrackedRecord | null {
+    const record = this.pendingRecordDetail();
+    if (record) {
+      this.pendingRecordDetail.set(null);
+    }
+    return record;
   }
 
   clearLastScannedCode(): void {
@@ -320,15 +356,73 @@ export class ScannerService {
       return;
     }
 
-    // On other pages (or dashboard), activate scanner view and trigger scan
+    // The scanner screen shows its own result card, so it keeps handling the scan there.
+    if (this.showScanner()) {
+      this.scanTrigger.set({ code: normalizedCode, timestamp: Date.now() });
+      return;
+    }
+
+    // Outside the scanner the listen is logged without leaving the page and shown in the widget.
+    void this.scanInBackground(normalizedCode);
+  }
+
+  /**
+   * Logs a scan received while the scanner screen is closed. A plain listen stays on the current
+   * page and appears in the global widget; anything that needs a decision opens the scanner.
+   */
+  private async scanInBackground(code: string): Promise<void> {
+    const requestId = ++this.scanRequestId;
+    this.nowPlaying.set(null);
+    const identify = this.identifyMode();
+
+    try {
+      const result = await firstValueFrom(this.apiService.scanBarcode(code, identify));
+      if (requestId !== this.scanRequestId) return;
+      this.handleBackgroundResult(result, identify, code);
+    } catch (error: any) {
+      if (requestId !== this.scanRequestId) return;
+      const errorResult = error?.error;
+      if (
+        errorResult &&
+        typeof errorResult === 'object' &&
+        ('discogsMatches' in errorResult || 'message' in errorResult)
+      ) {
+        this.handleBackgroundResult(errorResult as ScanResult, identify, code);
+      } else {
+        const message = errorResult?.message || error?.message || 'Netzwerkfehler oder Serverfehler';
+        this.toastService.showToast(message, 'error');
+      }
+    }
+  }
+
+  private handleBackgroundResult(result: ScanResult, identify: boolean, code: string): void {
+    // Identify mode and pressings that need a choice still need the scanner screen.
+    if (result.success && result.record && !identify && !result.discogsMatches?.length) {
+      this.nowPlaying.set(result.record);
+      this.notifyScanLogged();
+      return;
+    }
+
+    // A failed lookup without a choice to make is reported without leaving the page.
+    if (!result.success && !result.discogsMatches?.length) {
+      this.toastService.showToast(result.message || 'Netzwerkfehler oder Serverfehler', 'error');
+      return;
+    }
+
+    this.openScannerWithScan(code);
+  }
+
+  private openScannerWithScan(code: string): void {
+    const trigger = { code, timestamp: Date.now() };
+    const currentUrl = this.router?.url || '';
     if (currentUrl !== '/' && currentUrl !== '') {
-      this.router?.navigate(['/']).then(() => {
+      void this.router?.navigate(['/']).then(() => {
         this.openScanner();
-        this.scanTrigger.set({ code: normalizedCode, timestamp: Date.now() });
+        this.scanTrigger.set(trigger);
       });
     } else {
       this.openScanner();
-      this.scanTrigger.set({ code: normalizedCode, timestamp: Date.now() });
+      this.scanTrigger.set(trigger);
     }
   }
 

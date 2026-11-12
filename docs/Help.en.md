@@ -40,6 +40,8 @@ Use **Scan** in the navigation to log that you are playing a record – or to ad
 
 After a listen is logged, the record („Jetzt aufgelegt!“) stays visible – **30 seconds** by default, configurable under **Settings → Barcode & QR scanner** (5–120 seconds). Then the normal scan screen returns. **Nächste Platte scannen** continues right away.
 
+If you scan outside the scan screen – for example while browsing the collection – the current page stays open and the record appears as a **widget in the bottom right**. It hides after the same time; while you hover it or move focus to it, the countdown pauses. The **X button** closes it immediately, and clicking the record opens its details.
+
 ### Identify mode {#identify-modus}
 
 The **Identify mode** switch at the top of the scan page tells you which record you are holding – without logging a listen. If the scanned record is in your collection, the same detail view opens as when you click the cover in the collection (shelf slot, condition, price). After closing it the scanner is immediately ready for the next record. If the record is not in your collection, everything works as usual: Discogs matches, adding it or creating it manually. The switch is remembered.

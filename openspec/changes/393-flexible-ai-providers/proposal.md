@@ -29,5 +29,5 @@ Die automatische Label-Erkennung spricht heute ausschließlich OpenRouter an: Ke
 - **Backend:** Migration `18_add_ai_connections.sql` mit Backfill; `clients/openrouter.rs` wird zum generischen OpenAI-kompatiblen Client; neuer `AiConnectionService`, neue Routen unter `/api/users/me/ai/connections`; `LabelIdentificationService`, `LabelPhotoService`, `AppState`, `config.rs` und Fehlermeldungen werden anbieterneutral.
 - **Frontend:** `OpenRouterSettingsComponent` wird durch eine Anbieter-Verwaltung ersetzt; Typen, `ApiService`, i18n (de/en), Label-Inbox-Anzeige.
 - **API:** Neue Endpunkte; alter OpenRouter-Endpunkt als Alias; `label_photo.identify_provider` als neue Spalte.
-- **Dokumentation:** ADR-0025, README, `docs/Help.md`/`docs/Help.en.md`, `docs/arc42.md`, `docs/Release-Info.md`, Delta-Specs.
+- **Dokumentation:** ADR-0026, README, `docs/Help.md`/`docs/Help.en.md`, `docs/arc42.md`, `docs/Release-Info.md`, Delta-Specs.
 - **Nicht im Umfang:** native Anthropic-/Gemini-Protokolle, automatische Fallback-Kette, Task-Routing, Streaming, Embeddings, Kostenanzeige, OAuth-Login.

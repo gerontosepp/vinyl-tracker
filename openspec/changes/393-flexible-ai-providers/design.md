@@ -93,4 +93,4 @@ Der Client mappt 401/403 → abgelehnter Key, 404 → Modell/Endpunkt nicht gefu
 2. Backend deployen; es liest bevorzugt `ai_connection` und fällt für die Erkennung auf die migrierte OpenRouter-Verbindung zurück.
 3. Frontend deployen; der alte `/me/openrouter`-Endpunkt bleibt für gecachte Clients erreichbar.
 4. Verifizieren: bestehender Key wird ohne Neueingabe genutzt, Test-Endpunkt und Modellliste funktionieren, neues Foto wird erkannt.
-5. Rollback: vorheriges Image starten; es ignoriert Tabelle und neue Spalte, die alten `app_user`-Spalten bleiben gültig.
+5. Rollback: vorheriges Image starten; es ignoriert Tabelle und neue Spalte, die alten `app_user`-Spalten bleiben gültig. Vorher den Eintrag 18 aus `_sqlx_migrations` entfernen (sqlx würde sonst mit `VersionMissing(18)` abbrechen).

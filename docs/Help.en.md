@@ -69,7 +69,7 @@ Older records often have no barcode. A photo of the **label** (the paper sticker
 
 ### Automatic recognition
 
-If you added an API key under **Settings → Label recognition (OpenRouter)**, the app recognizes every new photo in the background (usually 10–30 seconds). The label inbox then shows a **suggestion** with cover, catalog number, country, year, confidence and reason – often with **other pressings** to choose from.
+If you have a default connection under **Settings → Label recognition (AI provider)** (OpenRouter, your own provider or a local model), the app recognizes every new photo in the background (usually 10–30 seconds). The label inbox then shows a **suggestion** with cover, catalog number, country, year, confidence and reason – often with **other pressings** to choose from.
 
 - **Add** puts the chosen pressing into your collection and shows which shelf compartment it belongs in.
 - **Only complete** marks the photo as done without adding anything – e.g. if the record is already in your collection.
@@ -77,7 +77,7 @@ If you added an API key under **Settings → Label recognition (OpenRouter)**, t
 - A hint sometimes suggests another photo (other side, run-out groove) to pin down the exact pressing.
 - **Add manually** – if the record is not on Discogs or the suggestion is uncertain, add it yourself; what was read from the label is already filled in (see **Records without a Discogs entry**).
 
-The model can only search Discogs and never changes anything itself. Every recognized photo usually costs a few cents via OpenRouter and is sent to OpenRouter and the model provider.
+The model can only search Discogs and never changes anything itself. Every recognized photo usually costs a few cents at the selected provider and is sent there.
 
 ### Recognition via an AI assistant
 
@@ -184,7 +184,7 @@ An estimated value, plays, shelf slot, condition and sort string do not exist he
 - **Discogs** – username and token.
 - **Barcode & QR scanner** – see **Scanning**.
 - **Roon integration** – see **Roon**.
-- **Label recognition (OpenRouter)** – API key and model for automatic recognition; the key is stored encrypted and never shown again. Choose a model with image input and tool calling; cheaper models are available in the OpenRouter catalog.
+- **Label recognition (AI provider)** – several connections for automatic recognition (OpenRouter, OpenAI, Anthropic, Google, local models or your own OpenAI-compatible endpoint). Each connection has a base URL, model, API key and authentication; one connection is the default. Keys are stored encrypted and never shown again. Choose a model with image input and tool calling.
 - **Export & back up collection** – CSV table, complete **JSON backup** (with listening history, shelves and the Want-to-Have list) or PDF insurance catalog.
 - **Restore backup** – merges a JSON backup into the collection; nothing is deleted, importing several times creates no duplicates. Records already in the collection are not added to the Want-to-Have list again.
 - **Reset all listens** – deletes the entire listening history (with confirmation).

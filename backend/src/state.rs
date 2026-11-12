@@ -1,5 +1,5 @@
 use crate::{
-    clients::{discogs::DiscogsClient, openrouter::OpenRouterClient},
+    clients::{ai::AiClient, discogs::DiscogsClient},
     config::Config,
     services::{crypto_service::CryptoService, image_proxy::ImageProxyService, roon::RoonService},
 };
@@ -27,7 +27,7 @@ pub struct AppState {
     pub image_proxy: Arc<ImageProxyService>,
     pub roon: Arc<RoonService>,
     pub auth_rate_limiter: Arc<AuthRateLimiter>,
-    pub openrouter: Arc<OpenRouterClient>,
+    pub ai: Arc<AiClient>,
     pub identify_slots: Arc<Semaphore>,
 }
 
@@ -56,7 +56,7 @@ impl AppState {
         );
 
         let roon = RoonService::new();
-        let openrouter = OpenRouterClient::new(config.openrouter_api_base_url.clone());
+        let ai = AiClient::new();
 
         let limit = NonZeroU32::new(config.auth_rate_limit_for_period)
             .unwrap_or_else(|| NonZeroU32::new(10).unwrap());
@@ -70,7 +70,7 @@ impl AppState {
             image_proxy: Arc::new(image_proxy),
             roon: Arc::new(roon),
             auth_rate_limiter,
-            openrouter: Arc::new(openrouter),
+            ai: Arc::new(ai),
             identify_slots: Arc::new(Semaphore::new(MAX_PARALLEL_IDENTIFICATIONS)),
         }
     }

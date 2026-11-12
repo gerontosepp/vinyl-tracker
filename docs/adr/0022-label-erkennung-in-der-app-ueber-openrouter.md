@@ -2,6 +2,7 @@
 
 * **Status:** Accepted
 * **Datum:** 2026-10-23
+* **Hinweis:** Die Bindung an OpenRouter wird durch [ADR-0026](0026-anbieterunabhaengige-ki-verbindungen.md) abgelöst; die In-App-Erkennung selbst bleibt bestehen.
 * **Beteiligte:** Entwicklungsteam / Core Maintainer
 * **Kontextbezug:** GitHub Issue [#235](https://github.com/gerontosepp/vinyl-tracker/issues/235), OpenSpec-Change `235-label-photo-auto-identification`; ergänzt [ADR-0021](0021-label-erkennung-ueber-mcp-und-label-inbox.md)
 

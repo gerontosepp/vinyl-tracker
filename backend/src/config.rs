@@ -39,8 +39,9 @@ pub struct Config {
     pub encryption_salt: Option<String>,
     pub discogs_user_agent: String,
     pub discogs_api_base_url: String,
-    /// OpenRouter API for the automatic label identification (`OPENROUTER_API_BASE_URL`).
-    pub openrouter_api_base_url: String,
+    /// Hosts/domains allowed as `ai_connection.base_url` (`AI_BASE_URL_ALLOWED_HOSTS`); empty
+    /// means all hosts except metadata/link-local targets.
+    pub ai_base_url_allowed_hosts: Vec<String>,
     pub image_proxy_allowed_hosts: String,
     pub cors_allowed_origins: Vec<String>,
     pub cors_allow_credentials: bool,
@@ -109,8 +110,12 @@ impl Config {
         let discogs_api_base_url = env::var("DISCOGS_API_BASE_URL")
             .unwrap_or_else(|_| "https://api.discogs.com".to_string());
 
-        let openrouter_api_base_url = env::var("OPENROUTER_API_BASE_URL")
-            .unwrap_or_else(|_| "https://openrouter.ai/api/v1".to_string());
+        let ai_base_url_allowed_hosts = env::var("AI_BASE_URL_ALLOWED_HOSTS")
+            .unwrap_or_default()
+            .split(',')
+            .map(|s| s.trim().to_ascii_lowercase())
+            .filter(|s| !s.is_empty())
+            .collect();
 
         let image_proxy_allowed_hosts = env::var("IMAGE_PROXY_ALLOWED_HOSTS")
             .unwrap_or_else(|_| "i.discogs.com,s.discogs.com,api.discogs.com".to_string());
@@ -186,7 +191,7 @@ impl Config {
             encryption_salt,
             discogs_user_agent,
             discogs_api_base_url,
-            openrouter_api_base_url,
+            ai_base_url_allowed_hosts,
             image_proxy_allowed_hosts,
             cors_allowed_origins,
             cors_allow_credentials,

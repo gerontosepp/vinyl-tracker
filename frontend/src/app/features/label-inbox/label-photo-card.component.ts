@@ -212,7 +212,13 @@ const CONFIDENCE_CLASSES: Record<LabelMatchConfidence, string> = {
                   }
                 </div>
                 @if (photo().identifyModel; as model) {
-                  <p class="text-[11px] text-slate-400 dark:text-slate-500">{{ 'labelInbox.model' | translate: { model } }}</p>
+                  <p class="text-[11px] text-slate-400 dark:text-slate-500">
+                    @if (photo().identifyProvider; as provider) {
+                      {{ 'labelInbox.providerModel' | translate: { provider, model } }}
+                    } @else {
+                      {{ 'labelInbox.model' | translate: { model } }}
+                    }
+                  </p>
                 }
               </div>
             }

@@ -541,15 +541,58 @@ export interface LabelPhoto {
   identifyState?: LabelIdentifyState;
   suggestion?: LabelSuggestion;
   identifyError?: string;
+  identifyProvider?: string;
   identifyModel?: string;
   labelReading?: LabelReading;
 }
 
-/** OpenRouter settings for the automatic label identification; the key is never returned. */
-export interface OpenRouterSettings {
-  hasApiKey: boolean;
+/** How an AI provider receives the API key. */
+export type AiAuthStyle = 'bearer' | 'api-key-header' | 'none';
+
+/** A configured AI connection; `hasApiKey` is the only key information returned. */
+export interface AiConnection {
+  id: number;
+  name: string;
+  kind: string;
+  baseUrl: string;
   model: string;
-  defaultModel: string;
+  hasApiKey: boolean;
+  authStyle: AiAuthStyle;
+  extraHeaders: Record<string, string>;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Defaults of a provider preset used to prefill the connection form. */
+export interface AiPreset {
+  kind: string;
+  label: string;
+  baseUrl: string;
+  authStyle: AiAuthStyle;
+  requiresApiKey: boolean;
+}
+
+/** `apiKey` omitted keeps the stored key; an empty string removes it. */
+export interface SaveAiConnection {
+  name: string;
+  kind: string;
+  baseUrl: string;
+  model: string;
+  apiKey?: string;
+  authStyle?: AiAuthStyle;
+  extraHeaders?: Record<string, string>;
+}
+
+export interface AiConnectionTestResult {
+  ok: boolean;
+  provider: string;
+  model: string;
+}
+
+export interface AiModelsResult {
+  models: string[];
+  supported: boolean;
 }
 
 export interface LabelPhotosResult {

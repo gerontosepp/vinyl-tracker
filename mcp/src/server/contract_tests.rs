@@ -181,6 +181,7 @@ fn label_photo(id: i64, status: LabelPhotoStatus, discogs_id: Option<i64>) -> La
         identify_state: None,
         suggestion: None,
         identify_error: None,
+        identify_provider: None,
         identify_model: None,
         label_reading: None,
     }

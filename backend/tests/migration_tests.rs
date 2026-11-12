@@ -107,6 +107,8 @@ async fn test_fresh_database_applies_all_migrations_idempotently() {
     assert_eq!(executed(&history), all_versions());
     assert!(db.column_exists("record_cache", "median_price").await);
     assert!(db.column_exists("manual_record_alias", "instance_id").await);
+    assert!(db.column_exists("ai_connection", "base_url").await);
+    assert!(db.column_exists("label_photo", "identify_provider").await);
 
     run_migrations(&db.pool)
         .await
@@ -139,6 +141,57 @@ async fn test_pending_migrations_run_on_existing_history() {
     run_migrations(&db.pool).await.unwrap();
     assert_eq!(executed(&db.sqlx_history().await), all_versions());
     assert!(db.column_exists("record_cache", "median_price").await);
+
+    db.drop().await;
+}
+
+#[tokio::test]
+async fn test_ai_connection_migration_backfills_openrouter_settings() {
+    let db = TestDatabase::create().await;
+    partial_migrator(17).run(&db.pool).await.unwrap();
+
+    let user_id: i64 = sqlx::query_scalar(
+        "INSERT INTO app_user (username, password, openrouter_api_key, openrouter_model)
+         VALUES ('legacy', 'hash', 'v2:encrypted-key', 'legacy/model') RETURNING id",
+    )
+    .fetch_one(&db.pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        "INSERT INTO app_user (username, password, openrouter_model)
+         VALUES ('model-only', 'hash', 'only/model')",
+    )
+    .execute(&db.pool)
+    .await
+    .unwrap();
+
+    run_migrations(&db.pool).await.unwrap();
+
+    let (kind, base_url, model, key, is_default): (String, String, String, Option<String>, bool) =
+        sqlx::query_as(
+            "SELECT kind, base_url, model, api_key, is_default
+             FROM ai_connection WHERE user_id = $1",
+        )
+        .bind(user_id)
+        .fetch_one(&db.pool)
+        .await
+        .unwrap();
+    assert_eq!(kind, "openrouter");
+    assert_eq!(base_url, "https://openrouter.ai/api/v1");
+    assert_eq!(model, "legacy/model");
+    assert_eq!(key.as_deref(), Some("v2:encrypted-key"));
+    assert!(is_default);
+
+    let model_only: (String, Option<String>, bool) = sqlx::query_as(
+        "SELECT model, api_key, is_default FROM ai_connection WHERE name = 'OpenRouter'
+         AND user_id <> $1",
+    )
+    .bind(user_id)
+    .fetch_one(&db.pool)
+    .await
+    .unwrap();
+    assert_eq!(model_only.0, "only/model");
+    assert!(model_only.1.is_none());
 
     db.drop().await;
 }

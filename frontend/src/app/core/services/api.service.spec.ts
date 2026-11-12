@@ -100,12 +100,6 @@ describe('ApiService label photos', () => {
     expect(resolve.request.method).toBe('PATCH');
     expect(resolve.request.body).toEqual({ status: 'identified', discogsId: 1622788 });
     resolve.flush({});
-
-    service.updateOpenRouterSettings({ apiKey: '' }).subscribe();
-    const settings = http.expectOne('/api/users/me/openrouter');
-    expect(settings.request.method).toBe('PUT');
-    expect(settings.request.body).toEqual({ apiKey: '' });
-    settings.flush({});
   });
 
   describe('manual records', () => {

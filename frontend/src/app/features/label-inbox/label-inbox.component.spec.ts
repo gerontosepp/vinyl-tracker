@@ -98,12 +98,32 @@ describe('LabelInboxComponent', () => {
     http.match((r) => r.url === '/api/want-to-have' && r.method === 'GET').forEach((req) => req.flush(items));
   }
 
-  /** Answers the OpenRouter settings request (once per component). */
+  /** Answers the AI connections request (once per component). */
   function answerSettings(hasApiKey: boolean): void {
     answerWantToHave();
     http
-      .match((r) => r.url === '/api/users/me/openrouter')
-      .forEach((req) => req.flush({ hasApiKey, model: 'm', defaultModel: 'm' }));
+      .match((r) => r.url === '/api/users/me/ai/connections')
+      .forEach((req) =>
+        req.flush(
+          hasApiKey
+            ? [
+                {
+                  id: 1,
+                  name: 'OpenRouter',
+                  kind: 'openrouter',
+                  baseUrl: 'https://openrouter.ai/api/v1',
+                  model: 'm',
+                  hasApiKey: true,
+                  authStyle: 'bearer',
+                  extraHeaders: {},
+                  isDefault: true,
+                  createdAt: '2026-10-22T15:00:00Z',
+                  updatedAt: '2026-10-22T15:00:00Z',
+                },
+              ]
+            : []
+        )
+      );
   }
 
   /** Answers the inbox request of the resource and renders the result. */
@@ -451,8 +471,8 @@ describe('LabelInboxComponent', () => {
 
     it('retries a failed identification', async () => {
       vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
-      await loadInbox([{ ...photo(1), identifyState: 'error', identifyError: 'OpenRouter rejected the API key' }], true);
-      expect(one('label-photo-error')?.textContent).toContain('Nicht erkannt: OpenRouter rejected the API key');
+      await loadInbox([{ ...photo(1), identifyState: 'error', identifyError: 'The AI provider rejected the API key' }], true);
+      expect(one('label-photo-error')?.textContent).toContain('Nicht erkannt: The AI provider rejected the API key');
 
       one('label-photo-identify')!.click();
       http.expectOne({ url: '/api/label-photos/1/identify', method: 'POST' }).flush({ ...photo(1), identifyState: 'queued' });
@@ -460,7 +480,7 @@ describe('LabelInboxComponent', () => {
       expect(one('label-photo-identifying')).not.toBeNull();
     });
 
-    it('offers no identification without an OpenRouter key', async () => {
+    it('offers no identification without a default AI connection', async () => {
       await loadInbox([{ ...photo(1), identifyState: 'error', identifyError: 'x' }], false);
       expect(one('label-photo-identify')).toBeNull();
     });

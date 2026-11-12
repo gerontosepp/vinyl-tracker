@@ -18,7 +18,7 @@ const JPEG_QUALITY: u8 = 85;
 const STORED_MIME_TYPE: &str = "image/jpeg";
 /// Columns of [`to_dto`].
 const DTO_COLUMNS: &str = "id, status, discogs_id, created_at, processed_at, identify_state, \
-                           suggestion, identify_error, identify_model, label_reading";
+                           suggestion, identify_error, identify_provider, identify_model, label_reading";
 
 /// Result of a finished identification run: a suggestion, or none with the model's hint
 /// (no Discogs release matched). The label reading is kept in both cases.
@@ -307,6 +307,7 @@ impl LabelPhotoService {
     pub async fn finish_identification(
         pool: &PgPool,
         id: i64,
+        provider: &str,
         model: &str,
         outcome: Result<&IdentifyOutcome, &str>,
     ) -> Result<(), AppError> {
@@ -319,14 +320,16 @@ impl LabelPhotoService {
             ),
             Err(message) => (LabelIdentifyState::Error, None, None, Some(message)),
         };
+        let provider = (!provider.is_empty()).then_some(provider);
         // A finished run replaces suggestion and reading (also with "no match"); an error keeps
         // those of an earlier run
         sqlx::query(
             "UPDATE label_photo
              SET identify_state = $2,
                  suggestion = CASE WHEN $2 = 'done' THEN $3 ELSE suggestion END,
-                 label_reading = CASE WHEN $2 = 'done' THEN $6 ELSE label_reading END,
+                 label_reading = CASE WHEN $2 = 'done' THEN $7 ELSE label_reading END,
                  identify_error = $4,
+                 identify_provider = $6,
                  identify_model = $5, identified_at = NOW() AT TIME ZONE 'UTC'
              WHERE id = $1 AND identify_state = 'running'",
         )
@@ -335,6 +338,7 @@ impl LabelPhotoService {
         .bind(suggestion)
         .bind(error)
         .bind(model)
+        .bind(provider)
         .bind(reading)
         .execute(pool)
         .await
@@ -420,6 +424,7 @@ fn to_dto(row: &PgRow) -> Result<LabelPhotoDto, AppError> {
             .get::<Option<Json<LabelSuggestion>>, _>("suggestion")
             .map(|Json(suggestion)| suggestion),
         identify_error: row.get("identify_error"),
+        identify_provider: row.get("identify_provider"),
         identify_model: row.get("identify_model"),
         label_reading: row
             .get::<Option<Json<LabelReading>>, _>("label_reading")

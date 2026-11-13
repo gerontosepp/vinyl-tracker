@@ -58,22 +58,6 @@ Alle Presets außer Azure OpenAI MUST die OpenAI-kompatible Chat-Completions-Sch
 - **WHEN** der Nutzer eine Azure-OpenAI-Verbindung anlegt
 - **THEN** sendet das Backend den Key im `api-key`-Header und spricht den konfigurierten Deployment-Pfad an
 
-#### Scenario: Preset auswählen
-- **WHEN** der Nutzer das Preset „OpenAI“ wählt
-- **THEN** sind Base-URL und Bearer-Auth vorausgefüllt und bleiben editierbar
-
-#### Scenario: Lokales Modell
-- **WHEN** der Nutzer eine Ollama-Verbindung ohne API-Key anlegt
-- **THEN** wird die Verbindung gespeichert und kann getestet werden
-
-#### Scenario: Custom-Endpunkt
-- **WHEN** der Nutzer ein Custom-Preset mit eigener Base-URL anlegt
-- **THEN** verwendet das Backend diese URL unverändert für Chat-Completions-Anfragen
-
-#### Scenario: Unbekanntes Preset
-- **WHEN** der Nutzer ein nicht unterstütztes Preset übergibt
-- **THEN** antwortet das Backend mit 400 als ProblemDetail
-
 ### Requirement: Verbindung testen
 
 Das Backend MUST über `POST /api/users/me/ai/connections/{id}/test` einen minimalen Chat-Request an die Verbindung senden und das Ergebnis melden. Bei Erfolg MUST die Antwort den verwendeten Anbieter und das Modell enthalten. Bei ungültigem Key (401/403), unbekanntem Modell oder Endpunkt (404), Rate-Limit (429) und Timeout MUST das Backend eine verständliche, anbieterneutrale Fehlermeldung als ProblemDetail liefern. Der Test DARF den Key nicht in der Antwort oder im Log offenlegen.

@@ -1,7 +1,7 @@
 # label-photo Specification
 
 ## Purpose
-Records without a barcode are identified from a photo of their label: the PWA collects label photos in a per-user inbox, and Claude processes them through the MCP server.
+Records without a barcode are identified from a photo of their label: the PWA collects label photos in a per-user inbox, and either a configured AI connection or an MCP-capable assistant identifies them.
 
 ## Requirements
 
@@ -68,11 +68,19 @@ Die PWA MUST unter `/label-inbox` die offenen Label-Fotos des Nutzers mit Aufnah
 - **WHEN** der Nutzer bei einem Foto „Löschen“ wählt
 - **THEN** verschwindet nur dieses Foto aus der Inbox
 
-### Requirement: Automatische Erkennung per OpenRouter
-Hat der Nutzer einen OpenRouter-API-Key hinterlegt, MUST das Backend jedes neu hochgeladene Label-Foto im Hintergrund mit dem gewählten Modell erkennen und den Vorschlag (bester Treffer, Alternativen, Sicherheit, Begründung, Hinweis) am Foto speichern. Das Modell MUST nur lesende Tools erhalten; vorgeschlagene Discogs-IDs MUST aus Tool-Ergebnissen derselben Erkennung stammen. Ohne Key MUST sich das Verhalten nicht ändern. Der Key MUST verschlüsselt gespeichert und nie ausgeliefert werden.
+### Requirement: Erkannte Platte vormerken
+Die Label-Inbox MUST beim vorgeschlagenen Treffer (und den Alternativen) neben „Hinzufügen“ die Aktion „Zu Want-to-Have“ anbieten. Beim Vormerken MUST das Foto NICHT als `identified` abgeschlossen werden, solange der Nutzer es nicht selbst bestätigt oder löscht.
+
+#### Scenario: Vormerken aus der Inbox
+- **WHEN** der Nutzer bei einem Vorschlag „Zu Want-to-Have“ wählt
+- **THEN** wird die Platte in Want-to-Have angelegt und das Foto bleibt in der Inbox
+
+### Requirement: Automatische Erkennung per Standard-Verbindung
+
+Mit einer Standard-KI-Verbindung MUST das Backend jedes neu hochgeladene Label-Foto im Hintergrund mit deren Modell erkennen und den Vorschlag (bester Treffer, Alternativen, Sicherheit, Begründung, Hinweis) speichern. Das Modell MUST nur lesende Tools erhalten; vorgeschlagene Discogs-IDs MUST aus Tool-Ergebnissen derselben Erkennung stammen.
 
 #### Scenario: Foto wird erkannt
-- **WHEN** der Nutzer mit hinterlegtem Key ein Label fotografiert
+- **WHEN** der Nutzer mit einer Standard-Verbindung ein Label fotografiert
 - **THEN** zeigt die Label-Inbox nach der Erkennung die vorgeschlagene Pressung zur Bestätigung
 
 #### Scenario: Erfundene Release-ID
@@ -83,9 +91,22 @@ Hat der Nutzer einen OpenRouter-API-Key hinterlegt, MUST das Backend jedes neu h
 - **WHEN** der Nutzer in der Label-Inbox „Hinzufügen“ wählt
 - **THEN** wird die Platte zur Sammlung hinzugefügt, das Foto als `identified` abgeschlossen und der Regalplatz angezeigt
 
-### Requirement: Erkannte Platte vormerken
-Die Label-Inbox MUST beim vorgeschlagenen Treffer (und den Alternativen) neben „Hinzufügen“ die Aktion „Zu Want-to-Have“ anbieten. Beim Vormerken MUST das Foto NICHT als `identified` abgeschlossen werden, solange der Nutzer es nicht selbst bestätigt oder löscht.
+#### Scenario: Anbieterfehler
+- **WHEN** der Anbieter den Request ablehnt oder nicht erreichbar ist
+- **THEN** wird die Erkennung mit einer anbieterneutralen Fehlermeldung als `error` gespeichert und kann erneut gestartet werden
 
-#### Scenario: Vormerken aus der Inbox
-- **WHEN** der Nutzer bei einem Vorschlag „Zu Want-to-Have“ wählt
-- **THEN** wird die Platte in Want-to-Have angelegt und das Foto bleibt in der Inbox
+### Requirement: Keine Standard-Verbindung
+
+Ohne Standard-KI-Verbindung MUST das Backend den Upload unverändert als `pending` speichern und keine Erkennung starten. Der MCP-Weg MUST unverändert funktionieren.
+
+#### Scenario: Upload ohne Verbindung
+- **WHEN** der Nutzer ein Label-Foto ohne hinterlegte Standard-Verbindung hochlädt
+- **THEN** bleibt das Foto `pending` und lässt sich über den MCP-Prompt bearbeiten
+
+### Requirement: Anbieter und Modell nachvollziehbar
+
+Das Foto MUST den verwendeten Anbieter und das Modell speichern und in der Label-Inbox anzeigen. Der API-Key MUST verschlüsselt gespeichert und nie ausgeliefert werden.
+
+#### Scenario: Herkunft der Erkennung
+- **WHEN** die Erkennung mit einer Verbindung „OpenAI“ und einer Modell-ID abgeschlossen ist
+- **THEN** zeigt die Inbox „OpenAI · <Modell-ID>“ am Vorschlag

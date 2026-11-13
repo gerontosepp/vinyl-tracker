@@ -31,6 +31,8 @@ Als Format dient der bewährte Standard für Architecture Decision Records (ange
 | [ADR-0019](0019-druck-modul-mit-vorlagen-renderern.md) | 2026-10-20 | Druck-Modul mit Vorlagen-Renderern (`POST /api/print`) | `Accepted` |
 | [ADR-0020](0020-lagerposition-aus-gespeicherten-fachgrenzen.md) | 2026-10-20 | Lagerposition aus gespeicherten Fachgrenzen (Regale) | `Accepted` |
 | [ADR-0021](0021-label-erkennung-ueber-mcp-und-label-inbox.md) | 2026-10-22 | Label-Erkennung über MCP mit Label-Inbox statt Claude API im Backend | `Accepted` |
+| [ADR-0022](0022-label-erkennung-in-der-app-ueber-openrouter.md) | 2026-10-23 | Label-Erkennung in der App über OpenRouter | `Accepted` |
+| [ADR-0026](0026-anbieterunabhaengige-ki-verbindungen.md) | 2026-11-13 | Anbieterunabhängige KI-Verbindungen (OpenAI-kompatibler Client mit Presets, eine Standard-Verbindung) | `Accepted` |
 
 ---
 
@@ -84,7 +86,3 @@ Neue ADRs werden nach folgendem Schema unter `docs/adr/XXXX-titel.md` angelegt:
 ### Nachteile & Risiken
 * ...
 ```
-| [ADR-0022](0022-label-erkennung-in-der-app-ueber-openrouter.md) | 2026-10-23 | Label-Erkennung in der App über OpenRouter | `Accepted` |
-| [ADR-0023](0023-manuelle-platten-mit-negativen-lokalen-ids.md) | 2026-10-24 | Manuelle Platten mit negativen lokalen IDs | `Accepted` |
-| [ADR-0024](0024-tls-provider-ring-fuer-reqwest.md) | 2026-11-05 | `ring` als TLS-Provider für `reqwest` 0.13 | `Accepted` |
-| [ADR-0025](0025-einheitliche-navigations-konfiguration.md) | 2026-11-11 | Eine Navigations-Konfiguration für Rail, Bottom-Nav und Befehlspalette | `Accepted` |

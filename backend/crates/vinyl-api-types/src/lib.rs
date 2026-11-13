@@ -4,6 +4,7 @@
 //! always agree on the JSON contract. Changing a field or `serde` attribute here changes the
 //! public API (including the Angular frontend) – keep it backwards compatible.
 
+pub mod ai;
 pub mod analytics;
 pub mod collection;
 pub mod discogs;

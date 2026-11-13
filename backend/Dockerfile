@@ -4,13 +4,16 @@
 FROM --platform=$BUILDPLATFORM tonistiigi/xx:1.6.1 AS xx
 
 # Stage 1: Chef base on the native host builder platform (eliminates QEMU crashes and runs at native speed)
-# The Rust version is pinned in rust-toolchain.toml (repo root); cargo-chef installs that toolchain.
-FROM --platform=$BUILDPLATFORM lukemathwalker/cargo-chef:latest-rust-bookworm AS chef
+# The Rust version is pinned in rust-toolchain.toml (repo root); the Docker build pins the same
+# version in the base image because cargo-chef images can lag behind the repository toolchain.
+FROM --platform=$BUILDPLATFORM rust:1.100-bookworm AS chef
 COPY --from=xx / /
 RUN apt-get update && apt-get install -y --no-install-recommends \
     clang \
     lld \
     && rm -rf /var/lib/apt/lists/*
+# Same cargo-chef version as the previously used image, installed into the pinned Rust image.
+RUN cargo install cargo-chef --locked --version 0.1.78
 ARG TARGETPLATFORM
 RUN xx-apt-get install -y xx-c-essentials
 WORKDIR /app

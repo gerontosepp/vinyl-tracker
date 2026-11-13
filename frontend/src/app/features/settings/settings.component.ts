@@ -16,7 +16,7 @@ import { LucideDownload, LucideLogOut, LucideSettings, LucideHistory, LucideUplo
 import { PrintDialogComponent } from '../../shared/components/print-dialog/print-dialog.component';
 import { ReleaseNotesComponent } from './components/release-notes/release-notes.component';
 import { TooltipDirective } from '../../shared/directives/tooltip.directive';
-import { OpenRouterSettingsComponent } from './components/openrouter-settings/openrouter-settings.component';
+import { AiProviderSettingsComponent } from './components/ai-provider-settings/ai-provider-settings.component';
 import { APP_VERSION } from '../../core/constants/release-info.data';
 import { HelpLinkComponent } from '../../shared/components/help-link/help-link.component';
 
@@ -42,7 +42,7 @@ interface PendingRestore {
     LucidePrinter,
     PrintDialogComponent,
     ReleaseNotesComponent,
-    OpenRouterSettingsComponent,
+    AiProviderSettingsComponent,
     TooltipDirective,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -373,8 +373,8 @@ interface PendingRestore {
               </form>
             </div>
 
-            <!-- Automatic label photo identification via OpenRouter -->
-            <app-openrouter-settings />
+            <!-- Automatic label photo identification via the configured AI provider -->
+            <app-ai-provider-settings />
 
             <!-- Data Management -->
             <div

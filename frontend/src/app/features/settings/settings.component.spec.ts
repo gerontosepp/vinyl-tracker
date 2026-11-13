@@ -73,11 +73,18 @@ describe('SettingsComponent', () => {
     };
 
     mockApiService = {
-      // Covered by OpenRouterSettingsComponent's own spec
-      openRouterSettingsResource: vi.fn().mockReturnValue({
-        hasValue: () => false,
-        value: signal(undefined),
+      // Covered by AiProviderSettingsComponent's own spec
+      aiConnectionsResource: vi.fn().mockReturnValue({
+        hasValue: () => true,
+        value: signal([]),
         error: () => undefined,
+        reload: vi.fn(),
+      }),
+      aiPresetsResource: vi.fn().mockReturnValue({
+        hasValue: () => true,
+        value: signal([]),
+        error: () => undefined,
+        reload: vi.fn(),
       }),
       getRoonStatus: vi.fn().mockName('getRoonStatus').mockReturnValue(of(mockRoonStatus)),
       getRoonZones: vi.fn().mockName('getRoonZones').mockReturnValue(of(mockRoonStatus.zones)),

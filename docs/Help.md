@@ -69,7 +69,7 @@ Wird ein Scan nicht erkannt (z. B. weil der Scanner zu langsam sendet), erschein
 
 ### Automatische Erkennung
 
-Hast du unter **Einstellungen → Label-Erkennung (OpenRouter)** einen API-Key hinterlegt, erkennt die App jedes neue Foto im Hintergrund (meist 10–30 Sekunden). In der Label-Inbox erscheint dann ein **Vorschlag** mit Cover, Katalognummer, Land, Jahr, Sicherheit und Begründung – oft auch mit **anderen Pressungen** zur Auswahl.
+Hast du unter **Einstellungen → Label-Erkennung (KI-Anbieter)** eine Standard-Verbindung hinterlegt (OpenRouter, ein eigener Anbieter oder ein lokales Modell), erkennt die App jedes neue Foto im Hintergrund (meist 10–30 Sekunden). In der Label-Inbox erscheint dann ein **Vorschlag** mit Cover, Katalognummer, Land, Jahr, Sicherheit und Begründung – oft auch mit **anderen Pressungen** zur Auswahl.
 
 - **Hinzufügen** übernimmt die gewählte Pressung in deine Sammlung und zeigt, in welches Regalfach sie gehört.
 - **Zu Want-to-Have** merkt die Pressung zum Anhören vor, ohne sie zu besitzen (siehe **Want-to-Have**); das Foto bleibt in der Inbox.
@@ -78,7 +78,7 @@ Hast du unter **Einstellungen → Label-Erkennung (OpenRouter)** einen API-Key h
 - Ein Hinweis schlägt manchmal ein weiteres Foto vor (andere Seite, Auslaufrille) – so lässt sich die genaue Pressung bestimmen.
 - **Manuell anlegen** – gibt es die Platte nicht bei Discogs oder ist der Vorschlag unsicher, legst du sie selbst an; das vom Label Gelesene ist schon eingetragen (siehe **Platten ohne Discogs-Eintrag**).
 
-Das Modell kann nur bei Discogs suchen und nie selbst etwas ändern. Jedes erkannte Foto kostet über OpenRouter meist wenige Cent und wird an OpenRouter und den Modellanbieter übertragen.
+Das Modell kann nur bei Discogs suchen und nie selbst etwas ändern. Jedes erkannte Foto kostet beim gewählten Anbieter meist wenige Cent und wird an diesen übertragen.
 
 ### Erkennung über einen KI-Assistenten
 
@@ -185,7 +185,7 @@ Ein Geschätzter Wert, Plays, Lagerplatz, Zustand und Sortierung gibt es hier ni
 - **Discogs** – Benutzername und Token.
 - **Barcode & QR Scanner** – siehe **Scannen**.
 - **Roon Integration** – siehe **Roon**.
-- **Label-Erkennung (OpenRouter)** – API-Key und Modell für die automatische Erkennung; der Key wird verschlüsselt gespeichert und nie wieder angezeigt. Wähle ein Modell mit Bild-Eingabe und Tool-Calling; günstigere Modelle findest du im OpenRouter-Katalog.
+- **Label-Erkennung (KI-Anbieter)** – mehrere Verbindungen für die automatische Erkennung (OpenRouter, OpenAI, Anthropic, Google, lokale Modelle oder ein eigener OpenAI-kompatibler Endpunkt). Pro Verbindung lassen sich Base-URL, Modell, API-Key und Authentifizierung setzen; eine Verbindung ist Standard. Keys werden verschlüsselt gespeichert und nie wieder angezeigt. Wähle ein Modell mit Bild-Eingabe und Tool-Calling.
 - **Sammlung exportieren & sichern** – CSV-Tabelle, vollständiges **JSON-Backup** (mit Hör-Historie, Regalen und Want-to-Have-Liste) oder PDF-Versicherungskatalog.
 - **Backup wiederherstellen** – ein JSON-Backup mit der Sammlung zusammenführen; nichts wird gelöscht, mehrfaches Einspielen erzeugt keine Duplikate. Platten, die schon in der Sammlung sind, werden aus der Want-to-Have-Liste nicht noch einmal übernommen.
 - **Alle Hördurchgänge zurücksetzen** – löscht die gesamte Hör-Historie (mit Rückfrage).

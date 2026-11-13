@@ -9,6 +9,8 @@
 
 ## Unreleased
 
+- **KI-Anbieter flexibel konfigurieren (`#393`)**: Die Label-Erkennung ist nicht mehr an OpenRouter gebunden. Unter **Einstellungen → Label-Erkennung (KI-Anbieter)** lassen sich mehrere Verbindungen anlegen – OpenRouter, OpenAI, Anthropic, Google Gemini, Groq, Mistral, DeepSeek, Together, Fireworks, Ollama, LM Studio, Azure OpenAI oder ein eigener OpenAI-kompatibler Endpunkt. Pro Verbindung gibt es Base-URL, Modell, verschlüsselten API-Key und Authentifizierung; eine Verbindung ist Standard. Ein Test-Button prüft die Verbindung, die Modellliste lässt sich optional laden. Bestehende OpenRouter-Keys und -Modelle werden beim Update automatisch übernommen; ohne Standard-Verbindung bleibt der MCP-Weg unverändert.
+
 - **Dokumentation: KI-Assistenten statt Claude in Hilfe und UI-Texten**: Hilfe-Seite (`/help`), MCP-Dokumentation und die Hinweise zur Label-Inbox sprechen jetzt von MCP-fähigen KI-Assistenten statt von Claude. Konkrete Modellnamen sind aus Doku und UI entfernt; die Einstellungen nennen nur noch die Anforderung (Bild-Eingabe, Tool-Calling). Im Modellfeld bleibt der technische Standard als Vorschlag stehen. Keine funktionale Änderung.
 
 ---

@@ -14,6 +14,13 @@ export const RELEASE_INFO_DATA: ReleaseEntry[] = [
     "isUnreleased": true,
     "items": [
       {
+        "title": "KI-Anbieter flexibel konfigurieren (`#393`)",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Die Label-Erkennung ist nicht mehr an OpenRouter gebunden. Unter **Einstellungen → Label-Erkennung (KI-Anbieter)** lassen sich mehrere Verbindungen anlegen – OpenRouter, OpenAI, Anthropic, Google Gemini, Groq, Mistral, DeepSeek, Together, Fireworks, Ollama, LM Studio, Azure OpenAI oder ein eigener OpenAI-kompatibler Endpunkt. Pro Verbindung gibt es Base-URL, Modell, verschlüsselten API-Key und Authentifizierung; eine Verbindung ist Standard. Ein Test-Button prüft die Verbindung, die Modellliste lässt sich optional laden. Bestehende OpenRouter-Keys und -Modelle werden beim Update automatisch übernommen; ohne Standard-Verbindung bleibt der MCP-Weg unverändert.",
+        "details": []
+      },
+      {
         "title": "Dokumentation: KI-Assistenten statt Claude in Hilfe und UI-Texten",
         "type": "docs",
         "typeLabel": "Docs",

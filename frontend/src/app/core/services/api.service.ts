@@ -43,7 +43,11 @@ import {
   LabelPhotoUploadResult,
   LabelPhotoDeleteResult,
   LabelPhoto,
-  OpenRouterSettings,
+  AiConnection,
+  AiPreset,
+  SaveAiConnection,
+  AiConnectionTestResult,
+  AiModelsResult,
 } from '../types';
 
 @Injectable({
@@ -81,7 +85,7 @@ export class ApiService {
     return `${this.baseUrl}/label-photos/${id}/image`;
   }
 
-  /** Queues a photo (again) for the automatic identification via OpenRouter. */
+  /** Queues a photo (again) for the automatic identification via the default AI connection. */
   identifyLabelPhoto(id: number): Observable<LabelPhoto> {
     return this.http.post<LabelPhoto>(`${this.baseUrl}/label-photos/${id}/identify`, {});
   }
@@ -91,14 +95,38 @@ export class ApiService {
     return this.http.patch<LabelPhoto>(`${this.baseUrl}/label-photos/${id}`, { status, discogsId: discogsId ?? null });
   }
 
-  /** OpenRouter settings as a resource; call it in an injection context. */
-  openRouterSettingsResource(): HttpResourceRef<OpenRouterSettings | undefined> {
-    return httpResource<OpenRouterSettings>(() => `${this.baseUrl}/users/me/openrouter`);
+  /** Provider presets for the AI connection form; call it in an injection context. */
+  aiPresetsResource(): HttpResourceRef<AiPreset[] | undefined> {
+    return httpResource<AiPreset[]>(() => `${this.baseUrl}/users/me/ai/presets`);
   }
 
-  /** `apiKey`: omit to keep, `''` to remove. `model`: `''` resets to the default. */
-  updateOpenRouterSettings(settings: { apiKey?: string; model?: string }): Observable<OpenRouterSettings> {
-    return this.http.put<OpenRouterSettings>(`${this.baseUrl}/users/me/openrouter`, settings);
+  /** Configured AI connections; call it in an injection context. Keys are never returned. */
+  aiConnectionsResource(): HttpResourceRef<AiConnection[] | undefined> {
+    return httpResource<AiConnection[]>(() => `${this.baseUrl}/users/me/ai/connections`);
+  }
+
+  createAiConnection(connection: SaveAiConnection): Observable<AiConnection> {
+    return this.http.post<AiConnection>(`${this.baseUrl}/users/me/ai/connections`, connection);
+  }
+
+  updateAiConnection(id: number, connection: SaveAiConnection): Observable<AiConnection> {
+    return this.http.put<AiConnection>(`${this.baseUrl}/users/me/ai/connections/${id}`, connection);
+  }
+
+  deleteAiConnection(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/users/me/ai/connections/${id}`);
+  }
+
+  setDefaultAiConnection(id: number): Observable<AiConnection> {
+    return this.http.put<AiConnection>(`${this.baseUrl}/users/me/ai/connections/${id}/default`, {});
+  }
+
+  testAiConnection(id: number): Observable<AiConnectionTestResult> {
+    return this.http.post<AiConnectionTestResult>(`${this.baseUrl}/users/me/ai/connections/${id}/test`, {});
+  }
+
+  aiConnectionModels(id: number): Observable<AiModelsResult> {
+    return this.http.get<AiModelsResult>(`${this.baseUrl}/users/me/ai/connections/${id}/models`);
   }
 
   deleteLabelPhoto(id: number): Observable<void> {

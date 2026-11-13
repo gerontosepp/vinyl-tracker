@@ -1,3 +1,4 @@
+pub mod ai_connection_service;
 pub mod analytics_service;
 pub mod collection_query;
 pub mod collection_restore;
@@ -10,7 +11,6 @@ pub mod label_photo_service;
 pub mod manual_record_service;
 pub mod manual_takeover_service;
 pub mod marketplace;
-pub mod openrouter_settings_service;
 pub mod print;
 pub mod purchase_sources;
 pub mod record_genres;

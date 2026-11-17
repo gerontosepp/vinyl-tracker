@@ -116,6 +116,17 @@ Die erzeugte Binärdatei liegt anschließend unter:
 
 ---
 
+## 🏷️ Version prüfen
+
+```bash
+vinyl-mcp-server --version   # z. B. "vinyl-mcp-server 1.12.0"
+```
+
+Die Version stammt aus `mcp/Cargo.toml` und wird auch im MCP-`initialize`-Handshake als
+`serverInfo` gemeldet (`name: "vinyl-mcp-server"`, `version: "<Cargo.toml>"`).
+
+---
+
 ## ⚙️ Konfiguration (Umgebungsvariablen)
 
 Der Server liest Konfigurationswerte aus Umgebungsvariablen oder einer optionalen `.env`-Datei:

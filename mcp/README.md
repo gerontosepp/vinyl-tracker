@@ -119,7 +119,7 @@ Die erzeugte Binärdatei liegt anschließend unter:
 ## 🏷️ Version prüfen
 
 ```bash
-vinyl-mcp-server --version   # z. B. "vinyl-mcp-server 1.12.0"
+vinyl-mcp-server --version   # z. B. "vinyl-mcp-server 1.13.0"
 ```
 
 Die Version stammt aus `mcp/Cargo.toml` und wird auch im MCP-`initialize`-Handshake als

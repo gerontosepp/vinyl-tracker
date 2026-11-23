@@ -7,6 +7,13 @@
     "isUnreleased": true,
     "items": [
       {
+        "title": "MCP-Server meldet eigenen Namen und Version",
+        "type": "feat",
+        "typeLabel": "Feature",
+        "summary": "Der MCP-Server gab im `initialize`-Handshake bisher `rmcp 3.5.0` als Identität an, also die Version des Frameworks statt der Anwendung. Jetzt meldet er `vinyl-mcp-server` mit der Version aus `mcp/Cargo.toml`; MCP-Clients zeigen damit die installierte Version der Anwendung an. Zusätzlich kennt das Binary `--version` (kurz `-V`) und `--help` (kurz `-h`), sodass sich die installierte Version ohne MCP-Handshake prüfen lässt. Keine Änderung an den Tools oder deinen Daten.",
+        "details": []
+      },
+      {
         "title": "KI-Anbieter flexibel konfigurieren (`#393`)",
         "type": "feat",
         "typeLabel": "Feature",

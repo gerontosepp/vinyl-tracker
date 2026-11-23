@@ -11,6 +11,16 @@
 
 ---
 
+## v1.13.0 (2026-11-23)
+
+- **MCP-Server meldet eigenen Namen und Version**: Der MCP-Server gab im `initialize`-Handshake bisher `rmcp 3.5.0` als Identität an, also die Version des Frameworks statt der Anwendung. Jetzt meldet er `vinyl-mcp-server` mit der Version aus `mcp/Cargo.toml`; MCP-Clients zeigen damit die installierte Version der Anwendung an. Zusätzlich kennt das Binary `--version` (kurz `-V`) und `--help` (kurz `-h`), sodass sich die installierte Version ohne MCP-Handshake prüfen lässt. Keine Änderung an den Tools oder deinen Daten.
+
+- **KI-Anbieter flexibel konfigurieren (`#393`)**: Die Label-Erkennung ist nicht mehr an OpenRouter gebunden. Unter **Einstellungen → Label-Erkennung (KI-Anbieter)** lassen sich mehrere Verbindungen anlegen – OpenRouter, OpenAI, Anthropic, Google Gemini, Groq, Mistral, DeepSeek, Together, Fireworks, Ollama, LM Studio, Azure OpenAI oder ein eigener OpenAI-kompatibler Endpunkt. Pro Verbindung gibt es Base-URL, Modell, verschlüsselten API-Key und Authentifizierung; eine Verbindung ist Standard. Ein Test-Button prüft die Verbindung, die Modellliste lässt sich optional laden. Bestehende OpenRouter-Keys und -Modelle werden beim Update automatisch übernommen; ohne Standard-Verbindung bleibt der MCP-Weg unverändert.
+
+- **Dokumentation: KI-Assistenten statt Claude in Hilfe und UI-Texten**: Hilfe-Seite (`/help`), MCP-Dokumentation und die Hinweise zur Label-Inbox sprechen jetzt von MCP-fähigen KI-Assistenten statt von Claude. Konkrete Modellnamen sind aus Doku und UI entfernt; die Einstellungen nennen nur noch die Anforderung (Bild-Eingabe, Tool-Calling). Im Modellfeld bleibt der technische Standard als Vorschlag stehen. Keine funktionale Änderung.
+
+---
+
 ## v1.12.0 (2026-11-12)
 
 - **Scan-Widget auf jeder Seite (`#380`)**: Nach einem Scan, der ein Hören erfasst, bleibt die aktuelle Ansicht offen und die Platte erscheint unten rechts als Widget mit Cover, Titel und Künstler. Es blendet sich nach der eingestellten Anzeigedauer aus, pausiert bei Hover/Fokus/Touch, lässt sich per X schließen und öffnet per Klick die Detailansicht. Auf dem Scanner-Bildschirm bleibt die bisherige Karte; Identify Mode und Discogs-Treffer verhalten sich unverändert.
@@ -117,7 +127,7 @@
 ## v1.3.0 (2026-10-24)
 
 - **Fix: Fotos in der Label-Inbox wieder sichtbar (`#238`)**: Einen Tag nach der Anmeldung zeigte die Label-Inbox statt der Fotos nur noch schwarze Flächen – das Bild wurde ohne Anmeldedaten geladen, sobald das Anmelde-Cookie abgelaufen war. Die Fotos werden jetzt wie alle anderen Daten mit dem Login-Token geladen.
-- **Plattenerkennung direkt in der App (`#235`)**: Mit einem eigenen [OpenRouter](https://openrouter.ai)-API-Key (Einstellungen → **Label-Erkennung**) erkennt die App fotografierte Labels selbst. Nach dem Foto schlägt die Label-Inbox die passende Pressung mit Cover, Katalognummer, Sicherheit, Begründung und Alternativen vor; **Hinzufügen** übernimmt sie in die Sammlung und zeigt den Regalplatz, **Nur abschließen** markiert das Foto. Das Modell ist wählbar (Standard Claude Sonnet, günstiger Claude Haiku) und kann nur suchen, nie selbst etwas ändern. Ohne Key bleibt der Weg über den MCP-Prompt.
+- **Plattenerkennung direkt in der App (`#235`)**: Mit einem eigenen [OpenRouter](https://openrouter.ai)-API-Key (Einstellungen → **Label-Erkennung**) erkennt die App fotografierte Labels selbst. Nach dem Foto schlägt die Label-Inbox die passende Pressung mit Cover, Katalognummer, Sicherheit, Begründung und Alternativen vor; **Hinzufügen** übernimmt sie in die Sammlung und zeigt den Regalplatz, **Nur abschließen** markiert das Foto. Das Modell ist frei wählbar (Bild-Eingabe und Tool-Calling nötig) und kann nur suchen, nie selbst etwas ändern. Ohne Key bleibt der Weg über den MCP-Prompt.
 ---
 
 ## v1.2.1 (2026-10-23)

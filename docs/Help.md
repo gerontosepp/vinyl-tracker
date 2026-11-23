@@ -1,6 +1,6 @@
 # Hilfe
 
-Diese Datei ist die Quelle der Hilfeseite in der App (`/help`). Jeder Abschnitt beginnt mit `## Titel {#anker}`; der Anker wird für Sprungmarken und die Kontext-Hilfe (?-Symbol) verwendet. Erlaubt sind Absätze, Listen, `###`-Zwischenüberschriften, **fett**, *kursiv*, `Code` und Links. Nach Änderungen erzeugt `node scripts/sync-help.js` die Daten für das Frontend (der Claude-Hook macht das automatisch). Die englische Fassung steht in `docs/Help.en.md`.
+Diese Datei ist die Quelle der Hilfeseite in der App (`/help`). Jeder Abschnitt beginnt mit `## Titel {#anker}`; der Anker wird für Sprungmarken und die Kontext-Hilfe (?-Symbol) verwendet. Erlaubt sind Absätze, Listen, `###`-Zwischenüberschriften, **fett**, *kursiv*, `Code` und Links. Nach Änderungen erzeugt `node scripts/sync-help.js` die Daten für das Frontend (der Hook in `.claude/settings.json` macht das automatisch). Die englische Fassung steht in `docs/Help.en.md`.
 
 ## Erste Schritte {#erste-schritte}
 
@@ -69,7 +69,7 @@ Wird ein Scan nicht erkannt (z. B. weil der Scanner zu langsam sendet), erschein
 
 ### Automatische Erkennung
 
-Hast du unter **Einstellungen → Label-Erkennung (OpenRouter)** einen API-Key hinterlegt, erkennt die App jedes neue Foto im Hintergrund (meist 10–30 Sekunden). In der Label-Inbox erscheint dann ein **Vorschlag** mit Cover, Katalognummer, Land, Jahr, Sicherheit und Begründung – oft auch mit **anderen Pressungen** zur Auswahl.
+Hast du unter **Einstellungen → Label-Erkennung (KI-Anbieter)** eine Standard-Verbindung hinterlegt (OpenRouter, ein eigener Anbieter oder ein lokales Modell), erkennt die App jedes neue Foto im Hintergrund (meist 10–30 Sekunden). In der Label-Inbox erscheint dann ein **Vorschlag** mit Cover, Katalognummer, Land, Jahr, Sicherheit und Begründung – oft auch mit **anderen Pressungen** zur Auswahl.
 
 - **Hinzufügen** übernimmt die gewählte Pressung in deine Sammlung und zeigt, in welches Regalfach sie gehört.
 - **Zu Want-to-Have** merkt die Pressung zum Anhören vor, ohne sie zu besitzen (siehe **Want-to-Have**); das Foto bleibt in der Inbox.
@@ -78,11 +78,11 @@ Hast du unter **Einstellungen → Label-Erkennung (OpenRouter)** einen API-Key h
 - Ein Hinweis schlägt manchmal ein weiteres Foto vor (andere Seite, Auslaufrille) – so lässt sich die genaue Pressung bestimmen.
 - **Manuell anlegen** – gibt es die Platte nicht bei Discogs oder ist der Vorschlag unsicher, legst du sie selbst an; das vom Label Gelesene ist schon eingetragen (siehe **Platten ohne Discogs-Eintrag**).
 
-Das Modell kann nur bei Discogs suchen und nie selbst etwas ändern. Jedes erkannte Foto kostet über OpenRouter meist wenige Cent und wird an OpenRouter und den Modellanbieter übertragen.
+Das Modell kann nur bei Discogs suchen und nie selbst etwas ändern. Jedes erkannte Foto kostet beim gewählten Anbieter meist wenige Cent und wird an diesen übertragen.
 
-### Erkennung über Claude
+### Erkennung über einen KI-Assistenten
 
-Ohne API-Key erkennt Claude die Platten mit deinem Claude-Abo: In Claude Desktop oder Claude Code den Prompt `process_label_inbox` des Vinyl-Tracker-MCP-Servers starten (siehe **Claude & MCP**).
+Ohne API-Key erkennt ein MCP-fähiger KI-Assistent die Platten mit dem Modellzugang deines Clients: den Prompt `process_label_inbox` des Vinyl-Tracker-MCP-Servers starten (siehe **KI-Assistenten & MCP**). Der Assistent braucht Bild-Eingabe.
 
 ### Inbox aufräumen
 
@@ -185,15 +185,15 @@ Ein Geschätzter Wert, Plays, Lagerplatz, Zustand und Sortierung gibt es hier ni
 - **Discogs** – Benutzername und Token.
 - **Barcode & QR Scanner** – siehe **Scannen**.
 - **Roon Integration** – siehe **Roon**.
-- **Label-Erkennung (OpenRouter)** – API-Key und Modell für die automatische Erkennung; der Key wird verschlüsselt gespeichert und nie wieder angezeigt. Standard ist Claude Sonnet, deutlich günstiger ist Claude Haiku.
+- **Label-Erkennung (KI-Anbieter)** – mehrere Verbindungen für die automatische Erkennung (OpenRouter, OpenAI, Anthropic, Google, lokale Modelle oder ein eigener OpenAI-kompatibler Endpunkt). Pro Verbindung lassen sich Base-URL, Modell, API-Key und Authentifizierung setzen; eine Verbindung ist Standard. Keys werden verschlüsselt gespeichert und nie wieder angezeigt. Wähle ein Modell mit Bild-Eingabe und Tool-Calling.
 - **Sammlung exportieren & sichern** – CSV-Tabelle, vollständiges **JSON-Backup** (mit Hör-Historie, Regalen und Want-to-Have-Liste) oder PDF-Versicherungskatalog.
 - **Backup wiederherstellen** – ein JSON-Backup mit der Sammlung zusammenführen; nichts wird gelöscht, mehrfaches Einspielen erzeugt keine Duplikate. Platten, die schon in der Sammlung sind, werden aus der Want-to-Have-Liste nicht noch einmal übernommen.
 - **Alle Hördurchgänge zurücksetzen** – löscht die gesamte Hör-Historie (mit Rückfrage).
 - **Versionshinweise** – was sich in den letzten Versionen geändert hat.
 
-## Claude & MCP {#claude-mcp}
+## KI-Assistenten & MCP {#ai-assistants-mcp}
 
-Der Vinyl-Tracker-**MCP-Server** verbindet Claude Desktop, Claude Code und andere KI-Assistenten mit deiner Sammlung. Claude kann dann z. B. Platten suchen und hinzufügen, Hören erfassen, Statistiken auswerten, Roon steuern oder die Label-Inbox abarbeiten.
+Der Vinyl-Tracker-**MCP-Server** verbindet MCP-fähige KI-Assistenten mit deiner Sammlung. Der Assistent kann dann z. B. Platten suchen und hinzufügen, Hören erfassen, Statistiken auswerten, Roon steuern oder die Label-Inbox abarbeiten.
 
 Den Server gibt es als fertiges Programm für Linux, macOS und Windows auf der Release-Seite des Projekts. Die Einrichtung (Pfad zum Programm, Backend-Adresse, Benutzername und Passwort) steht in `mcp/README.md`.
 

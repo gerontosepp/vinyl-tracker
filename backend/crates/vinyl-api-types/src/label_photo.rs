@@ -156,6 +156,8 @@ pub struct LabelPhotoDto {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identify_error: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identify_provider: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identify_model: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label_reading: Option<LabelReading>,
@@ -173,7 +175,7 @@ pub struct LabelPhotosDto {
 pub struct LabelPhotoUploadDto {
     pub id: i64,
     pub pending_count: i64,
-    /// `true` when the photo is identified automatically (OpenRouter key configured).
+    /// `true` when the photo is identified automatically (default AI connection configured).
     #[serde(default)]
     pub identifying: bool,
 }

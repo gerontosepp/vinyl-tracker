@@ -9,9 +9,12 @@ use axum::{
 use backend_rs::{
     config::Config,
     db::init_pool,
-    models::label_photo::{
-        LabelIdentifyState, LabelMatchConfidence, LabelPhotoDto, LabelPhotoUploadDto,
-        LabelPhotosDto, OpenRouterSettingsDto,
+    models::{
+        ai_connection::AiConnectionDto,
+        label_photo::{
+            LabelIdentifyState, LabelMatchConfidence, LabelPhotoDto, LabelPhotoUploadDto,
+            LabelPhotosDto, OpenRouterSettingsDto,
+        },
     },
     routes::create_app,
     state::AppState,
@@ -116,18 +119,17 @@ async fn mock_apis(submitted_id: i64) -> String {
     format!("http://{addr}")
 }
 
-async fn setup(submitted_id: i64) -> (Router, AppState) {
+async fn setup(submitted_id: i64) -> (Router, AppState, String) {
     let mock = mock_apis(submitted_id).await;
     dotenvy::dotenv().ok();
     let mut config = Config::from_env();
     config.discogs_api_base_url = mock.clone();
-    config.openrouter_api_base_url = mock;
     let pool = init_pool(&config).await.unwrap();
     backend_rs::db::migrations::run_migrations(&pool)
         .await
         .unwrap();
     let state = AppState::new(pool, config);
-    (create_app(state.clone()), state)
+    (create_app(state.clone()), state, mock)
 }
 
 /// Registers a user with a Discogs token and returns (user id, bearer token).
@@ -186,17 +188,24 @@ async fn call(
     )
 }
 
-async fn configure_openrouter(app: &Router, token: &str) -> OpenRouterSettingsDto {
+async fn configure_openrouter(app: &Router, token: &str, base_url: &str) -> AiConnectionDto {
     let (status, body) = call(
         app,
-        Method::PUT,
-        "/api/users/me/openrouter",
+        Method::POST,
+        "/api/users/me/ai/connections",
         Some(token),
         "application/json",
-        serde_json::to_vec(&json!({ "apiKey": API_KEY, "model": "test/vision-model" })).unwrap(),
+        serde_json::to_vec(&json!({
+            "name": "OpenRouter",
+            "kind": "openrouter",
+            "baseUrl": base_url,
+            "model": "test/vision-model",
+            "apiKey": API_KEY
+        }))
+        .unwrap(),
     )
     .await;
-    assert_eq!(status, StatusCode::OK);
+    assert_eq!(status, StatusCode::CREATED);
     serde_json::from_slice(&body).unwrap()
 }
 
@@ -249,9 +258,9 @@ async fn finished_photo(app: &Router, token: &str, id: i64) -> LabelPhotoDto {
 
 #[tokio::test]
 async fn test_upload_identifies_the_photo_in_the_background() {
-    let (app, state) = setup(RELEASE_ID).await;
+    let (app, state, mock) = setup(RELEASE_ID).await;
     let (_, token) = register(&app, &state).await;
-    let settings = configure_openrouter(&app, &token).await;
+    let settings = configure_openrouter(&app, &token, &mock).await;
     assert!(settings.has_api_key);
     assert_eq!(settings.model, "test/vision-model");
 
@@ -264,6 +273,11 @@ async fn test_upload_identifies_the_photo_in_the_background() {
         Some(LabelIdentifyState::Done),
         "{:?}",
         photo.identify_error
+    );
+    assert_eq!(
+        photo.identify_provider.as_deref(),
+        Some("OpenRouter"),
+        "provider is stored for the inbox"
     );
     assert_eq!(photo.identify_model.as_deref(), Some("test/vision-model"));
     let suggestion = photo.suggestion.unwrap();
@@ -282,9 +296,9 @@ async fn test_upload_identifies_the_photo_in_the_background() {
 
 #[tokio::test]
 async fn test_no_match_keeps_the_label_reading_for_a_manual_record() {
-    let (app, state) = setup(0).await;
+    let (app, state, mock) = setup(0).await;
     let (_, token) = register(&app, &state).await;
-    configure_openrouter(&app, &token).await;
+    configure_openrouter(&app, &token, &mock).await;
 
     let uploaded = upload(&app, &token).await;
     let photo = finished_photo(&app, &token, uploaded.id).await;
@@ -304,9 +318,9 @@ async fn test_no_match_keeps_the_label_reading_for_a_manual_record() {
 
 #[tokio::test]
 async fn test_invented_release_ids_are_rejected_and_can_be_retried() {
-    let (app, state) = setup(999_999).await;
+    let (app, state, mock) = setup(999_999).await;
     let (_, token) = register(&app, &state).await;
-    configure_openrouter(&app, &token).await;
+    configure_openrouter(&app, &token, &mock).await;
 
     let uploaded = upload(&app, &token).await;
     let photo = finished_photo(&app, &token, uploaded.id).await;
@@ -361,7 +375,7 @@ async fn test_invented_release_ids_are_rejected_and_can_be_retried() {
 
 #[tokio::test]
 async fn test_without_api_key_photos_are_not_identified() {
-    let (app, state) = setup(RELEASE_ID).await;
+    let (app, state, _mock) = setup(RELEASE_ID).await;
     let (_, token) = register(&app, &state).await;
 
     let uploaded = upload(&app, &token).await;
@@ -381,16 +395,17 @@ async fn test_without_api_key_photos_are_not_identified() {
 
 #[tokio::test]
 async fn test_api_key_is_stored_encrypted_and_never_returned() {
-    let (app, state) = setup(RELEASE_ID).await;
+    let (app, state, mock) = setup(RELEASE_ID).await;
     let (user_id, token) = register(&app, &state).await;
-    configure_openrouter(&app, &token).await;
+    configure_openrouter(&app, &token, &mock).await;
 
-    let stored: String =
-        sqlx::query_scalar("SELECT openrouter_api_key FROM app_user WHERE id = $1")
-            .bind(user_id)
-            .fetch_one(&state.pool)
-            .await
-            .unwrap();
+    let stored: String = sqlx::query_scalar(
+        "SELECT api_key FROM ai_connection WHERE user_id = $1 AND kind = 'openrouter'",
+    )
+    .bind(user_id)
+    .fetch_one(&state.pool)
+    .await
+    .unwrap();
     assert_ne!(stored, API_KEY);
     assert_eq!(state.crypto.decrypt(&stored).as_deref(), Some(API_KEY));
 

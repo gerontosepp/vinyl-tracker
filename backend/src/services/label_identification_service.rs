@@ -1,4 +1,4 @@
-//! Automatic label photo identification via OpenRouter (#235).
+//! Automatic label photo identification via the configured AI connection (#235, #393).
 //!
 //! A vision model reads the label photo and searches Discogs through read-only tools until it
 //! submits a match. It cannot change the collection: the suggestion is only stored and the user
@@ -7,8 +7,8 @@
 
 use crate::{
     clients::{
+        ai::{AiClient, AiTarget, ChatMessage},
         discogs::DiscogsClient,
-        openrouter::{ChatMessage, OpenRouterClient},
     },
     error::AppError,
     models::{
@@ -20,8 +20,8 @@ use crate::{
         user::AppUser,
     },
     services::{
+        ai_connection_service::AiConnectionService,
         label_photo_service::{IdentifyOutcome, LabelPhotoService},
-        openrouter_settings_service::OpenRouterSettingsService,
     },
     state::AppState,
 };
@@ -41,10 +41,10 @@ const MAX_NOTES_CHARS: usize = 600;
 
 /// Everything the identification needs besides the photo.
 pub struct IdentifyContext<'a> {
-    pub openrouter: &'a OpenRouterClient,
-    pub discogs: &'a DiscogsClient,
-    pub api_key: &'a str,
+    pub ai: &'a AiClient,
+    pub target: AiTarget<'a>,
     pub model: &'a str,
+    pub discogs: &'a DiscogsClient,
     pub discogs_token: &'a str,
 }
 
@@ -149,20 +149,24 @@ impl LabelIdentificationService {
             return Ok(());
         }
         match Self::identify_photo(state, user_id, photo_id, discogs_token).await {
-            Ok((model, outcome)) => {
+            Ok((provider, model, outcome)) => {
                 LabelPhotoService::finish_identification(
                     &state.pool,
                     photo_id,
+                    &provider,
                     &model,
                     Ok(&outcome),
                 )
                 .await
             }
-            Err((model, error)) => {
-                tracing::warn!("Label photo {photo_id} not identified with '{model}': {error}");
+            Err((provider, model, error)) => {
+                tracing::warn!(
+                    "Label photo {photo_id} not identified with '{provider} · {model}': {error}"
+                );
                 LabelPhotoService::finish_identification(
                     &state.pool,
                     photo_id,
+                    &provider,
                     &model,
                     Err(&user_message(&error)),
                 )
@@ -171,43 +175,52 @@ impl LabelIdentificationService {
         }
     }
 
-    /// Returns the model used plus the outcome, or the model plus the error.
+    /// Returns provider, model and outcome, or the known provider/model plus the error.
     async fn identify_photo(
         state: &AppState,
         user_id: i64,
         photo_id: i64,
         discogs_token: Option<String>,
-    ) -> Result<(String, IdentifyOutcome), (String, AppError)> {
-        let credentials =
-            OpenRouterSettingsService::credentials(&state.pool, &state.crypto, user_id)
-                .await
-                .map_err(|e| (String::new(), e))?
-                .ok_or_else(|| {
-                    (
-                        String::new(),
-                        AppError::BadRequest("No OpenRouter API key configured".to_string()),
-                    )
-                })?;
-        let model = credentials.model.clone();
-        let with_model = |e: AppError| (model.clone(), e);
+    ) -> Result<(String, String, IdentifyOutcome), (String, String, AppError)> {
+        let credentials = AiConnectionService::default_credentials(
+            &state.pool,
+            &state.crypto,
+            &state.config,
+            user_id,
+        )
+        .await
+        .map_err(|e| (String::new(), String::new(), e))?
+        .ok_or_else(|| {
+            (
+                String::new(),
+                String::new(),
+                AppError::BadRequest("No default AI connection configured".to_string()),
+            )
+        })?;
+        let provider = credentials.record.provider_label().to_string();
+        let model = credentials.record.model.clone();
+        let with = |e: AppError| (provider.clone(), model.clone(), e);
 
         let discogs_token = discogs_token
             .ok_or_else(|| AppError::BadRequest("No Discogs token configured".to_string()))
-            .map_err(with_model)?;
+            .map_err(with)?;
         let (jpeg, _) = LabelPhotoService::image(&state.pool, user_id, photo_id)
             .await
-            .map_err(with_model)?;
-        let ctx = IdentifyContext {
-            openrouter: &state.openrouter,
-            discogs: &state.discogs_client,
-            api_key: &credentials.api_key,
-            model: &credentials.model,
-            discogs_token: &discogs_token,
+            .map_err(with)?;
+        let outcome = {
+            let target = credentials.target();
+            let ctx = IdentifyContext {
+                ai: &state.ai,
+                target,
+                model: &credentials.record.model,
+                discogs: &state.discogs_client,
+                discogs_token: &discogs_token,
+            };
+            Self::identify(&ctx, &state.pool, user_id, &jpeg)
+                .await
+                .map_err(with)?
         };
-        let outcome = Self::identify(&ctx, &state.pool, user_id, &jpeg)
-            .await
-            .map_err(with_model)?;
-        Ok((model, outcome))
+        Ok((provider, model, outcome))
     }
 
     /// Lets the model identify the photo and returns the enriched suggestion, or no suggestion
@@ -229,8 +242,8 @@ impl LabelIdentificationService {
 
         for _ in 0..MAX_ROUNDS {
             let reply = ctx
-                .openrouter
-                .chat(ctx.api_key, ctx.model, &messages, &tools)
+                .ai
+                .chat(&ctx.target, ctx.model, &messages, &tools)
                 .await?;
             messages.push(ChatMessage::assistant(&reply));
             let calls = reply.tool_calls.unwrap_or_default();

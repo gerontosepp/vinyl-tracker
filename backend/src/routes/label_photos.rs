@@ -6,9 +6,9 @@ use crate::{
         UpdateLabelPhotoRequest,
     },
     services::{
+        ai_connection_service::AiConnectionService,
         label_identification_service::LabelIdentificationService,
         label_photo_service::LabelPhotoService,
-        openrouter_settings_service::OpenRouterSettingsService,
     },
     state::AppState,
 };
@@ -71,7 +71,7 @@ async fn upload_photo(
     if body.is_empty() {
         return Err(AppError::BadRequest("Image body is required".to_string()));
     }
-    let identify = has_openrouter_key(&state, user.id).await?;
+    let identify = has_usable_ai_connection(&state, user.id).await?;
     let created = LabelPhotoService::create(&state.pool, user.id, body, identify).await?;
     if identify {
         LabelIdentificationService::spawn(&state, &user, created.id);
@@ -79,12 +79,9 @@ async fn upload_photo(
     Ok((StatusCode::CREATED, Json(created)))
 }
 
-async fn has_openrouter_key(state: &AppState, user_id: i64) -> Result<bool, AppError> {
-    Ok(
-        OpenRouterSettingsService::credentials(&state.pool, &state.crypto, user_id)
-            .await?
-            .is_some(),
-    )
+async fn has_usable_ai_connection(state: &AppState, user_id: i64) -> Result<bool, AppError> {
+    AiConnectionService::has_usable_default(&state.pool, &state.crypto, &state.config, user_id)
+        .await
 }
 
 /// Queues an open photo (again) for the automatic identification.
@@ -93,9 +90,9 @@ async fn identify_photo(
     CurrentUser(user): CurrentUser,
     Path(id): Path<i64>,
 ) -> Result<(StatusCode, Json<LabelPhotoDto>), AppError> {
-    if !has_openrouter_key(&state, user.id).await? {
+    if !has_usable_ai_connection(&state, user.id).await? {
         return Err(AppError::BadRequest(
-            "Configure an OpenRouter API key in the settings first".to_string(),
+            "Configure a default AI connection in the settings first".to_string(),
         ));
     }
     let photo = LabelPhotoService::queue_identification(&state.pool, user.id, id).await?;

@@ -1,3 +1,4 @@
+pub mod ai_connection;
 pub mod analytics;
 pub mod collection;
 pub mod discogs;

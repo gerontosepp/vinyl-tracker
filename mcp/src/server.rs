@@ -68,6 +68,12 @@ If the record is not on Discogs, offer to add it as a manual record with `create
     )
 }
 
+/// Name advertised to MCP clients during the `initialize` handshake and by `--version`.
+pub const SERVER_NAME: &str = "vinyl-mcp-server";
+
+/// Server version, taken from `Cargo.toml` at build time.
+pub const SERVER_VERSION: &str = env!("CARGO_PKG_VERSION");
+
 #[derive(Clone)]
 pub struct VinylMcpServer {
     client: Arc<VinylApiClient>,
@@ -798,7 +804,10 @@ impl ServerHandler for VinylMcpServer {
                 .enable_resources()
                 .build(),
         )
-        .with_server_info(rmcp::model::Implementation::from_build_env())
+        .with_server_info(rmcp::model::Implementation::new(
+            SERVER_NAME,
+            SERVER_VERSION,
+        ))
         .with_instructions("Vinyl Tracker MCP Server providing collection tracking, hardware scanning, Roon playback, and collection intelligence.".to_string())
     }
 
@@ -951,6 +960,15 @@ mod contract_tests;
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_server_info_reports_own_name_and_version() {
+        let client = VinylApiClient::new("http://localhost:8080".to_string(), None, None, None);
+        let info = VinylMcpServer::new(client).get_info();
+
+        assert_eq!(info.server_info.name, SERVER_NAME);
+        assert_eq!(info.server_info.version, env!("CARGO_PKG_VERSION"));
+    }
 
     #[test]
     fn test_tools_registered() {

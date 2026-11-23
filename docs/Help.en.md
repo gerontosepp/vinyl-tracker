@@ -1,6 +1,6 @@
 # Help
 
-This file is the source of the in-app help page (`/help`, English). Each section starts with `## Title {#anchor}`; the anchors must match `docs/Help.md`, because the context help (? icon) links to them. Allowed: paragraphs, lists, `###` subheadings, **bold**, *italic*, `code` and links. After editing, `node scripts/sync-help.js` regenerates the frontend data (the Claude hook does this automatically).
+This file is the source of the in-app help page (`/help`, English). Each section starts with `## Title {#anchor}`; the anchors must match `docs/Help.md`, because the context help (? icon) links to them. Allowed: paragraphs, lists, `###` subheadings, **bold**, *italic*, `code` and links. After editing, `node scripts/sync-help.js` regenerates the frontend data (the hook in `.claude/settings.json` does this automatically).
 
 ## Getting started {#erste-schritte}
 
@@ -69,7 +69,7 @@ Older records often have no barcode. A photo of the **label** (the paper sticker
 
 ### Automatic recognition
 
-If you added an API key under **Settings → Label recognition (OpenRouter)**, the app recognizes every new photo in the background (usually 10–30 seconds). The label inbox then shows a **suggestion** with cover, catalog number, country, year, confidence and reason – often with **other pressings** to choose from.
+If you have a default connection under **Settings → Label recognition (AI provider)** (OpenRouter, your own provider or a local model), the app recognizes every new photo in the background (usually 10–30 seconds). The label inbox then shows a **suggestion** with cover, catalog number, country, year, confidence and reason – often with **other pressings** to choose from.
 
 - **Add** puts the chosen pressing into your collection and shows which shelf compartment it belongs in.
 - **Only complete** marks the photo as done without adding anything – e.g. if the record is already in your collection.
@@ -77,11 +77,11 @@ If you added an API key under **Settings → Label recognition (OpenRouter)**, t
 - A hint sometimes suggests another photo (other side, run-out groove) to pin down the exact pressing.
 - **Add manually** – if the record is not on Discogs or the suggestion is uncertain, add it yourself; what was read from the label is already filled in (see **Records without a Discogs entry**).
 
-The model can only search Discogs and never changes anything itself. Every recognized photo usually costs a few cents via OpenRouter and is sent to OpenRouter and the model provider.
+The model can only search Discogs and never changes anything itself. Every recognized photo usually costs a few cents at the selected provider and is sent there.
 
-### Recognition via Claude
+### Recognition via an AI assistant
 
-Without an API key, Claude recognizes the records with your Claude subscription: in Claude Desktop or Claude Code, start the prompt `process_label_inbox` of the Vinyl Tracker MCP server (see **Claude & MCP**).
+Without an API key, an MCP-capable AI assistant recognizes the records with the model access of your client: start the prompt `process_label_inbox` of the Vinyl Tracker MCP server (see **AI assistants & MCP**). The assistant needs image input.
 
 ### Cleaning up the inbox
 
@@ -184,15 +184,15 @@ An estimated value, plays, shelf slot, condition and sort string do not exist he
 - **Discogs** – username and token.
 - **Barcode & QR scanner** – see **Scanning**.
 - **Roon integration** – see **Roon**.
-- **Label recognition (OpenRouter)** – API key and model for automatic recognition; the key is stored encrypted and never shown again. The default is Claude Sonnet, Claude Haiku is much cheaper.
+- **Label recognition (AI provider)** – several connections for automatic recognition (OpenRouter, OpenAI, Anthropic, Google, local models or your own OpenAI-compatible endpoint). Each connection has a base URL, model, API key and authentication; one connection is the default. Keys are stored encrypted and never shown again. Choose a model with image input and tool calling.
 - **Export & back up collection** – CSV table, complete **JSON backup** (with listening history, shelves and the Want-to-Have list) or PDF insurance catalog.
 - **Restore backup** – merges a JSON backup into the collection; nothing is deleted, importing several times creates no duplicates. Records already in the collection are not added to the Want-to-Have list again.
 - **Reset all listens** – deletes the entire listening history (with confirmation).
 - **Release notes** – what changed in recent versions.
 
-## Claude & MCP {#claude-mcp}
+## AI assistants & MCP {#ai-assistants-mcp}
 
-The Vinyl Tracker **MCP server** connects Claude Desktop, Claude Code and other AI assistants to your collection. Claude can then e.g. search and add records, log listens, analyze statistics, control Roon or work through the label inbox.
+The Vinyl Tracker **MCP server** connects MCP-capable AI assistants to your collection. The assistant can then e.g. search and add records, log listens, analyze statistics, control Roon or work through the label inbox.
 
 The server is available as a ready-made program for Linux, macOS and Windows on the project's releases page. The setup (program path, backend address, username and password) is described in `mcp/README.md`.
 

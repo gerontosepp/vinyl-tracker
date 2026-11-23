@@ -189,8 +189,12 @@ export class LabelInboxComponent {
   /** Placement of the record added last, shown until dismissed. */
   readonly lastAdded = signal<{ title: string; placement: StoragePlacement } | null>(null);
 
-  private readonly openRouter = this.apiService.openRouterSettingsResource();
-  readonly canIdentify = computed(() => this.openRouter.hasValue() && this.openRouter.value().hasApiKey);
+  private readonly aiConnections = this.apiService.aiConnectionsResource();
+  readonly canIdentify = computed(() =>
+    (this.aiConnections.value() ?? []).some(
+      (connection) => connection.isDefault && (connection.hasApiKey || connection.authStyle === 'none')
+    )
+  );
   /** Photos are identified in the background; the list has to be refreshed until they are done. */
   readonly identifying = computed(() =>
     this.photos().some((p) => p.identifyState === 'queued' || p.identifyState === 'running')

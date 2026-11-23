@@ -12,6 +12,17 @@ Der Server stellt die MCP-Dienste über Standard Input/Output (Stdio) mit JSON-R
 - **WHEN** ein MCP-Client den Server über `stdio` startet und die `initialize`-Methode aufruft
 - **THEN** meldet der Server seine Server-Informationen und deklarierten Fähigkeiten erfolgreich zurück.
 
+### Requirement: Server-Identität und Kommandozeilen-Optionen
+Der Server meldet im `initialize`-Handshake als `serverInfo` den Namen `vinyl-mcp-server` und die Version der Anwendung aus `mcp/Cargo.toml` – nicht die Version des `rmcp`-Frameworks. Das Binary unterstützt zusätzlich `--version`/`-V` und `--help`/`-h` und beendet sich danach, ohne den Stdio-Transport zu starten.
+
+#### Scenario: Version ohne MCP-Handshake prüfen
+- **WHEN** das Binary mit `--version` oder `-V` gestartet wird
+- **THEN** schreibt es `vinyl-mcp-server <Version>` auf stdout und beendet sich erfolgreich.
+
+#### Scenario: Nutzungshinweis anzeigen
+- **WHEN** das Binary mit `--help` oder `-h` gestartet wird
+- **THEN** schreibt es Nutzungshinweis und verfügbare Umgebungsvariablen auf stdout und beendet sich erfolgreich.
+
 ### Requirement: Bereitstellung registrierter MCP-Tools
 Der Server stellt spezialisierte Tools für Sammlungsabfragen, Sammlungs-Management, Roon-Wiedergabe, Hardware-Scanning und Benutzerverwaltung bereit:
 - Sammlungsabfragen (`get_user_collection`, `get_record_details`, `get_random_record`, `get_top_records`, `get_unplayed_records`, `get_recent_listens`, `get_genre_breakdown`, `get_collection_value`)

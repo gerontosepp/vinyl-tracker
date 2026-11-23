@@ -4,11 +4,31 @@ mod server;
 
 use client::VinylApiClient;
 use rmcp::ServiceExt;
-use server::VinylMcpServer;
+use server::{SERVER_NAME, SERVER_VERSION, VinylMcpServer};
 use std::env;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // CLI flags run before anything writes to stdout, which is reserved for MCP JSON-RPC.
+    let args: Vec<String> = env::args().skip(1).collect();
+    if args.iter().any(|arg| arg == "--version" || arg == "-V") {
+        println!("{SERVER_NAME} {SERVER_VERSION}");
+        return Ok(());
+    }
+    if args.iter().any(|arg| arg == "--help" || arg == "-h") {
+        println!(
+            "{SERVER_NAME} {SERVER_VERSION}\n\n\
+             MCP server for Vinyl Tracker, speaking JSON-RPC over stdio.\n\n\
+             Usage: {SERVER_NAME} [--version | --help]\n\n\
+             Environment variables:\n  \
+             VINYL_API_URL      Backend base URL (default: http://localhost:8080)\n  \
+             VINYL_AUTH_TOKEN   Bearer token (optional)\n  \
+             VINYL_USERNAME     Login username (optional)\n  \
+             VINYL_PASSWORD     Login password (optional)"
+        );
+        return Ok(());
+    }
+
     // Load .env file if present
     dotenvy::dotenv().ok();
 

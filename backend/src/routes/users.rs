@@ -3,17 +3,20 @@ use crate::{
     config::Config,
     error::AppError,
     models::{
+        ai_connection::{
+            AiConnectionDto, AiConnectionTestDto, AiModelsDto, AiPresetDto, SaveAiConnectionRequest,
+        },
         label_photo::{OpenRouterSettingsDto, UpdateOpenRouterSettingsRequest},
         user::{
             LoginRequestDto, RegisterRequestDto, ResetPasswordRequestDto, UpdateDiscogsRequestDto,
         },
     },
-    services::{openrouter_settings_service::OpenRouterSettingsService, user_service::UserService},
+    services::{ai_connection_service::AiConnectionService, user_service::UserService},
     state::AppState,
 };
 use axum::{
     Json, Router,
-    extract::{ConnectInfo, Extension, Request, State},
+    extract::{ConnectInfo, Extension, Path, Request, State},
     http::{HeaderMap, HeaderValue, StatusCode, header},
     middleware::Next,
     response::{IntoResponse, Response},
@@ -162,7 +165,7 @@ pub async fn get_openrouter_handler(
     CurrentUser(user): CurrentUser,
 ) -> Result<Json<OpenRouterSettingsDto>, AppError> {
     Ok(Json(
-        OpenRouterSettingsService::get(&state.pool, &state.crypto, user.id).await?,
+        AiConnectionService::openrouter_settings(&state.pool, &state.crypto, user.id).await?,
     ))
 }
 
@@ -172,7 +175,103 @@ pub async fn update_openrouter_handler(
     Json(payload): Json<UpdateOpenRouterSettingsRequest>,
 ) -> Result<Json<OpenRouterSettingsDto>, AppError> {
     Ok(Json(
-        OpenRouterSettingsService::update(&state.pool, &state.crypto, user.id, payload).await?,
+        AiConnectionService::update_openrouter_settings(
+            &state.pool,
+            &state.crypto,
+            user.id,
+            payload,
+        )
+        .await?,
+    ))
+}
+
+pub async fn list_ai_presets_handler(CurrentUser(_user): CurrentUser) -> Json<Vec<AiPresetDto>> {
+    Json(AiConnectionService::presets())
+}
+
+pub async fn list_ai_connections_handler(
+    State(state): State<AppState>,
+    CurrentUser(user): CurrentUser,
+) -> Result<Json<Vec<AiConnectionDto>>, AppError> {
+    Ok(Json(
+        AiConnectionService::list(&state.pool, &state.crypto, user.id).await?,
+    ))
+}
+
+pub async fn get_ai_connection_handler(
+    State(state): State<AppState>,
+    CurrentUser(user): CurrentUser,
+    Path(id): Path<i64>,
+) -> Result<Json<AiConnectionDto>, AppError> {
+    Ok(Json(
+        AiConnectionService::get(&state.pool, &state.crypto, user.id, id).await?,
+    ))
+}
+
+pub async fn create_ai_connection_handler(
+    State(state): State<AppState>,
+    CurrentUser(user): CurrentUser,
+    Json(payload): Json<SaveAiConnectionRequest>,
+) -> Result<(StatusCode, Json<AiConnectionDto>), AppError> {
+    let dto =
+        AiConnectionService::create(&state.pool, &state.crypto, &state.config, user.id, payload)
+            .await?;
+    Ok((StatusCode::CREATED, Json(dto)))
+}
+
+pub async fn update_ai_connection_handler(
+    State(state): State<AppState>,
+    CurrentUser(user): CurrentUser,
+    Path(id): Path<i64>,
+    Json(payload): Json<SaveAiConnectionRequest>,
+) -> Result<Json<AiConnectionDto>, AppError> {
+    Ok(Json(
+        AiConnectionService::update(
+            &state.pool,
+            &state.crypto,
+            &state.config,
+            user.id,
+            id,
+            payload,
+        )
+        .await?,
+    ))
+}
+
+pub async fn delete_ai_connection_handler(
+    State(state): State<AppState>,
+    CurrentUser(user): CurrentUser,
+    Path(id): Path<i64>,
+) -> Result<StatusCode, AppError> {
+    AiConnectionService::delete(&state.pool, user.id, id).await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+pub async fn set_default_ai_connection_handler(
+    State(state): State<AppState>,
+    CurrentUser(user): CurrentUser,
+    Path(id): Path<i64>,
+) -> Result<Json<AiConnectionDto>, AppError> {
+    Ok(Json(
+        AiConnectionService::set_default(&state.pool, &state.crypto, user.id, id).await?,
+    ))
+}
+
+pub async fn test_ai_connection_handler(
+    State(state): State<AppState>,
+    CurrentUser(user): CurrentUser,
+    Path(id): Path<i64>,
+) -> Result<Json<AiConnectionTestDto>, AppError> {
+    Ok(Json(AiConnectionService::test(&state, user.id, id).await?))
+}
+
+pub async fn ai_connection_models_handler(
+    State(state): State<AppState>,
+    CurrentUser(user): CurrentUser,
+    Path(id): Path<i64>,
+) -> Result<Json<AiModelsDto>, AppError> {
+    Ok(Json(
+        AiConnectionService::models(&state, user.id, id).await?,
     ))
 }
 
@@ -222,6 +321,29 @@ pub fn router(state: &AppState) -> Router<AppState> {
         .route(
             "/me/openrouter",
             get(get_openrouter_handler).put(update_openrouter_handler),
+        )
+        .route("/me/ai/presets", get(list_ai_presets_handler))
+        .route(
+            "/me/ai/connections",
+            get(list_ai_connections_handler).post(create_ai_connection_handler),
+        )
+        .route(
+            "/me/ai/connections/{id}",
+            get(get_ai_connection_handler)
+                .put(update_ai_connection_handler)
+                .delete(delete_ai_connection_handler),
+        )
+        .route(
+            "/me/ai/connections/{id}/default",
+            put(set_default_ai_connection_handler),
+        )
+        .route(
+            "/me/ai/connections/{id}/test",
+            post(test_ai_connection_handler),
+        )
+        .route(
+            "/me/ai/connections/{id}/models",
+            get(ai_connection_models_handler),
         )
         .route("/logout", post(logout_handler))
 }

@@ -1,2 +1,2 @@
+pub mod ai;
 pub mod discogs;
-pub mod openrouter;
